@@ -239,11 +239,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
     if (permissions.position === 'clerk_teacher' || permissions.position === 'government_employee') {
       return true;
     }
-    // ผู้ช่วยผอ/รองผอ/ผอ ไม่เห็นเอกสาร pending_sign ทุกกรณี
+    // ผู้ช่วยผอ/รองผอ/ผอ เห็นเอกสารทุกชนิด รวมถึง pending_sign
     if (["assistant_director", "deputy_director", "director"].includes(permissions.position)) {
-      if (memo.status === 'pending_sign') {
-        return false;
-      }
+      return true;
     }
     // คนอื่นดูได้เฉพาะเอกสารของตนเอง
     return memo.user_id === profile?.user_id;
@@ -251,10 +249,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
 
   const filteredRealMemos = realMemos.filter(shouldShowMemo);
 
-  // ไม่แสดง Card รายการเอกสารสำหรับรองผอและผอ
-  if (["deputy_director", "director"].includes(permissions.position)) {
-    return null;
-  }
+  // แสดง Card รายการเอกสารสำหรับทุกตำแหน่ง
+  // if (["deputy_director", "director"].includes(permissions.position)) {
+  //   return null;
+  // }
 
   return (
     <Card className="bg-purple-50 border-purple-200 shadow-lg">

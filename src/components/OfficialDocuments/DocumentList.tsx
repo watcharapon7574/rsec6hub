@@ -51,7 +51,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
   
   // State สำหรับ pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
 
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
   const getStatusColor = (status: string): string => {
@@ -61,6 +61,45 @@ const DocumentList: React.FC<DocumentListProps> = ({
       case 'approved': return 'text-green-600'; // เขียว
       case 'rejected': return 'text-red-500'; // แดง
       default: return 'text-gray-600';
+    }
+  };
+
+  // ฟังก์ชันสำหรับข้อความสถานะตาม current_signer_order
+  const getStatusTextBySignerOrder = (signerOrder: number): string => {
+    switch (signerOrder) {
+      case 1: return 'ฉบับร่าง';
+      case 2:
+      case 3:
+      case 4: return 'รอลงนาม';
+      case 5: return 'เสร็จสิ้น';
+      case 0: return 'ตีกลับ';
+      default: return 'ไม่ระบุ';
+    }
+  };
+
+  // ฟังก์ชันสำหรับสีสถานะตาม current_signer_order
+  const getStatusColorBySignerOrder = (signerOrder: number): string => {
+    switch (signerOrder) {
+      case 1: return 'text-blue-600'; // ฉบับร่าง - น้ำเงิน
+      case 2:
+      case 3:
+      case 4: return 'text-orange-500'; // รอลงนาม - ส้ม
+      case 5: return 'text-green-600'; // เสร็จสิ้น - เขียว
+      case 0: return 'text-red-500'; // ตีกลับ - แดง
+      default: return 'text-gray-600';
+    }
+  };
+
+  // ฟังก์ชันสำหรับไอคอนสถานะตาม current_signer_order
+  const getStatusIconBySignerOrder = (signerOrder: number): JSX.Element => {
+    switch (signerOrder) {
+      case 1: return <FileText className="h-4 w-4" />; // ฉบับร่าง
+      case 2:
+      case 3:
+      case 4: return <Clock className="h-4 w-4" />; // รอลงนาม
+      case 5: return <CheckCircle className="h-4 w-4" />; // เสร็จสิ้น
+      case 0: return <XCircle className="h-4 w-4" />; // ตีกลับ
+      default: return <AlertCircle className="h-4 w-4" />;
     }
   };
 
@@ -117,31 +156,33 @@ const DocumentList: React.FC<DocumentListProps> = ({
         memo.doc_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         memo.form_data?.to?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      // กรองตามขั้นตอนการลงนาม (เฉพาะ pending_sign)
-      let stepMatch = true;
+      // กรองตาม current_signer_order
+      let statusMatch = true;
       if (statusFilter !== 'all') {
-        // กรองเฉพาะเอกสาร pending_sign
-        if (memo.status !== 'pending_sign') {
-          stepMatch = false;
-        } else {
-          // กรองตามลำดับผู้ลงนามปัจจุบัน
-          switch (statusFilter) {
-            case 'step_2':
-              stepMatch = memo.current_signer_order === 2;
-              break;
-            case 'step_3':
-              stepMatch = memo.current_signer_order === 3;
-              break;
-            case 'step_4':
-              stepMatch = memo.current_signer_order === 4;
-              break;
-            default:
-              stepMatch = true;
-          }
+        const signerOrder = memo.current_signer_order;
+        switch (statusFilter) {
+          case 'draft':
+            // ฉบับร่าง: current_signer_order = 1
+            statusMatch = signerOrder === 1;
+            break;
+          case 'pending_sign':
+            // รอลงนาม: current_signer_order = 2, 3, หรือ 4
+            statusMatch = signerOrder >= 2 && signerOrder <= 4;
+            break;
+          case 'completed':
+            // เสร็จสิ้น: current_signer_order = 5
+            statusMatch = signerOrder === 5;
+            break;
+          case 'rejected':
+            // ตีกลับ: current_signer_order = 0
+            statusMatch = signerOrder === 0;
+            break;
+          default:
+            statusMatch = true;
         }
       }
 
-      return searchMatch && stepMatch;
+      return searchMatch && statusMatch;
     });
 
     // จัดเรียงข้อมูล
@@ -154,8 +195,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
           bValue = b.subject || '';
           break;
         case 'status':
-          aValue = a.status || '';
-          bValue = b.status || '';
+          // เรียงตาม current_signer_order แทน status
+          aValue = a.current_signer_order || 0;
+          bValue = b.current_signer_order || 0;
           break;
         case 'doc_number':
           aValue = a.doc_number || '';
@@ -240,17 +282,18 @@ const DocumentList: React.FC<DocumentListProps> = ({
             />
           </div>
 
-          {/* ตัวกรองตามลำดับผู้ลงนาม */}
+          {/* ตัวกรองตามสถานะ */}
           <div className="w-32">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-purple-400">
-                <SelectValue placeholder="ขั้นตอน" />
+                <SelectValue placeholder="สถานะ" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">ทั้งหมด</SelectItem>
-                <SelectItem value="step_2">ตรวจสอบ</SelectItem>
-                <SelectItem value="step_3">รองผอ</SelectItem>
-                <SelectItem value="step_4">ผอ</SelectItem>
+                <SelectItem value="draft">ฉบับร่าง</SelectItem>
+                <SelectItem value="pending_sign">รอลงนาม</SelectItem>
+                <SelectItem value="completed">เสร็จสิ้น</SelectItem>
+                <SelectItem value="rejected">ตีกลับ</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -347,10 +390,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
                   <span
                     style={{
-                      background: memo.status === 'draft' ? '#2563eb' :
-                                  memo.status === 'pending_sign' ? '#f59e42' :
-                                  memo.status === 'approved' ? '#16a34a' :
-                                  memo.status === 'rejected' ? '#ef4444' : '#6b7280',
+                      background: memo.current_signer_order === 1 ? '#2563eb' : // ฉบับร่าง - น้ำเงิน
+                                  memo.current_signer_order >= 2 && memo.current_signer_order <= 4 ? '#f59e42' : // รอลงนาม - ส้ม  
+                                  memo.current_signer_order === 5 ? '#16a34a' : // เสร็จสิ้น - เขียว
+                                  memo.current_signer_order === 0 ? '#ef4444' : '#6b7280', // ตีกลับ - แดง
                       color: '#fff',
                       borderRadius: '9999px',
                       padding: '2px 8px',
@@ -361,7 +404,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       lineHeight: 1
                     }}
                   >
-                    {getStatusText(memo.status)}
+                    {getStatusTextBySignerOrder(memo.current_signer_order)}
                   </span>
                 </div>
                 {/* Progress Stepper: stepper เต็มทุกขนาดจอ (responsive size) */}
@@ -401,11 +444,23 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   ) : (
                     <>
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                        <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.current_signer_order === 1 ? 'text-purple-700' : 'text-purple-400'}`}>ตรวจทาน</span>
-                        <span className={`sm:text-[10px] text-[9px] ${memo.current_signer_order === 1 ? 'text-purple-700 font-bold' : 'text-purple-400'}`}>-</span>
-                        <div className={`w-2 h-2 rounded-full mt-1 ${memo.current_signer_order === 1 ? 'bg-purple-500' : 'bg-purple-200'}`}></div>
+                        <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                          memo.current_signer_order === 5 
+                            ? (memo.current_signer_order === 1 ? 'text-gray-700' : 'text-gray-400')
+                            : (memo.current_signer_order === 1 ? 'text-purple-700' : 'text-purple-400')
+                        }`}>ตรวจทาน</span>
+                        <span className={`sm:text-[10px] text-[9px] ${
+                          memo.current_signer_order === 5 
+                            ? (memo.current_signer_order === 1 ? 'text-gray-700 font-bold' : 'text-gray-400')
+                            : (memo.current_signer_order === 1 ? 'text-purple-700 font-bold' : 'text-purple-400')
+                        }`}>-</span>
+                        <div className={`w-2 h-2 rounded-full mt-1 ${
+                          memo.current_signer_order === 5 
+                            ? (memo.current_signer_order === 1 ? 'bg-gray-500' : 'bg-gray-200')
+                            : (memo.current_signer_order === 1 ? 'bg-purple-500' : 'bg-purple-200')
+                        }`}></div>
                       </div>
-                      <div className="w-4 sm:w-5 h-0.5 bg-purple-200 mx-0.5 sm:mx-1" />
+                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-purple-200'}`} />
                       {/* Step 2-4: ตรวจสอบ, รองผู้อำนวยการ, ผู้อำนวยการ (จาก signature_positions) */}
                       {Array.isArray(memo.signature_positions) && memo.signature_positions.length > 0 ? (
                         memo.signature_positions
@@ -414,13 +469,25 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           .map((pos, idx, arr) => (
                             <React.Fragment key={pos.signer.order}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.current_signer_order === pos.signer.order ? 'text-purple-700' : 'text-purple-400'}`}>{
+                                <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                  memo.current_signer_order === 5 
+                                    ? (memo.current_signer_order === pos.signer.order ? 'text-gray-700' : 'text-gray-400')
+                                    : (memo.current_signer_order === pos.signer.order ? 'text-purple-700' : 'text-purple-400')
+                                }`}>{
                                   pos.signer.order === 4 ? 'ผู้อำนวยการ' : (pos.signer.org_structure_role || pos.signer.position || '-')
                                 }</span>
-                                <span className={`sm:text-[10px] text-[9px] ${memo.current_signer_order === pos.signer.order ? 'text-purple-700 font-bold' : 'text-purple-400'}`}>{pos.signer.name || '-'}</span>
-                                <div className={`w-2 h-2 rounded-full mt-1 ${memo.current_signer_order === pos.signer.order ? 'bg-purple-500' : 'bg-purple-200'}`}></div>
+                                <span className={`sm:text-[10px] text-[9px] ${
+                                  memo.current_signer_order === 5 
+                                    ? (memo.current_signer_order === pos.signer.order ? 'text-gray-700 font-bold' : 'text-gray-400')
+                                    : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
+                                }`}>{pos.signer.name || '-'}</span>
+                                <div className={`w-2 h-2 rounded-full mt-1 ${
+                                  memo.current_signer_order === 5 
+                                    ? (memo.current_signer_order === pos.signer.order ? 'bg-gray-500' : 'bg-gray-200')
+                                    : (memo.current_signer_order === pos.signer.order ? 'bg-purple-500' : 'bg-purple-200')
+                                }`}></div>
                               </div>
-                              <div className="w-4 sm:w-5 h-0.5 bg-purple-200 mx-0.5 sm:mx-1" />
+                              <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-purple-200'}`} />
                             </React.Fragment>
                           ))
                       ) : null}
@@ -429,60 +496,89 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ */}
                   {memo.status !== 'draft' && memo.status !== 'rejected' && (
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
-                      <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.status === 'approved' ? 'text-purple-700' : 'text-purple-400'}`}>เกษียนหนังสือแล้ว</span>
+                      <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                        memo.current_signer_order === 5 
+                          ? 'text-gray-700' 
+                          : 'text-purple-400'
+                      }`}>เกษียนหนังสือแล้ว</span>
+                      {memo.current_signer_order === 5 && (
+                        <div className="w-2 h-2 rounded-full mt-1 bg-gray-700"></div>
+                      )}
                     </div>
                   )}
                 </div>
                 <div className="flex gap-1 ml-auto">
-                  <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
-                    onClick={() => {
-                      const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                      navigate('/pdf-just-preview', { 
-                        state: { 
-                          fileUrl, 
-                          fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                          memoId: memo.id 
-                        } 
-                      });
-                    }}
-                  >
-                    <Eye className="h-4 w-4" />
-                    <span className="text-xs font-medium">ดู</span>
-                  </Button>
-                  {/* Edit button - only show for memo author */}
-                  {profile?.user_id === memo.user_id && (
-                    <div className="relative">
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-purple-200 text-purple-600"
+                  {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
+                  {memo.current_signer_order === 5 ? (
+                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
+                      onClick={() => {
+                        const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
+                        navigate('/pdf-just-preview', { 
+                          state: { 
+                            fileUrl, 
+                            fileName: memo.subject || memo.title || 'ไฟล์ PDF',
+                            memoId: memo.id 
+                          } 
+                        });
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="text-xs font-medium">ดูเอกสาร</span>
+                    </Button>
+                  ) : (
+                    <>
+                      {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
                         onClick={() => {
-                          // Navigate to edit memo page with memo id
-                          navigate(`/create-memo?edit=${memo.id}`);
+                          const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
+                          navigate('/pdf-just-preview', { 
+                            state: { 
+                              fileUrl, 
+                              fileName: memo.subject || memo.title || 'ไฟล์ PDF',
+                              memoId: memo.id 
+                            } 
+                          });
                         }}
                       >
-                        <Edit className="h-4 w-4" />
-                        <span className="text-xs font-medium">แก้ไข</span>
+                        <Eye className="h-4 w-4" />
+                        <span className="text-xs font-medium">ดูเอกสาร</span>
                       </Button>
-                      {/* Show "ตีกลับ" badge for rejected memos on top-right corner */}
-                      {memo.status === 'rejected' && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white z-10">ใหม่</span>
+                      {/* Edit button - only show for memo author */}
+                      {profile?.user_id === memo.user_id && (
+                        <div className="relative">
+                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-purple-200 text-purple-600"
+                            onClick={() => {
+                              // Navigate to edit memo page with memo id
+                              navigate(`/create-memo?edit=${memo.id}`);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="text-xs font-medium">แก้ไข</span>
+                          </Button>
+                          {/* Show "ตีกลับ" badge for rejected memos on top-right corner */}
+                          {memo.status === 'rejected' && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white z-10">ใหม่</span>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-                  {['government_employee', 'clerk_teacher'].includes(profile?.position || '') && (
-                    <div className="relative">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="h-7 px-2 flex items-center gap-1 border-purple-200 text-purple-600"
-                        onClick={() => navigate(`/document-manage/${memo.id}`)}
-                        disabled={memo.status === 'rejected'}
-                      >
-                        <FileText className="h-4 w-4" />
-                        <span className="text-xs font-medium">จัดการเอกสาร</span>
-                      </Button>
-                      {memo.status === 'draft' && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
+                      {['government_employee', 'clerk_teacher'].includes(profile?.position || '') && (
+                        <div className="relative">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="h-7 px-2 flex items-center gap-1 border-purple-200 text-purple-600"
+                            onClick={() => navigate(`/document-manage/${memo.id}`)}
+                            disabled={memo.status === 'rejected'}
+                          >
+                            <FileText className="h-4 w-4" />
+                            <span className="text-xs font-medium">จัดการเอกสาร</span>
+                          </Button>
+                          {memo.status === 'draft' && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
+                          )}
+                        </div>
                       )}
-                    </div>
+                    </>
                   )}
                 </div>
               </div>

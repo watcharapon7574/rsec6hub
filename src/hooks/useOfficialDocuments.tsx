@@ -4,6 +4,7 @@ import { officialDocumentService } from '@/services/officialDocumentService';
 import type { OfficialDocument } from '@/types/officialDocument';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 
 export const useOfficialDocuments = () => {
   const [documents, setDocuments] = useState<OfficialDocument[]>([]);
@@ -12,6 +13,7 @@ export const useOfficialDocuments = () => {
   const [hasInitialized, setHasInitialized] = useState(false);
   const { toast } = useToast();
   const { profile } = useEmployeeAuth();
+  const { updateSingleMemo, updateSingleDocument } = useSmartRealtime();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchOfficialDocuments = async (signal?: AbortSignal) => {
@@ -180,56 +182,116 @@ export const useOfficialDocuments = () => {
       loadInitialData();
     }
     
-    // Set up real-time subscriptions after initial data load (TEMPORARILY DISABLED)
-    // let memosChannel: any = null;
+    // Set up real-time subscriptions after initial data load
+    let memosChannel: any = null;
+    let docsChannel: any = null;
+    let approvalStepsChannel: any = null;
+    let workflowsChannel: any = null;
     let debounceTimer: NodeJS.Timeout | null = null;
 
-    // Realtime temporarily disabled due to WebSocket connection issues
-    // TODO: Enable after Supabase Realtime is properly configured
-    // if (hasInitialized) {
-    //   const debouncedRefresh = () => {
-    //     if (debounceTimer) {
-    //       clearTimeout(debounceTimer);
-    //     }
-    //     debounceTimer = setTimeout(() => {
-    //       fetchOfficialDocuments();
-    //       fetchMemos();
-    //     }, 500);
-    //   };
+    if (hasInitialized) {
+      const debouncedRefresh = () => {
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        debounceTimer = setTimeout(() => {
+          console.log('🔄 Refreshing data due to realtime update...');
+          fetchOfficialDocuments();
+          fetchMemos();
+        }, 500);
+      };
 
-    //   const setupMemosChannel = () => {
-    //     memosChannel = supabase
-    //       .channel(`memos_${Date.now()}_${Math.random()}`)
-    //       .on('postgres_changes', { 
-    //         event: '*', 
-    //         schema: 'public', 
-    //         table: 'memos' 
-    //       }, (payload) => {
-    //         console.log('🔄 Realtime update received:', payload);
-    //         debouncedRefresh();
-    //       })
-    //       .subscribe((status) => {
-    //         console.log('📡 Realtime status:', status);
-    //         if (status === 'SUBSCRIBED') {
-    //           console.log('✅ Realtime connected successfully!');
-    //         }
-    //         if (status === 'CHANNEL_ERROR') {
-    //           console.error('❌ Memos channel error - will retry in 5 seconds...');
-    //           setTimeout(setupMemosChannel, 5000);
-    //         }
-    //       });
-    //   };
+      // Setup Memos Channel
+      memosChannel = supabase
+        .channel(`memos_${Date.now()}_${Math.random()}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'memos' 
+        }, (payload) => {
+          console.log('� Memos realtime update:', payload);
+          debouncedRefresh();
+        })
+        .subscribe((status) => {
+          console.log('📡 Memos realtime status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Memos realtime connected!');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Memos channel error - will retry in 5 seconds...');
+          }
+        });
 
-    //   setupMemosChannel();
-    // }
+      // Setup Official Documents Channel  
+      docsChannel = supabase
+        .channel(`docs_${Date.now()}_${Math.random()}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'official_documents' 
+        }, (payload) => {
+          console.log('🔔 Official documents realtime update:', payload);
+          debouncedRefresh();
+        })
+        .subscribe((status) => {
+          console.log('📡 Docs realtime status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Official documents realtime connected!');
+          }
+        });
+
+      // Setup Memo Approval Steps Channel (สำหรับการอนุมัติ)
+      approvalStepsChannel = supabase
+        .channel(`approval_steps_${Date.now()}_${Math.random()}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'memo_approval_steps' 
+        }, (payload) => {
+          console.log('🔔 Approval steps realtime update:', payload);
+          debouncedRefresh();
+        })
+        .subscribe((status) => {
+          console.log('📡 Approval steps realtime status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Approval steps realtime connected!');
+          }
+        });
+
+      // Setup Memo Workflows Channel (สำหรับ workflow การลงนาม)
+      workflowsChannel = supabase
+        .channel(`workflows_${Date.now()}_${Math.random()}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'memo_workflows' 
+        }, (payload) => {
+          console.log('🔔 Workflows realtime update:', payload);
+          debouncedRefresh();
+        })
+        .subscribe((status) => {
+          console.log('📡 Workflows realtime status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Workflows realtime connected!');
+          }
+        });
+    }
 
     return () => {
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
-      // if (memosChannel) {
-      //   memosChannel.unsubscribe();
-      // }
+      if (memosChannel) {
+        memosChannel.unsubscribe();
+      }
+      if (docsChannel) {
+        docsChannel.unsubscribe();
+      }
+      if (approvalStepsChannel) {
+        approvalStepsChannel.unsubscribe();
+      }
+      if (workflowsChannel) {
+        workflowsChannel.unsubscribe();
+      }
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }

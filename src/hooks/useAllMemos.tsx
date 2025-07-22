@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
+import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 
 export interface MemoRecord {
   id: string;
@@ -33,6 +34,7 @@ export const useAllMemos = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { profile } = useEmployeeAuth();
+  const { updateSingleMemo } = useSmartRealtime();
 
   const fetchMemos = async () => {
     try {
@@ -288,30 +290,64 @@ export const useAllMemos = () => {
   useEffect(() => {
     fetchMemos();
 
-    // Real-time subscription for memos changes (TEMPORARILY DISABLED)
-    // TODO: Enable after Supabase Realtime is properly configured
-    // const subscription = supabase
-    //   .channel('memos_realtime_updates')
-    //   .on('postgres_changes', 
-    //     { 
-    //       event: '*', 
-    //       schema: 'public', 
-    //       table: 'memos' 
-    //     }, 
-    //     (payload) => {
-    //       // Debounce การ refetch เพื่อป้องกันการเรียกบ่อยเกินไป
-    //       setTimeout(() => {
-    //         fetchMemos();
-    //       }, 500);
-    //     }
-    //   )
-    //   .subscribe((status) => {
-    //   });
+    // Smart Realtime - อัพเดทแค่ memo ที่เปลี่ยน
+    const memosSubscription = supabase
+      .channel('smart_memos_updates')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'memos' 
+        }, 
+        (payload) => {
+          console.log('🎯 Smart memos update:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
+          const memoId = (payload.new as any)?.id || (payload.old as any)?.id;
+          if (memoId) {
+            updateSingleMemo(memoId, payload);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Smart memos status:', status);
+      });
+
+    // Listen for smart updates
+    const handleMemoUpdated = (event: CustomEvent) => {
+      const { memo, action } = event.detail;
+      console.log('🔄 Applying smart memo update:', action, memo.id);
+      
+      setMemos(prevMemos => {
+        if (action === 'INSERT') {
+          // เพิ่ม memo ใหม่ถ้ายังไม่มี
+          const exists = prevMemos.find(m => m.id === memo.id);
+          if (!exists) {
+            return [memo, ...prevMemos];
+          }
+          return prevMemos;
+        } else if (action === 'UPDATE') {
+          // อัพเดท memo ที่มีอยู่
+          return prevMemos.map(m => m.id === memo.id ? { ...m, ...memo } : m);
+        }
+        return prevMemos;
+      });
+    };
+
+    const handleMemoDeleted = (event: CustomEvent) => {
+      const { memoId } = event.detail;
+      console.log('�️ Removing deleted memo:', memoId);
+      setMemos(prevMemos => prevMemos.filter(m => m.id !== memoId));
+    };
+
+    // Add event listeners
+    window.addEventListener('memo-updated', handleMemoUpdated as EventListener);
+    window.addEventListener('memo-deleted', handleMemoDeleted as EventListener);
 
     return () => {
-      // subscription.unsubscribe();
+      memosSubscription.unsubscribe();
+      window.removeEventListener('memo-updated', handleMemoUpdated as EventListener);
+      window.removeEventListener('memo-deleted', handleMemoDeleted as EventListener);
     };
-  }, []);
+  }, [updateSingleMemo]);
 
   return {
     memos,

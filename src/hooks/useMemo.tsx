@@ -16,7 +16,14 @@ export const useMemo = (memoId?: string) => {
 
     setLoading(true);
     try {
-      const result = await MemoService.createMemoDraft(formData, profile.user_id);
+      // เพิ่มข้อมูล author ที่ API ต้องการ
+      const enrichedFormData = {
+        ...formData,
+        author_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'ไม่ระบุชื่อ',
+        author_position: profile.current_position || profile.job_position || profile.position || 'ไม่ระบุตำแหน่ง'
+      };
+
+      const result = await MemoService.createMemoDraft(enrichedFormData, profile.user_id);
       
       if (result.success) {
         toast({

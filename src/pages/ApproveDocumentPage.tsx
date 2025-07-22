@@ -31,7 +31,7 @@ const ApproveDocumentPage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getMemoById, updateMemoApproval, updateMemoStatus } = useAllMemos();
+  const { getMemoById, updateMemoApproval, updateMemoStatus, refetch } = useAllMemos();
   const { profile } = useEmployeeAuth();
 
   // State

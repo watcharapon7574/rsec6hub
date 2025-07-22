@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useMemo } from '@/hooks/useMemo';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
+import { useMemoErrorHandler } from '@/hooks/useMemoErrorHandler';
 import { MemoFormData } from '@/types/memo';
 import { FileText, ArrowLeft, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -23,6 +24,7 @@ const CreateMemoPage = () => {
   const { createMemoDraft, loading } = useMemo();
   const { getMemoById } = useAllMemos();
   const { toast } = useToast();
+  const { handleMemoError, showSuccessMessage } = useMemoErrorHandler();
   const permissions = getPermissions();
   
   const [isEditMode, setIsEditMode] = useState(!!editMemoId);
@@ -114,6 +116,17 @@ const CreateMemoPage = () => {
     
     loadMemoForEdit();
   }, [editMemoId, getMemoById, originalMemo, profile]);
+
+  // Update form data when profile is loaded
+  useEffect(() => {
+    if (profile && !isEditMode) {
+      setFormData(prev => ({
+        ...prev,
+        author_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || '',
+        author_position: profile.current_position || profile.job_position || profile.position || ''
+      }));
+    }
+  }, [profile, isEditMode]);
 
   // Allow all authenticated users to create memos
 

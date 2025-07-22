@@ -9,10 +9,9 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  // Realtime temporarily disabled due to WebSocket connection issues
-  // realtime: {
-  //   params: {
-  //     eventsPerSecond: 10,
-  //   },
-  // },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
 });

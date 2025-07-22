@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAllMemos } from '@/hooks/useAllMemos';
 import { useOfficialDocuments } from '@/hooks/useOfficialDocuments';
+import { useGlobalRealtime } from '@/hooks/useGlobalRealtime';
 import { useToast } from '@/hooks/use-toast';
 
 const RealtimeTestPage = () => {
@@ -13,6 +14,36 @@ const RealtimeTestPage = () => {
   
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
+  const [realtimeEvents, setRealtimeEvents] = useState<string[]>([]);
+
+  // Setup Global Realtime with event logging
+  useGlobalRealtime({
+    onMemosChange: () => {
+      const timestamp = new Date().toLocaleTimeString('th-TH');
+      setRealtimeEvents(prev => [`${timestamp}: Memos updated`, ...prev.slice(0, 9)]);
+      setLastUpdate(new Date());
+    },
+    onDocumentsChange: () => {
+      const timestamp = new Date().toLocaleTimeString('th-TH');
+      setRealtimeEvents(prev => [`${timestamp}: Documents updated`, ...prev.slice(0, 9)]);
+      setLastUpdate(new Date());
+    },
+    onApprovalStepsChange: () => {
+      const timestamp = new Date().toLocaleTimeString('th-TH');
+      setRealtimeEvents(prev => [`${timestamp}: Approval steps updated`, ...prev.slice(0, 9)]);
+      setLastUpdate(new Date());
+    },
+    onWorkflowsChange: () => {
+      const timestamp = new Date().toLocaleTimeString('th-TH');
+      setRealtimeEvents(prev => [`${timestamp}: Workflows updated`, ...prev.slice(0, 9)]);
+      setLastUpdate(new Date());
+    },
+    onProfilesChange: () => {
+      const timestamp = new Date().toLocaleTimeString('th-TH');
+      setRealtimeEvents(prev => [`${timestamp}: Profiles updated`, ...prev.slice(0, 9)]);
+      setLastUpdate(new Date());
+    }
+  });
 
   // Monitor data changes to detect realtime updates
   useEffect(() => {
@@ -176,17 +207,38 @@ const RealtimeTestPage = () => {
           </Card>
         </div>
 
+        {/* Realtime Events Log */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🔔 Realtime Events Log (ล่าสุด 10 รายการ)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {realtimeEvents.length === 0 ? (
+                <p className="text-gray-500 text-sm">ยังไม่มี realtime events</p>
+              ) : (
+                realtimeEvents.map((event, index) => (
+                  <div key={index} className="text-xs bg-blue-50 p-2 rounded border-l-2 border-blue-400">
+                    {event}
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Instructions */}
         <Card>
           <CardHeader>
-            <CardTitle>วิธีการทดสอบ</CardTitle>
+            <CardTitle>📋 วิธีการทดสอบ Global Realtime</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
               <p>1. เปิดหน้านี้ไว้และเปิด tab ใหม่ไปที่หน้าสร้างบันทึก</p>
               <p>2. สร้างบันทึกใหม่หรือแก้ไขบันทึกที่มีอยู่</p>
-              <p>3. กลับมาดูหน้านี้ ข้อมูลควรอัพเดทอัตโนมัติภายใน 1-2 วินาที</p>
-              <p>4. ตรวจสอบ Console ใน Developer Tools เพื่อดู log ของ realtime subscription</p>
+              <p>3. อนุมัติ/ปฏิเสธเอกสารในหน้าการอนุมัติ</p>
+              <p>4. กลับมาดูหน้านี้ ข้อมูลและ Events Log ควรอัพเดทอัตโนมัติทันที</p>
+              <p>5. ตรวจสอบ Console ใน Developer Tools เพื่อดู log ของ global realtime</p>
               <p className="text-orange-600 font-medium">
                 หมายเหตุ: หากข้อมูลไม่อัพเดทอัตโนมัติ ให้กดปุ่ม "รีเฟรชแบบ Manual"
               </p>

@@ -28,8 +28,8 @@ const OfficialDocumentsPage = () => {
   } = useOfficialDocuments();
 
   const [pdfFiles, setPdfFiles] = useState<any[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Manual refresh function
   const handleManualRefresh = async () => {

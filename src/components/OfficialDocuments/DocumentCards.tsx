@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentList from './DocumentList';
 import PendingDocumentCard from './PendingDocumentCard';
+import PersonalDocumentList from './PersonalDocumentList';
 import TestTools from './TestTools';
 import ApprovalProcess from './ApprovalProcess';
 import ManagementTools from './ManagementTools';
@@ -126,14 +127,38 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
         <PendingDocumentCard pendingMemos={pendingSignMemos} />
       )}
 
-      {/* Document List */}
-      <DocumentList 
-        documents={documents} 
-        realMemos={realMemos}
-        onReject={onReject}
-        onAssignNumber={onAssignNumber}
-        onSetSigners={onSetSigners}
-      />
+      {/* สำหรับธุรการ: สลับลำดับ - เอกสารภายในสถานศึกษาก่อน แล้วเอกสารส่วนตัว */}
+      {["clerk_teacher", "government_employee"].includes(permissions.position) ? (
+        <>
+          {/* Document List สำหรับธุรการ - เอกสารภายในสถานศึกษา */}
+          <DocumentList 
+            documents={documents} 
+            realMemos={realMemos}
+            onReject={onReject}
+            onAssignNumber={onAssignNumber}
+            onSetSigners={onSetSigners}
+          />
+          
+          {/* Personal Document List สำหรับธุรการ */}
+          <PersonalDocumentList realMemos={realMemos} />
+        </>
+      ) : (
+        <>
+          {/* สำหรับผู้ช่วยผอ, รองผอ: เอกสารส่วนตัวก่อน */}
+          {["assistant_director", "deputy_director"].includes(permissions.position) && (
+            <PersonalDocumentList realMemos={realMemos} />
+          )}
+          
+          {/* Document List สำหรับบทบาทอื่น */}
+          <DocumentList 
+            documents={documents} 
+            realMemos={realMemos}
+            onReject={onReject}
+            onAssignNumber={onAssignNumber}
+            onSetSigners={onSetSigners}
+          />
+        </>
+      )}
 
       {/* Footer Spacer for FloatingNavbar */}
       <div className="w-full h-16" />

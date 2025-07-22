@@ -146,9 +146,32 @@ const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
+  // กรองเอกสารสำหรับแสดงใน DocumentList
+  // สำหรับ 3 บทบาท (ธุรการ, ผู้ช่วยผอ, รองผอ) ไม่แสดงเอกสารส่วนตัวใน DocumentList
+  // เพราะจะแสดงใน PersonalDocumentList แยกต่างหาก
+  const shouldShowMemo = (memo: any) => {
+    // สำหรับ 3 บทบาทนี้: ไม่แสดงเอกสารส่วนตัวใน DocumentList
+    if (["clerk_teacher", "government_employee", "assistant_director", "deputy_director"].includes(permissions.position)) {
+      // แสดงเฉพาะเอกสารของคนอื่น (ไม่ใช่เอกสารของตนเอง)
+      return memo.user_id !== profile?.user_id;
+    }
+    // ผอ เห็นเอกสารทุกชนิด
+    if (permissions.position === "director") {
+      return true;
+    }
+    // คนอื่นดูได้เฉพาะเอกสารของตนเอง
+    return memo.user_id === profile?.user_id;
+  };
+
   // ฟังก์ชันกรองและจัดเรียงข้อมูล
   const filteredAndSortedMemos = useMemo(() => {
+    // กรองตาม shouldShowMemo ก่อน
     let filtered = realMemos.filter(memo => {
+      // ตรวจสอบสิทธิ์การแสดงผลก่อน
+      if (!shouldShowMemo(memo)) {
+        return false;
+      }
+
       // ค้นหาตามชื่อเรื่อง, ผู้เขียน, หรือเลขที่เอกสาร
       const searchMatch = searchTerm === '' || 
         memo.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -218,7 +241,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
     });
 
     return filtered;
-  }, [realMemos, searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [realMemos, searchTerm, statusFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedMemos.length / itemsPerPage);
@@ -231,24 +254,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
     setCurrentPage(1);
   }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
-  // กรองเอกสารสำหรับแสดงใน DocumentList
-  // ถ้าเป็นธุรการ แสดงทุกเอกสาร 
-  // ถ้าไม่ใช่ธุรการ แสดงเฉพาะเอกสารของตนเอง
-  const shouldShowMemo = (memo: any) => {
-    // ธุรการดูได้ทุกเอกสาร
-    if (permissions.position === 'clerk_teacher' || permissions.position === 'government_employee') {
-      return true;
-    }
-    // ผู้ช่วยผอ/รองผอ/ผอ เห็นเอกสารทุกชนิด รวมถึง pending_sign
-    if (["assistant_director", "deputy_director", "director"].includes(permissions.position)) {
-      return true;
-    }
-    // คนอื่นดูได้เฉพาะเอกสารของตนเอง
-    return memo.user_id === profile?.user_id;
-  };
-
-  const filteredRealMemos = realMemos.filter(shouldShowMemo);
-
   // แสดง Card รายการเอกสารสำหรับทุกตำแหน่ง
   // if (["deputy_director", "director"].includes(permissions.position)) {
   //   return null;
@@ -259,11 +264,26 @@ const DocumentList: React.FC<DocumentListProps> = ({
       <CardHeader className="bg-gradient-to-r from-purple-400 to-purple-600 text-white rounded-t-lg py-3 px-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <FileText className="h-5 w-5" />
-          รายการเอกสาร
+          {["clerk_teacher", "government_employee"].includes(permissions.position) ? 
+            "เอกสารภายในสถานศึกษา" : 
+            (["assistant_director", "deputy_director"].includes(permissions.position) ? 
+              "เอกสารของผู้อื่น" : 
+              "รายการเอกสาร")
+          }
           <Badge variant="secondary" className="ml-auto bg-white text-purple-600 font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </Badge>
         </CardTitle>
+        {["clerk_teacher", "government_employee"].includes(permissions.position) && (
+          <div className="text-sm text-purple-100 font-normal mt-1">
+            จัดการเอกสารภายในสถานศึกษา ตรวจสอบความถูกต้อง กำหนดเลขที่ และจัดเส้นทางการอนุมัติ
+          </div>
+        )}
+        {["assistant_director", "deputy_director"].includes(permissions.position) && (
+          <div className="text-sm text-purple-100 font-normal mt-1">
+            เอกสารที่สร้างโดยผู้อื่น (เอกสารของคุณแสดงในส่วนข้างล่าง)
+          </div>
+        )}
       </CardHeader>
 
       {/* ส่วนค้นหาและกรอง - แถวเดียวแนวนอน */}
@@ -601,7 +621,20 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm">ไม่มีเอกสารในระบบ</p>
+                // แสดงข้อความที่แตกต่างกันตามบทบาท
+                ["clerk_teacher", "government_employee"].includes(permissions.position) ? (
+                  <div className="text-sm">
+                    <p>ยังไม่มีเอกสารในสถานศึกษา</p>
+                    <span className="text-xs text-gray-400">รอเอกสารจากครูและบุคลากรเพื่อทำการจัดการ</span>
+                  </div>
+                ) : (["assistant_director", "deputy_director"].includes(permissions.position) ? (
+                  <div className="text-sm">
+                    <p>ไม่มีเอกสารของผู้อื่น</p>
+                    <span className="text-xs text-gray-400">เอกสารส่วนตัวแสดงในส่วนข้างล่าง</span>
+                  </div>
+                ) : (
+                  <p className="text-sm">ไม่มีเอกสารในระบบ</p>
+                ))
               )}
             </div>
           )}

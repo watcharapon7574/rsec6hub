@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import ClerkDocumentActions from './ClerkDocumentActions';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
+import { useSmartRealtime } from '@/hooks/useSmartRealtime';
+import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from './Accordion';
 
@@ -41,6 +43,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const permissions = getPermissions();
+  const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
 
   // State สำหรับการค้นหาและกรอง
@@ -52,6 +55,85 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // State สำหรับ pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // State สำหรับ realtime updates
+  const [localMemos, setLocalMemos] = useState(realMemos);
+
+  // อัพเดท localMemos เมื่อ realMemos เปลี่ยน
+  useEffect(() => {
+    setLocalMemos(realMemos);
+  }, [realMemos]);
+
+  // Setup realtime listeners สำหรับผู้ช่วยผอและรองผอ
+  useEffect(() => {
+    // เฉพาะผู้ช่วยผอและรองผอเท่านั้นที่ต้อง realtime updates
+    if (!["assistant_director", "deputy_director"].includes(permissions.position)) {
+      return;
+    }
+
+    const handleMemoUpdated = (event: CustomEvent) => {
+      const { memo, action } = event.detail;
+      console.log('📋 DocumentList: Memo updated', { memo, action, position: permissions.position });
+      
+      if (action === 'INSERT' || action === 'UPDATE') {
+        setLocalMemos(prevMemos => {
+          const existingIndex = prevMemos.findIndex(m => m.id === memo.id);
+          if (existingIndex >= 0) {
+            // อัพเดท memo ที่มีอยู่
+            const updated = [...prevMemos];
+            updated[existingIndex] = memo;
+            return updated;
+          } else {
+            // เพิ่ม memo ใหม่
+            return [memo, ...prevMemos];
+          }
+        });
+      }
+    };
+
+    const handleMemoDeleted = (event: CustomEvent) => {
+      const { memoId } = event.detail;
+      console.log('🗑️ DocumentList: Memo deleted', { memoId, position: permissions.position });
+      
+      setLocalMemos(prevMemos => 
+        prevMemos.filter(memo => memo.id !== memoId)
+      );
+    };
+
+    // เพิ่ม event listeners
+    window.addEventListener('memo-updated', handleMemoUpdated as EventListener);
+    window.addEventListener('memo-deleted', handleMemoDeleted as EventListener);
+
+    // Setup Supabase realtime subscription สำหรับเอกสารที่ไม่ใช่ของตนเอง
+    const subscription = supabase
+      .channel('document-list-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'memos',
+          filter: profile?.user_id ? `user_id=neq.${profile.user_id}` : undefined, // เอกสารที่ไม่ใช่ของตนเอง
+        },
+        async (payload) => {
+          console.log('🔵 DocumentList: Realtime memo change:', payload);
+          
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            await updateSingleMemo(payload.new.id, payload);
+          } else if (payload.eventType === 'DELETE') {
+            await updateSingleMemo(payload.old.id, payload);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('memo-updated', handleMemoUpdated as EventListener);
+      window.removeEventListener('memo-deleted', handleMemoDeleted as EventListener);
+      subscription.unsubscribe();
+    };
+  }, [permissions.position, profile?.user_id, updateSingleMemo]);
 
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
   const getStatusColor = (status: string): string => {
@@ -166,7 +248,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // ฟังก์ชันกรองและจัดเรียงข้อมูล
   const filteredAndSortedMemos = useMemo(() => {
     // กรองตาม shouldShowMemo ก่อน
-    let filtered = realMemos.filter(memo => {
+    let filtered = localMemos.filter(memo => {
       // ตรวจสอบสิทธิ์การแสดงผลก่อน
       if (!shouldShowMemo(memo)) {
         return false;
@@ -241,7 +323,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
     });
 
     return filtered;
-  }, [realMemos, searchTerm, statusFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
+  }, [localMemos, searchTerm, statusFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedMemos.length / itemsPerPage);
@@ -584,15 +666,29 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="h-7 px-2 flex items-center gap-1 border-purple-200 text-purple-600"
-                            onClick={() => navigate(`/document-manage/${memo.id}`)}
-                            disabled={memo.status === 'rejected'}
+                            className={`h-7 px-2 flex items-center gap-1 ${
+                              memo.current_signer_order > 1 
+                                ? 'border-gray-200 text-gray-400 cursor-not-allowed' 
+                                : 'border-purple-200 text-purple-600'
+                            }`}
+                            onClick={() => {
+                              if (memo.current_signer_order <= 1) {
+                                navigate(`/document-manage/${memo.id}`);
+                              }
+                            }}
+                            disabled={memo.status === 'rejected' || memo.current_signer_order > 1}
+                            title={memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : 'จัดการเอกสาร'}
                           >
                             <FileText className="h-4 w-4" />
-                            <span className="text-xs font-medium">จัดการเอกสาร</span>
+                            <span className="text-xs font-medium">
+                              {memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : 'จัดการเอกสาร'}
+                            </span>
                           </Button>
-                          {memo.status === 'draft' && (
+                          {memo.status === 'draft' && memo.current_signer_order <= 1 && (
                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
+                          )}
+                          {memo.current_signer_order > 1 && memo.current_signer_order < 5 && (
+                            <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">เสนอแล้ว</span>
                           )}
                         </div>
                       )}

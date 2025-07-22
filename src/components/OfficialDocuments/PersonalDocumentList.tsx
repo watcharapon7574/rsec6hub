@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useNavigate } from 'react-router-dom';
 import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
+import { useSmartRealtime } from '@/hooks/useSmartRealtime';
+import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 
 interface PersonalDocumentListProps {
@@ -18,6 +20,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const permissions = getPermissions();
+  const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
 
   // State สำหรับการค้นหาและกรอง
@@ -29,6 +32,80 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   // State สำหรับ pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // State สำหรับ realtime updates
+  const [localMemos, setLocalMemos] = useState(realMemos);
+
+  // อัพเดท localMemos เมื่อ realMemos เปลี่ยน
+  useEffect(() => {
+    setLocalMemos(realMemos);
+  }, [realMemos]);
+
+  // Setup realtime listeners
+  useEffect(() => {
+    const handleMemoUpdated = (event: CustomEvent) => {
+      const { memo, action } = event.detail;
+      console.log('📝 PersonalDocumentList: Memo updated', { memo, action });
+      
+      if (action === 'INSERT' || action === 'UPDATE') {
+        setLocalMemos(prevMemos => {
+          const existingIndex = prevMemos.findIndex(m => m.id === memo.id);
+          if (existingIndex >= 0) {
+            // อัพเดท memo ที่มีอยู่
+            const updated = [...prevMemos];
+            updated[existingIndex] = memo;
+            return updated;
+          } else {
+            // เพิ่ม memo ใหม่
+            return [memo, ...prevMemos];
+          }
+        });
+      }
+    };
+
+    const handleMemoDeleted = (event: CustomEvent) => {
+      const { memoId } = event.detail;
+      console.log('🗑️ PersonalDocumentList: Memo deleted', { memoId });
+      
+      setLocalMemos(prevMemos => 
+        prevMemos.filter(memo => memo.id !== memoId)
+      );
+    };
+
+    // เพิ่ม event listeners
+    window.addEventListener('memo-updated', handleMemoUpdated as EventListener);
+    window.addEventListener('memo-deleted', handleMemoDeleted as EventListener);
+
+    // Setup Supabase realtime subscription
+    const subscription = supabase
+      .channel('personal-memos-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'memos',
+          filter: profile?.user_id ? `user_id=eq.${profile.user_id}` : undefined,
+        },
+        async (payload) => {
+          console.log('🔴 PersonalDocumentList: Realtime memo change:', payload);
+          
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            await updateSingleMemo(payload.new.id, payload);
+          } else if (payload.eventType === 'DELETE') {
+            await updateSingleMemo(payload.old.id, payload);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('memo-updated', handleMemoUpdated as EventListener);
+      window.removeEventListener('memo-deleted', handleMemoDeleted as EventListener);
+      subscription.unsubscribe();
+    };
+  }, [profile?.user_id, updateSingleMemo]);
 
   // ฟังก์ชันสำหรับข้อความสถานะตาม current_signer_order
   const getStatusTextBySignerOrder = (signerOrder: number): string => {
@@ -45,11 +122,11 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 
   // กรองเอกสารส่วนตัวเฉพาะของผู้ใช้ปัจจุบัน
   const personalMemos = useMemo(() => {
-    return realMemos.filter(memo => {
+    return localMemos.filter(memo => {
       // กรองเฉพาะเอกสารที่ผู้ใช้เป็นเจ้าของ
       return memo.user_id === profile?.user_id;
     });
-  }, [realMemos, profile?.user_id]);
+  }, [localMemos, profile?.user_id]);
 
   // ฟังก์ชันกรองและจัดเรียงข้อมูล
   const filteredAndSortedMemos = useMemo(() => {

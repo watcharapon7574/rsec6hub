@@ -148,10 +148,25 @@ const CreateMemoPage = () => {
       } as any);
       
       if (result.success) {
-        toast({
-          title: "อัพเดตบันทึกข้อความสำเร็จ",
-          description: "บันทึกข้อความได้ถูกอัพเดตและสร้าง PDF ใหม่แล้ว",
+        // Check if only attached files were changed
+        const contentFields = ['doc_number', 'subject', 'date', 'attachment_title', 'introduction', 'author_name', 'author_position', 'fact', 'proposal'];
+        const hasContentChanges = contentFields.some(field => {
+          const originalValue = originalMemo[field] || '';
+          const newValue = formData[field] || '';
+          return originalValue !== newValue;
         });
+
+        if (!hasContentChanges && selectedFiles.length > 0) {
+          toast({
+            title: "อัพเดตไฟล์แนบสำเร็จ",
+            description: "ไฟล์แนบได้ถูกอัพเดตแล้ว (ไม่ได้สร้าง PDF ใหม่)",
+          });
+        } else {
+          toast({
+            title: "อัพเดตบันทึกข้อความสำเร็จ",
+            description: "บันทึกข้อความได้ถูกอัพเดตและสร้าง PDF ใหม่แล้ว",
+          });
+        }
         navigate('/documents');
       }
     } else {

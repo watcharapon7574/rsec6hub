@@ -47,109 +47,142 @@ export class MemoService {
         attachedFileUrls = await this.uploadAttachedFiles(formData.attachedFileObjects, userId);
       }
 
-      // Call external API to generate PDF draft with CORS handling
-      const response = await fetch('https://pdf-memo-docx-production.up.railway.app/pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/pdf',
-         
-        },
-        mode: 'cors',
-        credentials: 'omit',
-        body: JSON.stringify(formData),
-      });
+      let publicUrl = '';
+      let shouldGenerateNewPdf = true;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
-      }
-
-      const pdfBlob = await response.blob();
-      if (pdfBlob.size === 0) {
-        throw new Error('Received empty PDF response');
-      }
-      
-      // Upload PDF to Supabase Storage
-      const fileName = `memo_${Date.now()}_${formData.doc_number.replace(/[^\w]/g, '_')}.pdf`;
-      const filePath = `memos/${userId}/${fileName}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, pdfBlob, {
-          contentType: 'application/pdf',
-          upsert: true
-        });
-
-      if (uploadError) {
-        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
-
-      // Check if this is an update (edit mode)
+      // Check if this is an update (edit mode) and determine if we need to regenerate PDF
       if (formData.memo_id) {
-        // Get existing memo to find old files
+        // Get existing memo to check what changed
         const { data: existingMemo, error: fetchError } = await supabase
           .from('memos')
-          .select('pdf_draft_path, attached_files')
+          .select('*')
           .eq('id', formData.memo_id)
           .single();
 
         if (fetchError) {
-          console.warn('Could not fetch existing memo for file cleanup:', fetchError);
-        }
+          console.warn('Could not fetch existing memo for comparison:', fetchError);
+        } else {
+          // Check if only attached files changed
+          const contentFields = ['doc_number', 'subject', 'date', 'attachment_title', 'introduction', 'author_name', 'author_position', 'fact', 'proposal'];
+          const hasContentChanges = contentFields.some(field => {
+            const existingValue = existingMemo[field] || '';
+            const newValue = formData[field] || '';
+            return existingValue !== newValue;
+          });
 
-        // Delete old PDF file if exists
-        if (existingMemo?.pdf_draft_path) {
-          try {
-            const extractedPdfUrl = extractPdfUrl(existingMemo.pdf_draft_path);
-            if (extractedPdfUrl) {
-              const oldPdfPath = extractedPdfUrl.split('/documents/')[1];
-              if (oldPdfPath) {
-                await supabase.storage
-                  .from('documents')
-                  .remove([oldPdfPath]);
-              }
-            }
-          } catch (error) {
-            console.warn('Could not delete old PDF file:', error);
-          }
-        }
-
-        // Delete old attached files if new files are uploaded
-        if (existingMemo?.attached_files && attachedFileUrls.length > 0) {
-          try {
-            // Parse JSON string to array if needed
-            let oldFiles: string[] = [];
-            if (typeof existingMemo.attached_files === 'string') {
-              try {
-                oldFiles = JSON.parse(existingMemo.attached_files);
-              } catch {
-                oldFiles = existingMemo.attached_files ? [existingMemo.attached_files] : [];
-              }
-            } else if (Array.isArray(existingMemo.attached_files)) {
-              oldFiles = existingMemo.attached_files;
-            }
-
-            // Extract file paths from storage URLs and delete them
-            const oldFilePaths = oldFiles
-              .filter((fileUrl: string) => fileUrl && fileUrl.includes('/documents/'))
-              .map((fileUrl: string) => fileUrl.split('/documents/')[1]);
+          // If only attached files changed and we have new files, skip PDF regeneration
+          if (!hasContentChanges && attachedFileUrls.length > 0) {
+            console.log('📎 Only attached files changed - skipping PDF regeneration');
+            shouldGenerateNewPdf = false;
+            publicUrl = existingMemo.pdf_draft_path; // Keep existing PDF
             
-            if (oldFilePaths.length > 0) {
-              await supabase.storage
-                .from('documents')
-                .remove(oldFilePaths);
+            // Delete old attached files if new files are uploaded
+            if (existingMemo?.attached_files) {
+              try {
+                let oldFiles: string[] = [];
+                if (typeof existingMemo.attached_files === 'string') {
+                  try {
+                    oldFiles = JSON.parse(existingMemo.attached_files);
+                  } catch {
+                    oldFiles = existingMemo.attached_files ? [existingMemo.attached_files] : [];
+                  }
+                } else if (Array.isArray(existingMemo.attached_files)) {
+                  oldFiles = existingMemo.attached_files;
+                }
+
+                const oldFilePaths = oldFiles
+                  .filter((fileUrl: string) => fileUrl && fileUrl.includes('/documents/'))
+                  .map((fileUrl: string) => fileUrl.split('/documents/')[1]);
+                
+                if (oldFilePaths.length > 0) {
+                  await supabase.storage
+                    .from('documents')
+                    .remove(oldFilePaths);
+                }
+              } catch (error) {
+                console.warn('Could not delete old attached files:', error);
+              }
             }
-          } catch (error) {
-            console.warn('Could not delete old attached files:', error);
           }
         }
+      }
 
+      // Generate new PDF only if content changed or it's a new memo
+      if (shouldGenerateNewPdf) {
+        console.log('📄 Generating new PDF...');
+        // Call external API to generate PDF draft with CORS handling
+        const response = await fetch('https://pdf-memo-docx-production.up.railway.app/pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/pdf',
+           
+          },
+          mode: 'cors',
+          credentials: 'omit',
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API Error: ${response.status} - ${errorText}`);
+        }
+
+        const pdfBlob = await response.blob();
+        if (pdfBlob.size === 0) {
+          throw new Error('Received empty PDF response');
+        }
+        
+        // Upload PDF to Supabase Storage
+        const fileName = `memo_${Date.now()}_${formData.doc_number.replace(/[^\w]/g, '_')}.pdf`;
+        const filePath = `memos/${userId}/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, pdfBlob, {
+            contentType: 'application/pdf',
+            upsert: true
+          });
+
+        if (uploadError) {
+          throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+        }
+
+        // Get public URL
+        const { data: { publicUrl: newPublicUrl } } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+        
+        publicUrl = newPublicUrl;
+
+        // Delete old PDF file if this is an update
+        if (formData.memo_id) {
+          const { data: existingMemo } = await supabase
+            .from('memos')
+            .select('pdf_draft_path')
+            .eq('id', formData.memo_id)
+            .single();
+
+          if (existingMemo?.pdf_draft_path) {
+            try {
+              const extractedPdfUrl = extractPdfUrl(existingMemo.pdf_draft_path);
+              if (extractedPdfUrl) {
+                const oldPdfPath = extractedPdfUrl.split('/documents/')[1];
+                if (oldPdfPath) {
+                  await supabase.storage
+                    .from('documents')
+                    .remove([oldPdfPath]);
+                }
+              }
+            } catch (error) {
+              console.warn('Could not delete old PDF file:', error);
+            }
+          }
+        }
+      }
+
+      // Check if this is an update (edit mode)
+      if (formData.memo_id) {
         // Update existing memo and reset current_signer_order to 1
         const { data, error } = await supabase
           .from('memos')

@@ -42,6 +42,7 @@ export interface MemoSignature {
 export interface Memo {
   id: string;
   doc_number: string;
+  doc_number_status?: string | null; // สถานะการลงเลขหนังสือ
   subject: string;
   date: string;
   attachment_title?: string;

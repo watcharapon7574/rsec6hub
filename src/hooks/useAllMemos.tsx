@@ -13,6 +13,7 @@ export interface MemoRecord {
   status: string;
   created_at: string;
   doc_number: string;
+  doc_number_status?: string | null; // สถานะการลงเลขหนังสือ
   document_summary?: string; // เพิ่มฟิลด์สรุปเนื้อหาเอกสาร
   pdf_draft_path?: string;
   pdf_final_path?: string;

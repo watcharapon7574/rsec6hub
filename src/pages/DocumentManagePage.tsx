@@ -25,6 +25,7 @@ import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
 import { submitPDFSignature } from '@/services/pdfSignatureService';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
@@ -47,9 +48,159 @@ const DocumentManagePage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isRejecting, setIsRejecting] = useState(false);
   const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [isAssigningNumber, setIsAssigningNumber] = useState(false);
+  const [isNumberAssigned, setIsNumberAssigned] = useState(false);
+  const [suggestedDocNumber, setSuggestedDocNumber] = useState("4568/68");
+  const [docNumberSuffix, setDocNumberSuffix] = useState('');
+
+  // Get user profile for API calls
+  const { profile } = useEmployeeAuth();
 
   // Get memo data
   const memo = memoId ? getMemoById(memoId) : null;
+
+  // Get latest document number and generate suggestion
+  const getLatestDocNumber = React.useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('memos')
+        .select('doc_number, doc_number_status')
+        .not('doc_number_status', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(10); // ดึงล่าสุด 10 รายการมาเรียง
+
+      if (error) {
+        console.error('Error fetching latest doc numbers:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // หาเลขล่าสุดที่มี timestamp ใหม่ที่สุด
+        let latestDoc = null;
+        let latestTimestamp = null;
+
+        for (const item of data) {
+          const docData = item as any;
+          if (docData.doc_number && docData.doc_number_status) {
+            let timestamp = null;
+            
+            // ตรวจสอบ format ของ doc_number_status
+            if (typeof docData.doc_number_status === 'object' && docData.doc_number_status.assigned_at) {
+              timestamp = docData.doc_number_status.assigned_at;
+            }
+            
+            if (timestamp && (!latestTimestamp || timestamp > latestTimestamp)) {
+              latestTimestamp = timestamp;
+              latestDoc = docData.doc_number;
+            }
+          }
+        }
+
+        if (latestDoc) {
+          // แยกเลขจากรูปแบบ เช่น "ศธ 04007.600/4567/68"
+          const match = latestDoc.match(/(\d+)\/(\d+)$/);
+          if (match) {
+            const lastNumber = parseInt(match[1]);
+            const year = match[2];
+            const nextNumber = lastNumber + 1;
+            setSuggestedDocNumber(`${nextNumber}/${year}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error processing latest doc number:', error);
+    }
+  }, []);
+
+  // Get suggestion when component mounts
+  React.useEffect(() => {
+    getLatestDocNumber();
+  }, [getLatestDocNumber]);
+
+  // Check document number status from database
+  const checkDocumentNumberStatus = React.useCallback(async () => {
+    if (!memoId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('memos')
+        .select('doc_number, doc_number_status')
+        .eq('id', memoId)
+        .single();
+
+      if (error) {
+        console.error('Error checking document number status:', error);
+        return;
+      }
+
+      if (data) {
+        // Check if doc_number_status is JSONB or string
+        let statusAssigned = false;
+        
+        if ((data as any).doc_number_status) {
+          const statusData = (data as any).doc_number_status;
+          if (typeof statusData === 'object' && statusData.status) {
+            // JSONB format
+            statusAssigned = statusData.status === 'ลงเลขหนังสือแล้ว';
+          } else if (typeof statusData === 'string') {
+            // Old string format
+            statusAssigned = statusData === 'ลงเลขหนังสือแล้ว';
+          }
+        }
+        
+        setIsNumberAssigned(statusAssigned);
+        if ((data as any).doc_number) {
+          const fullDocNumber = (data as any).doc_number;
+          setDocumentNumber(fullDocNumber);
+          // แยกส่วนที่อยู่หลัง "ศธ ๐๔๐๐๗.๖๐๐/"
+          const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+          if (match) {
+            setDocNumberSuffix(match[1]);
+          } else {
+            setDocNumberSuffix(fullDocNumber);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching document status:', error);
+    }
+  }, [memoId]);
+
+  // Check status when component mounts and when memoId changes
+  React.useEffect(() => {
+    checkDocumentNumberStatus();
+  }, [checkDocumentNumberStatus]);
+
+  // Also check from memo data as backup
+  React.useEffect(() => {
+    if (memo?.doc_number_status) {
+      let isAssigned = false;
+      const statusData = memo.doc_number_status;
+      
+      if (typeof statusData === 'object' && (statusData as any).status) {
+        // JSONB format
+        isAssigned = (statusData as any).status === 'ลงเลขหนังสือแล้ว';
+      } else if (typeof statusData === 'string') {
+        // Old string format
+        isAssigned = statusData === 'ลงเลขหนังสือแล้ว';
+      }
+      
+      if (isAssigned) {
+        setIsNumberAssigned(true);
+        if (memo.doc_number) {
+          const fullDocNumber = memo.doc_number;
+          setDocumentNumber(fullDocNumber);
+          // แยกส่วนที่อยู่หลัง "ศธ ๐๔๐๐๗.๖๐๐/"
+          const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+          if (match) {
+            setDocNumberSuffix(match[1]);
+          } else {
+            setDocNumberSuffix(fullDocNumber);
+          }
+        }
+      }
+    }
+  }, [memo]);
 
   // Get profiles by position
   const assistantDirectors = profiles.filter(p => p.position === 'assistant_director');
@@ -157,10 +308,163 @@ const DocumentManagePage: React.FC = () => {
 
   const isStepComplete = (step: number) => {
     switch (step) {
-      case 1: return documentNumber.trim() !== '';
+      case 1: return (docNumberSuffix.trim() !== '' || suggestedDocNumber !== '') && isNumberAssigned;
       case 2: return true; // ไม่บังคับให้เลือก - สามารถข้ามได้
       case 3: return signaturePositions.length >= 1; // เปลี่ยนเป็นมีลายเซ็นอย่างน้อย 1 ตำแหน่ง
       default: return false;
+    }
+  };
+
+  // Function to convert date to Thai format
+  const formatThaiDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const thaiMonths = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    
+    const day = date.getDate();
+    const month = thaiMonths[date.getMonth()];
+    const year = date.getFullYear() + 543; // Convert to Buddhist Era
+    
+    return `${day} ${month} ${year}`;
+  };
+
+  // Function to regenerate PDF with document number
+  const regeneratePdfWithDocNumber = async (docSuffix: string) => {
+    if (!memo || !profile?.user_id) return null;
+
+    try {
+      console.log('📄 Regenerating PDF with document suffix:', docSuffix);
+      
+      // Prepare form data for API call
+      const formData = {
+        doc_number: docSuffix, // ส่งแค่ส่วน 4568/68 เพราะใน template มี ศธ ๐๔๐๐๗.๖๐๐/ อยู่แล้ว
+        date: formatThaiDate(memo.date || new Date().toISOString().split('T')[0]),
+        subject: memo.subject || '',
+        attachment_title: memo.attachment_title || '',
+        introduction: memo.introduction || '',
+        author_name: memo.author_name || '',
+        author_position: memo.author_position || '',
+        fact: memo.fact || '',
+        proposal: memo.proposal || '',
+        attached_files: memo.attached_files || []
+      };
+
+      // Call external API to generate new PDF with document number
+      const response = await fetch('https://pdf-memo-docx-production.up.railway.app/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/pdf',
+        },
+        mode: 'cors',
+        credentials: 'omit',
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
+      }
+
+      const pdfBlob = await response.blob();
+      if (pdfBlob.size === 0) {
+        throw new Error('Received empty PDF response');
+      }
+      
+      // Upload new PDF to Supabase Storage (overwrite existing)
+      const fileName = `memo_${Date.now()}_${docSuffix.replace(/[^\w]/g, '_')}.pdf`;
+      const filePath = `memos/${profile.user_id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error regenerating PDF:', error);
+      throw error;
+    }
+  };
+
+  // Function to assign document number
+  const handleAssignNumber = async () => {
+    // ใช้ค่าจาก input หรือใช้ค่า suggested ถ้าไม่ได้กรอกอะไร
+    const finalDocSuffix = docNumberSuffix.trim() || suggestedDocNumber;
+    
+    if (!finalDocSuffix) {
+      toast({
+        title: "กรุณากรอกเลขหนังสือ",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!memoId) return;
+
+    const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${finalDocSuffix}`;
+    setDocumentNumber(fullDocNumber);
+    setDocNumberSuffix(finalDocSuffix); // อัปเดตให้แสดงในช่องกรอก
+
+    setIsAssigningNumber(true);
+    try {
+      const now = new Date().toISOString();
+      const docNumberStatusData = {
+        status: 'ลงเลขหนังสือแล้ว',
+        assigned_at: now
+      };
+
+      // Regenerate PDF with document number
+      const newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
+
+      // Update memo with document number, status, and new PDF URL
+      const updateData: any = {
+        doc_number: fullDocNumber,
+        doc_number_status: docNumberStatusData,
+        updated_at: now
+      };
+
+      // Update PDF path if regeneration was successful
+      if (newPdfUrl) {
+        updateData.pdf_draft_path = newPdfUrl;
+      }
+
+      const { error } = await supabase
+        .from('memos')
+        .update(updateData)
+        .eq('id', memoId);
+
+      if (error) {
+        throw error;
+      }
+
+      setIsNumberAssigned(true);
+      toast({
+        title: "ลงเลขหนังสือสำเร็จ",
+        description: `เลขหนังสือ ${fullDocNumber} ถูกบันทึกและสร้าง PDF ใหม่แล้ว`,
+      });
+    } catch (error) {
+      console.error('Error assigning document number:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error instanceof Error ? error.message : "ไม่สามารถลงเลขหนังสือได้",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAssigningNumber(false);
     }
   };
 
@@ -532,25 +836,67 @@ const DocumentManagePage: React.FC = () => {
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="doc-number">เลขหนังสือราชการ</Label>
-                    <Input
-                      id="doc-number"
-                      placeholder="เช่น ศษ.6/001/2567"
-                      value={documentNumber}
-                      onChange={(e) => setDocumentNumber(e.target.value)}
-                      className="text-lg"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      รูปแบบ: หน่วยงาน/ลำดับ/ปี เช่น ศษ.6/001/2567
-                    </p>
+                    <div className="flex items-stretch">
+                      <div className="text-lg font-medium text-gray-700 bg-gray-50 px-4 rounded-l-md border border-r-0 border-gray-300 flex items-center">
+                        ศธ ๐๔๐๐๗.๖๐๐/
+                      </div>
+                      <Input
+                        id="doc-number"
+                        placeholder={suggestedDocNumber}
+                        value={docNumberSuffix}
+                        onChange={(e) => setDocNumberSuffix(e.target.value)}
+                        className={`text-lg rounded-l-none flex-1 ${isNumberAssigned 
+                          ? 'bg-gray-100 text-gray-700 cursor-not-allowed border-gray-300' 
+                          : 'bg-white text-gray-900 border-gray-300'
+                        }`}
+                        disabled={isNumberAssigned}
+                        readOnly={isNumberAssigned}
+                      />
+                    </div>
+
+                    {isNumberAssigned && (
+                      <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                        <CheckCircle className="h-4 w-4" />
+                        เลขหนังสือถูกลงแล้ว: {documentNumber}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={handleNext}
-                      disabled={!isStepComplete(1)}
-                      className="bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                    >
-                      ถัดไป
-                    </Button>
+                  <div className="flex justify-between">
+                    <div /> {/* Empty div for spacing */}
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleAssignNumber}
+                        disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || isNumberAssigned || isAssigningNumber}
+                        className={isNumberAssigned 
+                          ? "bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed" 
+                          : "bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        }
+                      >
+                        {isAssigningNumber ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                            </svg>
+                            กำลังลงเลข...
+                          </>
+                        ) : isNumberAssigned ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            ลงเลขแล้ว
+                          </>
+                        ) : (
+                          "ลงเลข"
+                        )}
+                      </Button>
+                      <Button 
+                        onClick={handleNext}
+                        disabled={!isStepComplete(1)}
+                        className="bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        ถัดไป
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

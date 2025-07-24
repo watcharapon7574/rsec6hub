@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAllMemos } from '@/hooks/useAllMemos';
 import { submitPDFSignature } from '@/services/pdfSignatureService';
+import { mergeMemoWithAttachments } from '@/services/memoManageAPIcall';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -460,7 +461,95 @@ const DocumentManagePage: React.FC = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // If moving from step 1 to step 2, call PDFmerge API
+    if (currentStep === 1 && memo) {
+      try {
+        // Get attached files
+        let attachedFiles = [];
+        if (memo.attached_files) {
+          try {
+            if (typeof memo.attached_files === 'string') {
+              const parsed = JSON.parse(memo.attached_files);
+              attachedFiles = Array.isArray(parsed) ? parsed : [];
+            } else if (Array.isArray(memo.attached_files)) {
+              attachedFiles = memo.attached_files;
+            }
+          } catch {
+            attachedFiles = [];
+          }
+        }
+
+        // Only call merge API if there are attached files
+        if (attachedFiles.length > 0) {
+          console.log('🔄 Starting PDF merge with attached files:', attachedFiles);
+          
+          const mergeResult = await mergeMemoWithAttachments({
+            memoId: memo.id,
+            mainPdfPath: memo.pdf_draft_path,
+            attachedFiles: attachedFiles
+          });
+
+          if (mergeResult.success && mergeResult.mergedPdfUrl) {
+            // Update the memo in database to remove attached files and update PDF path
+            try {
+              const { error: updateError } = await supabase
+                .from('memos')
+                .update({
+                  pdf_draft_path: mergeResult.mergedPdfUrl,
+                  attached_files: null, // Remove attached files since they're now merged
+                  attachment_title: null // Clear attachment title as well
+                })
+                .eq('id', memo.id);
+
+              if (updateError) {
+                console.error('Error updating memo after merge:', updateError);
+                toast({
+                  title: "เกิดข้อผิดพลาด",
+                  description: "ไม่สามารถอัพเดตข้อมูลเมโมหลังจากรวมไฟล์ได้",
+                  variant: "destructive"
+                });
+                return;
+              }
+
+              toast({
+                title: "รวมไฟล์สำเร็จ",
+                description: "รวมไฟล์เอกสารหลักกับไฟล์แนบเรียบร้อยแล้ว ไฟล์แนบถูกลบออกแล้ว",
+              });
+              
+              console.log('✅ PDF merge completed and memo updated successfully');
+            } catch (dbError) {
+              console.error('Database update error after merge:', dbError);
+              toast({
+                title: "เกิดข้อผิดพลาด",
+                description: "ไม่สามารถอัพเดตฐานข้อมูลหลังจากรวมไฟล์ได้",
+                variant: "destructive"
+              });
+              return;
+            }
+          } else {
+            toast({
+              title: "เกิดข้อผิดพลาดในการรวมไฟล์",
+              description: mergeResult.error || "ไม่สามารถรวมไฟล์ได้",
+              variant: "destructive"
+            });
+            return; // Don't proceed to next step if merge fails
+          }
+        } else {
+          console.log('ℹ️ No attached files found, skipping PDF merge');
+        }
+      } catch (error) {
+        console.error('Error calling PDFmerge:', error);
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่สามารถเรียกใช้งาน API รวมไฟล์ได้",
+          variant: "destructive"
+        });
+        return; // Don't proceed to next step if there's an error
+      }
+    }
+
+    // Proceed to next step
     if (currentStep < 4) setCurrentStep(currentStep + 1);
   };
 
@@ -573,24 +662,26 @@ const DocumentManagePage: React.FC = () => {
           const formData = new FormData();
           formData.append('pdf', pdfBlob, 'document.pdf');
           formData.append('sig1', sigBlob, 'signature.png');
-          // ใช้ตำแหน่งของ author (order 1)
-          const authorPos = updatedSignaturePositions.find(pos => pos.signer.order === 1);
-          if (authorPos) {
-            const signaturesPayload = [
-              {
-                page: authorPos.page - 1, // ปรับจาก 1-based (frontend) เป็น 0-based (API)
-                x: authorPos.x,
-                y: authorPos.y,
-                width: 120,
-                height: 60,
-                lines
-              }
-            ];
+          // ใช้ตำแหน่งทั้งหมดของ author (order 1) - อนุญาตให้เซ็นหลายที่
+          const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
+          
+          if (authorPositions.length > 0) {
+            // สร้าง signatures payload สำหรับทุกตำแหน่งที่ author วางไว้
+            const signaturesPayload = authorPositions.map(pos => ({
+              page: pos.page - 1, // ปรับจาก 1-based (frontend) เป็น 0-based (API)
+              x: pos.x,
+              y: pos.y,
+              width: 120,
+              height: 60,
+              lines
+            }));
+            
             formData.append('signatures', JSON.stringify(signaturesPayload));
+            
             // --- LOG ข้อมูลก่อนส่ง ---
             console.log('📄 pdfBlob:', pdfBlob);
             console.log('🖊️ sigBlob:', sigBlob);
-            console.log('📝 signatures:', JSON.stringify(signaturesPayload, null, 2));
+            console.log(`📝 signatures (${authorPositions.length} positions):`, JSON.stringify(signaturesPayload, null, 2));
             // ---
             const res = await fetch('https://pdf-memo-docx-production.up.railway.app/add_signature_v2', {
               method: 'POST',
@@ -649,6 +740,14 @@ const DocumentManagePage: React.FC = () => {
             .from('documents')
             .getPublicUrl(newFilePath);
           await updateMemoStatus(memoId, 'pending_sign', documentNumber, undefined, 2, newPublicUrl);
+          
+          // แสดงข้อความสำเร็จพร้อมจำนวนลายเซ็นที่ประมวลผล
+          const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
+          toast({
+            title: "ส่งเอกสารสำเร็จ",
+            description: `ลงลายเซ็นเรียบร้อยแล้ว ${authorPositions.length} ตำแหน่ง และส่งให้ผู้อนุมัติถัดไป`,
+          });
+          
           // --- ลบไฟล์เก่า ---
           const { error: removeError } = await supabase.storage
             .from('documents')

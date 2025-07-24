@@ -92,7 +92,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
             {isNumberAssigned && (
               <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
                 <CheckCircle className="h-4 w-4" />
-                เลขหนังสือถูกลงแล้ว: {documentNumber.replace(/\d/g, (d) => '๐๑๒๓๔๕๖๗๘๙'[parseInt(d)])}
+                เลขหนังสือถูกลงแล้ว: ศธ ๐๔๐๐๗.๖๐๐/{documentNumber.replace(/\d/g, (d) => '๐๑๒๓๔๕๖๗๘๙'[parseInt(d)])}
               </p>
             )}
           </div>
@@ -148,6 +148,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
           {memo.pdf_draft_path ? (
             <div className="w-full">
               <PDFViewer 
+                key={`pdf-${memo.pdf_draft_path}-${isNumberAssigned ? documentNumber : 'draft'}`}
                 fileUrl={extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path} 
                 fileName="เอกสาร"
                 memo={memo}

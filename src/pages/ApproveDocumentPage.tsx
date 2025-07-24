@@ -244,12 +244,26 @@ const ApproveDocumentPage: React.FC = () => {
           const { data: { publicUrl: newPublicUrl } } = supabase.storage
             .from('documents')
             .getPublicUrl(newFilePath);
-          // หา nextSignerOrder
+          
+          // หา nextSignerOrder - ปรับ logic สำหรับกรณีที่ผอ.เซ็น
           const currentOrder = currentUserSignature?.signer?.order || memo.current_signer_order || 1;
           const signatureOrders = signaturePositions.map((pos: any) => pos.signer?.order).filter(Boolean);
           const maxOrder = Math.max(...signatureOrders);
-          let nextSignerOrder = currentOrder < maxOrder ? currentOrder + 1 : currentOrder;
-          let newStatus = nextSignerOrder > maxOrder ? 'completed' : 'pending_sign';
+          
+          let nextSignerOrder: number;
+          let newStatus: string;
+          
+          // ถ้าเป็นผอ. (director) ให้ set current_signer_order = 5 เพื่อบ่งบอกว่าเสร็จสิ้น
+          if (profile.position === 'director') {
+            nextSignerOrder = 5;
+            newStatus = 'completed';
+            console.log('🎯 Director approved: Setting current_signer_order = 5 (completed)');
+          } else {
+            // สำหรับตำแหน่งอื่นๆ ใช้ logic เดิม
+            nextSignerOrder = currentOrder < maxOrder ? currentOrder + 1 : currentOrder;
+            newStatus = nextSignerOrder > maxOrder ? 'completed' : 'pending_sign';
+          }
+          
           await updateMemoStatus(memoId, newStatus, undefined, undefined, nextSignerOrder, newPublicUrl);
           // --- ลบไฟล์เก่า ---
           const { error: removeError } = await supabase.storage

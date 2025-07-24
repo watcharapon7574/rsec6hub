@@ -133,10 +133,10 @@ const CreateMemoPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Generate doc_number if empty (for API compatibility)
+    // Use the doc_number as is, without auto-generation
     const submissionData = {
       ...formData,
-      doc_number: formData.doc_number.trim() || `AUTO-${Date.now()}` // Auto generate if empty
+      doc_number: formData.doc_number.trim() || '' // Leave empty if not provided
     };
     
     if (isEditMode && originalMemo) {

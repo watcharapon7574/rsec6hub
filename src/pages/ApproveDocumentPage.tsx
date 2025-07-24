@@ -40,6 +40,7 @@ const ApproveDocumentPage: React.FC = () => {
   const [action, setAction] = useState<'approve' | 'reject' | null>(null);
   const [showLoadingModal, setShowLoadingModal] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false); // สำหรับ RejectionCard
+  const [hasShownPermissionToast, setHasShownPermissionToast] = useState(false); // ป้องกัน toast ซ้ำ
 
   // Get memo data
   const memo = memoId ? getMemoById(memoId) : null;
@@ -47,23 +48,55 @@ const ApproveDocumentPage: React.FC = () => {
   // Check if user can comment (only deputy and director)
   const canComment = profile?.position === 'deputy_director' || profile?.position === 'director';
 
-  // Get current user's signature info
+  // Debug: แสดงข้อมูลสำหรับการ debug (ลบออกได้หลังจากแก้ไขเสร็จ)
+  useEffect(() => {
+    if (memo && profile) {
+      console.log('🔍 Debug ApproveDocumentPage data:', {
+        memo: {
+          id: memo.id,
+          status: memo.status,
+          current_signer_order: memo.current_signer_order,
+          signature_positions: memo.signature_positions,
+          signer_list_progress: (memo as any).signer_list_progress
+        },
+        profile: {
+          user_id: profile.user_id,
+          position: profile.position,
+          name: `${profile.first_name} ${profile.last_name}`
+        }
+      });
+    }
+  }, [memo, profile]);
+
+  // Get current user's signature info - ใช้ signer_list_progress แทน signature_positions
+  const signerListProgress = Array.isArray((memo as any)?.signer_list_progress) 
+    ? (memo as any).signer_list_progress 
+    : [];
   const signaturePositions = Array.isArray(memo?.signature_positions) 
     ? memo.signature_positions 
     : [];
+  
+  // หาข้อมูลผู้ลงนามปัจจุบันจาก signer_list_progress ก่อน ถ้าไม่มีค่อยใช้ signature_positions
+  const currentUserSigner = signerListProgress.find((signer: any) => 
+    signer.user_id === profile?.user_id
+  );
   const currentUserSignature = signaturePositions.find((pos: any) => 
     pos.signer?.user_id === profile?.user_id
   );
 
+  // ใช้ข้อมูลจาก signer_list_progress หากมี ไม่งั้นใช้ signature_positions
+  const userCanSign = currentUserSigner || currentUserSignature;
+
   useEffect(() => {
-    if (!memo || !profile) return;
+    if (!memo || !profile || hasShownPermissionToast) return;
 
     // Check if this user should be able to approve this document
-    // สำหรับผู้บริหาร ให้เข้าถึงได้ถ้ามีลายเซ็นใน signature_positions
+    // สำหรับผู้บริหาร ให้เข้าถึงได้ถ้ามีลายเซ็นใน signature_positions หรือ signer_list_progress
     const isManagementRole = ['assistant_director', 'deputy_director', 'director'].includes(profile.position || '');
-    const hasSignatureInDocument = currentUserSignature && memo.status === 'pending_sign';
+    const hasSignatureInDocument = userCanSign && memo.status === 'pending_sign';
     
-    if (!currentUserSignature) {
+    if (!userCanSign) {
+      setHasShownPermissionToast(true);
       toast({
         title: "ไม่สามารถเข้าถึงได้",
         description: "คุณไม่มีสิทธิ์อนุมัติเอกสารนี้",
@@ -74,21 +107,29 @@ const ApproveDocumentPage: React.FC = () => {
       // ผู้บริหารที่มีลายเซ็นในเอกสารสามารถเข้าถึงได้
       // ถ้า current_signer_order = 1 (ผู้เขียน) ให้แสดงให้ order 2 เห็น
       const nextSignerOrder = memo.current_signer_order === 1 ? 2 : memo.current_signer_order;
-      const canApprove = currentUserSignature.signer?.order === nextSignerOrder;
+      
+      // ตรวจสอบลำดับจาก signer_list_progress ก่อน ถ้าไม่มีค่อยใช้ signature_positions
+      const userOrder = currentUserSigner?.order || currentUserSignature?.signer?.order;
+      const canApprove = userOrder === nextSignerOrder;
       
       if (!canApprove) {
         // แสดงข้อความแจ้งว่ายังไม่ถึงลำดับ แต่ให้เข้าถึงได้เพื่อดูเอกสาร
         console.log('🔍 Management user accessing document before their turn');
       }
-    } else if (currentUserSignature.signer?.order !== memo.current_signer_order) {
-      toast({
-        title: "ไม่สามารถเข้าถึงได้", 
-        description: "ยังไม่ถึงลำดับการอนุมัติของคุณ",
-        variant: "destructive",
-      });
-      navigate('/documents');
+    } else {
+      // ตรวจสอบลำดับสำหรับผู้ใช้ทั่วไป
+      const userOrder = currentUserSigner?.order || currentUserSignature?.signer?.order;
+      if (userOrder !== memo.current_signer_order) {
+        setHasShownPermissionToast(true);
+        toast({
+          title: "ไม่สามารถเข้าถึงได้", 
+          description: "ยังไม่ถึงลำดับการอนุมัติของคุณ",
+          variant: "destructive",
+        });
+        navigate('/documents');
+      }
     }
-  }, [memo, profile, currentUserSignature, navigate, toast]);
+  }, [memo, profile, userCanSign, currentUserSigner, currentUserSignature, navigate, toast, hasShownPermissionToast]);
 
   // Handle rejection from RejectionCard
   const handleReject = async (rejectionReason: string) => {
@@ -131,11 +172,29 @@ const ApproveDocumentPage: React.FC = () => {
   const handleSubmit = async (approvalAction: 'approve') => {
     if (!memoId || !memo || !profile) return;
 
+    // ตรวจสอบสิทธิ์อีกครั้งก่อนเซ็น
+    if (!userCanSign) {
+      console.log('❌ User cannot sign - no permission');
+      setIsSubmitting(false);
+      return;
+    }
+
     setIsSubmitting(true);
     setAction(approvalAction);
 
     try {
       if (approvalAction === 'approve' && memo.pdf_draft_path && profile.signature_url) {
+        // ตรวจสอบว่ามีลายเซ็นหรือไม่
+        if (!profile.signature_url) {
+          toast({
+            title: "ไม่มีลายเซ็น",
+            description: "กรุณาอัปโหลดลายเซ็นในโปรไฟล์ของคุณก่อน",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
         const extractedPdfUrl = extractPdfUrl(memo.pdf_draft_path);
         if (!extractedPdfUrl) {
           toast({
@@ -193,10 +252,69 @@ const ApproveDocumentPage: React.FC = () => {
           const formData = new FormData();
           formData.append('pdf', pdfBlob, 'document.pdf');
           formData.append('sig1', sigBlob, 'signature.png');
-          // ใช้ตำแหน่งของ currentUserSignature
-          const signerOrder = currentUserSignature?.signer?.order;
-          const signerPos = signaturePositions.find(pos => pos.signer.order === signerOrder);
-          if (!signerPos) throw new Error('ไม่พบตำแหน่งลายเซ็นของผู้ใช้');
+          // ใช้ตำแหน่งของผู้ลงนาม - ใช้ข้อมูลจาก signer_list_progress หากมี
+          const signerOrder = currentUserSigner?.order || currentUserSignature?.signer?.order;
+          
+          // ค้นหาตำแหน่งลายเซ็นด้วยหลายวิธี
+          let signerPos = null;
+          
+          // วิธีที่ 1: ค้นหาจาก order
+          if (signerOrder) {
+            signerPos = signaturePositions.find(pos => pos.signer?.order === signerOrder);
+          }
+          
+          // วิธีที่ 2: ค้นหาจาก user_id ถ้าไม่เจอจากวิธีที่ 1
+          if (!signerPos && profile?.user_id) {
+            signerPos = signaturePositions.find(pos => pos.signer?.user_id === profile.user_id);
+          }
+          
+          // วิธีที่ 3: ค้นหาจากตำแหน่ง (position) ถ้ายังไม่เจอ
+          if (!signerPos && profile?.position) {
+            signerPos = signaturePositions.find(pos => 
+              pos.signer?.position === profile.position ||
+              pos.signer?.position === profile.current_position
+            );
+          }
+          
+          // วิธีที่ 4: หากยังไม่เจอ ให้สร้างตำแหน่งลายเซ็นแบบ default สำหรับ director
+          if (!signerPos && profile.position === 'director') {
+            console.log('🔧 Creating default signature position for director');
+            signerPos = {
+              signer: {
+                user_id: profile.user_id,
+                name: `${profile.first_name} ${profile.last_name}`,
+                position: profile.position,
+                order: signerOrder || 2
+              },
+              page: 1,
+              x: 350, // ตำแหน่ง default สำหรับผู้อำนวยการ
+              y: 200
+            };
+          }
+          
+          if (!signerPos) {
+            console.error('🚨 Cannot find signature position for user:', {
+              signerOrder,
+              userId: profile?.user_id,
+              userPosition: profile?.position,
+              signaturePositions: signaturePositions,
+              signaturePositionsDetails: signaturePositions.map(pos => ({
+                signer: pos.signer,
+                page: pos.page,
+                x: pos.x,
+                y: pos.y
+              })),
+              currentUserSigner,
+              currentUserSignature
+            });
+            setShowLoadingModal(false);
+            toast({ 
+              title: 'ไม่พบตำแหน่งลายเซ็น', 
+              description: 'ไม่พบตำแหน่งลายเซ็นของคุณในเอกสาร กรุณาติดต่อผู้ดูแลระบบ',
+              variant: "destructive"
+            });
+            return;
+          }
           formData.append('signatures', JSON.stringify([
             {
               page: signerPos.page - 1, // 0-based
@@ -246,7 +364,7 @@ const ApproveDocumentPage: React.FC = () => {
             .getPublicUrl(newFilePath);
           
           // หา nextSignerOrder - ปรับ logic สำหรับกรณีที่ผอ.เซ็น
-          const currentOrder = currentUserSignature?.signer?.order || memo.current_signer_order || 1;
+          const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;
           const signatureOrders = signaturePositions.map((pos: any) => pos.signer?.order).filter(Boolean);
           const maxOrder = Math.max(...signatureOrders);
           
@@ -483,7 +601,7 @@ const ApproveDocumentPage: React.FC = () => {
                 <div className="text-sm">
                   <p><span className="font-medium">ชื่อ:</span> {profile.first_name} {profile.last_name}</p>
                   <p><span className="font-medium">ตำแหน่ง:</span> {profile.current_position || profile.position}</p>
-                  <p><span className="font-medium">ลำดับการลงนาม:</span> {currentUserSignature?.signer?.order}</p>
+                  <p><span className="font-medium">ลำดับการลงนาม:</span> {currentUserSigner?.order || currentUserSignature?.signer?.order}</p>
                 </div>
               </CardContent>
             </Card>

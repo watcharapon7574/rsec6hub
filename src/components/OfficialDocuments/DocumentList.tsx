@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import ClerkDocumentActions from './ClerkDocumentActions';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
+import { useProfiles } from '@/hooks/useProfiles';
 import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
@@ -42,6 +43,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
   onSetSigners 
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
+  const { profiles } = useProfiles();
   const permissions = getPermissions();
   const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
@@ -134,6 +136,14 @@ const DocumentList: React.FC<DocumentListProps> = ({
       subscription.unsubscribe();
     };
   }, [permissions.position, profile?.user_id, updateSingleMemo]);
+
+  // ฟังก์ชันสำหรับหาชื่อธุรการจาก clerk_id
+  const getClerkName = (clerkId?: string): string => {
+    if (!clerkId) return '-';
+    const clerkProfile = profiles.find(p => p.user_id === clerkId);
+    if (!clerkProfile) return '-';
+    return `${clerkProfile.first_name} ${clerkProfile.last_name}`;
+  };
 
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
   const getStatusColor = (status: string): string => {
@@ -546,17 +556,34 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5 
-                            ? (memo.current_signer_order === 1 ? 'text-gray-700' : 'text-gray-400')
+                            ? 'text-gray-400'
                             : (memo.current_signer_order === 1 ? 'text-purple-700' : 'text-purple-400')
                         }`}>ตรวจทาน</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5 
-                            ? (memo.current_signer_order === 1 ? 'text-gray-700 font-bold' : 'text-gray-400')
+                            ? 'text-gray-400'
                             : (memo.current_signer_order === 1 ? 'text-purple-700 font-bold' : 'text-purple-400')
-                        }`}>-</span>
+                        }`}>
+                          {(() => {
+                            // ดึงชื่อธุรการผู้ตรวจทานจาก clerk_id
+                            try {
+                              if (memo.clerk_id) {
+                                const clerkProfile = profiles.find(p => p.user_id === memo.clerk_id);
+                                if (clerkProfile) {
+                                  return `${clerkProfile.first_name} ${clerkProfile.last_name}`;
+                                }
+                              }
+                              
+                              return 'ไม่ระบุ';
+                            } catch (error) {
+                              console.error('Error getting clerk name:', error);
+                              return 'ไม่ระบุ';
+                            }
+                          })()}
+                        </span>
                         <div className={`w-2 h-2 rounded-full mt-1 ${
                           memo.current_signer_order === 5 
-                            ? (memo.current_signer_order === 1 ? 'bg-gray-500' : 'bg-gray-200')
+                            ? 'bg-gray-200'
                             : (memo.current_signer_order === 1 ? 'bg-purple-500' : 'bg-purple-200')
                         }`}></div>
                       </div>
@@ -571,19 +598,21 @@ const DocumentList: React.FC<DocumentListProps> = ({
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
-                                    ? (memo.current_signer_order === pos.signer.order ? 'text-gray-700' : 'text-gray-400')
+                                    ? 'text-gray-400'
                                     : (memo.current_signer_order === pos.signer.order ? 'text-purple-700' : 'text-purple-400')
                                 }`}>{
-                                  pos.signer.order === 4 ? 'ผู้อำนวยการ' : (pos.signer.org_structure_role || pos.signer.position || '-')
+                                  // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
+                                  (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
+                                  (pos.signer.org_structure_role || pos.signer.position || '-')
                                 }</span>
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
-                                    ? (memo.current_signer_order === pos.signer.order ? 'text-gray-700 font-bold' : 'text-gray-400')
+                                    ? 'text-gray-400'
                                     : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
                                 }`}>{pos.signer.name || '-'}</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5 
-                                    ? (memo.current_signer_order === pos.signer.order ? 'bg-gray-500' : 'bg-gray-200')
+                                    ? 'bg-gray-200'
                                     : (memo.current_signer_order === pos.signer.order ? 'bg-purple-500' : 'bg-purple-200')
                                 }`}></div>
                               </div>

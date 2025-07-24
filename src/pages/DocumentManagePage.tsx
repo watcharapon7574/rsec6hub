@@ -17,6 +17,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
+import { SignerProgress } from '@/types/memo';
 
 // Import step components
 import Step1DocumentNumber from '@/components/DocumentManage/Step1DocumentNumber';
@@ -41,6 +42,10 @@ const DocumentManagePage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isRejecting, setIsRejecting] = useState(false);
   const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState({
+    title: "กำลังดำเนินการ",
+    description: "กรุณารอสักครู่..."
+  });
   const [isAssigningNumber, setIsAssigningNumber] = useState(false);
   const [isNumberAssigned, setIsNumberAssigned] = useState(false);
   const [suggestedDocNumber, setSuggestedDocNumber] = useState("4568/68");
@@ -464,6 +469,12 @@ const DocumentManagePage: React.FC = () => {
   const handleNext = async () => {
     // If moving from step 1 to step 2, call PDFmerge API
     if (currentStep === 1 && memo) {
+      setLoadingMessage({
+        title: "กำลังประมวลผลไฟล์เอกสาร",
+        description: "ระบบกำลังรวมไฟล์เอกสารหลักกับไฟล์แนบ กรุณารอสักครู่..."
+      });
+      setShowLoadingModal(true); // เริ่มแสดง loading modal
+      
       try {
         // Get attached files
         let attachedFiles = [];
@@ -509,6 +520,7 @@ const DocumentManagePage: React.FC = () => {
                   description: "ไม่สามารถอัพเดตข้อมูลเมโมหลังจากรวมไฟล์ได้",
                   variant: "destructive"
                 });
+                setShowLoadingModal(false);
                 return;
               }
 
@@ -525,6 +537,7 @@ const DocumentManagePage: React.FC = () => {
                 description: "ไม่สามารถอัพเดตฐานข้อมูลหลังจากรวมไฟล์ได้",
                 variant: "destructive"
               });
+              setShowLoadingModal(false);
               return;
             }
           } else {
@@ -533,6 +546,7 @@ const DocumentManagePage: React.FC = () => {
               description: mergeResult.error || "ไม่สามารถรวมไฟล์ได้",
               variant: "destructive"
             });
+            setShowLoadingModal(false);
             return; // Don't proceed to next step if merge fails
           }
         } else {
@@ -545,7 +559,59 @@ const DocumentManagePage: React.FC = () => {
           description: "ไม่สามารถเรียกใช้งาน API รวมไฟล์ได้",
           variant: "destructive"
         });
+        setShowLoadingModal(false);
         return; // Don't proceed to next step if there's an error
+      } finally {
+        setShowLoadingModal(false); // ปิด loading modal เมื่อเสร็จสิ้น
+      }
+    }
+
+    // If moving from step 2 to step 3, save signer_list_progress
+    if (currentStep === 2 && memo && memoId) {
+      try {
+        // Create signer_list_progress data with order, position, name
+        const signerListProgress: SignerProgress[] = signers.map(signer => ({
+          order: signer.order,
+          position: signer.position || signer.role,
+          name: signer.name,
+          role: signer.role,
+          user_id: signer.user_id
+        }));
+
+        console.log('📊 Saving signer_list_progress:', signerListProgress);
+
+        // Update memo with signer_list_progress (using type assertion for database compatibility)
+        const { error: updateError } = await supabase
+          .from('memos')
+          .update({
+            signer_list_progress: signerListProgress
+          } as any)
+          .eq('id', memoId);
+
+        if (updateError) {
+          console.error('Error updating signer_list_progress:', updateError);
+          toast({
+            title: "เกิดข้อผิดพลาด",
+            description: "ไม่สามารถบันทึกข้อมูลผู้ลงนามได้",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        console.log('✅ Signer list progress saved successfully');
+        toast({
+          title: "บันทึกข้อมูลผู้ลงนามสำเร็จ",
+          description: `บันทึกรายชื่อผู้ลงนาม ${signers.length} คน เรียบร้อยแล้ว`,
+        });
+
+      } catch (error) {
+        console.error('Error saving signer_list_progress:', error);
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่สามารถบันทึกข้อมูลผู้ลงนามได้",
+          variant: "destructive"
+        });
+        return;
       }
     }
 
@@ -667,20 +733,41 @@ const DocumentManagePage: React.FC = () => {
           
           if (authorPositions.length > 0) {
             // สร้าง signatures payload สำหรับทุกตำแหน่งที่ author วางไว้
-            const signaturesPayload = authorPositions.map(pos => ({
-              page: pos.page - 1, // ปรับจาก 1-based (frontend) เป็น 0-based (API)
-              x: pos.x,
-              y: pos.y,
-              width: 120,
-              height: 60,
-              lines
-            }));
+            const signaturesPayload = authorPositions.map(pos => {
+              // แปลงพิกัดจาก PDF viewer coordinate system ไปเป็น PDF coordinate system
+              // PDF viewer ใช้ pixel coordinates แต่ PDF API ใช้ point coordinates
+              // คำนวณโดยสมมติว่า PDF page มีขนาดมาตรฐาน A4 (595 x 842 points)
+              
+              // สมมติว่าขนาด PDF viewer page width ประมาณ 600px 
+              // แปลง pixel เป็น PDF points โดยใช้อัตราส่วน
+              const pdfPageWidthPoints = 595; // A4 width in points
+              const pdfPageHeightPoints = 842; // A4 height in points
+              const viewerPageWidthPx = 600; // Assumed viewer width in pixels
+              const viewerPageHeightPx = 847; // Assumed viewer height in pixels
+              
+              // แปลงพิกัด X (ค่า X ใช้ได้เลย)
+              const pdfX = (pos.x / viewerPageWidthPx) * pdfPageWidthPoints;
+              
+              // แปลงพิกัด Y (ต้องพลิกแกน Y เพราะ PDF origin อยู่ที่มุมซ้ายล่าง)
+              const pdfY = pdfPageHeightPoints - ((pos.y / viewerPageHeightPx) * pdfPageHeightPoints);
+              
+              return {
+                page: pos.page - 1, // ปรับจาก 1-based (frontend) เป็น 0-based (API)
+                x: Math.round(pdfX),
+                y: Math.round(pdfY),
+                width: 120,
+                height: 60,
+                lines
+              };
+            });
             
             formData.append('signatures', JSON.stringify(signaturesPayload));
             
             // --- LOG ข้อมูลก่อนส่ง ---
             console.log('📄 pdfBlob:', pdfBlob);
             console.log('🖊️ sigBlob:', sigBlob);
+            console.log(`📝 Original positions (viewer px):`, authorPositions.map(pos => ({ x: pos.x, y: pos.y, page: pos.page })));
+            console.log(`📝 Converted positions (PDF points):`, signaturesPayload.map(sig => ({ x: sig.x, y: sig.y, page: sig.page })));
             console.log(`📝 signatures (${authorPositions.length} positions):`, JSON.stringify(signaturesPayload, null, 2));
             // ---
             const res = await fetch('https://pdf-memo-docx-production.up.railway.app/add_signature_v2', {
@@ -707,6 +794,10 @@ const DocumentManagePage: React.FC = () => {
       }
       // 3. ถ้าเซ็นสำเร็จ → อัปเดตสถานะ/ลำดับ
       if (signSuccess && signedPdfBlob && memo?.pdf_draft_path) {
+        setLoadingMessage({
+          title: "กำลังส่งเสนอต่อผู้ลงนามลำดับถัดไป",
+          description: "ระบบกำลังบันทึกไฟล์และอัพเดตสถานะเอกสาร กรุณารอสักครู่..."
+        });
         setShowLoadingModal(true);
         try {
           // --- อัปโหลดไฟล์ใหม่ (ชื่อใหม่) ---
@@ -735,11 +826,16 @@ const DocumentManagePage: React.FC = () => {
             toast({ title: 'Upload error', description: uploadError.message });
             return;
           }
-          // --- อัปเดต path ใน database ---
+          // --- อัปเดต path ใน database พร้อม clerk_id ---
           const { data: { publicUrl: newPublicUrl } } = supabase.storage
             .from('documents')
             .getPublicUrl(newFilePath);
-          await updateMemoStatus(memoId, 'pending_sign', documentNumber, undefined, 2, newPublicUrl);
+          
+          // บันทึก clerk_id (user_id ของธุรการที่จัดการเอกสาร)
+          const clerkId = profile?.user_id;
+          console.log('📝 Recording clerk_id:', clerkId, 'for memo:', memoId);
+          
+          await updateMemoStatus(memoId, 'pending_sign', documentNumber, undefined, 2, newPublicUrl, clerkId);
           
           // แสดงข้อความสำเร็จพร้อมจำนวนลายเซ็นที่ประมวลผล
           const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
@@ -977,9 +1073,9 @@ const DocumentManagePage: React.FC = () => {
       </div>
       <Dialog open={showLoadingModal}>
         <DialogContent>
-          <DialogTitle>กำลังส่งเสนอต่อผู้ลงนามลำดับถัดไป กรุณารอสักครู่</DialogTitle>
+          <DialogTitle>{loadingMessage.title}</DialogTitle>
           <DialogDescription>
-            ระบบกำลังบันทึกไฟล์... กรุณาอย่าปิดหน้านี้จนกว่ากระบวนการจะเสร็จสมบูรณ์
+            {loadingMessage.description}
           </DialogDescription>
           <div className="flex flex-col items-center gap-4 mt-4">
             <svg className="animate-spin h-8 w-8 text-blue-600" viewBox="0 0 24 24">

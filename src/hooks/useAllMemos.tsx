@@ -86,12 +86,13 @@ export const useAllMemos = () => {
     return memos.find(memo => memo.id === id) || null;
   };
 
-  const updateMemoStatus = async (memoId: string, status: string, docNumber?: string, rejectionReason?: string, currentSignerOrder?: number, newPdfDraftPath?: string) => {
+  const updateMemoStatus = async (memoId: string, status: string, docNumber?: string, rejectionReason?: string, currentSignerOrder?: number, newPdfDraftPath?: string, clerkId?: string) => {
     try {
       const updates: any = { status };
       if (docNumber) updates.doc_number = docNumber;
       if (typeof currentSignerOrder === 'number') updates.current_signer_order = currentSignerOrder;
       if (newPdfDraftPath) updates.pdf_draft_path = newPdfDraftPath;
+      if (clerkId) updates.clerk_id = clerkId;
 
       // If there's a rejection reason, store it in form_data and rejected_name_comment
       if (rejectionReason && status === 'rejected' && profile) {

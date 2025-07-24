@@ -11,6 +11,14 @@ export interface MemoFormData {
   attached_files?: string[];
 }
 
+export interface SignerProgress {
+  order: number;
+  position: string;
+  name: string;
+  role: string;
+  user_id: string;
+}
+
 export interface SignaturePosition {
   user_id: string;
   name: string;
@@ -63,6 +71,8 @@ export interface Memo {
   signatures: MemoSignature[];
   current_signer_order: number;
   attached_files?: string[];
+  signer_list_progress?: SignerProgress[]; // รายการผู้ลงนาม progress
+  clerk_id?: string; // user_id ของธุรการที่จัดการเอกสาร
 }
 
 export interface MemoNotification {

@@ -1,35 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   ArrowLeft, 
-  FileText, 
-  Users, 
-  MapPin,
-  Send,
-  User,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAllMemos } from '@/hooks/useAllMemos';
-import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
-import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
 import { submitPDFSignature } from '@/services/pdfSignatureService';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
-import Accordion from '@/components/OfficialDocuments/Accordion';
+
+// Import step components
+import Step1DocumentNumber from '@/components/DocumentManage/Step1DocumentNumber';
+import Step2SelectSigners from '@/components/DocumentManage/Step2SelectSigners';
+import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
+import Step4Review from '@/components/DocumentManage/Step4Review';
 
 const DocumentManagePage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
@@ -821,507 +813,67 @@ const DocumentManagePage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto p-6">
         <div className="w-full">
-          {/* Main Content */}
-          <div className="space-y-6">
-            
-            {/* Step 1: เลขหนังสือ */}
-            {currentStep === 1 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    กำหนดเลขหนังสือราชการ
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="doc-number">เลขหนังสือราชการ</Label>
-                    <div className="flex items-stretch">
-                      <div className="text-lg font-medium text-gray-700 bg-gray-50 px-4 rounded-l-md border border-r-0 border-gray-300 flex items-center">
-                        ศธ ๐๔๐๐๗.๖๐๐/
-                      </div>
-                      <Input
-                        id="doc-number"
-                        placeholder={suggestedDocNumber}
-                        value={docNumberSuffix}
-                        onChange={(e) => setDocNumberSuffix(e.target.value)}
-                        className={`text-lg rounded-l-none flex-1 ${isNumberAssigned 
-                          ? 'bg-gray-100 text-gray-700 cursor-not-allowed border-gray-300' 
-                          : 'bg-white text-gray-900 border-gray-300'
-                        }`}
-                        disabled={isNumberAssigned}
-                        readOnly={isNumberAssigned}
-                      />
-                    </div>
+          {/* Render appropriate step component */}
+          {currentStep === 1 && (
+            <Step1DocumentNumber
+              documentNumber={documentNumber}
+              suggestedDocNumber={suggestedDocNumber}
+              docNumberSuffix={docNumberSuffix}
+              isNumberAssigned={isNumberAssigned}
+              isAssigningNumber={isAssigningNumber}
+              memo={memo}
+              onDocNumberSuffixChange={setDocNumberSuffix}
+              onAssignNumber={handleAssignNumber}
+              onNext={handleNext}
+              onReject={handleReject}
+              isRejecting={isRejecting}
+              isStepComplete={isStepComplete(1)}
+            />
+          )}
 
-                    {isNumberAssigned && (
-                      <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
-                        <CheckCircle className="h-4 w-4" />
-                        เลขหนังสือถูกลงแล้ว: {documentNumber}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex justify-between">
-                    <div /> {/* Empty div for spacing */}
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={handleAssignNumber}
-                        disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || isNumberAssigned || isAssigningNumber}
-                        className={isNumberAssigned 
-                          ? "bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed" 
-                          : "bg-green-600 text-white hover:bg-green-700 transition-colors"
-                        }
-                      >
-                        {isAssigningNumber ? (
-                          <>
-                            <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                            </svg>
-                            กำลังลงเลข...
-                          </>
-                        ) : isNumberAssigned ? (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            ลงเลขแล้ว
-                          </>
-                        ) : (
-                          "ลงเลข"
-                        )}
-                      </Button>
-                      <Button 
-                        onClick={handleNext}
-                        disabled={!isStepComplete(1)}
-                        className="bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        ถัดไป
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+          {currentStep === 2 && (
+            <Step2SelectSigners
+              selectedAssistant={selectedAssistant}
+              selectedDeputy={selectedDeputy}
+              assistantDirectors={assistantDirectors}
+              deputyDirectors={deputyDirectors}
+              signers={signers}
+              onSelectedAssistantChange={setSelectedAssistant}
+              onSelectedDeputyChange={setSelectedDeputy}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              isStepComplete={isStepComplete(2)}
+            />
+          )}
 
-            {/* PDF Preview - Step 1 */}
-            {currentStep === 1 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    ตัวอย่างเอกสาร
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {memo.pdf_draft_path ? (
-                    <div className="w-full">
-                      <PDFViewer 
-                        fileUrl={extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path} 
-                        fileName="เอกสาร"
-                        memo={memo}
-                        showSignatureMode={false}
-                      />
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      ไม่มีไฟล์ PDF สำหรับแสดงตัวอย่าง
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+          {currentStep === 3 && (
+            <Step3SignaturePositions
+              signers={signers}
+              signaturePositions={signaturePositions}
+              comment={comment}
+              selectedSignerIndex={selectedSignerIndex}
+              memo={memo}
+              onCommentChange={setComment}
+              onSelectedSignerIndexChange={setSelectedSignerIndex}
+              onPositionClick={handlePositionClick}
+              onPositionRemove={handlePositionRemove}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              isStepComplete={isStepComplete(3)}
+            />
+          )}
 
-            {/* Attached Files Accordion - Step 1 */}
-            {currentStep === 1 && (() => {
-              let attachedFiles = [];
-              if (memo?.attached_files) {
-                try {
-                  if (typeof memo.attached_files === 'string') {
-                    const parsed = JSON.parse(memo.attached_files);
-                    attachedFiles = Array.isArray(parsed) ? parsed : [];
-                  } else if (Array.isArray(memo.attached_files)) {
-                    attachedFiles = memo.attached_files;
-                  }
-                } catch {
-                  attachedFiles = [];
-                }
-              }
-              
-              return attachedFiles.length > 0 && (
-                <Accordion 
-                  attachments={attachedFiles}
-                  attachmentTitle={memo?.attachment_title}
-                />
-              );
-            })()}
-
-            {/* Rejection Card - Step 1 */}
-            {currentStep === 1 && (
-              <RejectionCard 
-                onReject={handleReject}
-                isLoading={isRejecting}
-              />
-            )}
-
-            {/* Step 2: เลือกผู้ลงนาม */}
-            {currentStep === 2 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    เลือกผู้ลงนาม
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>ผู้ช่วยผู้อำนวยการ (เลือก 1 คน หรือไม่ระบุ)</Label>
-                      <Select value={selectedAssistant} onValueChange={setSelectedAssistant}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="เลือกผู้ช่วยผู้อำนวยการ หรือไม่ระบุ" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border border-blue-200 z-50 shadow-lg">
-                          <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
-                            <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
-                          </SelectItem>
-                          {assistantDirectors.map((profile) => (
-                            <SelectItem 
-                              key={`assistant-${profile.id}`} 
-                              value={profile.user_id || profile.id}
-                              className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer"
-                            >
-                              <div className="flex flex-col">
-                                <span className="font-medium">
-                                  {profile.prefix || ''}{profile.first_name} {profile.last_name}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  ตำแหน่ง {profile.academic_rank || ''} {profile.org_structure_role || profile.current_position || ''}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>รองผู้อำนวยการ (เลือก 1 คน หรือไม่ระบุ)</Label>
-                      <Select value={selectedDeputy} onValueChange={setSelectedDeputy}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="เลือกรองผู้อำนวยการ หรือไม่ระบุ" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border border-blue-200 z-50 shadow-lg">
-                          <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
-                            <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
-                          </SelectItem>
-                          {deputyDirectors.map((profile) => (
-                            <SelectItem 
-                              key={`deputy-${profile.id}`} 
-                              value={profile.user_id || profile.id}
-                              className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer"
-                            >
-                              <div className="flex flex-col">
-                                <span className="font-medium">
-                                  {profile.prefix || ''}{profile.first_name} {profile.last_name}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  ตำแหน่ง {profile.academic_rank || ''} {profile.org_structure_role || profile.current_position || ''}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* คำอธิบายการข้าม */}
-                  <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                    <p className="font-medium mb-1">หมายเหตุ:</p>
-                    <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามผู้ช่วยหรือรองผู้อำนวยการได้</p>
-                    <p>• หมายเลขลำดับจะปรับให้ต่อเนื่องตามคนที่เลือกจริง</p>
-                    <p>• ตัวอย่าง: ข้ามทั้งคู่ → 1(ผู้เขียน), 2(ผอ.) หรือข้ามผู้ช่วย → 1(ผู้เขียน), 2(รองผอ.), 3(ผอ.)</p>
-                    <p>• ผู้เขียนและผู้อำนวยการจะอยู่เสมอ</p>
-                  </div>
-
-                  <div>
-                    <Label>ลำดับการลงนาม ({signers.length} คน)</Label>
-                    <div className="mt-2 space-y-2">
-                      {signers.map((signer, index) => (
-                        <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                          <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
-                          <div className="flex-1">
-                            <p className="font-medium">{signer.name}</p>
-                            <p className="text-sm text-gray-500">
-                              ตำแหน่ง {signer.academic_rank && `${signer.academic_rank} `}
-                              {signer.org_structure_role || signer.position}
-                            </p>
-                          </div>
-                          <Badge variant={
-                            signer.role === 'author' ? 'default' :
-                            signer.role === 'assistant_director' ? 'secondary' :
-                            signer.role === 'deputy_director' ? 'secondary' :
-                            'destructive'
-                          }>
-                            {signer.role === 'author' ? 'ผู้เขียน' :
-                             signer.role === 'assistant_director' ? 'ผู้ช่วยผอ.' :
-                             signer.role === 'deputy_director' ? 'รองผอ.' :
-                             'ผอ.'}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <Button variant="outline" onClick={handlePrevious}>
-                      ก่อนหน้า
-                    </Button>
-                    <Button 
-                      onClick={handleNext}
-                      disabled={!isStepComplete(2)}
-                      className="bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                    >
-                      ถัดไป
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 3: วางตำแหน่งลายเซ็น */}
-            {currentStep === 3 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    วางตำแหน่งลายเซ็นและความเห็น
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-
-
-                  {/* แสดงรายชื่อผู้ลงนามทั้งหมด */}
-                  <div className="mb-4">
-                    <Label className="text-base font-medium">ผู้ลงนามที่เลือก ({signers.length} คน)</Label>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                      {signers.map((signer, index) => {
-                        const positionsCount = signaturePositions.filter(pos => pos.signer.order === signer.order).length;
-                        const isSelected = selectedSignerIndex === index;
-                        
-                        return (
-                          <div
-                            key={signer.order}
-                            className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'border-blue-500 bg-blue-50 shadow-md' 
-                                : positionsCount > 0 
-                                  ? 'border-green-500 bg-green-50' 
-                                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-                            }`}
-                            onClick={() => setSelectedSignerIndex(index)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <p className="font-medium text-gray-900">{signer.name}</p>
-                                <p className="text-sm text-gray-600">{signer.academic_rank || signer.org_structure_role || signer.position}</p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {signer.role === 'author' && 'ผู้เขียน'}
-                                  {signer.role === 'assistant_director' && 'ผู้ช่วยผู้อำนวยการ'}
-                                  {signer.role === 'deputy_director' && 'รองผู้อำนวยการ'}
-                                  {signer.role === 'director' && 'ผู้อำนวยการ'}
-                                </p>
-                              </div>
-                              <div className="flex flex-col items-end gap-2">
-                                {positionsCount > 0 && (
-                                  <Badge variant="default" className="bg-green-600 text-white">
-                                    ✓ {positionsCount} ตำแหน่ง
-                                  </Badge>
-                                )}
-                                {isSelected && (
-                                  <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
-                                    เลือกอยู่
-                                  </Badge>
-                                )}
-                                <Badge variant="secondary" className="text-xs">
-                                  ลำดับ {signer.order}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <Label>ความหมายโดยสรุปของเอกสารฉบับนี้</Label>
-                    <Textarea
-                      placeholder="โปรดอธิบายโดยสรุปว่าเอกสารฉบับนี้มีเนื้อหาเกี่ยวกับอะไร เพื่อให้ผู้ลงนามเข้าใจเบื้องต้น"
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      rows={3}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      ข้อมูลนี้จะแสดงให้ผู้ลงนามอ่านเพื่อทำความเข้าใจเนื้อหาเอกสารก่อนลงนาม
-                    </p>
-                  </div>
-
-                  <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-                    <p className="font-medium mb-1">วิธีการใช้งาน:</p>
-                    <p>1. เลือกผู้ลงนามจากรายการข้างต้น</p>
-                    <p>2. กรอกสรุปเนื้อหาเอกสาร (เพื่อให้ผู้ลงนามเข้าใจ)</p>
-                    <p>3. คลิกบน PDF เพื่อวางตำแหน่งลายเซ็น</p>
-                    <p>4. <span className="font-medium text-blue-600">สามารถวางได้หลายตำแหน่งต่อคน</span> - เลือกคนเดียวกันแล้ววางใหม่ได้</p>
-                    <p>5. คลิกปุ่ม X บนการ์ดเพื่อลบตำแหน่งที่วางผิด</p>
-                    <p>6. ผู้ลงนามที่เลือก: <strong>{signers[selectedSignerIndex]?.name || 'ไม่มี'}</strong></p>
-                  </div>
-
-                  {memo.pdf_draft_path ? (
-                    <div className="w-full">
-                      <PDFViewer 
-                        fileUrl={extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path} 
-                        fileName="เอกสาร"
-                        memo={memo}
-                        onPositionClick={handlePositionClick}
-                        onPositionRemove={handlePositionRemove}
-                        signaturePositions={signaturePositions}
-                        signers={signers}
-                        showSignatureMode={true}
-                      />
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      ไม่มีไฟล์ PDF สำหรับวางตำแหน่งลายเซ็น
-                    </div>
-                  )}
-
-                  {/* Attached Files Accordion - Step 2 */}
-                  {(() => {
-                    let attachedFiles = [];
-                    if (memo?.attached_files) {
-                      try {
-                        if (typeof memo.attached_files === 'string') {
-                          const parsed = JSON.parse(memo.attached_files);
-                          attachedFiles = Array.isArray(parsed) ? parsed : [];
-                        } else if (Array.isArray(memo.attached_files)) {
-                          attachedFiles = memo.attached_files;
-                        }
-                      } catch {
-                        attachedFiles = [];
-                      }
-                    }
-                    
-                    return attachedFiles.length > 0 && (
-                      <div className="mt-4">
-                        <Accordion 
-                          attachments={attachedFiles}
-                          attachmentTitle={memo?.attachment_title}
-                        />
-                      </div>
-                    );
-                  })()}
-
-                  <div className="flex justify-between">
-                    <Button variant="outline" onClick={handlePrevious}>
-                      ก่อนหน้า
-                    </Button>
-                    <Button 
-                      onClick={handleNext}
-                      disabled={!isStepComplete(3)}
-                      className="bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                    >
-                      ตรวจสอบ
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 4: ตรวจสอบและส่งเสนอ */}
-            {currentStep === 4 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    ตรวจสอบและส่งเสนอ
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="font-medium mb-3">ข้อมูลเอกสาร</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">เรื่อง:</span>
-                          <span className="font-medium">{memo.subject}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">เลขหนังสือ:</span>
-                          <span className="font-medium">{documentNumber}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">ผู้เขียน:</span>
-                          <span className="font-medium">{memo.author_name}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-medium mb-3">ผู้ลงนาม</h3>
-                      <div className="space-y-2">
-                        {signers.map((signer, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm">
-                            <Badge variant="outline">{signer.order}</Badge>
-                            <span>{signer.name}</span>
-                            <span className="text-gray-500">({signer.academic_rank || signer.org_structure_role || signer.position})</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h3 className="font-medium mb-3">ตำแหน่งลายเซ็นที่กำหนด</h3>
-                    <div className="space-y-2">
-                      {signaturePositions.map((pos, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <p className="font-medium">{pos.signer.name}</p>
-                            <p className="text-sm text-gray-500">
-                              หน้า {pos.page} ตำแหน่ง ({Math.round(pos.x)}, {Math.round(pos.y)})
-                            </p>
-                            {pos.comment && (
-                              <p className="text-sm text-blue-600">ความเห็น: {pos.comment}</p>
-                            )}
-                          </div>
-                          <Button
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handlePositionRemove(index)}
-                          >
-                            ลบ
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between pt-4">
-                    <Button variant="outline" onClick={handlePrevious}>
-                      ก่อนหน้า
-                    </Button>
-                    <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
-                      <Send className="h-4 w-4 mr-2" />
-                      ส่งเสนอ
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          {currentStep === 4 && (
+            <Step4Review
+              memo={memo}
+              documentNumber={documentNumber}
+              signers={signers}
+              signaturePositions={signaturePositions}
+              onPositionRemove={handlePositionRemove}
+              onPrevious={handlePrevious}
+              onSubmit={handleSubmit}
+            />
+          )}
         </div>
       </div>
       <Dialog open={showLoadingModal}>

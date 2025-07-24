@@ -588,38 +588,87 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         }`}></div>
                       </div>
                       <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-purple-200'}`} />
-                      {/* Step 2-4: ตรวจสอบ, รองผู้อำนวยการ, ผู้อำนวยการ (จาก signature_positions) */}
-                      {Array.isArray(memo.signature_positions) && memo.signature_positions.length > 0 ? (
-                        memo.signature_positions
-                          .filter(pos => pos.signer && [2,3,4].includes(pos.signer.order))
-                          .sort((a, b) => a.signer.order - b.signer.order)
-                          .map((pos, idx, arr) => (
-                            <React.Fragment key={pos.signer.order}>
+                      
+                      {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author) */}
+                      {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
+                        memo.signer_list_progress
+                          .filter(signer => signer.role !== 'author') // ข้ามผู้เขียน
+                          .sort((a, b) => a.order - b.order)
+                          .map((signer, idx, arr) => (
+                            <React.Fragment key={signer.order}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
                                     ? 'text-gray-400'
-                                    : (memo.current_signer_order === pos.signer.order ? 'text-purple-700' : 'text-purple-400')
-                                }`}>{
-                                  // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
-                                  (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
-                                  (pos.signer.org_structure_role || pos.signer.position || '-')
-                                }</span>
+                                    : (memo.current_signer_order === signer.order ? 'text-purple-700' : 'text-purple-400')
+                                }`}>
+                                  {(() => {
+                                    // แสดงตำแหน่งตาม role (ไม่รวม author)
+                                    switch (signer.role) {
+                                      case 'deputy_director': return 'รองผู้อำนวยการ';
+                                      case 'director': return 'ผู้อำนวยการ';
+                                      default: return signer.position || '-';
+                                    }
+                                  })()}
+                                </span>
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
                                     ? 'text-gray-400'
-                                    : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
-                                }`}>{pos.signer.name || '-'}</span>
+                                    : (memo.current_signer_order === signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
+                                }`}>{signer.name || '-'}</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5 
                                     ? 'bg-gray-200'
-                                    : (memo.current_signer_order === pos.signer.order ? 'bg-purple-500' : 'bg-purple-200')
+                                    : (memo.current_signer_order === signer.order ? 'bg-purple-500' : 'bg-purple-200')
                                 }`}></div>
                               </div>
-                              <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-purple-200'}`} />
+                              {idx < arr.length - 1 && (
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-purple-200'}`} />
+                              )}
                             </React.Fragment>
                           ))
-                      ) : null}
+                      ) : (
+                        // Fallback เก่าถ้าไม่มี signer_list_progress
+                        Array.isArray(memo.signature_positions) && memo.signature_positions.length > 0 ? (
+                          memo.signature_positions
+                            .filter(pos => pos.signer && [2,3,4].includes(pos.signer.order))
+                            .sort((a, b) => a.signer.order - b.signer.order)
+                            .map((pos, idx, arr) => (
+                              <React.Fragment key={pos.signer.order}>
+                                <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
+                                  <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                    memo.current_signer_order === 5 
+                                      ? 'text-gray-400'
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700' : 'text-purple-400')
+                                  }`}>{
+                                    // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
+                                    (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
+                                    (pos.signer.org_structure_role || pos.signer.position || '-')
+                                  }</span>
+                                  <span className={`sm:text-[10px] text-[9px] ${
+                                    memo.current_signer_order === 5 
+                                      ? 'text-gray-400'
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
+                                  }`}>{pos.signer.name || '-'}</span>
+                                  <div className={`w-2 h-2 rounded-full mt-1 ${
+                                    memo.current_signer_order === 5 
+                                      ? 'bg-gray-200'
+                                      : (memo.current_signer_order === pos.signer.order ? 'bg-purple-500' : 'bg-purple-200')
+                                  }`}></div>
+                                </div>
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-purple-200'}`} />
+                              </React.Fragment>
+                          ))
+                        ) : (
+                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-gray-400' : 'text-purple-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                        )
+                      )}
+                      
+                      {/* Connector to final step */}
+                      {((memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0) || 
+                        (memo.signature_positions && memo.signature_positions.length > 0)) && (
+                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-purple-200'}`} />
+                      )}
                     </>
                   )}
                   {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ */}

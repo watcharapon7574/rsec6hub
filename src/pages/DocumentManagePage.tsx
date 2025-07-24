@@ -732,42 +732,23 @@ const DocumentManagePage: React.FC = () => {
           const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
           
           if (authorPositions.length > 0) {
-            // สร้าง signatures payload สำหรับทุกตำแหน่งที่ author วางไว้
-            const signaturesPayload = authorPositions.map(pos => {
-              // แปลงพิกัดจาก PDF viewer coordinate system ไปเป็น PDF coordinate system
-              // PDF viewer ใช้ pixel coordinates แต่ PDF API ใช้ point coordinates
-              // คำนวณโดยสมมติว่า PDF page มีขนาดมาตรฐาน A4 (595 x 842 points)
-              
-              // สมมติว่าขนาด PDF viewer page width ประมาณ 600px 
-              // แปลง pixel เป็น PDF points โดยใช้อัตราส่วน
-              const pdfPageWidthPoints = 595; // A4 width in points
-              const pdfPageHeightPoints = 842; // A4 height in points
-              const viewerPageWidthPx = 600; // Assumed viewer width in pixels
-              const viewerPageHeightPx = 847; // Assumed viewer height in pixels
-              
-              // แปลงพิกัด X (ค่า X ใช้ได้เลย)
-              const pdfX = (pos.x / viewerPageWidthPx) * pdfPageWidthPoints;
-              
-              // แปลงพิกัด Y (ต้องพลิกแกน Y เพราะ PDF origin อยู่ที่มุมซ้ายล่าง)
-              const pdfY = pdfPageHeightPoints - ((pos.y / viewerPageHeightPx) * pdfPageHeightPoints);
-              
-              return {
-                page: pos.page - 1, // ปรับจาก 1-based (frontend) เป็น 0-based (API)
-                x: Math.round(pdfX),
-                y: Math.round(pdfY),
-                width: 120,
-                height: 60,
-                lines
-              };
-            });
+            // สร้าง signatures payload สำหรับ /add_signature_v2 (format ใหม่)
+            const signaturesPayload = authorPositions.map(pos => ({
+              page: pos.page - 1, // ปรับจาก 1-based (frontend) เป็น 0-based (API)
+              x: Math.round(pos.x), // ส่งพิกัด X โดยตรง
+              y: Math.round(pos.y), // ส่งพิกัด Y โดยตรง
+              width: 120,
+              height: 60,
+              lines
+            }));
             
             formData.append('signatures', JSON.stringify(signaturesPayload));
             
             // --- LOG ข้อมูลก่อนส่ง ---
             console.log('📄 pdfBlob:', pdfBlob);
             console.log('🖊️ sigBlob:', sigBlob);
-            console.log(`📝 Original positions (viewer px):`, authorPositions.map(pos => ({ x: pos.x, y: pos.y, page: pos.page })));
-            console.log(`📝 Converted positions (PDF points):`, signaturesPayload.map(sig => ({ x: sig.x, y: sig.y, page: sig.page })));
+            console.log(`📝 Original positions (DOM pixels):`, authorPositions.map(pos => ({ x: pos.x, y: pos.y, page: pos.page })));
+            console.log(`📝 Signatures payload for /add_signature_v2:`, signaturesPayload.map(sig => ({ x: sig.x, y: sig.y, page: sig.page, lines: sig.lines?.length })));
             console.log(`📝 signatures (${authorPositions.length} positions):`, JSON.stringify(signaturesPayload, null, 2));
             // ---
             const res = await fetch('https://pdf-memo-docx-production.up.railway.app/add_signature_v2', {

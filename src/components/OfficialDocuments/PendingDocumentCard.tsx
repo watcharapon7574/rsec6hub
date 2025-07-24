@@ -57,7 +57,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
   // กรองเอกสารที่ต้องการการอนุมัติจากผู้ใช้ปัจจุบัน + เอกสารที่เสร็จสิ้นแล้ว
   const isExecutive = ['deputy_director', 'director'].includes(profile?.position || '');
   const initialFilteredMemos = pendingMemos.filter(memo => {
-    if (!memo.signature_positions || !profile) return false;
+    if (!memo.signer_list_progress || !profile) return false;
     
     // แสดงเอกสารที่เสร็จสิ้นแล้ว (current_signer_order = 5)
     if (memo.current_signer_order === 5) {
@@ -68,15 +68,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
       // รองผอ/ผอ เห็นทุก pending_sign (current_signer_order 2-4)
       return memo.status === 'pending_sign' && memo.current_signer_order >= 2 && memo.current_signer_order <= 4;
     }
-    // logic เดิมสำหรับคนอื่น (current_signer_order 2-4)
-    const signaturePositions = Array.isArray(memo.signature_positions) 
-      ? memo.signature_positions 
-      : (typeof memo.signature_positions === 'object' ? Object.values(memo.signature_positions) : []);
-    const userSignature = signaturePositions.find((pos: any) => 
-      pos.signer?.user_id === profile.user_id
-    );
+    
+    // logic ใหม่ใช้ signer_list_progress แทน signature_positions
+    const signerList = Array.isArray(memo.signer_list_progress) ? memo.signer_list_progress : [];
+    const userSigner = signerList.find((signer: any) => signer.user_id === profile.user_id);
     const nextSignerOrder = memo.current_signer_order === 1 ? 2 : memo.current_signer_order;
-    const isCurrentApprover = userSignature && userSignature.signer?.order === nextSignerOrder;
+    const isCurrentApprover = userSigner && userSigner.order === nextSignerOrder;
     const isNotAuthor = memo.user_id !== profile.user_id;
     return isCurrentApprover && isNotAuthor && memo.current_signer_order >= 2 && memo.current_signer_order <= 4;
   });
@@ -197,7 +194,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
       author: m.author_name,
       user_id: m.user_id,
       currentSignerOrder: m.current_signer_order,
-      signaturePositions: m.signature_positions,
+      signerListProgress: m.signer_list_progress,
       status: m.status
     }))
   });
@@ -340,7 +337,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
                   >
                     {getStatusTextBySignerOrder(memo.current_signer_order)}
                   </span>
-                  {/* Progress Stepper: responsive แบบเดียวกับ DocumentList */}
+                  {/* Progress Stepper: ใช้ signer_list_progress จาก database - ข้ามผู้เขียน */}
                   <div className="flex items-center gap-1 sm:gap-2 ml-2 flex-1 overflow-x-auto">
                     {/* ถ้าเป็นฉบับร่าง แสดงแค่ step รอตรวจทาน step เดียว */}
                     {memo.status === 'draft' ? (
@@ -350,6 +347,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
                       </div>
                     ) : (
                       <>
+                        {/* Step 1: ตรวจทาน (โดยธุรการ) */}
                         <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5 
@@ -385,41 +383,55 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
                           }`}></div>
                         </div>
                         <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-amber-200'}`} />
-                        {/* Step 2-4: ตรวจสอบ, รองผู้อำนวยการ, ผู้อำนวยการ (จาก signature_positions) */}
-                        {Array.isArray(memo.signature_positions) && memo.signature_positions.length > 0 ? (
-                          memo.signature_positions
-                            .filter(pos => pos.signer && [2,3,4].includes(pos.signer.order))
-                            .sort((a, b) => a.signer.order - b.signer.order)
-                            .map((pos, idx, arr) => (
-                              <React.Fragment key={pos.signer.order}>
+                        
+                        {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author) */}
+                        {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
+                          memo.signer_list_progress
+                            .filter(signer => signer.role !== 'author') // ข้ามผู้เขียน
+                            .sort((a, b) => a.order - b.order)
+                            .map((signer, idx, arr) => (
+                              <React.Fragment key={signer.order}>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-gray-400'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-amber-700' : 'text-amber-400')
-                                  }`}>{
-                                    // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
-                                    (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
-                                    (pos.signer.org_structure_role || pos.signer.position || '-')
-                                  }</span>
+                                      : (memo.current_signer_order === signer.order ? 'text-amber-700' : 'text-amber-400')
+                                  }`}>
+                                    {(() => {
+                                      // แสดงตำแหน่งตาม role (ไม่รวม author)
+                                      switch (signer.role) {
+                                        case 'deputy_director': return 'รองผู้อำนวยการ';
+                                        case 'director': return 'ผู้อำนวยการ';
+                                        default: return signer.position || '-';
+                                      }
+                                    })()}
+                                  </span>
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-gray-400'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
-                                  }`}>{pos.signer.name || '-'}</span>
+                                      : (memo.current_signer_order === signer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
+                                  }`}>{signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
                                       ? 'bg-gray-200'
-                                      : (memo.current_signer_order === pos.signer.order ? 'bg-amber-500' : 'bg-amber-200')
+                                      : (memo.current_signer_order === signer.order ? 'bg-amber-500' : 'bg-amber-200')
                                   }`}></div>
                                 </div>
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-amber-200'}`} />
+                                {idx < arr.length - 1 && (
+                                  <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-amber-200'}`} />
+                                )}
                               </React.Fragment>
                             ))
                         ) : (
                           <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-gray-400' : 'text-amber-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )}
-                        {/* Step 5: เกษียนหนังสือแล้ว */}
+                        
+                        {/* Connector to final step */}
+                        {memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0 && (
+                          <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-amber-200'}`} />
+                        )}
+                        
+                        {/* Step สุดท้าย: เกษียนหนังสือแล้ว */}
                         <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5 
@@ -453,15 +465,13 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
                       );
                     }
 
-                    // Logic เดิมสำหรับเอกสารอื่นๆ (current_signer_order 2-4)
-                    const signaturePositions = Array.isArray(memo.signature_positions) 
-                      ? memo.signature_positions 
-                      : (typeof memo.signature_positions === 'object' ? Object.values(memo.signature_positions) : []);
-                    const userSignature = signaturePositions.find((pos: any) => pos.signer?.user_id === profile?.user_id);
-                    const canSign = !!userSignature && userSignature.signer?.order === memo.current_signer_order;
-                    const canView = !!userSignature;
+                    // Logic ใหม่ใช้ signer_list_progress แทน signature_positions
+                    const signerList = Array.isArray(memo.signer_list_progress) ? memo.signer_list_progress : [];
+                    const userSigner = signerList.find((signer: any) => signer.user_id === profile?.user_id);
+                    const canSign = !!userSigner && userSigner.order === memo.current_signer_order;
+                    const canView = !!userSigner;
                     const showViewOnly = !canSign;
-                    if (!userSignature) {
+                    if (!userSigner) {
                       return (
                         <Button
                           variant="outline"

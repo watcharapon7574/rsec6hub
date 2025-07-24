@@ -296,12 +296,38 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     const rect = pdfPage.getBoundingClientRect();
     
     // Calculate position relative to the PDF page element
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    // Convert DOM coordinates to PDF coordinates
+    // A4 standard: 595 x 842 points
+    const standardPageWidth = 595;
+    const standardPageHeight = 842;
+    
+    // Calculate scale factors based on actual page size vs A4 standard
+    const scaleX = standardPageWidth / rect.width;
+    const scaleY = standardPageHeight / rect.height;
+    
+    // Convert DOM pixels to PDF points
+    const pdfX = clickX * scaleX;
+    const pdfY_DOM = clickY * scaleY;
+    
+    // Flip Y-axis for PDF coordinate system (API expects flipped Y)
+    // Top-left = (0, 842), Bottom-right = (595, 0)
+    const pdfY = standardPageHeight - pdfY_DOM;
 
     // Ensure position is within bounds
-    const boundedX = Math.max(0, Math.min(x, rect.width));
-    const boundedY = Math.max(0, Math.min(y, rect.height));
+    const boundedX = Math.max(0, Math.min(pdfX, standardPageWidth));
+    const boundedY = Math.max(0, Math.min(pdfY, standardPageHeight));
+    
+    console.log(`🎯 Click position calculation:
+      - Click coordinates: (${clickX.toFixed(1)}, ${clickY.toFixed(1)}) [DOM pixels]
+      - Page size: ${rect.width.toFixed(1)} x ${rect.height.toFixed(1)} [DOM]
+      - A4 standard: ${standardPageWidth} x ${standardPageHeight} [PDF points]
+      - Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}
+      - PDF coordinates (DOM): (${pdfX.toFixed(1)}, ${pdfY_DOM.toFixed(1)})
+      - PDF coordinates (flipped): (${pdfX.toFixed(1)}, ${pdfY.toFixed(1)})
+      - Final bounded position: (${boundedX.toFixed(1)}, ${boundedY.toFixed(1)})`);
     
     onPositionClick(boundedX, boundedY, currentPageIndex);
   }, [onPositionClick, showSignatureMode, currentPageIndex]);
@@ -363,6 +389,12 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     // console.log('Page index changed to:', currentPageIndex);
     setRefreshKey(prev => prev + 1);
   }, [currentPageIndex]);
+
+  // Force refresh when zoom scale changes to reposition pins
+  useEffect(() => {
+    console.log('Zoom scale changed to:', scale, 'Refreshing pin positions');
+    setRefreshKey(prev => prev + 1);
+  }, [scale]);
 
   // Add interval to periodically refresh positions (as backup)
   useEffect(() => {
@@ -618,9 +650,24 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const roleColor = roleColors[pos.signer.role as keyof typeof roleColors] || 'bg-gray-500';
                 
                 // Use the correct page element selector - use data-testid which is more reliable
-                const pageElement = viewerRef.current?.querySelector(`[data-testid="core__page-layer-${currentPageIndex}"]`);
+                let pageElement = viewerRef.current?.querySelector(`[data-testid="core__page-layer-${currentPageIndex}"]`);
+                
+                // Fallback to class-based selector if data-testid doesn't work
+                if (!pageElement) {
+                  pageElement = viewerRef.current?.querySelector(`.rpv-core__page-layer:nth-child(${currentPageIndex + 1})`);
+                }
+
+                // Last fallback: get all page layers and pick by index
+                if (!pageElement) {
+                  const allPages = viewerRef.current?.querySelectorAll('.rpv-core__page-layer');
+                  if (allPages && allPages[currentPageIndex]) {
+                    pageElement = allPages[currentPageIndex];
+                  }
+                }
                 
                 if (!pageElement) {
+                  console.warn(`Could not find page element for page ${currentPageIndex}. Available pages:`, 
+                    viewerRef.current?.querySelectorAll('.rpv-core__page-layer').length);
                   return null;
                 }
 
@@ -631,10 +678,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                   return null;
                 }
 
-                // Calculate zoom level based on page width
-                // Standard PDF page width is approximately 595pt (A4), convert to pixels at 96 DPI: 595 * 96/72 ≈ 793px
-                const standardPageWidth = 793; // pixels at 100% zoom
-                const currentZoom = pageRect.width / standardPageWidth;
+                // Calculate zoom level based on page width - ใช้ scale state ที่มีอยู่
+                // A4 = 595 x 842 points (8.27 x 11.69 inches)
+                const standardPageWidth = 595; // A4 width in points
+                const standardPageHeight = 842; // A4 height in points
+                const currentZoom = scale; // ใช้ scale state จาก zoomPlugin แทนการคำนวณใหม่
                 
                 // Target pin size: 150pt width x 150pt height (square shape)
                 // Convert points to pixels: pt * 96/72 = pt * 1.333
@@ -644,17 +692,69 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const pinHeight = (targetHeightPt * 96 / 72) * currentZoom; // Convert pt to px and apply zoom
 
                 // Calculate position that sticks to the PDF page
-                const scrollTop = viewerRef.current?.scrollTop || 0;
-                const finalX = pos.x + pageRect.left - viewerRect.left;
-                const finalY = pos.y + pageRect.top - viewerRect.top;
+                // pos.x, pos.y อยู่ในหน่วย PDF points แล้ว แต่ Y-axis ถูก flipped
+                // ต้องแปลงกลับเป็น DOM pixels โดย flip Y-axis กลับ
+                
+                // Calculate scale factors to convert PDF points back to DOM pixels
+                const scaleX = pageRect.width / standardPageWidth;   // DOM width / PDF width
+                const scaleY = pageRect.height / standardPageHeight; // DOM height / PDF height
+                
+                // Convert PDF coordinates back to DOM coordinates
+                const displayX = pos.x * scaleX; // Convert PDF points to DOM pixels
+                
+                // Flip Y-axis back to DOM coordinate system
+                // pos.y is in flipped PDF coordinates, convert back to DOM
+                const pdfY_DOM = standardPageHeight - pos.y; // Flip back from API coordinates
+                const displayY = pdfY_DOM * scaleY; // Convert to DOM pixels
+                
+                // คำนวณตำแหน่ง relative to the viewer container (not viewport)
+                const finalX = displayX + pageRect.left - viewerRect.left;
+                const finalY = displayY + pageRect.top - viewerRect.top;
+
+                // Check if pin is visible in viewport
+                const viewportHeight = window.innerHeight;
+                const viewportWidth = window.innerWidth;
+                const pinMargin = pinHeight; // Use pin height as margin to show pins that are partially visible
+                
+                const isVisible = finalX >= -pinMargin && 
+                                finalX <= viewportWidth + pinMargin && 
+                                finalY >= -pinMargin && 
+                                finalY <= viewportHeight + pinMargin;
 
                 // Calculate coordinates that match API usage
-                // pos.x, pos.y is the click position (top-center of pin)
-                // API uses: x = center, y = top
-                // So pos.x = API x (center), pos.y = API y (top)
-                const apiX = Math.round(pos.x); // This is the center X that API will use
-                const apiY = Math.round(pos.y); // This is the top Y that API will use
-                const cardCenterY = Math.round(pos.y + (pinHeight / 2)); // Visual center for display
+                // pos.x, pos.y is the actual position in PDF (not zoomed)
+                const apiX = Math.round(pos.x); // This is the actual X that API will use
+                const apiY = Math.round(pos.y); // This is the actual Y that API will use
+
+                // Debug logging for position calculation
+                console.log(`🎯 Pin ${index} rendering debug:
+                  - Stored PDF coords: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}) [PDF points, flipped Y]
+                  - Current scale: ${scale}x
+                  - A4 dimensions: ${standardPageWidth} x ${standardPageHeight} points
+                  - Page rect: left=${pageRect.left.toFixed(1)}, top=${pageRect.top.toFixed(1)}, w=${pageRect.width.toFixed(1)}, h=${pageRect.height.toFixed(1)}
+                  - Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}
+                  - Viewer rect: left=${viewerRect.left.toFixed(1)}, top=${viewerRect.top.toFixed(1)}
+                  - PDF Y (DOM): ${pdfY_DOM.toFixed(1)} [before flip]
+                  - Display coords: (${displayX.toFixed(1)}, ${displayY.toFixed(1)}) [DOM pixels]
+                  - Final position: (${finalX.toFixed(1)}, ${finalY.toFixed(1)}) [Relative to viewer]
+                  - Visible: ${isVisible}`);
+
+                // Log for debugging zoom calculation
+                if (index === 0) { // Log only for first pin to reduce noise
+                  console.log(`📍 Pin position calculation (zoom: ${scale}x):
+                    - Stored position: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}) [PDF coordinates, flipped Y]
+                    - A4 standard: ${standardPageWidth} x ${standardPageHeight} points
+                    - Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}
+                    - Display position: (${displayX.toFixed(1)}, ${displayY.toFixed(1)}) [DOM pixels]
+                    - Final position: (${finalX.toFixed(1)}, ${finalY.toFixed(1)}) [Relative to viewer]
+                    - API coordinates: (${apiX}, ${apiY})
+                    - Visible: ${isVisible}`);
+                }
+
+                // Only render pin if it's visible or close to viewport
+                if (!isVisible) {
+                  return null;
+                }
 
                 // Only log rendering when debugging is needed
                 // console.log(`✅ Rendering pin ${index} (${pos.signer.name}):`, { 

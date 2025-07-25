@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import ClerkDocumentActions from './ClerkDocumentActions';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -33,6 +33,7 @@ interface DocumentListProps {
   onReject?: (documentId: string, reason: string) => void;
   onAssignNumber?: (documentId: string, number: string) => void;
   onSetSigners?: (documentId: string, signers: any[]) => void;
+  onRefresh?: () => void;
 }
 
 const DocumentList: React.FC<DocumentListProps> = ({ 
@@ -40,7 +41,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
   realMemos = [], 
   onReject,
   onAssignNumber,
-  onSetSigners 
+  onSetSigners,
+  onRefresh 
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
@@ -239,11 +241,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
   };
 
   // กรองเอกสารสำหรับแสดงใน DocumentList
-  // สำหรับ 3 บทบาท (ธุรการ, ผู้ช่วยผอ, รองผอ) ไม่แสดงเอกสารส่วนตัวใน DocumentList
+  // สำหรับ clerk_teacher, ผู้ช่วยผอ, รองผอ ไม่แสดงเอกสารส่วนตัวใน DocumentList
   // เพราะจะแสดงใน PersonalDocumentList แยกต่างหาก
   const shouldShowMemo = (memo: any) => {
-    // สำหรับ 3 บทบาทนี้: ไม่แสดงเอกสารส่วนตัวใน DocumentList
-    if (["clerk_teacher", "government_employee", "assistant_director", "deputy_director"].includes(permissions.position)) {
+    // สำหรับ clerk_teacher และผู้บริหาร: ไม่แสดงเอกสารส่วนตัวใน DocumentList
+    if (["clerk_teacher", "assistant_director", "deputy_director"].includes(permissions.position)) {
       // แสดงเฉพาะเอกสารของคนอื่น (ไม่ใช่เอกสารของตนเอง)
       return memo.user_id !== profile?.user_id;
     }
@@ -356,7 +358,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
       <CardHeader className="bg-gradient-to-r from-purple-400 to-purple-600 text-white rounded-t-lg py-3 px-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <FileText className="h-5 w-5" />
-          {["clerk_teacher", "government_employee"].includes(permissions.position) ? 
+          {permissions.position === "clerk_teacher" ? 
             "เอกสารภายในสถานศึกษา" : 
             (["assistant_director", "deputy_director"].includes(permissions.position) ? 
               "เอกสารของผู้อื่น" : 
@@ -365,15 +367,24 @@ const DocumentList: React.FC<DocumentListProps> = ({
           <Badge variant="secondary" className="ml-auto bg-white text-purple-600 font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            disabled={!onRefresh}
+            className="ml-2 p-1 h-8 w-8 text-white hover:bg-purple-700/50 disabled:opacity-50"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
         </CardTitle>
-        {["clerk_teacher", "government_employee"].includes(permissions.position) && (
+        {permissions.position === "clerk_teacher" && (
           <div className="text-sm text-purple-100 font-normal mt-1">
             จัดการเอกสารภายในสถานศึกษา ตรวจสอบความถูกต้อง กำหนดเลขที่ และจัดเส้นทางการอนุมัติ
           </div>
         )}
         {["assistant_director", "deputy_director"].includes(permissions.position) && (
           <div className="text-sm text-purple-100 font-normal mt-1">
-            เอกสารที่สร้างโดยผู้อื่น (เอกสารของคุณแสดงในส่วนข้างล่าง)
+            เอกสารที่สร้างโดยผู้อื่น (เอกสารของคุณแสดงในส่วนข้างบน)
           </div>
         )}
       </CardHeader>
@@ -606,7 +617,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     // แสดงตำแหน่งตาม role
                                     switch (signer.role) {
                                       case 'assistant_director':
-                                        return signer.org_structure_role || signer.position || '-';
+                                        return signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ';
                                       case 'deputy_director': 
                                         return 'รองผู้อำนวยการ';
                                       case 'director': 
@@ -620,7 +631,34 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   memo.current_signer_order === 5 
                                     ? 'text-gray-400'
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
-                                }`}>{signer.name || '-'}</span>
+                                }`}>{(() => {
+                                  // Try first_name + last_name first
+                                  const firstName = signer.first_name || '';
+                                  const lastName = signer.last_name || '';
+                                  if (firstName || lastName) {
+                                    return `${firstName} ${lastName}`.trim();
+                                  }
+                                  
+                                  // Fallback: extract from full name by removing prefix
+                                  const fullName = signer.name || '-';
+                                  if (fullName === '-') return '-';
+                                  
+                                  // Find profile from profiles list for additional info
+                                  const userProfile = profiles.find(p => p.user_id === signer.user_id);
+                                  if (userProfile) {
+                                    return `${userProfile.first_name} ${userProfile.last_name}`.trim();
+                                  }
+                                  
+                                  // Last resort: extract from name field
+                                  const parts = fullName.trim().split(/\s+/);
+                                  if (parts.length >= 3) {
+                                    return parts.slice(-2).join(' ');
+                                  } else if (parts.length === 2) {
+                                    return parts.join(' ');
+                                  } else {
+                                    return parts[0] || '-';
+                                  }
+                                })()}</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5 
                                     ? 'bg-gray-200'
@@ -744,7 +782,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           )}
                         </div>
                       )}
-                      {['government_employee', 'clerk_teacher'].includes(profile?.position || '') && (
+                      {/* Debug: Check user position */}
+                      {(() => {
+                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', profile?.position === 'clerk_teacher');
+                        return null;
+                      })()}
+                      {profile?.position === 'clerk_teacher' && (
                         <div className="relative">
                           <Button 
                             variant="outline" 
@@ -756,6 +799,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             }`}
                             onClick={() => {
                               if (memo.current_signer_order <= 1) {
+                                console.log('🔍 Navigating to document-manage for memo:', memo.id);
                                 navigate(`/document-manage/${memo.id}`);
                               }
                             }}
@@ -801,7 +845,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 </div>
               ) : (
                 // แสดงข้อความที่แตกต่างกันตามบทบาท
-                ["clerk_teacher", "government_employee"].includes(permissions.position) ? (
+                permissions.position === "clerk_teacher" ? (
                   <div className="text-sm">
                     <p>ยังไม่มีเอกสารในสถานศึกษา</p>
                     <span className="text-xs text-gray-400">รอเอกสารจากครูและบุคลากรเพื่อทำการจัดการ</span>
@@ -809,7 +853,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 ) : (["assistant_director", "deputy_director"].includes(permissions.position) ? (
                   <div className="text-sm">
                     <p>ไม่มีเอกสารของผู้อื่น</p>
-                    <span className="text-xs text-gray-400">เอกสารส่วนตัวแสดงในส่วนข้างล่าง</span>
+                    <span className="text-xs text-gray-400">เอกสารส่วนตัวแสดงในส่วนข้างบน</span>
                   </div>
                 ) : (
                   <p className="text-sm">ไม่มีเอกสารในระบบ</p>

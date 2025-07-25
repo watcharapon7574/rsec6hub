@@ -55,6 +55,7 @@ interface DocumentCardsProps {
   onReject?: (documentId: string, reason: string) => void;
   onAssignNumber?: (documentId: string, number: string) => void;
   onSetSigners?: (documentId: string, signers: any[]) => void;
+  onRefresh?: () => void;
 }
 
 const DocumentCards: React.FC<DocumentCardsProps> = ({ 
@@ -64,7 +65,8 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
   permissions,
   onReject,
   onAssignNumber,
-  onSetSigners
+  onSetSigners,
+  onRefresh
 }) => {
   const navigate = useNavigate();
   const { profile } = useEmployeeAuth();
@@ -124,11 +126,11 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
 
       {/* Pending Document Card - เฉพาะผู้ช่วยผอ รองผอ ผอ เท่านั้น */}
       {canAccessApproval && pendingSignMemos.length > 0 && (
-        <PendingDocumentCard pendingMemos={pendingSignMemos} />
+        <PendingDocumentCard pendingMemos={pendingSignMemos} onRefresh={onRefresh} />
       )}
 
       {/* สำหรับธุรการ: สลับลำดับ - เอกสารภายในสถานศึกษาก่อน แล้วเอกสารส่วนตัว */}
-      {["clerk_teacher", "government_employee"].includes(permissions.position) ? (
+      {permissions.position === "clerk_teacher" ? (
         <>
           {/* Document List สำหรับธุรการ - เอกสารภายในสถานศึกษา */}
           <DocumentList 
@@ -137,16 +139,17 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
             onReject={onReject}
             onAssignNumber={onAssignNumber}
             onSetSigners={onSetSigners}
+            onRefresh={onRefresh}
           />
           
           {/* Personal Document List สำหรับธุรการ */}
-          <PersonalDocumentList realMemos={realMemos} />
+          <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} />
         </>
       ) : (
         <>
           {/* สำหรับผู้ช่วยผอ, รองผอ: เอกสารส่วนตัวก่อน */}
           {["assistant_director", "deputy_director"].includes(permissions.position) && (
-            <PersonalDocumentList realMemos={realMemos} />
+            <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} />
           )}
           
           {/* Document List สำหรับบทบาทอื่น */}
@@ -156,6 +159,7 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
             onReject={onReject}
             onAssignNumber={onAssignNumber}
             onSetSigners={onSetSigners}
+            onRefresh={onRefresh}
           />
         </>
       )}

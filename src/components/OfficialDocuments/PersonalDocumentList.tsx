@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useSmartRealtime } from '@/hooks/useSmartRealtime';
@@ -14,10 +14,12 @@ import { extractPdfUrl } from '@/utils/fileUpload';
 
 interface PersonalDocumentListProps {
   realMemos?: any[];
+  onRefresh?: () => void;
 }
 
 const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({ 
-  realMemos = []
+  realMemos = [],
+  onRefresh
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
@@ -215,8 +217,8 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
     setCurrentPage(1);
   }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
-  // แสดงเฉพาะสำหรับ ธุรการ, ผู้ช่วยผอ, รองผอ
-  if (!["clerk_teacher", "government_employee", "assistant_director", "deputy_director"].includes(permissions.position)) {
+  // แสดงเฉพาะสำหรับ clerk_teacher, ผู้ช่วยผอ, รองผอ
+  if (!["clerk_teacher", "assistant_director", "deputy_director"].includes(permissions.position)) {
     return null;
   }
 
@@ -229,6 +231,15 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
           <Badge variant="secondary" className="ml-auto bg-white text-blue-600 font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            disabled={!onRefresh}
+            className="ml-2 p-1 h-8 w-8 text-white hover:bg-blue-700/50 disabled:opacity-50"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
         </CardTitle>
       </CardHeader>
 
@@ -463,7 +474,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                     switch (signer.role) {
                                       case 'deputy_director': return 'รองผู้อำนวยการ';
                                       case 'director': return 'ผู้อำนวยการ';
-                                      case 'assistant_director': return signer.org_structure_role || signer.position || '-';
+                                      case 'assistant_director': return signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ';
                                       default: return signer.position || '-';
                                     }
                                   })()}
@@ -472,7 +483,34 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                   memo.current_signer_order === 5 
                                     ? 'text-gray-400'
                                     : (memo.current_signer_order === signer.order ? 'text-blue-700 font-bold' : 'text-blue-400')
-                                }`}>{signer.name || '-'}</span>
+                                }`}>{(() => {
+                                  // Try first_name + last_name first
+                                  const firstName = signer.first_name || '';
+                                  const lastName = signer.last_name || '';
+                                  if (firstName || lastName) {
+                                    return `${firstName} ${lastName}`.trim();
+                                  }
+                                  
+                                  // Fallback: extract from full name by removing prefix
+                                  const fullName = signer.name || '-';
+                                  if (fullName === '-') return '-';
+                                  
+                                  // Find profile from profiles list for additional info
+                                  const userProfile = profiles.find(p => p.user_id === signer.user_id);
+                                  if (userProfile) {
+                                    return `${userProfile.first_name} ${userProfile.last_name}`.trim();
+                                  }
+                                  
+                                  // Last resort: extract from name field
+                                  const parts = fullName.trim().split(/\s+/);
+                                  if (parts.length >= 3) {
+                                    return parts.slice(-2).join(' ');
+                                  } else if (parts.length === 2) {
+                                    return parts.join(' ');
+                                  } else {
+                                    return parts[0] || '-';
+                                  }
+                                })()}</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5 
                                     ? 'bg-gray-200'

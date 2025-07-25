@@ -5,15 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Clock, AlertCircle, PenTool, Eye, Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, ArrowUpDown } from 'lucide-react';
+import { FileText, Clock, AlertCircle, PenTool, Eye, Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, ArrowUpDown, RotateCcw } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 
 interface PendingDocumentCardProps {
   pendingMemos: any[];
+  onRefresh?: () => void;
 }
 
-const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos }) => {
+const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos, onRefresh }) => {
   const navigate = useNavigate();
   const { profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
@@ -243,6 +244,15 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
           >
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            disabled={!onRefresh}
+            className="ml-2 p-1 h-8 w-8 text-white hover:bg-amber-700/50 disabled:opacity-50"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3">
@@ -401,7 +411,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
                                       // แสดงตำแหน่งตาม role
                                       switch (signer.role) {
                                         case 'assistant_director':
-                                          return signer.org_structure_role || signer.position || '-';
+                                          return signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ';
                                         case 'deputy_director': 
                                           return 'รองผู้อำนวยการ';
                                         case 'director': 
@@ -415,7 +425,34 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos 
                                     memo.current_signer_order === 5 
                                       ? 'text-gray-400'
                                       : (memo.current_signer_order === signer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
-                                  }`}>{signer.name || '-'}</span>
+                                  }`}>{(() => {
+                                    // Try first_name + last_name first
+                                    const firstName = signer.first_name || '';
+                                    const lastName = signer.last_name || '';
+                                    if (firstName || lastName) {
+                                      return `${firstName} ${lastName}`.trim();
+                                    }
+                                    
+                                    // Fallback: extract from full name by removing prefix
+                                    const fullName = signer.name || '-';
+                                    if (fullName === '-') return '-';
+                                    
+                                    // Find profile from profiles list for additional info
+                                    const userProfile = profiles.find(p => p.user_id === signer.user_id);
+                                    if (userProfile) {
+                                      return `${userProfile.first_name} ${userProfile.last_name}`.trim();
+                                    }
+                                    
+                                    // Last resort: extract from name field
+                                    const parts = fullName.trim().split(/\s+/);
+                                    if (parts.length >= 3) {
+                                      return parts.slice(-2).join(' ');
+                                    } else if (parts.length === 2) {
+                                      return parts.join(' ');
+                                    } else {
+                                      return parts[0] || '-';
+                                    }
+                                  })()}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
                                       ? 'bg-gray-200'

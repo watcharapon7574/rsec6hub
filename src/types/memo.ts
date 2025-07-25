@@ -17,6 +17,9 @@ export interface SignerProgress {
   name: string;
   role: string;
   user_id: string;
+  first_name?: string; // เพิ่มฟิลด์ first_name
+  last_name?: string;  // เพิ่มฟิลด์ last_name
+  org_structure_role?: string; // เพิ่มฟิลด์ org_structure_role
 }
 
 export interface SignaturePosition {

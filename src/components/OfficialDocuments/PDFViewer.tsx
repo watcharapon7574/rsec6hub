@@ -868,7 +868,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                         style={{ fontSize: `${Math.max(9, 12 * currentZoom)}px` }} // เปลี่ยนเป็น 12pt
                       >
                         {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.position || ''}`}
-                        {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.position || ''}`}
+                        {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
                         {pos.signer.role === 'deputy_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
                         {pos.signer.role === 'director' && `ผู้อำนวยการศูนย์การศึกษาพิเศษ`}
                       </div>

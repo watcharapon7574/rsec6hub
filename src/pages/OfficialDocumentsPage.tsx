@@ -3,6 +3,7 @@ import React, { useCallback, useMemo as ReactUseMemo, useEffect, useState } from
 import { useNavigate } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useMemo } from '@/hooks/useMemo';
+import { useAllMemos } from '@/hooks/useAllMemos';
 import { useOfficialDocuments } from '@/hooks/useOfficialDocuments';
 import { officialDocumentService } from '@/services/officialDocumentService';
 import StatisticsCards from '@/components/OfficialDocuments/StatisticsCards';
@@ -17,6 +18,7 @@ const OfficialDocumentsPage = () => {
   const { toast } = useToast();
   const { profile, getPermissions, isAuthenticated } = useEmployeeAuth();
   const { userMemos, loadUserMemos } = useMemo();
+  const { memos: allMemos, loading: memosLoading, refetch: refetchMemos } = useAllMemos();
   const { 
     documents: officialDocuments, 
     memos,
@@ -57,6 +59,17 @@ const OfficialDocumentsPage = () => {
       });
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  // Document list refresh function (ใช้ useAllMemos refetch)
+  const handleDocumentRefresh = async () => {
+    try {
+      console.log('🔄 Starting document refresh with useAllMemos...');
+      await refetchMemos();
+      console.log('✅ Document refresh completed');
+    } catch (error) {
+      console.error('❌ Error refreshing documents:', error);
     }
   };
 
@@ -179,7 +192,7 @@ const OfficialDocumentsPage = () => {
   const firstDay = `${year}-${month}-01T00:00:00.000Z`;
   const nextMonth = new Date(year, now.getMonth() + 1, 1);
   const lastDay = nextMonth.toISOString();
-  const memosThisMonth = memos.filter(m => m.created_at >= firstDay && m.created_at < lastDay);
+  const memosThisMonth = allMemos.filter(m => m.created_at >= firstDay && m.created_at < lastDay);
   const pendingCount = memosThisMonth.filter(m => [2, 3, 4].includes(m.current_signer_order)).length;
   const approvedCount = memosThisMonth.filter(m => m.current_signer_order === 5).length;
   const inProgressCount = memosThisMonth.filter(m => m.current_signer_order === 1 || m.current_signer_order === 0).length;
@@ -266,12 +279,13 @@ const OfficialDocumentsPage = () => {
         {/* Document Management Cards */}
         <DocumentCards 
           documents={allDocuments}
-          realMemos={memos} // ใช้ memos จาก hook แทน userMemos
+          realMemos={allMemos} // ใช้ allMemos จาก useAllMemos แทน
           onDocumentSubmit={handleDocumentSubmit}
           permissions={permissions}
           onReject={rejectDocument}
           onAssignNumber={assignDocumentNumber}
           onSetSigners={setDocumentForSigning}
+          onRefresh={handleDocumentRefresh}
         />
       </div>
       <div className="h-10" />

@@ -461,12 +461,15 @@ const DocumentManagePage: React.FC = () => {
       // Regenerate PDF with document number
       const newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
 
-      // Update memo with document number, status, and new PDF URL
+      // Update memo with document number, status, clerk_id, and new PDF URL
       const updateData: any = {
         doc_number: finalDocSuffix, // บันทึกแค่ส่วน suffix เช่น 4571/68
         doc_number_status: docNumberStatusData,
+        clerk_id: profile?.user_id, // บันทึก user_id ของ clerk_teacher ที่ลงเลขหนังสือ
         updated_at: now
       };
+
+      console.log('📝 Step 1 - Recording clerk_id:', profile?.user_id, 'for memo:', memoId);
 
       // Update PDF path if regeneration was successful
       if (newPdfUrl) {
@@ -602,14 +605,22 @@ const DocumentManagePage: React.FC = () => {
     // If moving from step 2 to step 3, save signer_list_progress
     if (currentStep === 2 && memo && memoId) {
       try {
-        // Create signer_list_progress data with order, position, name
-        const signerListProgress: SignerProgress[] = signers.map(signer => ({
-          order: signer.order,
-          position: signer.position || signer.role,
-          name: signer.name,
-          role: signer.role,
-          user_id: signer.user_id
-        }));
+        // Create signer_list_progress data with order, position, name, first_name, last_name
+        const signerListProgress: SignerProgress[] = signers.map(signer => {
+          // Find profile for first_name and last_name
+          const signerProfile = profiles.find(p => p.user_id === signer.user_id);
+          
+          return {
+            order: signer.order,
+            position: signer.position || signer.role,
+            name: signer.name,
+            role: signer.role,
+            user_id: signer.user_id,
+            first_name: signerProfile?.first_name || '',
+            last_name: signerProfile?.last_name || '',
+            org_structure_role: signerProfile?.org_structure_role || signer.org_structure_role
+          };
+        });
 
         console.log('📊 Saving signer_list_progress:', signerListProgress);
 

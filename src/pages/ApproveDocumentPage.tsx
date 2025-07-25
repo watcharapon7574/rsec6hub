@@ -210,37 +210,55 @@ const ApproveDocumentPage: React.FC = () => {
         let signSuccess = false;
         let signedPdfBlob: Blob | null = null;
         try {
-          // --- เตรียม lines ตาม role (เหมือนเดิม) ---
-          let lines: any[] = [];
+          // --- เตรียม lines ตาม role สำหรับตำแหน่งแรก (มี comment) และตำแหน่งถัดไป (ไม่มี comment) ---
+          let linesWithComment: any[] = [];
+          let linesWithoutComment: any[] = [];
+          
+          // สร้างชื่อเต็มพร้อม prefix
+          const fullName = `${profile.prefix || ''}${profile.first_name} ${profile.last_name}`.trim();
+          
           if (profile.position === 'assistant_director') {
-            lines = [
+            linesWithComment = [
               { type: "image", file_key: "sig1" },
-              { type: "name", value: `${profile.first_name} ${profile.last_name}` },
+              { type: "name", value: fullName },
               { type: "academic_rank", value: `ตำแหน่ง ${profile.academic_rank || ""}` },
               { type: "org_structure_role", value: `ปฏิบัติหน้าที่${profile.org_structure_role || ""}` }
             ];
+            linesWithoutComment = [...linesWithComment]; // ผู้ช่วยไม่มี comment อยู่แล้ว
           } else if (profile.position === 'deputy_director') {
-            lines = [
+            linesWithComment = [
               { type: "comment", value: `- ${comment || "เห็นชอบ"}` },
               { type: "image", file_key: "sig1" },
-              { type: "name", value: `${profile.first_name} ${profile.last_name}` },
+              { type: "name", value: fullName },
+              { type: "org_structure_role", value: `ตำแหน่ง ${profile.org_structure_role || ""}` },
+              { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
+            ];
+            linesWithoutComment = [
+              { type: "image", file_key: "sig1" },
+              { type: "name", value: fullName },
               { type: "org_structure_role", value: `ตำแหน่ง ${profile.org_structure_role || ""}` },
               { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
             ];
           } else if (profile.position === 'director') {
-            lines = [
+            linesWithComment = [
               { type: "comment", value: `- ${comment || "เห็นชอบ"}` },
               { type: "image", file_key: "sig1" },
-              { type: "name", value: `${profile.first_name} ${profile.last_name}` },
+              { type: "name", value: fullName },
+              { type: "org_structure_role", value: profile.org_structure_role || "" }
+            ];
+            linesWithoutComment = [
+              { type: "image", file_key: "sig1" },
+              { type: "name", value: fullName },
               { type: "org_structure_role", value: profile.org_structure_role || "" }
             ];
           } else {
-            // clerk/author
-            lines = [
+            // clerk/author - ใช้ข้อมูลจาก memo ที่อาจมี prefix แล้ว
+            linesWithComment = [
               { type: "image", file_key: "sig1" },
               { type: "name", value: memo.author_name },
               { type: "academic_rank", value: `ตำแหน่ง ${memo.author_position || ""}` }
             ];
+            linesWithoutComment = [...linesWithComment]; // ผู้เขียนไม่มี comment อยู่แล้ว
           }
           // --- เตรียม FormData และเรียก API ลายเซ็น ---
           // ดาวน์โหลด PDF
@@ -255,31 +273,26 @@ const ApproveDocumentPage: React.FC = () => {
           // ใช้ตำแหน่งของผู้ลงนาม - ใช้ข้อมูลจาก signer_list_progress หากมี
           const signerOrder = currentUserSigner?.order || currentUserSignature?.signer?.order;
           
-          // ค้นหาตำแหน่งลายเซ็นด้วยหลายวิธี
-          let signerPos = null;
+          // ค้นหาตำแหน่งลายเซ็นทั้งหมดที่ตรงกับ order ของผู้ใช้ (เหมือน DocumentManagePage)
+          let userSignaturePositions = signaturePositions.filter(pos => pos.signer?.order === signerOrder);
           
-          // วิธีที่ 1: ค้นหาจาก order
-          if (signerOrder) {
-            signerPos = signaturePositions.find(pos => pos.signer?.order === signerOrder);
+          // หากไม่เจอจาก order ให้ลองค้นหาจาก user_id
+          if (userSignaturePositions.length === 0 && profile?.user_id) {
+            userSignaturePositions = signaturePositions.filter(pos => pos.signer?.user_id === profile.user_id);
           }
           
-          // วิธีที่ 2: ค้นหาจาก user_id ถ้าไม่เจอจากวิธีที่ 1
-          if (!signerPos && profile?.user_id) {
-            signerPos = signaturePositions.find(pos => pos.signer?.user_id === profile.user_id);
-          }
-          
-          // วิธีที่ 3: ค้นหาจากตำแหน่ง (position) ถ้ายังไม่เจอ
-          if (!signerPos && profile?.position) {
-            signerPos = signaturePositions.find(pos => 
+          // หากไม่เจอจาก user_id ให้ลองค้นหาจาก position
+          if (userSignaturePositions.length === 0 && profile?.position) {
+            userSignaturePositions = signaturePositions.filter(pos => 
               pos.signer?.position === profile.position ||
               pos.signer?.position === profile.current_position
             );
           }
           
-          // วิธีที่ 4: หากยังไม่เจอ ให้สร้างตำแหน่งลายเซ็นแบบ default สำหรับ director
-          if (!signerPos && profile.position === 'director') {
+          // หากยังไม่เจอและเป็น director ให้สร้างตำแหน่ง default
+          if (userSignaturePositions.length === 0 && profile.position === 'director') {
             console.log('🔧 Creating default signature position for director');
-            signerPos = {
+            userSignaturePositions = [{
               signer: {
                 user_id: profile.user_id,
                 name: `${profile.first_name} ${profile.last_name}`,
@@ -289,11 +302,11 @@ const ApproveDocumentPage: React.FC = () => {
               page: 1,
               x: 350, // ตำแหน่ง default สำหรับผู้อำนวยการ
               y: 200
-            };
+            }];
           }
           
-          if (!signerPos) {
-            console.error('🚨 Cannot find signature position for user:', {
+          if (userSignaturePositions.length === 0) {
+            console.error('🚨 Cannot find signature positions for user:', {
               signerOrder,
               userId: profile?.user_id,
               userPosition: profile?.position,
@@ -315,16 +328,21 @@ const ApproveDocumentPage: React.FC = () => {
             });
             return;
           }
-          formData.append('signatures', JSON.stringify([
-            {
-              page: signerPos.page - 1, // 0-based
-              x: signerPos.x,
-              y: signerPos.y,
-              width: 120,
-              height: 60,
-              lines
-            }
-          ]));
+          
+          // สร้าง signatures payload สำหรับ /add_signature_v2 - comment เฉพาะตำแหน่งแรก
+          const signaturesPayload = userSignaturePositions.map((pos, index) => ({
+            page: pos.page - 1, // ปรับจาก 1-based เป็น 0-based
+            x: Math.round(pos.x),
+            y: Math.round(pos.y),
+            width: 120,
+            height: 60,
+            lines: index === 0 ? linesWithComment : linesWithoutComment // comment เฉพาะตำแหน่งแรก
+          }));
+          
+          formData.append('signatures', JSON.stringify(signaturesPayload));
+          
+          console.log(`📝 User signature positions (${userSignaturePositions.length} positions):`, userSignaturePositions.map(pos => ({ x: pos.x, y: pos.y, page: pos.page })));
+          console.log(`📝 Signatures payload:`, JSON.stringify(signaturesPayload, null, 2));
           const res = await fetch('https://pdf-memo-docx-production.up.railway.app/add_signature_v2', {
             method: 'POST',
             body: formData

@@ -4,7 +4,6 @@ import { officialDocumentService } from '@/services/officialDocumentService';
 import type { OfficialDocument } from '@/types/officialDocument';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 
 export const useOfficialDocuments = () => {
   const [documents, setDocuments] = useState<OfficialDocument[]>([]);
@@ -13,7 +12,6 @@ export const useOfficialDocuments = () => {
   const [hasInitialized, setHasInitialized] = useState(false);
   const { toast } = useToast();
   const { profile } = useEmployeeAuth();
-  const { updateSingleMemo, updateSingleDocument } = useSmartRealtime();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchOfficialDocuments = async (signal?: AbortSignal) => {

@@ -20,7 +20,6 @@ import DocumentManagePage from "@/pages/DocumentManagePage";
 import ApproveDocumentPage from "@/pages/ApproveDocumentPage";
 import PDFjustPreview from '@/pages/PDFjustPreview';
 import NotificationsPage from "@/pages/NotificationsPage";
-import RealtimeTestPage from "@/pages/RealtimeTestPage";
 
 
 const queryClient = new QueryClient();
@@ -127,11 +126,6 @@ const AppContent = () => {
       <Route path="/notifications" element={
         <ProtectedRoute>
           <NotificationsPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/realtime-test" element={
-        <ProtectedRoute>
-          <RealtimeTestPage />
         </ProtectedRoute>
       } />
       <Route path="/" element={

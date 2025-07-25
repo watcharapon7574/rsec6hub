@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 
 export interface MemoRecord {
   id: string;
@@ -35,7 +34,6 @@ export const useAllMemos = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { profile } = useEmployeeAuth();
-  const { updateSingleMemo } = useSmartRealtime();
 
   const fetchMemos = async () => {
     try {
@@ -305,7 +303,8 @@ export const useAllMemos = () => {
           console.log('🎯 Smart memos update:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
           const memoId = (payload.new as any)?.id || (payload.old as any)?.id;
           if (memoId) {
-            updateSingleMemo(memoId, payload);
+            // Removed realtime update - manual refresh only
+            console.log('Memo update detected, use manual refresh to see changes');
           }
         }
       )
@@ -349,7 +348,7 @@ export const useAllMemos = () => {
       window.removeEventListener('memo-updated', handleMemoUpdated as EventListener);
       window.removeEventListener('memo-deleted', handleMemoDeleted as EventListener);
     };
-  }, [updateSingleMemo]);
+  }, []);
 
   return {
     memos,

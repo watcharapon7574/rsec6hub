@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
-import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 
@@ -24,7 +23,6 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
   const permissions = getPermissions();
-  const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
 
   // State สำหรับการค้นหาและกรอง
@@ -95,9 +93,11 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
           console.log('🔴 PersonalDocumentList: Realtime memo change:', payload);
           
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            await updateSingleMemo(payload.new.id, payload);
+            // Removed realtime update - manual refresh only
+            console.log('Memo update detected, use manual refresh to see changes');
           } else if (payload.eventType === 'DELETE') {
-            await updateSingleMemo(payload.old.id, payload);
+            // Removed realtime update - manual refresh only
+            console.log('Memo delete detected, use manual refresh to see changes');
           }
         }
       )
@@ -109,7 +109,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
       window.removeEventListener('memo-deleted', handleMemoDeleted as EventListener);
       subscription.unsubscribe();
     };
-  }, [profile?.user_id, updateSingleMemo]);
+  }, [profile?.user_id]);
 
   // ฟังก์ชันสำหรับข้อความสถานะตาม current_signer_order
   const getStatusTextBySignerOrder = (signerOrder: number): string => {

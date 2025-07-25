@@ -463,6 +463,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                     switch (signer.role) {
                                       case 'deputy_director': return 'รองผู้อำนวยการ';
                                       case 'director': return 'ผู้อำนวยการ';
+                                      case 'assistant_director': return signer.org_structure_role || signer.position || '-';
                                       default: return signer.position || '-';
                                     }
                                   })()}

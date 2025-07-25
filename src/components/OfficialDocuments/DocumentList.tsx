@@ -603,11 +603,16 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700' : 'text-purple-400')
                                 }`}>
                                   {(() => {
-                                    // แสดงตำแหน่งตาม role (ไม่รวม author)
+                                    // แสดงตำแหน่งตาม role
                                     switch (signer.role) {
-                                      case 'deputy_director': return 'รองผู้อำนวยการ';
-                                      case 'director': return 'ผู้อำนวยการ';
-                                      default: return signer.position || '-';
+                                      case 'assistant_director':
+                                        return signer.org_structure_role || signer.position || '-';
+                                      case 'deputy_director': 
+                                        return 'รองผู้อำนวยการ';
+                                      case 'director': 
+                                        return 'ผู้อำนวยการ';
+                                      default: 
+                                        return signer.position || '-';
                                     }
                                   })()}
                                 </span>

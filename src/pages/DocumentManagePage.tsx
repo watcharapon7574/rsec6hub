@@ -95,8 +95,19 @@ const DocumentManagePage: React.FC = () => {
         }
 
         if (latestDoc) {
-          // แยกเลขจากรูปแบบ เช่น "ศธ 04007.600/4567/68"
-          const match = latestDoc.match(/(\d+)\/(\d+)$/);
+          // ตรวจสอบและแยกเลขจากรูปแบบ
+          let docToProcess = latestDoc;
+          
+          // ถ้าเป็น full format ให้แยก suffix ออกมา
+          if (latestDoc.startsWith('ศธ ๐๔๐๐๗.๖๐๐/') || latestDoc.includes('ศธ')) {
+            const match = latestDoc.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+            if (match) {
+              docToProcess = match[1];
+            }
+          }
+          
+          // แยกเลขจากรูปแบบ เช่น "4567/68"
+          const match = docToProcess.match(/(\d+)\/(\d+)$/);
           if (match) {
             const lastNumber = parseInt(match[1]);
             const year = match[2];
@@ -148,14 +159,25 @@ const DocumentManagePage: React.FC = () => {
         
         setIsNumberAssigned(statusAssigned);
         if ((data as any).doc_number) {
-          const fullDocNumber = (data as any).doc_number;
-          setDocumentNumber(fullDocNumber);
-          // แยกส่วนที่อยู่หลัง "ศธ ๐๔๐๐๗.๖๐๐/"
-          const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
-          if (match) {
-            setDocNumberSuffix(match[1]);
+          const docNumber = (data as any).doc_number;
+          
+          // ตรวจสอบว่า doc_number เป็น full format หรือ suffix only
+          if (docNumber.startsWith('ศธ ๐๔๐๐๗.๖๐๐/') || docNumber.includes('ศธ')) {
+            // กรณีที่เป็น full format (เก่า)
+            const fullDocNumber = docNumber;
+            setDocumentNumber(fullDocNumber);
+            const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+            if (match) {
+              setDocNumberSuffix(match[1]);
+            } else {
+              setDocNumberSuffix(fullDocNumber);
+            }
           } else {
-            setDocNumberSuffix(fullDocNumber);
+            // กรณีที่เป็น suffix only (ใหม่)
+            const suffix = docNumber;
+            const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${suffix}`;
+            setDocumentNumber(fullDocNumber);
+            setDocNumberSuffix(suffix);
           }
         }
       }
@@ -186,14 +208,25 @@ const DocumentManagePage: React.FC = () => {
       if (isAssigned) {
         setIsNumberAssigned(true);
         if (memo.doc_number) {
-          const fullDocNumber = memo.doc_number;
-          setDocumentNumber(fullDocNumber);
-          // แยกส่วนที่อยู่หลัง "ศธ ๐๔๐๐๗.๖๐๐/"
-          const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
-          if (match) {
-            setDocNumberSuffix(match[1]);
+          const docNumber = memo.doc_number;
+          
+          // ตรวจสอบว่า doc_number เป็น full format หรือ suffix only
+          if (docNumber.startsWith('ศธ ๐๔๐๐๗.๖๐๐/') || docNumber.includes('ศธ')) {
+            // กรณีที่เป็น full format (เก่า)
+            const fullDocNumber = docNumber;
+            setDocumentNumber(fullDocNumber);
+            const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+            if (match) {
+              setDocNumberSuffix(match[1]);
+            } else {
+              setDocNumberSuffix(fullDocNumber);
+            }
           } else {
-            setDocNumberSuffix(fullDocNumber);
+            // กรณีที่เป็น suffix only (ใหม่)
+            const suffix = docNumber;
+            const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${suffix}`;
+            setDocumentNumber(fullDocNumber);
+            setDocNumberSuffix(suffix);
           }
         }
       }
@@ -430,7 +463,7 @@ const DocumentManagePage: React.FC = () => {
 
       // Update memo with document number, status, and new PDF URL
       const updateData: any = {
-        doc_number: fullDocNumber,
+        doc_number: finalDocSuffix, // บันทึกแค่ส่วน suffix เช่น 4571/68
         doc_number_status: docNumberStatusData,
         updated_at: now
       };

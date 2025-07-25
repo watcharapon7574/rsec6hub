@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Profile } from '@/types/database';
+import { Profile, getPositionDisplayName } from '@/types/database';
 
 interface ProfileFormProps {
   profile: Partial<Profile>;
@@ -167,29 +167,16 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ profile, setProfile, editing 
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="position">ตำแหน่ง</Label>
-              <Select 
-                value={profile.position || ''} 
-                onValueChange={(value) => handleInputChange('position', value)}
-                disabled={!editing}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="เลือกตำแหน่ง" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="director">ผู้อำนวยการ</SelectItem>
-                  <SelectItem value="deputy_director">รองผู้อำนวยการ</SelectItem>
-                  <SelectItem value="assistant_director">ผู้ช่วยผู้อำนวยการ</SelectItem>
-                  <SelectItem value="government_teacher">ครูข้าราชการ</SelectItem>
-                  <SelectItem value="government_employee">ข้าราชการ</SelectItem>
-                  <SelectItem value="contract_teacher">ครูอัตราจ้าง</SelectItem>
-                  <SelectItem value="clerk_teacher">ธุรการ</SelectItem>
-                  <SelectItem value="disability_aide">ผู้ช่วยเหลือคนพิการ</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="position">สิทธิ์เข้าถึง</Label>
+              <Input
+                id="position"
+                value={profile.position || ''}
+                disabled={true}
+                className="bg-gray-50"
+              />
             </div>
             <div>
-              <Label htmlFor="job_position">ตำแหน่งงาน</Label>
+              <Label htmlFor="job_position">บทบาท</Label>
               <Input
                 id="job_position"
                 value={profile.job_position || ''}
@@ -198,7 +185,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ profile, setProfile, editing 
               />
             </div>
             <div>
-              <Label htmlFor="academic_rank">ตำแหน่งทางวิชาการ</Label>
+              <Label htmlFor="academic_rank">วิทยฐานะ</Label>
               <Input
                 id="academic_rank"
                 value={profile.academic_rank || ''}

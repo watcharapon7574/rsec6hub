@@ -87,7 +87,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
         {/* Gradient Bar */}
         <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-t-2xl" />
         {/* กราฟเส้นเล็ก ยาวจากใต้ 'ด' ถึงเลข 4 */}
-        <div className="absolute left-[140px] right-[100px] top-[80px] z-0 pointer-events-none flex justify-end">{renderLineChart()}</div>
+        <div className="absolute left-[80px] right-[140px] top-[80px] z-0 pointer-events-none flex justify-end">{renderLineChart()}</div>
         <div className="p-8 flex-1 flex flex-col justify-between relative z-10">
           <div className="flex items-start justify-between">
             {/* Icon with bg circle */}
@@ -106,6 +106,22 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
       </div>
       {/* กลุ่มการ์ดเล็ก (desktop: flex-row, mobile: scroll ได้) */}
       <div className="flex-[1.5] flex flex-row gap-4 w-full overflow-x-auto sm:overflow-visible sm:mb-0 mb-3 scrollbar-hide">
+        <div className="flex-1 min-w-[220px] bg-white rounded-2xl shadow-xl shadow-purple-500/5 border border-purple-100/30 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 group flex flex-col w-full">
+          <div className="bg-gradient-to-r from-purple-400 to-purple-600 h-3 w-full"></div>
+          <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between pb-2">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <AlertCircle className="h-7 w-7 sm:h-8 sm:w-8 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="text-4xl sm:text-7xl font-bold text-purple-600">{inProgressCount}</span>
+              </div>
+              <div className="mt-2">
+                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">รอตรวจทาน</h3>
+                {renderMonthSummary(inProgressCount)}
+                {renderMonthSummaryMobile(inProgressCount)}
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="flex-1 min-w-[220px] bg-white rounded-2xl shadow-xl shadow-orange-500/5 border border-orange-100/30 overflow-hidden hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300 group flex flex-col w-full">
           <div className="bg-gradient-to-r from-orange-400 to-orange-600 h-3 w-full"></div>
           <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between pb-2">
@@ -115,7 +131,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
                 <span className="text-4xl sm:text-7xl font-bold text-orange-600">{pendingCount}</span>
               </div>
               <div className="mt-2">
-                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">รอพิจารณา</h3>
+                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">รอลงนาม</h3>
                 {renderMonthSummary(pendingCount)}
                 {renderMonthSummaryMobile(pendingCount)}
               </div>
@@ -131,25 +147,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
                 <span className="text-4xl sm:text-7xl font-bold text-green-600">{approvedCount}</span>
               </div>
               <div className="mt-2">
-                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">อนุมัติแล้ว</h3>
+                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">เสร็จสิ้น</h3>
                 {renderMonthSummary(approvedCount)}
                 {renderMonthSummaryMobile(approvedCount)}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 min-w-[220px] bg-white rounded-2xl shadow-xl shadow-purple-500/5 border border-purple-100/30 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 group flex flex-col w-full">
-          <div className="bg-gradient-to-r from-purple-400 to-purple-600 h-3 w-full"></div>
-          <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between pb-2">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <AlertCircle className="h-7 w-7 sm:h-8 sm:w-8 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-4xl sm:text-7xl font-bold text-purple-600">{inProgressCount}</span>
-              </div>
-              <div className="mt-2">
-                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">กำลังดำเนินการ</h3>
-                {renderMonthSummary(inProgressCount)}
-                {renderMonthSummaryMobile(inProgressCount)}
               </div>
             </div>
           </div>

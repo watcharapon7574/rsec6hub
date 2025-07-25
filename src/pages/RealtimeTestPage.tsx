@@ -81,6 +81,21 @@ const RealtimeTestPage = () => {
     }
   };
 
+  const testToast = () => {
+    toast({
+      title: "ทดสอบ Toast สำเร็จ",
+      description: "Toast นี้จะแสดงเป็นเวลา 2 วินาที",
+    });
+  };
+
+  const testErrorToast = () => {
+    toast({
+      title: "ทดสอบ Toast แสดงข้อผิดพลาด",
+      description: "Toast สีแดงนี้จะแสดงเป็นเวลา 2 วินาที",
+      variant: "destructive",
+    });
+  };
+
   const getStatusIcon = () => {
     switch (connectionStatus) {
       case 'connected':
@@ -113,10 +128,18 @@ const RealtimeTestPage = () => {
               <h1 className="text-2xl font-bold text-gray-900 mb-2">ทดสอบ Realtime Updates</h1>
               <p className="text-gray-600">ตรวจสอบการทำงานของระบบอัพเดทแบบ realtime</p>
             </div>
-            <Button onClick={handleManualRefresh} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              รีเฟรชแบบ Manual
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={testToast} variant="outline" size="sm">
+                ทดสอบ Toast ปกติ
+              </Button>
+              <Button onClick={testErrorToast} variant="outline" size="sm">
+                ทดสอบ Toast ข้อผิดพลาด
+              </Button>
+              <Button onClick={handleManualRefresh} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                รีเฟรชแบบ Manual
+              </Button>
+            </div>
           </div>
         </div>
 

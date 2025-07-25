@@ -244,12 +244,33 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // สำหรับ clerk_teacher, ผู้ช่วยผอ, รองผอ ไม่แสดงเอกสารส่วนตัวใน DocumentList
   // เพราะจะแสดงใน PersonalDocumentList แยกต่างหาก
   const shouldShowMemo = (memo: any) => {
-    // สำหรับ clerk_teacher และผู้บริหาร: ไม่แสดงเอกสารส่วนตัวใน DocumentList
-    if (["clerk_teacher", "assistant_director", "deputy_director"].includes(permissions.position)) {
+    // สำหรับ clerk_teacher: ไม่แสดงเอกสารส่วนตัวใน DocumentList (เหมือนเดิม)
+    if (permissions.position === "clerk_teacher") {
       // แสดงเฉพาะเอกสารของคนอื่น (ไม่ใช่เอกสารของตนเอง)
       return memo.user_id !== profile?.user_id;
     }
-    // ผอ เห็นเอกสารทุกชนิด
+    
+    // สำหรับผู้ช่วยผอและรองผอ: แสดงเฉพาะเอกสารที่มีชื่อตัวเองใน signer_list_progress
+    if (["assistant_director", "deputy_director"].includes(permissions.position)) {
+      // ตรวจสอบว่ามีชื่อตัวเองใน signer_list_progress หรือไม่
+      if (memo.signer_list_progress && Array.isArray(memo.signer_list_progress)) {
+        const hasUserInSignerList = memo.signer_list_progress.some((signer: any) => 
+          signer.user_id === profile?.user_id
+        );
+        return hasUserInSignerList;
+      }
+      // ถ้าไม่มี signer_list_progress ให้ fallback ไปดู signature_positions
+      if (memo.signature_positions && Array.isArray(memo.signature_positions)) {
+        const hasUserInSignatures = memo.signature_positions.some((pos: any) => 
+          pos.signer?.user_id === profile?.user_id
+        );
+        return hasUserInSignatures;
+      }
+      // ถ้าไม่พบใน signer list ก็ไม่แสดง
+      return false;
+    }
+    
+    // ผอ เห็นเอกสารทุกชนิด (เหมือนเดิม)
     if (permissions.position === "director") {
       return true;
     }
@@ -502,8 +523,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     
                     return attachedFileCount > 0 && (
                       <div className="flex items-center gap-1">
-                        <Paperclip className="h-3 w-3 text-gray-500" />
-                        <span className="text-xs text-gray-500">{attachedFileCount}</span>
+                        <Paperclip className="h-3 w-3 text-purple-600" />
                       </div>
                     );
                   })()}

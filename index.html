@@ -3,9 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>rsec6-nexus-hub</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+    <title>RSEC6 OfficeHub</title>
+    <link rel="icon" type="image/png" href="/lovable-uploads/iconLogo.png" />
+    <meta name="description" content="ระบบจัดการเอกสารดิจิทัล ศูนย์การศึกษาพิเศษ เขตการศึกษา 6" />
+    <meta name="author" content="RSEC6 OfficeHub" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="RSEC6 Hub" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/lovable-uploads/iconLogo.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/lovable-uploads/iconLogo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/lovable-uploads/iconLogo.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/lovable-uploads/iconLogo.png" />
 
     <meta property="og:title" content="rsec6-nexus-hub" />
     <meta property="og:description" content="Lovable Generated Project" />
@@ -20,5 +37,20 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

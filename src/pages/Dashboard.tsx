@@ -62,6 +62,13 @@ const Dashboard = () => {
           <div className="relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 rounded-t-2xl opacity-90"></div>
             <div className="pt-20">
+              <div className="flex justify-center mb-4">
+                <img 
+                  src="/lovable-uploads/iconLogo.png" 
+                  alt="RSEC6 OfficeHub Icon" 
+                  className="h-12 w-12 object-contain"
+                />
+              </div>
               <h1 className="text-4xl font-bold text-gray-800 mb-3 leading-tight">
                 ยินดีต้อนรับ, {displayName}
               </h1>

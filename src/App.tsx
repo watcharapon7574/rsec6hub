@@ -16,10 +16,12 @@ import DailyReportsPage from "@/pages/DailyReportsPage";
 import OfficialDocumentsPage from "@/pages/OfficialDocumentsPage";
 import CreateDocumentPage from "@/pages/CreateDocumentPage";
 import CreateMemoPage from "@/pages/CreateMemoPage";
+import PDFSignaturePage from "@/pages/PDFSignaturePage";
 import DocumentManagePage from "@/pages/DocumentManagePage";
 import ApproveDocumentPage from "@/pages/ApproveDocumentPage";
 import PDFjustPreview from '@/pages/PDFjustPreview';
 import NotificationsPage from "@/pages/NotificationsPage";
+import InstallPrompt from "@/components/PWA/InstallPrompt";
 
 
 const queryClient = new QueryClient();
@@ -108,6 +110,11 @@ const AppContent = () => {
           <CreateMemoPage />
         </ProtectedRoute>
       } />
+      <Route path="/pdf-signature" element={
+        <ProtectedRoute>
+          <PDFSignaturePage />
+        </ProtectedRoute>
+      } />
       <Route path="/document-manage/:memoId" element={
         <ProtectedRoute>
           <DocumentManagePage />
@@ -149,6 +156,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppContent />
+          <InstallPrompt />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

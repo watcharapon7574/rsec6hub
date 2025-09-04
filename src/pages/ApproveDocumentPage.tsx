@@ -343,7 +343,7 @@ const ApproveDocumentPage: React.FC = () => {
           
           console.log(`📝 User signature positions (${userSignaturePositions.length} positions):`, userSignaturePositions.map(pos => ({ x: pos.x, y: pos.y, page: pos.page })));
           console.log(`📝 Signatures payload:`, JSON.stringify(signaturesPayload, null, 2));
-          const res = await fetch('https://pdf-memo-docx-production.up.railway.app/add_signature_v2', {
+          const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
             method: 'POST',
             body: formData
           });

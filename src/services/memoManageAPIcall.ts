@@ -49,7 +49,7 @@ export async function mergeMemoWithAttachments(memoData: MemoMergeRequest): Prom
 
       console.log(`📤 Sending merge request ${i + 1}/${attachedBlobs.length} to PDFmerge API...`);
       
-      const response: Response = await fetch('https://pdf-memo-docx-production.up.railway.app/PDFmerge', {
+      const response: Response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/PDFmerge', {
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',

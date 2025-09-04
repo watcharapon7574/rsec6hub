@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Viewer, Worker } from '@react-pdf-viewer/core';
@@ -378,11 +378,30 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   }, []);
 
-  // Force refresh when signature positions change
-  useEffect(() => {
-    // console.log('Signature positions changed:', signaturePositions);
-    setRefreshKey(prev => prev + 1);
+  // Force refresh when signature positions change - use useMemo to avoid infinite loop
+  const positionsHash = useMemo(() => {
+    return signaturePositions.map(p => `${p.x}-${p.y}-${p.page}`).join(',');
   }, [signaturePositions]);
+  
+  useEffect(() => {
+    if (positionsHash) {
+      setRefreshKey(prev => prev + 1);
+    }
+  }, [positionsHash]);
+
+  // Add refresh timer for signature pins
+  useEffect(() => {
+    if (signaturePositions.length === 0) return;
+
+    const refreshInterval = setInterval(() => {
+      setRefreshKey(prev => prev + 1);
+    }, 500); // Refresh every 0.5 seconds
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, [signaturePositions.length]);
+
 
   // Force refresh when page changes
   useEffect(() => {
@@ -396,16 +415,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     setRefreshKey(prev => prev + 1);
   }, [scale]);
 
-  // Add interval to periodically refresh positions (as backup)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (signaturePositions.length > 0) {
-        setRefreshKey(prev => prev + 1);
-      }
-    }, 1000); // Refresh every second
-
-    return () => clearInterval(interval);
-  }, [signaturePositions.length]);
+  // Remove problematic interval - only refresh on actual changes
 
   // Refresh signature positions
   const refreshPositions = () => {
@@ -646,7 +656,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
               className="absolute inset-0 pointer-events-none z-40"
               style={{ overflow: 'visible' }}
             >
+              {console.log(`📍 About to render ${currentPagePositions.length} pins on page ${currentPageNumber} (total ${signaturePositions.length} positions)`)}
+            
               {currentPagePositions.map((pos, index) => {
+                console.log(`🔍 Processing signature pin ${index} on page ${currentPageNumber}`);
                 const roleColor = roleColors[pos.signer.role as keyof typeof roleColors] || 'bg-gray-500';
                 
                 // Use the correct page element selector - use data-testid which is more reliable
@@ -684,12 +697,26 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const standardPageHeight = 842; // A4 height in points
                 const currentZoom = scale; // ใช้ scale state จาก zoomPlugin แทนการคำนวณใหม่
                 
-                // Target pin size: 150pt width x 150pt height (square shape)
-                // Convert points to pixels: pt * 96/72 = pt * 1.333
-                const targetWidthPt = 150;
-                const targetHeightPt = 150; // Same as width for square
-                const pinWidth = (targetWidthPt * 96 / 72) * currentZoom; // Convert pt to px and apply zoom
-                const pinHeight = (targetHeightPt * 96 / 72) * currentZoom; // Convert pt to px and apply zoom
+                // Calculate pin size based on actual PDF scale/zoom
+                const basePinSizePt = 100; // Base size in PDF points (smaller base size)
+                const minPinSize = 40; // Minimum size in pixels
+                const maxPinSize = 300; // Maximum size in pixels
+                
+                // Scale pin size with PDF scale
+                const calculatedSize = basePinSizePt * scale * (96/72); // Convert pt to px and scale
+                const basePinSize = Math.max(minPinSize, Math.min(maxPinSize, calculatedSize));
+                const pinWidth = basePinSize;
+                const pinHeight = basePinSize;
+                
+                // Debug log for pin sizing and PDF dimensions
+                console.log(`📌 Pin size debug - Page ${currentPageNumber}:
+                  - scale: ${scale}x
+                  - PDF pageRect: ${pageRect.width.toFixed(1)} x ${pageRect.height.toFixed(1)}px
+                  - viewerRect: ${viewerRect.width.toFixed(1)} x ${viewerRect.height.toFixed(1)}px
+                  - basePinSizePt: ${basePinSizePt}pt
+                  - calculatedSize: ${calculatedSize.toFixed(1)}px
+                  - basePinSize (final): ${basePinSize.toFixed(1)}px
+                  - scaleFactors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}`);
 
                 // Calculate position that sticks to the PDF page
                 // pos.x, pos.y อยู่ในหน่วย PDF points แล้ว แต่ Y-axis ถูก flipped
@@ -785,7 +812,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       top: `${finalY}px`,
                       width: `${pinWidth}px`, // Dynamic width based on zoom
                       height: `${pinHeight}px`, // Dynamic height based on zoom
-                      padding: `${Math.max(2, 6 * currentZoom)}px`, // Scale padding with zoom
+                      padding: `${Math.max(2, basePinSize * 0.05)}px`, // Scale padding with pin size (5%)
                       transform: 'translate(-50%, 0%)', // Pin positioned above click point
                       zIndex: 999,
                       pointerEvents: 'auto', // เปลี่ยนเป็น auto เพื่อให้ปุ่ม X คลิกได้
@@ -823,8 +850,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       className="rounded-lg text-center w-full h-full flex flex-col justify-center relative"
                       onClick={(e) => e.stopPropagation()} // ป้องกันการ propagate click
                       style={{
-                        fontSize: `${Math.max(12, 16 * currentZoom)}px`, // Base 16pt scaling with zoom
-                        padding: `${Math.max(3, 6 * currentZoom)}px ${Math.max(4, 8 * currentZoom)}px`, // เพิ่ม padding ให้เหมาะสม
+                        fontSize: `${Math.max(10, basePinSize * 0.15)}px`, // Font size based on pin size (15%)
+                        padding: `${Math.max(2, basePinSize * 0.03)}px ${Math.max(3, basePinSize * 0.04)}px`, // Padding based on pin size
                         background: 'rgba(255, 255, 255, 0.3)', // Much more transparent white background
                         backdropFilter: 'blur(2px)', // Reduced blur
                         border: '1px solid rgba(0, 0, 0, 0.05)', // Very light border
@@ -841,7 +868,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             alt="ลายเซ็น"
                             style={{
                               maxWidth: '95%', // เพิ่มเป็น 95% ให้ใหญ่พอดีกรอบ
-                              maxHeight: `${Math.max(40, 60 * currentZoom)}px`, // เพิ่มขนาดให้ใหญ่และ responsive
+                              maxHeight: `${Math.max(35, basePinSize * 0.5)}px`, // Scale signature height with pin size (50%)
                               width: 'auto',
                               height: 'auto',
                               objectFit: 'contain',
@@ -853,7 +880,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       )}
                       
                       {/* ชื่อ - แสดงตามที่มีอยู่พร้อมหมายเลขตำแหน่ง */}
-                      <div className="font-semibold truncate leading-tight text-gray-800" style={{ fontSize: `${Math.max(12, 16 * currentZoom)}px` }}>
+                      <div className="font-semibold truncate leading-tight text-gray-800" style={{ fontSize: `${Math.max(12, basePinSize * 0.18)}px` }}>
                         {pos.signer.name}
                         {(pos.signer as any).positionIndex && (pos.signer as any).positionIndex > 1 && (
                           <span className="ml-1 text-blue-600 font-bold">
@@ -865,7 +892,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       {/* ตำแหน่ง - แตกต่างตามบทบาท */}
                       <div 
                         className="truncate leading-tight text-gray-600"
-                        style={{ fontSize: `${Math.max(9, 12 * currentZoom)}px` }} // เปลี่ยนเป็น 12pt
+                        style={{ fontSize: `${Math.max(8, basePinSize * 0.12)}px` }} // Font size based on pin size (12%)
                       >
                         {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.position || ''}`}
                         {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
@@ -876,7 +903,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       {/* บรรทัดเพิ่มเติม - แตกต่างตามบทบาท */}
                       <div 
                         className="leading-tight text-gray-500"
-                        style={{ fontSize: `${Math.max(9, 12 * currentZoom)}px` }} // เปลี่ยนเป็น 12pt
+                        style={{ fontSize: `${Math.max(8, basePinSize * 0.12)}px` }} // Font size based on pin size (12%)
                       >
                         {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ'}`}
                         {pos.signer.role === 'deputy_director' && (memo?.updated_at ? formatThaiDate(memo.updated_at) : '๑๑ กรกฎาคม ๒๕๖๘')}
@@ -887,7 +914,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       <div 
                         key={`coords-${index}-${pos.x}-${pos.y}-${pinHeight}`}
                         className="leading-tight text-gray-400"
-                        style={{ fontSize: `${Math.max(8, 10 * currentZoom)}px` }} // เปลี่ยนเป็น 10pt
+                        style={{ fontSize: `${Math.max(7, basePinSize * 0.1)}px` }} // Font size based on pin size (coordinates)
                       >
                         P{currentPageNumber} (API: {apiX},{apiY})
                       </div>

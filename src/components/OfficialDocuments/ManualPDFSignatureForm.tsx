@@ -148,7 +148,7 @@ const ManualPDFSignatureForm: React.FC = () => {
       });
 
       // เรียก API
-      const response = await fetch('https://pdf-memo-docx-production.up.railway.app/add_signature', {
+      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature', {
         method: 'POST',
         body: formData,
       });

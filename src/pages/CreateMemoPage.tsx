@@ -9,7 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useMemoErrorHandler } from '@/hooks/useMemoErrorHandler';
 import { MemoFormData } from '@/types/memo';
-import { FileText, ArrowLeft, AlertCircle } from 'lucide-react';
+import { FileText, ArrowLeft, AlertCircle, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -32,6 +32,18 @@ const CreateMemoPage = () => {
   const [rejectionComments, setRejectionComments] = useState<any[]>([]);
   const [loadingMemo, setLoadingMemo] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [grammarLoading, setGrammarLoading] = useState(false);
+  const [showGrammarModal, setShowGrammarModal] = useState(false);
+  const [grammarSuggestions, setGrammarSuggestions] = useState<Array<{
+    field: string,
+    fieldLabel: string,
+    originalWord: string,
+    correctedWord: string,
+    context: string,
+    wordIndex: number,
+    applied?: boolean
+  }>>([]);
+  const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   
   const [formData, setFormData] = useState<MemoFormData>({
     doc_number: '', // ธุรการจะเป็นคนใส่
@@ -188,6 +200,196 @@ const CreateMemoPage = () => {
     }));
   };
 
+  const correctGrammar = async () => {
+    if (grammarLoading) return;
+    
+    const fieldsToCorrect = [
+      { field: 'subject', label: 'เรื่อง' },
+      { field: 'attachment_title', label: 'สิ่งที่ส่งมาด้วย' },
+      { field: 'introduction', label: 'ต้นเรื่อง' },
+      { field: 'fact', label: 'ข้อเท็จจริง' },
+      { field: 'proposal', label: 'ข้อเสนอและพิจารณา' }
+    ];
+
+    const hasContent = fieldsToCorrect.some(({ field }) => 
+      formData[field as keyof MemoFormData]?.toString().trim()
+    );
+
+    if (!hasContent) {
+      toast({
+        title: "ไม่มีเนื้อหาให้ตรวจ",
+        description: "กรุณากรอกข้อมูลในแบบฟอร์มก่อนใช้งานฟีเจอร์นี้",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGrammarLoading(true);
+    const allSuggestions: Array<{
+      field: string,
+      fieldLabel: string,
+      originalWord: string,
+      correctedWord: string,
+      context: string,
+      wordIndex: number
+    }> = [];
+
+    try {
+      for (const { field, label } of fieldsToCorrect) {
+        const content = formData[field as keyof MemoFormData]?.toString().trim();
+        if (!content) continue;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyAvl5ACEnCTduXuwBjucHo6Nplx7lABl58`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `ตรวจสอบข้อความภาษาไทยต่อไปนี้และหาคำที่เขียนผิด หรือไวยากรณ์ที่ผิด:
+
+"${content}"
+
+กรุณาตอบในรูปแบบ JSON เท่านั้น ดังนี้:
+[
+  {
+    "originalWord": "คำที่ผิด",
+    "correctedWord": "คำที่ถูกต้อง",
+    "wordIndex": ตำแหน่งของคำ (เริ่มจาก 0)
+  }
+]
+
+หากไม่พบข้อผิดพลาด ให้ตอบ []`
+              }]
+            }]
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('API request failed');
+        }
+
+        const result = await response.json();
+        const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+        if (responseText) {
+          try {
+            // Clean the response to extract JSON
+            const jsonText = responseText.replace(/```json\n?|\n?```/g, '').trim();
+            const wordCorrections = JSON.parse(jsonText);
+
+            if (Array.isArray(wordCorrections) && wordCorrections.length > 0) {
+              console.log('Word corrections for', label, ':', wordCorrections);
+              wordCorrections.forEach((correction: any) => {
+                if (correction.originalWord && correction.correctedWord && correction.originalWord !== correction.correctedWord) {
+                  const words = content.split(/\s+/);
+                  const contextStart = Math.max(0, correction.wordIndex - 3);
+                  const contextEnd = Math.min(words.length, correction.wordIndex + 4);
+                  const contextWords = words.slice(contextStart, contextEnd);
+                  
+                  allSuggestions.push({
+                    field,
+                    fieldLabel: label,
+                    originalWord: correction.originalWord.trim(),
+                    correctedWord: correction.correctedWord.trim(),
+                    context: contextWords.join(' '),
+                    wordIndex: correction.wordIndex,
+                    applied: false
+                  });
+                }
+              });
+            }
+          } catch (parseError) {
+            console.warn('Could not parse word corrections for:', label, parseError);
+          }
+        }
+      }
+
+      if (allSuggestions.length === 0) {
+        toast({
+          title: "ไม่พบข้อผิดพลาด",
+          description: "ไวยากรณ์และการสะกดคำในเอกสารนี้ถูกต้องแล้ว",
+        });
+      } else {
+        setGrammarSuggestions(allSuggestions);
+        setCurrentSuggestionIndex(0);
+        setShowGrammarModal(true);
+      }
+
+    } catch (error) {
+      console.error('Grammar correction error:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถตรวจสอบไวยากรณ์ได้ กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive",
+      });
+    } finally {
+      setGrammarLoading(false);
+    }
+  };
+
+  const applyCorrection = () => {
+    const suggestion = grammarSuggestions[currentSuggestionIndex];
+    if (!suggestion || suggestion.applied) return;
+
+    const content = formData[suggestion.field as keyof MemoFormData]?.toString() || '';
+    console.log('Before correction:', content);
+    console.log('Original word:', suggestion.originalWord);
+    console.log('Corrected word:', suggestion.correctedWord);
+    
+    // Use more precise replacement - escape special regex characters
+    const escapedOriginal = suggestion.originalWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const updatedContent = content.replace(new RegExp(escapedOriginal, 'g'), suggestion.correctedWord);
+    
+    console.log('After correction:', updatedContent);
+    
+    setFormData(prev => ({
+      ...prev,
+      [suggestion.field]: updatedContent
+    }));
+
+    // Mark as applied
+    setGrammarSuggestions(prev => prev.map((item, index) => 
+      index === currentSuggestionIndex 
+        ? { ...item, applied: true }
+        : item
+    ));
+
+    nextSuggestion();
+  };
+
+  const skipCorrection = () => {
+    nextSuggestion();
+  };
+
+  const previousSuggestion = () => {
+    if (currentSuggestionIndex > 0) {
+      setCurrentSuggestionIndex(currentSuggestionIndex - 1);
+    }
+  };
+
+  const nextSuggestion = () => {
+    if (currentSuggestionIndex < grammarSuggestions.length - 1) {
+      setCurrentSuggestionIndex(currentSuggestionIndex + 1);
+    } else {
+      // เสร็จสิ้นทั้งหมด
+      setShowGrammarModal(false);
+      setGrammarSuggestions([]);
+      setCurrentSuggestionIndex(0);
+      toast({
+        title: "เสร็จสิ้นการตรวจสอบ",
+        description: "ตรวจสอบและแก้ไขไวยากรณ์เสร็จสิ้น",
+      });
+    }
+  };
+
+  const closeGrammarModal = () => {
+    setShowGrammarModal(false);
+    setGrammarSuggestions([]);
+    setCurrentSuggestionIndex(0);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Loading Modal */}
@@ -275,6 +477,101 @@ const CreateMemoPage = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Grammar Correction Modal */}
+          <Dialog open={showGrammarModal} onOpenChange={setShowGrammarModal}>
+            <DialogContent className="bg-white p-6 rounded-lg shadow-lg max-w-2xl">
+              <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                <Sparkles className="h-5 w-5 text-green-600" />
+                ตรวจสอบไวยากรณ์
+              </DialogTitle>
+              <DialogDescription className="text-gray-600 mb-4">
+                พบข้อเสนอแนะการแก้ไข {grammarSuggestions.length} รายการ (รายการที่ {currentSuggestionIndex + 1}/{grammarSuggestions.length})
+              </DialogDescription>
+              
+              {grammarSuggestions[currentSuggestionIndex] && (
+                <div className="space-y-4">
+                  <div className={`p-4 rounded-lg border ${
+                    grammarSuggestions[currentSuggestionIndex].applied 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-blue-50 border-blue-200'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className={`font-medium ${
+                        grammarSuggestions[currentSuggestionIndex].applied 
+                          ? 'text-green-800' 
+                          : 'text-blue-800'
+                      }`}>
+                        ช่อง: {grammarSuggestions[currentSuggestionIndex].fieldLabel}
+                      </h4>
+                      {grammarSuggestions[currentSuggestionIndex].applied && (
+                        <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">
+                          ✓ แก้ไขแล้ว
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-600 mb-3">
+                      บริบท: "{grammarSuggestions[currentSuggestionIndex].context}"
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                      <h5 className="font-medium text-red-700 mb-2">คำเดิม</h5>
+                      <p className={`font-mono bg-red-100 p-2 rounded ${
+                        grammarSuggestions[currentSuggestionIndex].applied 
+                          ? 'text-red-500 line-through' 
+                          : 'text-red-800'
+                      }`}>
+                        "{grammarSuggestions[currentSuggestionIndex].originalWord}"
+                      </p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <h5 className="font-medium text-green-700 mb-2">
+                        {grammarSuggestions[currentSuggestionIndex].applied ? 'คำที่ใช้แล้ว' : 'คำที่แนะนำ'}
+                      </h5>
+                      <p className={`font-mono bg-green-100 p-2 rounded ${
+                        grammarSuggestions[currentSuggestionIndex].applied 
+                          ? 'text-green-800 font-bold' 
+                          : 'text-green-800'
+                      }`}>
+                        "{grammarSuggestions[currentSuggestionIndex].correctedWord}"
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Button 
+                      onClick={previousSuggestion}
+                      variant="outline"
+                      disabled={currentSuggestionIndex === 0}
+                      className="flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ← ย้อน
+                    </Button>
+                    <Button 
+                      onClick={applyCorrection}
+                      disabled={grammarSuggestions[currentSuggestionIndex].applied}
+                      className="bg-green-600 hover:bg-green-700 text-white flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {grammarSuggestions[currentSuggestionIndex].applied ? '✓ แก้ไขแล้ว' : '✓ ใช้การแก้ไข'}
+                    </Button>
+                    <Button 
+                      onClick={skipCorrection}
+                      variant="outline"
+                      className="flex-1 flex items-center justify-center gap-2 hover:bg-gray-50"
+                    >
+                      → ข้ามไป
+                    </Button>
+                  </div>
+                  
+                  <div className="text-center text-xs text-gray-500 mt-2">
+                    กด "ใช้การแก้ไข" เพื่อแก้คำนี้ หรือ "ข้ามไป" เพื่อไม่แก้ไข • "ย้อน" เพื่อกลับไปรายการก่อนหน้า
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Header Card */}
           <Card className="mb-8 overflow-hidden shadow-xl border-0">
@@ -537,7 +834,7 @@ const CreateMemoPage = () => {
                 <div className="flex gap-4 pt-6 border-t border-gray-200">
                   <Button 
                     type="submit" 
-                    disabled={loading || loadingMemo}
+                    disabled={loading || loadingMemo || grammarLoading}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (isEditMode ? 'กำลังอัปเดต...' : 'กำลังสร้าง...') : (isEditMode ? 'อัปเดตบันทึก' : 'ส่งบันทึก')}
@@ -545,9 +842,32 @@ const CreateMemoPage = () => {
                   <Button 
                     type="button" 
                     variant="outline"
+                    onClick={correctGrammar}
+                    disabled={loading || loadingMemo || grammarLoading}
+                    className="border-green-300 text-green-700 hover:bg-green-50 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {grammarLoading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                        </svg>
+                        กำลังตรวจ...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        ปรับไวยากรณ์
+                      </>
+                    )}
+                  </Button>
+                  <div className="flex-1"></div>
+                  <Button 
+                    type="button" 
+                    variant="outline"
                     onClick={() => navigate('/documents')}
                     className="border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-2 rounded-lg transition-all duration-200"
-                    disabled={loading || loadingMemo}
+                    disabled={loading || loadingMemo || grammarLoading}
                   >
                     ยกเลิก
                   </Button>

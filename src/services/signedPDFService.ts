@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://pdf-memo-docx-production.up.railway.app';
+const API_BASE_URL = 'https://pdf-memo-docx-production-25de.up.railway.app';
 
 export interface SignedPDFRequest {
   name: string;

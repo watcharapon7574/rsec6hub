@@ -170,7 +170,8 @@ const DocumentManagePage: React.FC = () => {
             if (match) {
               setDocNumberSuffix(match[1]);
             } else {
-              setDocNumberSuffix(fullDocNumber);
+              // ถ้า regex ไม่ match ให้ใช้แค่ docNumber โดยตรง แทนที่จะใช้ fullDocNumber
+              setDocNumberSuffix(docNumber);
             }
           } else {
             // กรณีที่เป็น suffix only (ใหม่)
@@ -219,7 +220,8 @@ const DocumentManagePage: React.FC = () => {
             if (match) {
               setDocNumberSuffix(match[1]);
             } else {
-              setDocNumberSuffix(fullDocNumber);
+              // ถ้า regex ไม่ match ให้ใช้แค่ docNumber โดยตรง แทนที่จะใช้ fullDocNumber
+              setDocNumberSuffix(docNumber);
             }
           } else {
             // กรณีที่เป็น suffix only (ใหม่)
@@ -383,7 +385,7 @@ const DocumentManagePage: React.FC = () => {
       };
 
       // Call external API to generate new PDF with document number
-      const response = await fetch('https://pdf-memo-docx-production.up.railway.app/pdf', {
+      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -434,7 +436,14 @@ const DocumentManagePage: React.FC = () => {
   // Function to assign document number
   const handleAssignNumber = async () => {
     // ใช้ค่าจาก input หรือใช้ค่า suggested ถ้าไม่ได้กรอกอะไร
-    const finalDocSuffix = docNumberSuffix.trim() || suggestedDocNumber;
+    let finalDocSuffix = docNumberSuffix.trim() || suggestedDocNumber;
+    
+    // ตรวจสอบและแยกเอาเฉพาะ suffix ออกมา ถ้ามี prefix อยู่
+    const match = finalDocSuffix.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+    if (match) {
+      finalDocSuffix = match[1];
+      console.log('Extracted suffix from full number:', finalDocSuffix);
+    }
     
     if (!finalDocSuffix) {
       toast({
@@ -795,7 +804,7 @@ const DocumentManagePage: React.FC = () => {
             console.log(`📝 Signatures payload for /add_signature_v2:`, signaturesPayload.map(sig => ({ x: sig.x, y: sig.y, page: sig.page, lines: sig.lines?.length })));
             console.log(`📝 signatures (${authorPositions.length} positions):`, JSON.stringify(signaturesPayload, null, 2));
             // ---
-            const res = await fetch('https://pdf-memo-docx-production.up.railway.app/add_signature_v2', {
+            const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
               method: 'POST',
               body: formData
             });

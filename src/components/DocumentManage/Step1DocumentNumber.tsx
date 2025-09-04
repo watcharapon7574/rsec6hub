@@ -92,7 +92,20 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
             {isNumberAssigned && (
               <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
                 <CheckCircle className="h-4 w-4" />
-                เลขหนังสือถูกลงแล้ว: ศธ ๐๔๐๐๗.๖๐๐/{documentNumber.replace(/\d/g, (d) => '๐๑๒๓๔๕๖๗๘๙'[parseInt(d)])}
+                เลขหนังสือถูกลงแล้ว: {(() => {
+                  // ลบ prefix ที่ซ้ำออกก่อน จากนั้นสร้าง document number ใหม่
+                  const prefix = 'ศธ ๐๔๐๐๗.๖๐๐/';
+                  let cleanNumber = documentNumber;
+                  
+                  // ถ้ามี prefix ซ้ำ ให้แยกเอาเฉพาะส่วน suffix
+                  const match = cleanNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+                  if (match) {
+                    cleanNumber = match[1]; // เอาเฉพาะส่วนหลัง /
+                  }
+                  
+                  const displayNumber = `${prefix}${cleanNumber}`;
+                  return displayNumber.replace(/\d/g, (d) => '๐๑๒๓๔๕๖๗๘๙'[parseInt(d)]);
+                })()}
               </p>
             )}
           </div>

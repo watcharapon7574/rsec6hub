@@ -1,0 +1,66 @@
+{
+  "name": "RSEC6 OfficeHub",
+  "short_name": "RSEC6 Hub",
+  "description": "ระบบจัดการเอกสารดิจิทัล ศูนย์การศึกษาพิเศษ เขตการศึกษา 6",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "th",
+  "dir": "ltr",
+  "categories": ["productivity", "business", "education"],
+  "icons": [
+    {
+      "src": "/lovable-uploads/iconLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/lovable-uploads/iconLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "เอกสาร",
+      "short_name": "เอกสาร",
+      "description": "ดูเอกสารทั้งหมด",
+      "url": "/documents",
+      "icons": [
+        {
+          "src": "/lovable-uploads/iconLogo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "สร้างเอกสาร",
+      "short_name": "สร้าง",
+      "description": "สร้างเอกสารใหม่",
+      "url": "/create-document",
+      "icons": [
+        {
+          "src": "/lovable-uploads/iconLogo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "โปรไฟล์",
+      "short_name": "โปรไฟล์",
+      "description": "จัดการโปรไฟล์",
+      "url": "/profile",
+      "icons": [
+        {
+          "src": "/lovable-uploads/iconLogo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

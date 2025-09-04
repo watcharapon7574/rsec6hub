@@ -111,7 +111,7 @@ export class MemoService {
       if (shouldGenerateNewPdf) {
         console.log('📄 Generating new PDF...');
         // Call external API to generate PDF draft with CORS handling
-        const response = await fetch('https://pdf-memo-docx-production.up.railway.app/pdf', {
+        const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -395,7 +395,7 @@ export class MemoService {
       formData.append('signatures', JSON.stringify(signaturesArray));
 
       // Call add_signature API
-      const response = await fetch('https://pdf-memo-docx-production.up.railway.app/add_signature', {
+      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature', {
         method: 'POST',
         body: formData
       });

@@ -5,9 +5,9 @@ import { SUPABASE_CONFIG } from './constants';
 /**
  * Send OTP to phone number via Telegram bot
  */
-export const sendOTP = async (phone: string): Promise<OTPResult> => {
+export const sendOTP = async (phone: string, telegramChatId?: string): Promise<OTPResult> => {
   try {
-    
+
     // Validate phone number format
     const validation = validatePhoneNumber(phone);
     if (!validation.isValid) {
@@ -21,7 +21,10 @@ export const sendOTP = async (phone: string): Promise<OTPResult> => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
       },
-      body: JSON.stringify({ phone })
+      body: JSON.stringify({
+        phone,
+        telegram_chat_id: telegramChatId
+      })
     });
 
     const result = await response.json();
@@ -29,6 +32,12 @@ export const sendOTP = async (phone: string): Promise<OTPResult> => {
     if (!response.ok) {
       if (result.error === 'need_telegram_link') {
         return { error: new Error(result.message), needsTelegram: true };
+      }
+      if (result.error === 'need_telegram_chat_id') {
+        return { error: new Error(result.message), isNewUser: true };
+      }
+      if (result.error === 'user_not_found') {
+        return { error: new Error(result.message) };
       }
       return { error: new Error(result.error || 'ไม่สามารถส่งรหัส OTP ได้') };
     }

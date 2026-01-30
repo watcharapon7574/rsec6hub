@@ -5,6 +5,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import TelegramLinking from '@/components/Auth/TelegramLinking';
+import TelegramChatIdStep from '@/components/Auth/TelegramChatIdStep';
 import PhoneStep from '@/components/Auth/PhoneStep';
 import OTPStep from '@/components/Auth/OTPStep';
 import AuthHeader from '@/components/Auth/AuthHeader';
@@ -15,9 +16,10 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<AuthStep>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [telegramChatId, setTelegramChatId] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpError, setOtpError] = useState<string>('');
-  
+
   const { signIn, sendOTP, isAuthenticated } = useEmployeeAuth();
   const navigate = useNavigate();
 
@@ -54,11 +56,13 @@ const AuthPage = () => {
     setLoading(true);
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
-      const { error, needsTelegram } = await sendOTP(formattedPhone);
-      
+      const { error, needsTelegram, isNewUser } = await sendOTP(formattedPhone);
+
       if (error) {
         if (needsTelegram) {
           setStep('telegram');
+        } else if (isNewUser) {
+          setStep('telegram_chat_id');
         } else {
           toast({
             title: "ไม่สามารถส่งรหัส OTP ได้",
@@ -178,15 +182,65 @@ const AuthPage = () => {
     setStep('phone');
   };
 
+  const handleTelegramChatIdSubmit = async (chatId: string) => {
+    setTelegramChatId(chatId);
+    setLoading(true);
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const { error } = await sendOTP(formattedPhone, chatId);
+
+      if (error) {
+        toast({
+          title: "ไม่สามารถส่งรหัส OTP ได้",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        setOtpSent(true);
+        setStep('otp');
+        toast({
+          title: "ส่งรหัส OTP แล้ว",
+          description: "กรุณาตรวจสอบข้อความใน Telegram ของคุณ"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackFromChatId = () => {
+    setStep('phone');
+    setTelegramChatId('');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-sky-50 flex items-center justify-center p-4">
       <div className="max-w-md space-y-6 mx-auto">
         {step === 'telegram' ? (
-          <TelegramLinking 
+          <TelegramLinking
             phone={formatPhoneNumber(phoneNumber)}
             onLinked={handleTelegramLinked}
             onBack={handleBackFromTelegram}
           />
+        ) : step === 'telegram_chat_id' ? (
+          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm min-w-[260px] max-w-[340px] mx-auto">
+            <AuthHeader />
+            <CardContent className="space-y-6 px-6">
+              <TelegramChatIdStep
+                phoneNumber={formatPhoneNumber(phoneNumber)}
+                onSubmit={handleTelegramChatIdSubmit}
+                onBack={handleBackFromChatId}
+                loading={loading}
+              />
+              <AuthInfoPanel />
+            </CardContent>
+          </Card>
         ) : (
           <>
             <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm min-w-[260px] max-w-[340px] mx-auto">

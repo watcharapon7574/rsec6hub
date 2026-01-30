@@ -1,7 +1,7 @@
 import { Profile } from '@/types/database';
 import { User } from '@supabase/supabase-js';
 
-export type AuthStep = 'phone' | 'otp' | 'telegram';
+export type AuthStep = 'phone' | 'otp' | 'telegram' | 'telegram_chat_id';
 
 export interface AuthResult {
   error?: Error;
@@ -12,6 +12,7 @@ export interface AuthResult {
 export interface OTPResult {
   error?: Error;
   needsTelegram?: boolean;
+  isNewUser?: boolean;
 }
 
 export interface SessionData {

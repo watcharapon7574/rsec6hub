@@ -85,9 +85,25 @@ serve(async (req) => {
     if (profileError || !profile) {
       console.error('Profile lookup error:', profileError)
       return new Response(
-        JSON.stringify({ error: 'ไม่พบข้อมูลผู้ใช้' }),
+        JSON.stringify({ error: 'ไม่พบข้อมูลผู้ใช้ในระบบ กรุณาติดต่อผู้ดูแลระบบ' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // อัปเดต telegram_chat_id ถ้ายังไม่มี (ผู้ใช้เข้าใช้งานครั้งแรก)
+    if (!profile.telegram_chat_id && otpRecord.telegram_chat_id) {
+      console.log('📝 First time login: updating telegram_chat_id for profile')
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({ telegram_chat_id: otpRecord.telegram_chat_id })
+        .eq('id', profile.id)
+
+      if (updateError) {
+        console.error('⚠️ Failed to update telegram_chat_id:', updateError)
+      } else {
+        profile.telegram_chat_id = otpRecord.telegram_chat_id
+        console.log('✅ Updated profile with telegram_chat_id')
+      }
     }
 
     let authUser = null

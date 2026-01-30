@@ -283,6 +283,290 @@ export const testRequestQueue = {
       totalPdfSize: totalSize,
       results
     };
+  },
+
+  /**
+   * Test Telegram Notify Edge Function
+   * Tests concurrent notification sending to multiple users
+   */
+  async testEdgeFunctionNotify(count: number = 10, chatId: string = '7094586730') {
+    console.log(`📢 Starting Telegram Notify Test with ${count} concurrent notifications...`);
+    console.log('⏰ Start time:', new Date().toLocaleTimeString());
+
+    const startTime = Date.now();
+    const promises: Promise<any>[] = [];
+
+    // Sample notification payloads
+    const notificationTypes = [
+      'document_pending',
+      'document_approved',
+      'document_rejected',
+      'document_ready',
+      'document_created',
+      'task_assigned'
+    ] as const;
+
+    for (let i = 0; i < count; i++) {
+      const promise = requestQueue.enqueue(async () => {
+        console.log(`📤 Notification ${i + 1} started`);
+
+        try {
+          const notificationType = notificationTypes[i % notificationTypes.length];
+
+          // Call Telegram Notify Edge Function
+          const response = await supabase.functions.invoke('telegram-notify', {
+            body: {
+              type: notificationType,
+              document_id: `test-doc-${i + 1}`,
+              document_type: 'memo',
+              subject: `ทดสอบการแจ้งเตือน #${i + 1}`,
+              author_name: 'ระบบทดสอบ',
+              doc_number: `ทดสอบ/${String(i + 1).padStart(3, '0')}/2568`,
+              chat_id: chatId,
+              ...(notificationType === 'task_assigned' && {
+                assigned_by: 'ผู้จัดการ',
+                note: 'กรุณาดำเนินการด่วน'
+              })
+            }
+          });
+
+          if (response.error) {
+            throw new Error(`Edge Function Error: ${response.error.message}`);
+          }
+
+          console.log(`✅ Notification ${i + 1} sent successfully`);
+          return { requestId: i + 1, success: true };
+        } catch (error: any) {
+          console.error(`❌ Notification ${i + 1} failed:`, error.message);
+          throw error;
+        }
+      });
+
+      promises.push(promise);
+    }
+
+    // Wait for all requests to complete
+    const results = await Promise.allSettled(promises);
+
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+    // Calculate statistics
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const successRate = ((successful / count) * 100).toFixed(1);
+
+    console.log('\n📊 Telegram Notify Test Results:');
+    console.log('='.repeat(50));
+    console.log(`✅ Successful: ${successful}/${count} (${successRate}%)`);
+    console.log(`❌ Failed: ${failed}/${count}`);
+    console.log(`⏱️  Duration: ${duration} seconds`);
+    console.log(`📈 Throughput: ${(count / parseFloat(duration)).toFixed(2)} notifications/second`);
+    console.log('⏰ End time:', new Date().toLocaleTimeString());
+    console.log('='.repeat(50));
+
+    if (parseFloat(successRate) === 100) {
+      console.log('✅ Telegram Notify Edge Function working perfectly!');
+    } else {
+      console.warn(`⚠️  ${failed} notifications failed`);
+    }
+
+    return {
+      total: count,
+      successful,
+      failed,
+      successRate: parseFloat(successRate),
+      duration: parseFloat(duration),
+      throughput: count / parseFloat(duration),
+      results
+    };
+  },
+
+  /**
+   * Test OTP Request Edge Function
+   * Tests concurrent OTP generation and sending
+   * NOTE: Rate limit is 3 OTP per 5 minutes per phone number
+   */
+  async testEdgeFunctionOTP(count: number = 5) {
+    console.log(`🔐 Starting OTP Request Test with ${count} concurrent requests...`);
+    console.log('⚠️ Rate Limit: 3 OTP per 5 minutes per phone number');
+    console.log('⏰ Start time:', new Date().toLocaleTimeString());
+
+    const startTime = Date.now();
+    const promises: Promise<any>[] = [];
+
+    // Test phone numbers (will use different phones to avoid rate limit)
+    const testPhones = [
+      '0925717574', // Your phone
+      '0812345678', // Test phone 1
+      '0823456789', // Test phone 2
+      '0834567890', // Test phone 3
+      '0845678901'  // Test phone 4
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const promise = requestQueue.enqueue(async () => {
+        console.log(`📤 OTP Request ${i + 1} started`);
+
+        try {
+          // Use different phone numbers to avoid rate limiting
+          const phone = testPhones[i % testPhones.length];
+
+          // Call Telegram OTP Edge Function
+          const response = await supabase.functions.invoke('telegram-otp/send-otp', {
+            body: {
+              phone: phone
+            }
+          });
+
+          if (response.error) {
+            throw new Error(`Edge Function Error: ${response.error.message}`);
+          }
+
+          console.log(`✅ OTP Request ${i + 1} completed`);
+          return { requestId: i + 1, phone: phone, success: true };
+        } catch (error: any) {
+          console.error(`❌ OTP Request ${i + 1} failed:`, error.message);
+          throw error;
+        }
+      });
+
+      promises.push(promise);
+    }
+
+    // Wait for all requests to complete
+    const results = await Promise.allSettled(promises);
+
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+    // Calculate statistics
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const successRate = ((successful / count) * 100).toFixed(1);
+
+    // Analyze error types
+    const errorTypes: Record<string, number> = {};
+    results.forEach(r => {
+      if (r.status === 'rejected') {
+        const errorMsg = r.reason?.message || 'Unknown error';
+        errorTypes[errorMsg] = (errorTypes[errorMsg] || 0) + 1;
+      }
+    });
+
+    console.log('\n📊 OTP Request Test Results:');
+    console.log('='.repeat(50));
+    console.log(`✅ Successful: ${successful}/${count} (${successRate}%)`);
+    console.log(`❌ Failed: ${failed}/${count}`);
+    console.log(`⏱️  Duration: ${duration} seconds`);
+    console.log(`📈 Throughput: ${(count / parseFloat(duration)).toFixed(2)} OTPs/second`);
+    console.log('⏰ End time:', new Date().toLocaleTimeString());
+
+    if (failed > 0) {
+      console.log('\n❌ Error breakdown:');
+      Object.entries(errorTypes).forEach(([error, count]) => {
+        console.log(`  - ${error}: ${count} occurrences`);
+      });
+    }
+
+    console.log('='.repeat(50));
+
+    if (parseFloat(successRate) >= 80) {
+      console.log('✅ OTP Edge Function working well!');
+      if (parseFloat(successRate) < 100) {
+        console.log('💡 Some failures expected due to rate limiting (3 OTP/5min)');
+      }
+    } else {
+      console.warn(`⚠️  Success rate below 80% - may indicate Edge Function issues`);
+    }
+
+    return {
+      total: count,
+      successful,
+      failed,
+      successRate: parseFloat(successRate),
+      duration: parseFloat(duration),
+      throughput: count / parseFloat(duration),
+      errorTypes,
+      results
+    };
+  },
+
+  /**
+   * Test OTP Verification Edge Function
+   * Tests concurrent OTP verification requests
+   */
+  async testEdgeFunctionVerifyOTP(count: number = 10, phone: string = '0925717574', otp: string = '123456') {
+    console.log(`🔓 Starting OTP Verification Test with ${count} concurrent requests...`);
+    console.log('⏰ Start time:', new Date().toLocaleTimeString());
+
+    const startTime = Date.now();
+    const promises: Promise<any>[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const promise = requestQueue.enqueue(async () => {
+        console.log(`📤 OTP Verify ${i + 1} started`);
+
+        try {
+          // Call Verify OTP Edge Function
+          const response = await supabase.functions.invoke('verify-otp', {
+            body: {
+              phone: phone,
+              otp: otp
+            }
+          });
+
+          if (response.error) {
+            throw new Error(`Edge Function Error: ${response.error.message}`);
+          }
+
+          console.log(`✅ OTP Verify ${i + 1} completed`);
+          return { requestId: i + 1, success: true };
+        } catch (error: any) {
+          console.error(`❌ OTP Verify ${i + 1} failed:`, error.message);
+          throw error;
+        }
+      });
+
+      promises.push(promise);
+    }
+
+    // Wait for all requests to complete
+    const results = await Promise.allSettled(promises);
+
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+    // Calculate statistics
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const successRate = ((successful / count) * 100).toFixed(1);
+
+    console.log('\n📊 OTP Verification Test Results:');
+    console.log('='.repeat(50));
+    console.log(`✅ Successful: ${successful}/${count} (${successRate}%)`);
+    console.log(`❌ Failed: ${failed}/${count}`);
+    console.log(`⏱️  Duration: ${duration} seconds`);
+    console.log(`📈 Throughput: ${(count / parseFloat(duration)).toFixed(2)} verifications/second`);
+    console.log('⏰ End time:', new Date().toLocaleTimeString());
+    console.log('='.repeat(50));
+
+    if (parseFloat(successRate) >= 90) {
+      console.log('✅ OTP Verification Edge Function working well!');
+    } else {
+      console.warn(`⚠️  Success rate: ${successRate}% - expected failures after first verification`);
+      console.log('💡 Note: OTP can only be verified once, subsequent requests will fail');
+    }
+
+    return {
+      total: count,
+      successful,
+      failed,
+      successRate: parseFloat(successRate),
+      duration: parseFloat(duration),
+      throughput: count / parseFloat(duration),
+      results
+    };
   }
 };
 

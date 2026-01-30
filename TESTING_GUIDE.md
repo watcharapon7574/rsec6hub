@@ -238,5 +238,187 @@ async testWithErrorInjection() {
 
 ---
 
-**เวอร์ชัน:** v1.0
+## 📡 การทดสอบ Edge Functions (ใหม่!)
+
+### Edge Functions ที่ทดสอบได้
+
+1. **Telegram Notifications** - ส่งการแจ้งเตือนผ่าน Telegram
+2. **OTP Requests** - ขอรหัส OTP ผ่าน Telegram (มี rate limit 3 OTP/5min)
+3. **OTP Verification** - ยืนยันรหัส OTP
+
+### วิธีทดสอบ Edge Functions
+
+#### 1. ทดสอบ Telegram Notifications
+
+**คลิก:** "10 แจ้งเตือน", "20 แจ้งเตือน", "50 แจ้งเตือน", "100 แจ้งเตือน"
+
+**สิ่งที่ควรเห็น:**
+```
+📢 Starting Telegram Notify Test with 20 concurrent notifications...
+📤 Notification 1 started
+📤 Notification 2 started
+...
+📤 Notification 8 started (หยุดที่ 8 เพราะ maxConcurrent = 8)
+
+✅ Notification 1 sent successfully
+📤 Notification 9 started
+✅ Notification 2 sent successfully
+📤 Notification 10 started
+...
+
+📊 Telegram Notify Test Results:
+==================================================
+✅ Successful: 20/20 (100.0%)
+❌ Failed: 0/20
+⏱️  Duration: 2.34 seconds
+📈 Throughput: 8.55 notifications/second
+==================================================
+```
+
+**เช็คการทำงาน:**
+- ตรวจสอบ Telegram ว่าได้รับการแจ้งเตือน 20 ข้อความ
+- Success Rate ควรเป็น 100% (ถ้า chat_id ถูกต้อง)
+- Throughput ปกติประมาณ 5-10 notifications/second
+
+**สัญญาณเตือน:**
+- ❌ Failed > 10% → ตรวจสอบ Telegram bot token
+- ❌ Error "chat_id required" → ต้องระบุ chat_id ใน code
+
+---
+
+#### 2. ทดสอบ OTP Requests
+
+**คลิก:** "5 OTP", "10 OTP", "20 OTP", "50 OTP"
+
+**⚠️ สำคัญ:** มี Rate Limit 3 OTP ต่อ 5 นาที ต่อเบอร์โทร
+
+**สิ่งที่ควรเห็น:**
+```
+🔐 Starting OTP Request Test with 10 concurrent requests...
+⚠️ Rate Limit: 3 OTP per 5 minutes per phone number
+📤 OTP Request 1 started (phone: 0925717574)
+📤 OTP Request 2 started (phone: 0812345678)
+📤 OTP Request 3 started (phone: 0823456789)
+...
+
+📊 OTP Request Test Results:
+==================================================
+✅ Successful: 8/10 (80.0%)
+❌ Failed: 2/10
+⏱️  Duration: 3.12 seconds
+
+❌ Error breakdown:
+  - Edge Function Error: กรุณารอ 5 นาทีก่อนขอรหัส OTP ใหม่: 2 occurrences
+==================================================
+✅ OTP Edge Function working well!
+💡 Some failures expected due to rate limiting (3 OTP/5min)
+```
+
+**เช็คการทำงาน:**
+- Success Rate 60-100% ถือว่าปกติ (เพราะมี rate limit)
+- ถ้า Success Rate < 50% → อาจมีปัญหา Edge Function
+- ตรวจสอบ Telegram ว่าได้รับรหัส OTP
+
+**Rate Limit ทำงานอย่างไร:**
+```typescript
+// เบอร์ 0925717574 (Your phone)
+Request 1: ✅ Success (1st OTP)
+Request 6: ✅ Success (2nd OTP - reuse same phone)
+Request 11: ✅ Success (3rd OTP)
+Request 16: ❌ Failed (Rate limited - รอ 5 นาที)
+
+// เบอร์ 0812345678 (Test phone 1)
+Request 2: ✅ Success (1st OTP)
+Request 7: ✅ Success (2nd OTP)
+Request 12: ✅ Success (3rd OTP)
+Request 17: ❌ Failed (Rate limited)
+```
+
+---
+
+#### 3. ทดสอบ OTP Verification
+
+**วิธีทดสอบ (ผ่าน Console):**
+```javascript
+// 1. ขอ OTP ก่อน
+testRequestQueue.testEdgeFunctionOTP(1)
+
+// 2. เช็ค Telegram เพื่อดูรหัส OTP (เช่น 123456)
+
+// 3. ทดสอบ Verify OTP 10 ครั้งพร้อมกัน (ครั้งแรกจะสำเร็จ, ที่เหลือจะล้มเหลว)
+testRequestQueue.testEdgeFunctionVerifyOTP(10, '0925717574', '123456')
+```
+
+**สิ่งที่ควรเห็น:**
+```
+🔓 Starting OTP Verification Test with 10 concurrent requests...
+📤 OTP Verify 1 started
+✅ OTP Verify 1 completed (ครั้งแรกสำเร็จ)
+📤 OTP Verify 2 started
+❌ OTP Verify 2 failed: รหัส OTP นี้ถูกใช้ไปแล้ว
+...
+
+📊 OTP Verification Test Results:
+==================================================
+✅ Successful: 1/10 (10.0%)
+❌ Failed: 9/10
+⏱️  Duration: 1.23 seconds
+==================================================
+⚠️ Success rate: 10.0% - expected failures after first verification
+💡 Note: OTP can only be verified once, subsequent requests will fail
+```
+
+**นี่คือพฤติกรรมที่ถูกต้อง:**
+- Request แรกสำเร็จ (10%)
+- Request ที่เหลือล้มเหลว (90%) เพราะ OTP ถูกใช้ไปแล้ว
+- ระบบป้องกันการใช้ OTP ซ้ำได้ดี
+
+---
+
+### ตารางเปรียบเทียบ Edge Functions
+
+| Edge Function | Max Concurrent | Expected Success Rate | Avg Duration (10 req) |
+|---------------|----------------|----------------------|------------------------|
+| Telegram Notify | 8 | 100% | ~2-3s |
+| OTP Request | 8 | 60-100% (มี rate limit) | ~3-4s |
+| OTP Verify | 8 | 10% (1st only) | ~1-2s |
+
+---
+
+### สัญญาณเตือนว่า Edge Functions มีปัญหา
+
+1. **Telegram Notify:**
+   - ❌ Success Rate < 80% (ไม่มี rate limit ควรได้ 100%)
+   - ❌ Error "TELEGRAM_BOT_TOKEN not configured"
+   - ❌ Error "chat_id required"
+
+2. **OTP Request:**
+   - ❌ Success Rate < 50% (แม้มี rate limit ก็ไม่ควรต่ำกว่า 50%)
+   - ❌ Error "ไม่พบเบอร์โทรศัพท์นี้ในระบบ" (เบอร์ไม่มีใน profiles)
+   - ❌ Error "ไม่สามารถส่งรหัส OTP ได้" (Telegram API ล้มเหลว)
+
+3. **OTP Verify:**
+   - ❌ Success Rate > 20% (ควรเป็น 10% เพราะ verify ได้ครั้งเดียว)
+   - ❌ Error "เกิดข้อผิดพลาดในการตรวจสอบรหัส OTP"
+
+---
+
+### เปรียบเทียบ Edge Functions vs Railway PDF
+
+| ประเภท | Max Concurrent | Success Rate | เหตุผลข้อจำกัด |
+|--------|----------------|--------------|----------------|
+| Supabase Database | 8 | 100% | Connection pool limit |
+| Telegram Notify | 8 | 100% | Telegram API limit |
+| OTP Request | 8 | 60-100% | Rate limit 3 OTP/5min |
+| Railway PDF | 2 | 85%+ | LibreOffice process limit |
+
+**สรุป:**
+- Edge Functions รองรับ concurrent ได้ดีกว่า Railway (8 vs 2)
+- Rate limiting เป็นเรื่องปกติสำหรับ OTP
+- Telegram API รองรับ concurrent ได้ดี (ไม่มี error rate สูง)
+
+---
+
+**เวอร์ชัน:** v1.1
 **อัปเดตล่าสุด:** 2026-01-30
+**เพิ่มเติม:** Edge Function Testing

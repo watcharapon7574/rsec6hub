@@ -133,6 +133,70 @@ const TestRequestQueuePage: React.FC = () => {
     }
   };
 
+  const runEdgeFunctionNotifyTest = async (count: number) => {
+    try {
+      setIsRunning(true);
+      setResults(null);
+      setLogs([]);
+      setShowLogs(true);
+
+      addLog(`📢 เริ่มทดสอบ Telegram Notify ด้วย ${count} notifications`, 'info');
+      addLog(`⚙️ Max concurrent: 8 requests`, 'info');
+      addLog(`⚠️ การทดสอบนี้จะส่งการแจ้งเตือนจริงผ่าน Telegram`, 'info');
+
+      const result = await testRequestQueue.testEdgeFunctionNotify(count);
+      setResults(result);
+
+      if (result.successRate === 100) {
+        addLog(`✅ ทดสอบสำเร็จ! ส่งการแจ้งเตือนได้ ${result.successful} ครั้ง`, 'success');
+      } else {
+        addLog(`⚠️ Success Rate: ${result.successRate}% (${result.failed} ล้มเหลว)`, 'error');
+      }
+
+      addLog(`⏱️ ใช้เวลา: ${result.duration.toFixed(2)} วินาที`, 'info');
+      addLog(`📈 Throughput: ${result.throughput.toFixed(2)} notifications/second`, 'info');
+    } catch (error) {
+      console.error('Edge Function Notify test failed:', error);
+      addLog(`❌ เกิดข้อผิดพลาด: ${error}`, 'error');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const runEdgeFunctionOTPTest = async (count: number) => {
+    try {
+      setIsRunning(true);
+      setResults(null);
+      setLogs([]);
+      setShowLogs(true);
+
+      addLog(`🔐 เริ่มทดสอบ OTP Request ด้วย ${count} requests`, 'info');
+      addLog(`⚙️ Max concurrent: 8 requests`, 'info');
+      addLog(`⚠️ Rate Limit: 3 OTP ต่อ 5 นาที ต่อเบอร์`, 'info');
+      addLog(`💡 ใช้เบอร์ต่างกันเพื่อหลีกเลี่ยง rate limit`, 'info');
+
+      const result = await testRequestQueue.testEdgeFunctionOTP(count);
+      setResults(result);
+
+      if (result.successRate >= 80) {
+        addLog(`✅ ทดสอบสำเร็จ! ขอ OTP ได้ ${result.successful} ครั้ง`, 'success');
+        if (result.successRate < 100) {
+          addLog(`💡 บางรายการล้มเหลวเนื่องจาก rate limiting (ปกติ)`, 'info');
+        }
+      } else {
+        addLog(`⚠️ Success Rate: ${result.successRate}% (${result.failed} ล้มเหลว)`, 'error');
+      }
+
+      addLog(`⏱️ ใช้เวลา: ${result.duration.toFixed(2)} วินาที`, 'info');
+      addLog(`📈 Throughput: ${result.throughput.toFixed(2)} OTPs/second`, 'info');
+    } catch (error) {
+      console.error('Edge Function OTP test failed:', error);
+      addLog(`❌ เกิดข้อผิดพลาด: ${error}`, 'error');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
@@ -285,6 +349,104 @@ const TestRequestQueuePage: React.FC = () => {
               >
                 50 PDFs
               </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Edge Function Tests */}
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <div className="text-sm font-medium text-purple-800 mb-2">
+              ⚡ Supabase Edge Function Tests
+            </div>
+            <div className="text-xs text-purple-600 mb-3">
+              ทดสอบ Edge Functions (OTP, Notifications, Login)
+            </div>
+
+            {/* Telegram Notify Tests */}
+            <div className="mb-3">
+              <div className="text-xs font-medium text-purple-700 mb-2">📢 Telegram Notifications</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button
+                  onClick={() => runEdgeFunctionNotifyTest(10)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  10 แจ้งเตือน
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionNotifyTest(20)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  20 แจ้งเตือน
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionNotifyTest(50)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  50 แจ้งเตือน
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionNotifyTest(100)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  100 แจ้งเตือน
+                </Button>
+              </div>
+            </div>
+
+            {/* OTP Request Tests */}
+            <div className="mb-3">
+              <div className="text-xs font-medium text-purple-700 mb-2">🔐 OTP Requests (Rate Limited)</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button
+                  onClick={() => runEdgeFunctionOTPTest(5)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  5 OTP
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionOTPTest(10)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  10 OTP
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionOTPTest(20)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  20 OTP
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionOTPTest(50)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  50 OTP
+                </Button>
+              </div>
             </div>
           </div>
 

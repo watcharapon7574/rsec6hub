@@ -128,9 +128,9 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400
           })
         }
-        
-        const { phone } = body
-        
+
+        const { phone, telegram_chat_id } = body
+
         // Normalize phone number for database lookup
         // Convert +66925717574 to 0925717574 for database comparison
         let normalizedPhone = phone.replace(/^\+66/, '0').replace(/\D/g, '')
@@ -138,7 +138,7 @@ serve(async (req) => {
           normalizedPhone = '0' + normalizedPhone
         }
         console.log('🔍 Looking up phone:', phone, '-> normalized:', normalizedPhone)
-        
+
         // Check for rate limiting - max 3 OTP requests per 5 minutes
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
         const { data: recentOtps, error: recentError } = await supabaseClient
@@ -146,7 +146,7 @@ serve(async (req) => {
           .select('id')
           .eq('phone', normalizedPhone)
           .gte('created_at', fiveMinutesAgo.toISOString())
-        
+
         if (recentError) {
           console.error('Error checking rate limit:', recentError)
         } else if (recentOtps && recentOtps.length >= 3) {
@@ -155,14 +155,14 @@ serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
           )
         }
-        
+
         // Check if user exists and get telegram_chat_id
         const { data: profile, error: profileError } = await supabaseClient
           .from('profiles')
           .select('telegram_chat_id, first_name, last_name, user_id')
           .eq('phone', normalizedPhone)
           .maybeSingle()
-        
+
         if (profileError) {
           console.error('Profile lookup error:', profileError)
           return new Response(
@@ -170,19 +170,37 @@ serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
           )
         }
-        
+
+        // ถ้าไม่พบ profile = เบอร์ไม่มีในระบบ (ติดต่อแอดมิน)
         if (!profile) {
           return new Response(
-            JSON.stringify({ error: 'ไม่พบเบอร์โทรศัพท์นี้ในระบบ' }),
+            JSON.stringify({
+              error: 'user_not_found',
+              message: 'ไม่พบเบอร์โทรศัพท์นี้ในระบบ กรุณาติดต่อผู้ดูแลระบบ'
+            }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
           )
         }
 
-        if (!profile.telegram_chat_id) {
+        // ถ้ามี profile แต่ไม่มี telegram_chat_id และไม่มีส่งมาด้วย = ผู้ใช้เข้าครั้งแรกต้องกรอก chat id
+        if (profile && !profile.telegram_chat_id && !telegram_chat_id) {
           return new Response(
-            JSON.stringify({ 
-              error: 'need_telegram_link',
-              message: 'กรุณาเชื่อมต่อบัญชี Telegram ก่อนเข้าสู่ระบบ'
+            JSON.stringify({
+              error: 'need_telegram_chat_id',
+              message: 'กรุณาใส่ Telegram Chat ID สำหรับการเข้าใช้งานครั้งแรก'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          )
+        }
+
+        // ใช้ telegram_chat_id จาก profile หรือจากที่ผู้ใช้ส่งมา (สำหรับผู้ใช้ใหม่)
+        const chatId = profile?.telegram_chat_id || telegram_chat_id
+
+        if (!chatId) {
+          return new Response(
+            JSON.stringify({
+              error: 'telegram_chat_id_required',
+              message: 'กรุณาใส่ Telegram Chat ID'
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
           )
@@ -205,7 +223,7 @@ serve(async (req) => {
           .insert({
             phone: normalizedPhone,
             otp_code: otpCode,
-            telegram_chat_id: profile.telegram_chat_id,
+            telegram_chat_id: chatId,
             expires_at: expiresAt.toISOString()
           })
 
@@ -216,14 +234,14 @@ serve(async (req) => {
 
         // Send OTP via Telegram
         const message = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ RSEC6 OfficeHub\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
-        
+
         try {
-          await sendTelegramMessage(botToken, profile.telegram_chat_id, message)
+          await sendTelegramMessage(botToken, chatId, message)
           console.log('✅ OTP sent successfully to:', normalizedPhone)
         } catch (telegramError) {
           console.error('Failed to send Telegram message:', telegramError)
           return new Response(
-            JSON.stringify({ error: 'ไม่สามารถส่งรหัส OTP ได้ กรุณาตรวจสอบการเชื่อมต่อ Telegram' }),
+            JSON.stringify({ error: 'ไม่สามารถส่งรหัส OTP ได้ กรุณาตรวจสอบ Telegram Chat ID' }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
           )
         }

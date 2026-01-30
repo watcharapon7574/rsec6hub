@@ -111,10 +111,10 @@ export const useEmployeeAuth = () => {
     };
   }, []);
 
-  const handleSendOTP = async (phone: string) => {
+  const handleSendOTP = async (phone: string, telegramChatId?: string) => {
     try {
       setLoading(true);
-      const result = await sendOTP(phone);
+      const result = await sendOTP(phone, telegramChatId);
       return result;
     } catch (err) {
       console.error('Send OTP error:', err);

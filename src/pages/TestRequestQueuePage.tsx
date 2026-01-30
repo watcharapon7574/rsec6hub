@@ -14,23 +14,52 @@ interface TestResult {
   successRate: number;
   duration: number;
   throughput: number;
+  results?: any[];
+}
+
+interface LogEntry {
+  time: string;
+  message: string;
+  type: 'info' | 'success' | 'error';
 }
 
 const TestRequestQueuePage: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<TestResult | null>(null);
   const [testCount, setTestCount] = useState(20);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
   const { queueLength, activeCount, isProcessing } = useRequestQueue();
+
+  const addLog = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    const time = new Date().toLocaleTimeString('th-TH');
+    setLogs(prev => [...prev, { time, message, type }]);
+  };
 
   const runTest = async (count: number) => {
     try {
       setIsRunning(true);
       setResults(null);
+      setLogs([]);
+      setShowLogs(true);
+
+      addLog(`🧪 เริ่มทดสอบด้วย ${count} concurrent requests`, 'info');
+      addLog(`⚙️ Max concurrent: 8 requests`, 'info');
 
       const result = await testRequestQueue.runTest(count);
       setResults(result);
+
+      if (result.successRate === 100) {
+        addLog(`✅ ทดสอบสำเร็จ! Success Rate: 100%`, 'success');
+      } else {
+        addLog(`⚠️ Success Rate: ${result.successRate}% (${result.failed} requests ล้มเหลว)`, 'error');
+      }
+
+      addLog(`⏱️ ใช้เวลา: ${result.duration.toFixed(2)} วินาที`, 'info');
+      addLog(`📈 Throughput: ${result.throughput.toFixed(2)} requests/second`, 'info');
     } catch (error) {
       console.error('Test failed:', error);
+      addLog(`❌ เกิดข้อผิดพลาด: ${error}`, 'error');
     } finally {
       setIsRunning(false);
     }
@@ -264,6 +293,42 @@ const TestRequestQueuePage: React.FC = () => {
         </Card>
       )}
 
+      {/* Logs Card */}
+      {showLogs && logs.length > 0 && (
+        <Card className="mt-6 border-gray-300">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center justify-between">
+              <span>Test Logs</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLogs(false)}
+              >
+                ซ่อน
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gray-900 text-gray-100 p-4 rounded-lg max-h-80 overflow-y-auto font-mono text-sm">
+              {logs.map((log, index) => (
+                <div
+                  key={index}
+                  className={`mb-1 ${
+                    log.type === 'success'
+                      ? 'text-green-400'
+                      : log.type === 'error'
+                      ? 'text-red-400'
+                      : 'text-gray-300'
+                  }`}
+                >
+                  <span className="text-gray-500">[{log.time}]</span> {log.message}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Instructions Card */}
       <Card className="mt-6 bg-gray-50">
         <CardHeader>
@@ -286,9 +351,22 @@ const TestRequestQueuePage: React.FC = () => {
             <Badge variant="outline">4</Badge>
             <span>Success Rate 100% = ระบบทำงานได้ดี ✅</span>
           </div>
+          <div className="flex gap-2">
+            <Badge variant="outline">5</Badge>
+            <span>เปิด Developer Console (F12) → Network Tab เพื่อดูหลักฐาน</span>
+          </div>
           <Separator className="my-3" />
           <div className="text-xs text-muted-foreground">
             💡 <strong>Tip:</strong> ใช้ Health Check สำหรับทดสอบเบื้องต้น และใช้ Stress Test เพื่อทดสอบแบบหนักๆ
+          </div>
+          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+            🔍 <strong>หลักฐานที่เชื่อถือได้:</strong>
+            <ul className="ml-4 mt-1 space-y-1">
+              <li>• Network Tab: ดู requests ทีละ 8 (ไม่พร้อมกัน 20+)</li>
+              <li>• LoadingQueue: ต้องแสดงตรงมุมล่างขวา</li>
+              <li>• Duration: นานกว่า (เพราะรอคิว) = Queue ทำงาน</li>
+              <li>• Success Rate: 100% = ไม่มี connection errors</li>
+            </ul>
           </div>
         </CardContent>
       </Card>

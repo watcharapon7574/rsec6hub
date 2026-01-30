@@ -28,6 +28,7 @@ import EditDocReceivePage from "@/pages/EditDocReceivePage";
 import TaskAssignmentPage from "@/pages/TaskAssignmentPage";
 import AssignedTasksPage from "@/pages/AssignedTasksPage";
 import DocumentDetailPage from "@/pages/DocumentDetailPage";
+import TestRequestQueuePage from "@/pages/TestRequestQueuePage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
 
 
@@ -170,6 +171,11 @@ const AppContent = () => {
       <Route path="/document-detail" element={
         <ProtectedRoute>
           <DocumentDetailPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/test-queue" element={
+        <ProtectedRoute>
+          <TestRequestQueuePage />
         </ProtectedRoute>
       } />
       <Route path="/" element={

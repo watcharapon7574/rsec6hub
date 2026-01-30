@@ -95,8 +95,13 @@ class RequestQueue {
   }
 }
 
-// Export singleton instance
+// Export singleton instance for general use (8 concurrent)
 export const requestQueue = new RequestQueue(8);
+
+// Export dedicated queue for Railway PDF with VERY low concurrency
+// Railway API uses LibreOffice which can't handle many concurrent conversions
+// Error 500 occurs when >2 concurrent conversions due to LibreOffice process limit
+export const railwayPDFQueue = new RequestQueue(2);
 
 // Export class for testing or custom instances
 export { RequestQueue };

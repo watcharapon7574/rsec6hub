@@ -110,7 +110,7 @@ const TestRequestQueuePage: React.FC = () => {
       setShowLogs(true);
 
       addLog(`📄 เริ่มทดสอบ Railway PDF API ด้วย ${count} requests`, 'info');
-      addLog(`⚙️ Max concurrent: 8 requests`, 'info');
+      addLog(`⚙️ Max concurrent: 2 requests (Railway limit)`, 'info');
       addLog(`⚠️ การทดสอบนี้จะเรียก Railway API จริง อาจใช้เวลานาน`, 'info');
 
       const result = await testRequestQueue.testRailwayPDF(count);

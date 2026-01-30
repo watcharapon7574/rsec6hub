@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Memo, MemoFormData, SignaturePosition, MemoSignature } from '@/types/memo';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDeviceFingerprint } from '@/utils/deviceInfo';
-import { requestQueue } from '@/utils/requestQueue';
+import { requestQueue, railwayPDFQueue } from '@/utils/requestQueue';
 
 export class MemoService {
   // Helper function to upload files to storage
@@ -117,13 +117,18 @@ export class MemoService {
       // Generate new PDF only if content changed or it's a new memo
       if (shouldGenerateNewPdf) {
         console.log('📄 Generating new PDF...');
+
+        // NOTE: Railway PDF API is already throttled by railwayPDFQueue (max 2 concurrent)
+        // The fetch itself doesn't need enqueue because the Railway server handles queueing
+        // But if we see 500 errors, we should wrap this in railwayPDFQueue.enqueue()
+
         // Call external API to generate PDF draft with CORS handling
         const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/pdf',
-           
+
           },
           mode: 'cors',
           credentials: 'omit',

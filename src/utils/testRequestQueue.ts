@@ -10,7 +10,7 @@
  * ```
  */
 
-import { requestQueue } from './requestQueue';
+import { requestQueue, railwayPDFQueue } from './requestQueue';
 import { supabase } from '@/integrations/supabase/client';
 
 export const testRequestQueue = {
@@ -180,7 +180,7 @@ export const testRequestQueue = {
     };
 
     for (let i = 0; i < count; i++) {
-      const promise = requestQueue.enqueue(async () => {
+      const promise = railwayPDFQueue.enqueue(async () => {
         console.log(`📤 PDF Request ${i + 1} started`);
 
         try {
@@ -236,6 +236,15 @@ export const testRequestQueue = {
       .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
       .reduce((sum, r) => sum + (r.value?.pdfSize || 0), 0);
 
+    // Analyze error types
+    const errorTypes: Record<string, number> = {};
+    results.forEach(r => {
+      if (r.status === 'rejected') {
+        const errorMsg = r.reason?.message || 'Unknown error';
+        errorTypes[errorMsg] = (errorTypes[errorMsg] || 0) + 1;
+      }
+    });
+
     console.log('\n📊 Railway PDF Test Results:');
     console.log('='.repeat(50));
     console.log(`✅ Successful: ${successful}/${count} (${successRate}%)`);
@@ -244,12 +253,24 @@ export const testRequestQueue = {
     console.log(`📈 Throughput: ${(count / parseFloat(duration)).toFixed(2)} PDFs/second`);
     console.log(`📦 Total PDF Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
     console.log('⏰ End time:', new Date().toLocaleTimeString());
+
+    if (failed > 0) {
+      console.log('\n❌ Error breakdown:');
+      Object.entries(errorTypes).forEach(([error, count]) => {
+        console.log(`  - ${error}: ${count} occurrences`);
+      });
+    }
+
     console.log('='.repeat(50));
 
     if (parseFloat(successRate) === 100) {
       console.log('✅ Railway PDF API + Request Queue working perfectly!');
     } else {
       console.warn(`⚠️  ${failed} requests failed - may need to check Railway API limits`);
+      console.warn('💡 Possible solutions:');
+      console.warn('   1. Reduce maxConcurrent to 4-5');
+      console.warn('   2. Add delay between requests');
+      console.warn('   3. Increase Railway timeout settings');
     }
 
     return {

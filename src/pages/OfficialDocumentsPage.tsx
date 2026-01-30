@@ -45,7 +45,7 @@ const OfficialDocumentsPage = () => {
 
       // Query with task_assignments to check for in_progress tasks
       const { data, error } = await supabase
-        .from('doc_receive')
+        .from('doc_receive' as any)
         .select(`
           *,
           task_assignments!task_assignments_doc_receive_id_fkey(

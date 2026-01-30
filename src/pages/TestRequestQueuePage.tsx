@@ -173,24 +173,80 @@ const TestRequestQueuePage: React.FC = () => {
       addLog(`🔐 เริ่มทดสอบ OTP Request ด้วย ${count} requests`, 'info');
       addLog(`⚙️ Max concurrent: 8 requests`, 'info');
       addLog(`⚠️ Rate Limit: 3 OTP ต่อ 5 นาที ต่อเบอร์`, 'info');
-      addLog(`💡 ใช้เบอร์ต่างกันเพื่อหลีกเลี่ยง rate limit`, 'info');
+
+      if (count > 3) {
+        addLog(`💡 คาดหวัง: 3 สำเร็จ (100%), ${count - 3} rate limited`, 'info');
+      } else {
+        addLog(`💡 คาดหวัง: ${count} สำเร็จ (100%)`, 'info');
+      }
 
       const result = await testRequestQueue.testEdgeFunctionOTP(count);
       setResults(result);
 
-      if (result.successRate >= 80) {
+      const expectedSuccess = Math.min(count, 3);
+      const expectedRate = (expectedSuccess / count) * 100;
+
+      if (result.successful === expectedSuccess) {
+        addLog(`✅ ทดสอบสำเร็จ! ขอ OTP ได้ ${result.successful}/${expectedSuccess} ตามที่คาดหวัง`, 'success');
+        addLog(`💡 Rate limiting ทำงานถูกต้อง (3 OTP max per 5min)`, 'info');
+      } else if (result.successRate >= 90) {
         addLog(`✅ ทดสอบสำเร็จ! ขอ OTP ได้ ${result.successful} ครั้ง`, 'success');
-        if (result.successRate < 100) {
-          addLog(`💡 บางรายการล้มเหลวเนื่องจาก rate limiting (ปกติ)`, 'info');
-        }
       } else {
         addLog(`⚠️ Success Rate: ${result.successRate}% (${result.failed} ล้มเหลว)`, 'error');
+        addLog(`💡 คาดหวัง ${expectedRate.toFixed(0)}% (${expectedSuccess}/${count})`, 'info');
       }
 
       addLog(`⏱️ ใช้เวลา: ${result.duration.toFixed(2)} วินาที`, 'info');
       addLog(`📈 Throughput: ${result.throughput.toFixed(2)} OTPs/second`, 'info');
     } catch (error) {
       console.error('Edge Function OTP test failed:', error);
+      addLog(`❌ เกิดข้อผิดพลาด: ${error}`, 'error');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const runEdgeFunctionLoginTest = async (count: number) => {
+    try {
+      setIsRunning(true);
+      setResults(null);
+      setLogs([]);
+      setShowLogs(true);
+
+      addLog(`👥 เริ่มทดสอบ Concurrent Login ด้วย ${count} simulated users`, 'info');
+      addLog(`⚙️ Max concurrent: 8 requests`, 'info');
+      addLog(`💡 ทดสอบ: Session check + Profile load + DB access`, 'info');
+      addLog(`🎯 คาดหวัง: Success Rate >= 90%`, 'info');
+
+      const result = await testRequestQueue.testEdgeFunctionLogin(count);
+      setResults(result);
+
+      if (result.successRate >= 95) {
+        addLog(`✅ ยอดเยี่ยม! ระบบรองรับ concurrent login ได้ดีมาก 🎉`, 'success');
+        addLog(`📊 Login สำเร็จ ${result.successful}/${count} (${result.successRate}%)`, 'success');
+      } else if (result.successRate >= 90) {
+        addLog(`✅ ดีมาก! ระบบรองรับ concurrent login ได้ดี ✓`, 'success');
+        addLog(`📊 Login สำเร็จ ${result.successful}/${count} (${result.successRate}%)`, 'success');
+      } else if (result.successRate >= 75) {
+        addLog(`⚠️ ผ่าน: Success Rate ${result.successRate}% (${result.failed} ล้มเหลว)`, 'error');
+        addLog(`💡 แนะนำ: พิจารณาเพิ่ม connection pool หรือ optimize auth flow`, 'info');
+      } else {
+        addLog(`❌ ต้องปรับปรุง: Success Rate ${result.successRate}% (${result.failed} ล้มเหลว)`, 'error');
+        addLog(`💡 อาจมีปัญหา: Connection pool limit, Rate limiting, หรือ DB performance`, 'error');
+      }
+
+      addLog(`⏱️ ใช้เวลา: ${result.duration.toFixed(2)} วินาที`, 'info');
+      addLog(`📈 Throughput: ${result.throughput.toFixed(2)} logins/second`, 'info');
+
+      // Show error breakdown if any
+      if (result.failed > 0 && result.errorTypes) {
+        addLog(`\n📋 สาเหตุของ Error:`, 'info');
+        Object.entries(result.errorTypes).forEach(([error, count]) => {
+          addLog(`  - ${error}: ${count} ครั้ง`, 'error');
+        });
+      }
+    } catch (error) {
+      console.error('Edge Function Login test failed:', error);
       addLog(`❌ เกิดข้อผิดพลาด: ${error}`, 'error');
     } finally {
       setIsRunning(false);
@@ -445,6 +501,49 @@ const TestRequestQueuePage: React.FC = () => {
                   className="border-purple-300"
                 >
                   50 OTP
+                </Button>
+              </div>
+            </div>
+
+            {/* Concurrent Login Tests */}
+            <div>
+              <div className="text-xs font-medium text-purple-700 mb-2">👥 Concurrent Login (Auth & DB Access)</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button
+                  onClick={() => runEdgeFunctionLoginTest(10)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  10 Logins
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionLoginTest(25)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  25 Logins
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionLoginTest(50)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300 font-bold"
+                >
+                  50 Logins
+                </Button>
+                <Button
+                  onClick={() => runEdgeFunctionLoginTest(100)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  100 Logins
                 </Button>
               </div>
             </div>

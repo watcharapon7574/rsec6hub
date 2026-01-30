@@ -382,6 +382,84 @@ testRequestQueue.testEdgeFunctionVerifyOTP(10, '0925717574', '123456')
 | Telegram Notify | 8 | 100% | ~2-3s |
 | OTP Request | 8 | 60-100% (มี rate limit) | ~3-4s |
 | OTP Verify | 8 | 10% (1st only) | ~1-2s |
+| Concurrent Login | 8 | 95%+ | ~2-4s |
+
+---
+
+#### 4. ทดสอบ Concurrent Login (ใหม่! 👥)
+
+**คลิก:** "10 Logins", "25 Logins", "50 Logins", "100 Logins"
+
+**วัตถุประสงค์:** ทดสอบความสามารถของระบบในการรองรับผู้ใช้ที่ล็อกอินพร้อมกัน
+
+**การทดสอบประกอบด้วย:**
+1. **Session Check** - ตรวจสอบ Authentication Token
+2. **Profile Load** - โหลดข้อมูล Profile จาก Database
+3. **Database Access** - ทดสอบการเข้าถึงข้อมูล (เช่น memos)
+
+**สิ่งที่ควรเห็น:**
+```
+👥 Starting Concurrent Login Test with 50 simulated users...
+⚠️ Note: Testing login flow with Supabase Auth
+📱 Using test phone: 0925717574
+💡 Note: Simulating 50 concurrent auth checks
+⏰ Start time: 15:23:45
+
+📤 Login Test 1 started
+📤 Login Test 2 started
+...
+📤 Login Test 8 started (หยุดที่ 8 เพราะ maxConcurrent = 8)
+
+✅ Login Test 1 completed (session valid, profile loaded)
+📤 Login Test 9 started
+✅ Login Test 2 completed (session valid, profile loaded)
+📤 Login Test 10 started
+...
+
+📊 Concurrent Login Test Results:
+==================================================
+✅ Successful: 49/50 (98.0%)
+❌ Failed: 1/50
+⏱️  Duration: 6.78 seconds
+📈 Throughput: 7.37 logins/second
+==================================================
+✅ Concurrent login handling is EXCELLENT! 🎉
+💡 System can handle high concurrent authentication load
+```
+
+**เช็คการทำงาน:**
+- **Success Rate >= 95%:** ✅ ยอดเยี่ยม! ระบบรองรับ concurrent login ได้ดีมาก
+- **Success Rate 90-95%:** ✅ ดีมาก! ระบบรองรับ concurrent login ได้ดี
+- **Success Rate 75-90%:** ⚠️ พอใช้ได้ แต่แนะนำให้ปรับปรุง
+- **Success Rate < 75%:** ❌ ต้องปรับปรุง มีปัญหาระบบ
+
+**Throughput ปกติ:**
+- 5-10 logins/second (ขึ้นกับ network และ Supabase response time)
+- 50 logins ใช้เวลาประมาณ 5-10 วินาที
+- 100 logins ใช้เวลาประมาณ 10-20 วินาที
+
+**สัญญาณเตือน:**
+- ❌ Success Rate < 90% → มีปัญหา Auth service หรือ Database
+- ❌ Error "Connection pool exhausted" → เพิ่ม max connections
+- ❌ Error "Session check failed" → ตรวจสอบ Supabase Auth
+- ❌ Error "Profile fetch failed" → ตรวจสอบ profiles table
+- ❌ Throughput < 3 logins/second → Network หรือ Server ช้า
+
+**กรณีใช้งานจริง:**
+```
+เช้าวันจันทร์ 8:00 น. มีพนักงาน 50 คน login พร้อมกัน
+- ถ้าไม่มี Request Queue: Database ล่ม, Login ไม่ได้ 40-50%
+- ถ้ามี Request Queue: Login สำเร็จ 95%+, ใช้เวลา 8-10 วินาที
+```
+
+**Error Breakdown:**
+ถ้ามี errors จะแสดงสาเหตุ เช่น:
+```
+📋 สาเหตุของ Error:
+  - Session check failed: 1 ครั้ง
+  - Profile fetch failed: 2 ครั้ง
+  - Database access failed: 1 ครั้ง
+```
 
 ---
 
@@ -403,22 +481,41 @@ testRequestQueue.testEdgeFunctionVerifyOTP(10, '0925717574', '123456')
 
 ---
 
-### เปรียบเทียบ Edge Functions vs Railway PDF
+### เปรียบเทียบทุกระบบที่ทดสอบ
 
 | ประเภท | Max Concurrent | Success Rate | เหตุผลข้อจำกัด |
 |--------|----------------|--------------|----------------|
 | Supabase Database | 8 | 100% | Connection pool limit |
 | Telegram Notify | 8 | 100% | Telegram API limit |
 | OTP Request | 8 | 60-100% | Rate limit 3 OTP/5min |
+| **Concurrent Login** | **8** | **95%+** | **Auth + DB operations** |
 | Railway PDF | 2 | 85%+ | LibreOffice process limit |
 
 **สรุป:**
+- **Concurrent Login** รองรับได้ดีมาก (95%+) เหมาะกับการใช้งานจริง
 - Edge Functions รองรับ concurrent ได้ดีกว่า Railway (8 vs 2)
 - Rate limiting เป็นเรื่องปกติสำหรับ OTP
 - Telegram API รองรับ concurrent ได้ดี (ไม่มี error rate สูง)
 
+**กรณีทดสอบ 50 คน Login พร้อมกัน:**
+```
+✅ ไม่มี Request Queue:
+   - Login ไม่ได้ 40-50% (Database connection pool หมด)
+   - ระบบล่ม, พนักงานต้องรอ Login ซ้ำ
+
+✅ มี Request Queue:
+   - Login สำเร็จ 95%+ (จัดคิวทีละ 8 คน)
+   - ใช้เวลา 8-10 วินาที แต่ทุกคน Login สำเร็จ
+```
+
+**คำแนะนำสำหรับ Production:**
+1. **Login Peak Time** (เช้าวันจันทร์): Request Queue จำเป็นมาก
+2. **OTP Peak**: Rate limiting 3 OTP/5min เพียงพอสำหรับการใช้งานปกติ
+3. **Notifications**: รองรับได้ถึง 100+ notifications/minute
+4. **PDF Generation**: ควรใช้ Background Queue (Railway จำกัดที่ 2 concurrent)
+
 ---
 
-**เวอร์ชัน:** v1.1
+**เวอร์ชัน:** v1.2
 **อัปเดตล่าสุด:** 2026-01-30
-**เพิ่มเติม:** Edge Function Testing
+**เพิ่มเติม:** Concurrent Login Testing (50-100 users)

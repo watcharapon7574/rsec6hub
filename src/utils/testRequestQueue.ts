@@ -288,9 +288,47 @@ export const testRequestQueue = {
   /**
    * Test Telegram Notify Edge Function
    * Tests concurrent notification sending to multiple users
+   *
+   * NOTE: You need to provide a valid Telegram chat_id
+   * To get your chat_id:
+   * 1. Open Telegram
+   * 2. Search for @userinfobot
+   * 3. Start chat and it will show your chat_id
+   *
+   * Example: testRequestQueue.testEdgeFunctionNotify(10, '123456789')
    */
-  async testEdgeFunctionNotify(count: number = 10, chatId: string = '7094586730') {
+  async testEdgeFunctionNotify(count: number = 10, chatId?: string) {
     console.log(`📢 Starting Telegram Notify Test with ${count} concurrent notifications...`);
+
+    // If no chat_id provided, try to get from current user's profile
+    if (!chatId) {
+      console.warn('⚠️ No chat_id provided. Attempting to get from current user profile...');
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error('No authenticated user');
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('telegram_chat_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profile?.telegram_chat_id) {
+          throw new Error('No telegram_chat_id found in profile. Please provide chat_id parameter.');
+        }
+
+        chatId = profile.telegram_chat_id;
+        console.log(`✅ Using chat_id from profile: ${chatId}`);
+      } catch (error: any) {
+        console.error('❌ Failed to get chat_id:', error.message);
+        throw new Error(`Cannot test notifications without chat_id. Usage: testRequestQueue.testEdgeFunctionNotify(10, 'YOUR_CHAT_ID')`);
+      }
+    }
+
+    console.log(`📱 Using Telegram chat_id: ${chatId}`);
     console.log('⏰ Start time:', new Date().toLocaleTimeString());
 
     const startTime = Date.now();
@@ -331,10 +369,11 @@ export const testRequestQueue = {
           });
 
           if (response.error) {
-            throw new Error(`Edge Function Error: ${response.error.message}`);
+            console.error(`❌ Edge Function Error Details:`, response.error);
+            throw new Error(`Edge Function Error: ${JSON.stringify(response.error)}`);
           }
 
-          console.log(`✅ Notification ${i + 1} sent successfully`);
+          console.log(`✅ Notification ${i + 1} sent successfully`, response.data);
           return { requestId: i + 1, success: true };
         } catch (error: any) {
           console.error(`❌ Notification ${i + 1} failed:`, error.message);
@@ -385,46 +424,65 @@ export const testRequestQueue = {
   /**
    * Test OTP Request Edge Function
    * Tests concurrent OTP generation and sending
+   *
    * NOTE: Rate limit is 3 OTP per 5 minutes per phone number
+   * This test will send OTP to the current user's phone repeatedly
+   * Expected: First 3 requests succeed, rest fail with rate limit error
    */
   async testEdgeFunctionOTP(count: number = 5) {
     console.log(`🔐 Starting OTP Request Test with ${count} concurrent requests...`);
     console.log('⚠️ Rate Limit: 3 OTP per 5 minutes per phone number');
+
+    // Get current user's phone number
+    let userPhone: string | null = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.phone) {
+        throw new Error('No phone number found in profile');
+      }
+
+      userPhone = profile.phone;
+      console.log(`📱 Using phone from profile: ${userPhone}`);
+      console.log(`💡 Note: Testing rate limit with same phone (expect 3 success, ${count - 3} failures)`);
+    } catch (error: any) {
+      console.error('❌ Failed to get user phone:', error.message);
+      throw new Error('Cannot test OTP without user phone number');
+    }
+
     console.log('⏰ Start time:', new Date().toLocaleTimeString());
 
     const startTime = Date.now();
     const promises: Promise<any>[] = [];
-
-    // Test phone numbers (will use different phones to avoid rate limit)
-    const testPhones = [
-      '0925717574', // Your phone
-      '0812345678', // Test phone 1
-      '0823456789', // Test phone 2
-      '0834567890', // Test phone 3
-      '0845678901'  // Test phone 4
-    ];
 
     for (let i = 0; i < count; i++) {
       const promise = requestQueue.enqueue(async () => {
         console.log(`📤 OTP Request ${i + 1} started`);
 
         try {
-          // Use different phone numbers to avoid rate limiting
-          const phone = testPhones[i % testPhones.length];
-
-          // Call Telegram OTP Edge Function
+          // Call Telegram OTP Edge Function with user's phone
           const response = await supabase.functions.invoke('telegram-otp/send-otp', {
             body: {
-              phone: phone
+              phone: userPhone
             }
           });
 
           if (response.error) {
-            throw new Error(`Edge Function Error: ${response.error.message}`);
+            console.error(`❌ Edge Function Error Details (Request ${i + 1}):`, response.error);
+            throw new Error(`Edge Function Error: ${JSON.stringify(response.error)}`);
           }
 
-          console.log(`✅ OTP Request ${i + 1} completed`);
-          return { requestId: i + 1, phone: phone, success: true };
+          console.log(`✅ OTP Request ${i + 1} completed`, response.data);
+          return { requestId: i + 1, phone: userPhone, success: true };
         } catch (error: any) {
           console.error(`❌ OTP Request ${i + 1} failed:`, error.message);
           throw error;

@@ -82,11 +82,52 @@ const TestRequestQueuePage: React.FC = () => {
     try {
       setIsRunning(true);
       setResults(null);
+      setLogs([]);
+      setShowLogs(true);
 
+      addLog('🏥 เริ่ม Health Check...', 'info');
       const result = await testRequestQueue.healthCheck();
       setResults(result);
+
+      if (result.successRate === 100) {
+        addLog('✅ Health Check ผ่าน!', 'success');
+      } else {
+        addLog(`⚠️ Health Check มีปัญหา: ${result.failed} requests ล้มเหลว`, 'error');
+      }
     } catch (error) {
       console.error('Health check failed:', error);
+      addLog(`❌ Health Check ล้มเหลว: ${error}`, 'error');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const runRailwayPDFTest = async (count: number) => {
+    try {
+      setIsRunning(true);
+      setResults(null);
+      setLogs([]);
+      setShowLogs(true);
+
+      addLog(`📄 เริ่มทดสอบ Railway PDF API ด้วย ${count} requests`, 'info');
+      addLog(`⚙️ Max concurrent: 8 requests`, 'info');
+      addLog(`⚠️ การทดสอบนี้จะเรียก Railway API จริง อาจใช้เวลานาน`, 'info');
+
+      const result = await testRequestQueue.testRailwayPDF(count);
+      setResults(result);
+
+      if (result.successRate === 100) {
+        addLog(`✅ ทดสอบสำเร็จ! สร้าง PDF ได้ ${result.successful} ไฟล์`, 'success');
+        addLog(`📦 ขนาดรวม: ${(result.totalPdfSize / 1024 / 1024).toFixed(2)} MB`, 'info');
+      } else {
+        addLog(`⚠️ Success Rate: ${result.successRate}% (${result.failed} ล้มเหลว)`, 'error');
+      }
+
+      addLog(`⏱️ ใช้เวลา: ${result.duration.toFixed(2)} วินาที`, 'info');
+      addLog(`📈 Throughput: ${result.throughput.toFixed(2)} PDFs/second`, 'info');
+    } catch (error) {
+      console.error('Railway PDF test failed:', error);
+      addLog(`❌ เกิดข้อผิดพลาด: ${error}`, 'error');
     } finally {
       setIsRunning(false);
     }
@@ -195,6 +236,56 @@ const TestRequestQueuePage: React.FC = () => {
               <Activity className="h-4 w-4 mr-2" />
               Stress Test (5, 10, 20, 50)
             </Button>
+          </div>
+
+          <Separator />
+
+          {/* Railway PDF Tests */}
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+            <div className="text-sm font-medium text-orange-800 mb-2">
+              📄 Railway PDF Generation Tests
+            </div>
+            <div className="text-xs text-orange-600 mb-3">
+              ทดสอบการสร้าง PDF จริงผ่าน Railway API (ใช้เวลานานกว่า)
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Button
+                onClick={() => runRailwayPDFTest(5)}
+                disabled={isRunning}
+                variant="outline"
+                size="sm"
+                className="border-orange-300"
+              >
+                5 PDFs
+              </Button>
+              <Button
+                onClick={() => runRailwayPDFTest(10)}
+                disabled={isRunning}
+                variant="outline"
+                size="sm"
+                className="border-orange-300"
+              >
+                10 PDFs
+              </Button>
+              <Button
+                onClick={() => runRailwayPDFTest(20)}
+                disabled={isRunning}
+                variant="outline"
+                size="sm"
+                className="border-orange-300"
+              >
+                20 PDFs
+              </Button>
+              <Button
+                onClick={() => runRailwayPDFTest(50)}
+                disabled={isRunning}
+                variant="outline"
+                size="sm"
+                className="border-orange-300"
+              >
+                50 PDFs
+              </Button>
+            </div>
           </div>
 
           {isRunning && (

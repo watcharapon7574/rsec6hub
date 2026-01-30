@@ -153,6 +153,115 @@ export const testRequestQueue = {
       console.error('❌ Health check FAILED:', error);
       throw error;
     }
+  },
+
+  /**
+   * Test Railway PDF Generation API with Request Queue
+   * This simulates real memo creation including PDF generation
+   */
+  async testRailwayPDF(count: number = 10) {
+    console.log(`📄 Starting Railway PDF Test with ${count} concurrent requests...`);
+    console.log('⏰ Start time:', new Date().toLocaleTimeString());
+
+    const startTime = Date.now();
+    const promises: Promise<any>[] = [];
+
+    // Sample memo data for PDF generation
+    const sampleMemoData = {
+      doc_number: 'ทดสอบ/001/2568',
+      subject: 'ทดสอบระบบ Request Queue',
+      date: new Date().toISOString().split('T')[0],
+      attachment_title: '',
+      introduction: 'ทดสอบการสร้าง PDF พร้อมกัน',
+      author_name: 'ระบบทดสอบ',
+      author_position: 'Developer',
+      fact: 'ทดสอบ Railway PDF Generation API',
+      proposal: 'ควรใช้ Request Queue เพื่อจำกัด concurrent requests'
+    };
+
+    for (let i = 0; i < count; i++) {
+      const promise = requestQueue.enqueue(async () => {
+        console.log(`📤 PDF Request ${i + 1} started`);
+
+        try {
+          // Call Railway PDF API
+          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/pdf',
+            },
+            mode: 'cors',
+            credentials: 'omit',
+            body: JSON.stringify({
+              ...sampleMemoData,
+              doc_number: `ทดสอบ/${String(i + 1).padStart(3, '0')}/2568`
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Railway API Error: ${response.status}`);
+          }
+
+          const pdfBlob = await response.blob();
+
+          if (pdfBlob.size === 0) {
+            throw new Error('Received empty PDF');
+          }
+
+          console.log(`✅ PDF Request ${i + 1} completed (${(pdfBlob.size / 1024).toFixed(2)} KB)`);
+          return { requestId: i + 1, pdfSize: pdfBlob.size };
+        } catch (error: any) {
+          console.error(`❌ PDF Request ${i + 1} failed:`, error.message);
+          throw error;
+        }
+      });
+
+      promises.push(promise);
+    }
+
+    // Wait for all requests to complete
+    const results = await Promise.allSettled(promises);
+
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+    // Calculate statistics
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const successRate = ((successful / count) * 100).toFixed(1);
+
+    // Calculate total PDF size
+    const totalSize = results
+      .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+      .reduce((sum, r) => sum + (r.value?.pdfSize || 0), 0);
+
+    console.log('\n📊 Railway PDF Test Results:');
+    console.log('='.repeat(50));
+    console.log(`✅ Successful: ${successful}/${count} (${successRate}%)`);
+    console.log(`❌ Failed: ${failed}/${count}`);
+    console.log(`⏱️  Duration: ${duration} seconds`);
+    console.log(`📈 Throughput: ${(count / parseFloat(duration)).toFixed(2)} PDFs/second`);
+    console.log(`📦 Total PDF Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+    console.log('⏰ End time:', new Date().toLocaleTimeString());
+    console.log('='.repeat(50));
+
+    if (parseFloat(successRate) === 100) {
+      console.log('✅ Railway PDF API + Request Queue working perfectly!');
+    } else {
+      console.warn(`⚠️  ${failed} requests failed - may need to check Railway API limits`);
+    }
+
+    return {
+      total: count,
+      successful,
+      failed,
+      successRate: parseFloat(successRate),
+      duration: parseFloat(duration),
+      throughput: count / parseFloat(duration),
+      totalPdfSize: totalSize,
+      results
+    };
   }
 };
 

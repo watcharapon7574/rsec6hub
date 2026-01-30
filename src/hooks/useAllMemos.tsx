@@ -27,6 +27,7 @@ export interface MemoRecord {
   updated_at?: string;
   signatures?: any;
   attached_files?: string[];
+  has_in_progress_task?: boolean;
 }
 
 export const useAllMemos = () => {
@@ -38,35 +39,92 @@ export const useAllMemos = () => {
   const fetchMemos = async () => {
     try {
       setLoading(true);
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = (now.getMonth() + 1).toString().padStart(2, '0');
-      const firstDay = `${year}-${month}-01T00:00:00.000Z`;
-      const nextMonth = new Date(year, now.getMonth() + 1, 1);
-      const lastDay = nextMonth.toISOString();
+      // แสดงเอกสารย้อนหลัง 30 วัน เพื่อไม่ให้พลาดเอกสารข้ามเดือน
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const startDate = thirtyDaysAgo.toISOString();
+
+      // Query with task_assignments to check for in_progress tasks
       const { data, error } = await supabase
         .from('memos')
-        .select('*')
-        .gte('created_at', firstDay)
-        .lt('created_at', lastDay)
+        .select(`
+          *,
+          task_assignments!task_assignments_memo_id_fkey(
+            id,
+            status,
+            deleted_at
+          )
+        `)
+        .is('doc_del', null)
+        .gte('created_at', startDate)
         .order('created_at', { ascending: false });
       if (error) {
         console.error('Error fetching memos:', error);
         throw error;
       }
-      
-      // Transform data to match MemoRecord type
-      const transformedData = data?.map(memo => ({
-        ...memo,
-        attached_files: (() => {
-          try {
-            return memo.attached_files ? JSON.parse(memo.attached_files) : [];
-          } catch {
-            return [];
-          }
-        })()
-      })) || [];
-      
+
+      // Debug: Log raw data from database
+      console.log('📊 useAllMemos: Raw data from database:', {
+        count: data?.length,
+        firstMemo: data?.[0],
+        hasTaskAssignments: !!data?.[0]?.task_assignments,
+        sampleTaskAssignments: data?.[0]?.task_assignments,
+        assignedMemos: data?.filter(m => m.is_assigned).map(m => ({
+          id: m.id,
+          subject: m.subject,
+          is_assigned: m.is_assigned,
+          task_assignments: m.task_assignments
+        }))
+      });
+
+      // Transform data to match MemoRecord type and add has_in_progress_task
+      const transformedData = data?.map(memo => {
+        const tasks = memo.task_assignments || [];
+        // Check for in_progress tasks that are not deleted
+        const hasInProgressTask = tasks.some((task: any) =>
+          task.status === 'in_progress' && task.deleted_at === null
+        );
+
+        // Debug log - ล็อกทุก memo ที่มี is_assigned
+        if (memo.is_assigned) {
+          console.log('🔍 useAllMemos transformation:', {
+            memoId: memo.id,
+            subject: memo.subject,
+            is_assigned: memo.is_assigned,
+            tasks: tasks,
+            tasksLength: tasks.length,
+            hasInProgressTask: hasInProgressTask
+          });
+        }
+
+        // Remove task_assignments from the object to keep it clean
+        const { task_assignments, ...memoWithoutTasks } = memo;
+
+        return {
+          ...memoWithoutTasks,
+          attached_files: (() => {
+            try {
+              return memoWithoutTasks.attached_files ? JSON.parse(memoWithoutTasks.attached_files) : [];
+            } catch {
+              return [];
+            }
+          })(),
+          has_in_progress_task: hasInProgressTask
+        };
+      }) || [];
+
+      // Debug: Log transformed data
+      console.log('✅ useAllMemos: Transformed data:', {
+        count: transformedData.length,
+        firstTransformed: transformedData[0],
+        hasInProgressTaskField: transformedData[0]?.has_in_progress_task,
+        assignedDocs: transformedData.filter(m => m.is_assigned).map(m => ({
+          id: m.id,
+          subject: m.subject,
+          has_in_progress_task: m.has_in_progress_task
+        }))
+      });
+
       setMemos(transformedData as MemoRecord[]);
     } catch (error) {
       console.error('Error fetching memos:', error);
@@ -149,6 +207,28 @@ export const useAllMemos = () => {
 
   const updateMemoSigners = async (memoId: string, signers: any[], signaturePositions: any[]) => {
     try {
+      // ตรวจสอบว่า memo มีอยู่จริงก่อน
+      const { data: existingMemo, error: checkError } = await supabase
+        .from('memos')
+        .select('id, status, doc_del')
+        .eq('id', memoId)
+        .single();
+
+      if (checkError) {
+        console.error('Error checking memo:', checkError);
+        throw new Error(`ไม่พบเอกสาร: ${checkError.message}`);
+      }
+
+      if (!existingMemo) {
+        throw new Error('ไม่พบเอกสารในระบบ');
+      }
+
+      if (existingMemo.doc_del) {
+        throw new Error('เอกสารถูกลบแล้ว');
+      }
+
+      console.log('✅ Found memo:', existingMemo);
+
       const { error } = await supabase
         .from('memos')
         .update({

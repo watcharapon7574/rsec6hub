@@ -18,9 +18,15 @@ import CreateDocumentPage from "@/pages/CreateDocumentPage";
 import CreateMemoPage from "@/pages/CreateMemoPage";
 import PDFSignaturePage from "@/pages/PDFSignaturePage";
 import DocumentManagePage from "@/pages/DocumentManagePage";
+import PDFDocumentManagePage from "@/pages/PDFDocumentManagePage";
+import PDFReceiveManagePage from "@/pages/PDFReceiveManagePage";
 import ApproveDocumentPage from "@/pages/ApproveDocumentPage";
 import PDFjustPreview from '@/pages/PDFjustPreview';
 import NotificationsPage from "@/pages/NotificationsPage";
+import EditDocReceivePage from "@/pages/EditDocReceivePage";
+import TaskAssignmentPage from "@/pages/TaskAssignmentPage";
+import AssignedTasksPage from "@/pages/AssignedTasksPage";
+import DocumentDetailPage from "@/pages/DocumentDetailPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
 
 
@@ -120,6 +126,21 @@ const AppContent = () => {
           <DocumentManagePage />
         </ProtectedRoute>
       } />
+      <Route path="/pdf-document-manage/:memoId" element={
+        <ProtectedRoute>
+          <PDFDocumentManagePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/pdf-receive-manage/:memoId" element={
+        <ProtectedRoute>
+          <PDFReceiveManagePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/edit-doc-receive/:memoId" element={
+        <ProtectedRoute>
+          <EditDocReceivePage />
+        </ProtectedRoute>
+      } />
       <Route path="/approve-document/:memoId" element={
         <ProtectedRoute>
           <ApproveDocumentPage />
@@ -133,6 +154,21 @@ const AppContent = () => {
       <Route path="/notifications" element={
         <ProtectedRoute>
           <NotificationsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/task-assignment" element={
+        <ProtectedRoute>
+          <TaskAssignmentPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/assigned-tasks" element={
+        <ProtectedRoute>
+          <AssignedTasksPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/document-detail" element={
+        <ProtectedRoute>
+          <DocumentDetailPage />
         </ProtectedRoute>
       } />
       <Route path="/" element={

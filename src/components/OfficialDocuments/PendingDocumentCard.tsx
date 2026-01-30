@@ -55,22 +55,28 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     }
   };
 
-  // กรองเอกสารที่ต้องการการอนุมัติจากผู้ใช้ปัจจุบัน + เอกสารที่เสร็จสิ้นแล้ว
-  const isExecutive = ['deputy_director', 'director'].includes(profile?.position || '');
+  // กรองเอกสารที่ต้องการการอนุมัติจากผู้ใช้ปัจจุบัน (ไม่รวมเอกสารที่เสร็จสิ้นแล้ว)
+  const isExecutive = ['assistant_director', 'deputy_director', 'director'].includes(profile?.position || '');
   const initialFilteredMemos = pendingMemos.filter(memo => {
-    if (!memo.signer_list_progress || !profile) return false;
-    
-    // แสดงเอกสารที่เสร็จสิ้นแล้ว (current_signer_order = 5)
-    if (memo.current_signer_order === 5) {
-      return true;
+    // กรองเอกสารที่ถูก soft delete ออก
+    if (memo.doc_del) {
+      return false;
     }
-    
+
+    // ไม่แสดงเอกสารที่เสร็จสิ้นแล้ว (current_signer_order = 5)
+    if (memo.current_signer_order === 5) {
+      return false;
+    }
+
     if (isExecutive) {
-      // รองผอ/ผอ เห็นทุก pending_sign (current_signer_order 2-4)
+      // ผู้ช่วยผอ/รองผอ/ผอ เห็นทุก pending_sign (current_signer_order 2-4)
+      // ไม่ต้องเช็ค signer_list_progress เพราะจะทำให้เอกสารที่ยังไม่มี list ไม่แสดง
       return memo.status === 'pending_sign' && memo.current_signer_order >= 2 && memo.current_signer_order <= 4;
     }
-    
-    // logic ใหม่ใช้ signer_list_progress แทน signature_positions
+
+    // สำหรับ user อื่นๆ ที่ไม่ใช่ executive
+    if (!memo.signer_list_progress || !profile) return false;
+
     const signerList = Array.isArray(memo.signer_list_progress) ? memo.signer_list_progress : [];
     const userSigner = signerList.find((signer: any) => signer.user_id === profile.user_id);
     const nextSignerOrder = memo.current_signer_order === 1 ? 2 : memo.current_signer_order;
@@ -207,8 +213,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     currentUserId: profile?.user_id
   });
 
-  const handleManageDocument = (memoId: string) => {
-    navigate(`/approve-document/${memoId}`);
+  const handleManageDocument = (memo: any) => {
+    // Check if this is a doc_receive or regular memo
+    const isDocReceive = memo.__source_table === 'doc_receive';
+
+    // Navigate to the same approval page (ApproveDocumentPage handles both types)
+    navigate(`/approve-document/${memo.id}`);
   };
 
   // ฟังก์ชันสำหรับข้อความสถานะ (แปลไทย)
@@ -357,20 +367,20 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                       </div>
                     ) : (
                       <>
-                        {/* Step 1: ตรวจทาน (โดยธุรการ) */}
+                        {/* Step 1: ตรวจทาน/เสนอ (สำหรับ Memo) หรือ ตรวจทาน (สำหรับ doc_receive) */}
                         <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                            memo.current_signer_order === 5 
+                            memo.current_signer_order === 5
                               ? 'text-gray-400'
                               : (memo.current_signer_order === 1 ? 'text-amber-700' : 'text-amber-400')
-                          }`}>ตรวจทาน</span>
+                          }`}>{memo.__source_table === 'doc_receive' ? 'ตรวจทาน' : 'ตรวจทาน/เสนอ'}</span>
                           <span className={`sm:text-[10px] text-[9px] ${
-                            memo.current_signer_order === 5 
+                            memo.current_signer_order === 5
                               ? 'text-gray-400'
                               : (memo.current_signer_order === 1 ? 'text-amber-700 font-bold' : 'text-amber-400')
                           }`}>
                             {(() => {
-                              // ดึงชื่อธุรการผู้ตรวจทานจาก clerk_id
+                              // ดึงชื่อผู้ตรวจทาน/ผู้เสนอจาก clerk_id (first_name + last_name)
                               try {
                                 if (memo.clerk_id) {
                                   const clerkProfile = profiles.find(p => p.user_id === memo.clerk_id);
@@ -378,7 +388,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                     return `${clerkProfile.first_name} ${clerkProfile.last_name}`;
                                   }
                                 }
-                                
+
                                 return 'ไม่ระบุ';
                               } catch (error) {
                                 console.error('Error getting clerk name:', error);
@@ -393,11 +403,50 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                           }`}></div>
                         </div>
                         <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-amber-200'}`} />
-                        
-                        {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author) */}
+
+                        {/* แสดงผู้เสนอ (clerk_teacher) สำหรับหนังสือรับ */}
+                        {memo.__source_table === 'doc_receive' && memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 && (() => {
+                          const proposer = memo.signer_list_progress.find(s => s.role === 'clerk');
+                          if (proposer) {
+                            return (
+                              <>
+                                <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
+                                  <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                    memo.current_signer_order === 5
+                                      ? 'text-gray-400'
+                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700' : 'text-amber-400')
+                                  }`}>ผู้เสนอ</span>
+                                  <span className={`sm:text-[10px] text-[9px] ${
+                                    memo.current_signer_order === 5
+                                      ? 'text-gray-400'
+                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
+                                  }`}>
+                                    {(() => {
+                                      // Always use user_id to fetch fresh data from profiles
+                                      const userProfile = profiles.find(p => p.user_id === proposer.user_id);
+                                      if (userProfile) {
+                                        return `${userProfile.first_name} ${userProfile.last_name}`.trim();
+                                      }
+                                      return '-';
+                                    })()}
+                                  </span>
+                                  <div className={`w-2 h-2 rounded-full mt-1 ${
+                                    memo.current_signer_order === 5
+                                      ? 'bg-gray-200'
+                                      : (memo.current_signer_order === proposer.order ? 'bg-amber-500' : 'bg-amber-200')
+                                  }`}></div>
+                                </div>
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-amber-200'}`} />
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
+
+                        {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author และธุรการ/clerk) */}
                         {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
                           memo.signer_list_progress
-                            .filter(signer => signer.role !== 'author') // ข้ามผู้เขียน
+                            .filter(signer => signer.role !== 'author' && signer.role !== 'clerk') // ข้ามผู้เขียนและธุรการ
                             .sort((a, b) => a.order - b.order)
                             .map((signer, idx, arr) => (
                               <React.Fragment key={signer.order}>
@@ -422,36 +471,16 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                     })()}
                                   </span>
                                   <span className={`sm:text-[10px] text-[9px] ${
-                                    memo.current_signer_order === 5 
+                                    memo.current_signer_order === 5
                                       ? 'text-gray-400'
                                       : (memo.current_signer_order === signer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
                                   }`}>{(() => {
-                                    // Try first_name + last_name first
-                                    const firstName = signer.first_name || '';
-                                    const lastName = signer.last_name || '';
-                                    if (firstName || lastName) {
-                                      return `${firstName} ${lastName}`.trim();
-                                    }
-                                    
-                                    // Fallback: extract from full name by removing prefix
-                                    const fullName = signer.name || '-';
-                                    if (fullName === '-') return '-';
-                                    
-                                    // Find profile from profiles list for additional info
+                                    // Always use user_id to fetch fresh data from profiles
                                     const userProfile = profiles.find(p => p.user_id === signer.user_id);
                                     if (userProfile) {
                                       return `${userProfile.first_name} ${userProfile.last_name}`.trim();
                                     }
-                                    
-                                    // Last resort: extract from name field
-                                    const parts = fullName.trim().split(/\s+/);
-                                    if (parts.length >= 3) {
-                                      return parts.slice(-2).join(' ');
-                                    } else if (parts.length === 2) {
-                                      return parts.join(' ');
-                                    } else {
-                                      return parts[0] || '-';
-                                    }
+                                    return '-';
                                   })()}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
@@ -492,17 +521,16 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                     // ถ้าเป็นเอกสารที่เสร็จสิ้นแล้ว (current_signer_order = 5) แสดงเฉพาะปุ่ม "ดูเอกสาร"
                     if (memo.current_signer_order === 5) {
                       return (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 hover:bg-amber-50 mt-2 sm:mt-0 sm:ml-auto flex items-center gap-1"
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 hover:bg-amber-50 mt-2 sm:mt-0 sm:ml-auto flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });
                           }}
                         >
                           <Eye className="h-4 w-4" />
-                          ดูเอกสาร
                         </Button>
                       );
                     }
@@ -518,14 +546,13 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <Button
                           variant="outline"
                           size="sm"
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 mt-2 sm:mt-0 sm:ml-auto flex items-center gap-1"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 mt-2 sm:mt-0 sm:ml-auto flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });
                           }}
                         >
                           <Eye className="h-4 w-4" />
-                          ดูเอกสาร
                         </Button>
                       );
                     }
@@ -535,26 +562,24 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <Button
                           variant="outline"
                           size="sm"
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 flex items-center gap-1"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });
                           }}
                         >
                           <Eye className="h-4 w-4" />
-                          ดูเอกสาร
                         </Button>
-                        
+
                         {/* ปุ่มลงนาม (ขวา) */}
                         <div className="relative">
-                          <Button 
-                            onClick={() => handleManageDocument(memo.id)}
+                          <Button
+                            onClick={() => handleManageDocument(memo)}
                             size="sm"
-                            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
+                            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center"
                             disabled={!canSign}
                           >
                             <PenTool className="h-4 w-4" />
-                            <span className="leading-none">ลงนาม</span>
                           </Button>
                           {canSign && (
                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 py-0.5 rounded-full font-bold">

@@ -2,8 +2,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentList from './DocumentList';
+import DocReceiveList from './DocReceiveList';
+import MemoList from './MemoList';
 import PendingDocumentCard from './PendingDocumentCard';
 import PersonalDocumentList from './PersonalDocumentList';
+import AssignedDocumentsList from './AssignedDocumentsList';
 import TestTools from './TestTools';
 import ApprovalProcess from './ApprovalProcess';
 import ManagementTools from './ManagementTools';
@@ -14,13 +17,14 @@ import ClerkSigningTools from './ClerkSigningTools';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  FileText, 
-  Settings, 
-  GraduationCap, 
-  Briefcase, 
-  PenTool, 
-  Plus
+import {
+  FileText,
+  Settings,
+  GraduationCap,
+  Briefcase,
+  PenTool,
+  Plus,
+  ClipboardList
 } from 'lucide-react';
 import { isExecutive, isClerk, isTeacher, getPositionDisplayName } from '@/types/database';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
@@ -50,6 +54,7 @@ interface Permissions {
 interface DocumentCardsProps {
   documents: Document[];
   realMemos?: any[];
+  docReceiveList?: any[];
   onDocumentSubmit: (data: any) => void;
   permissions: Permissions;
   onReject?: (documentId: string, reason: string) => void;
@@ -61,6 +66,7 @@ interface DocumentCardsProps {
 const DocumentCards: React.FC<DocumentCardsProps> = ({ 
   documents, 
   realMemos = [],
+  docReceiveList = [],
   onDocumentSubmit, 
   permissions,
   onReject,
@@ -129,33 +135,94 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
         <PendingDocumentCard pendingMemos={pendingSignMemos} onRefresh={onRefresh} />
       )}
 
-      {/* สำหรับธุรการ: สลับลำดับ - เอกสารภายในสถานศึกษาก่อน แล้วเอกสารส่วนตัว */}
+      {/* สำหรับธุรการ: สลับลำดับ - งานที่ได้รับมอบหมายก่อน แล้วเอกสารภายในสถานศึกษา แล้วหนังสือรับ แล้วรายการบันทึกข้อความ แล้วเอกสารส่วนตัว */}
       {permissions.position === "clerk_teacher" ? (
         <>
+          {/* Assigned Documents List สำหรับธุรการเท่านั้น - งานที่ได้รับมอบหมาย */}
+          {permissions.position === "clerk_teacher" && (
+            <Card className="bg-white border border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <ClipboardList className="h-5 w-5 text-green-600" />
+                  <span>งานที่ได้รับมอบหมาย</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AssignedDocumentsList />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Document List สำหรับธุรการ - เอกสารภายในสถานศึกษา */}
-          <DocumentList 
-            documents={documents} 
+          <DocumentList
+            documents={documents}
             realMemos={realMemos}
+            docReceiveList={docReceiveList}
             onReject={onReject}
             onAssignNumber={onAssignNumber}
             onSetSigners={onSetSigners}
             onRefresh={onRefresh}
           />
-          
+
+          {/* Doc Receive List สำหรับธุรการเท่านั้น - รายการหนังสือรับ (PDF อัปโหลด) */}
+          {permissions.position === "clerk_teacher" && (
+            <DocReceiveList
+              documents={docReceiveList.map(docReceive => ({
+                id: parseInt(docReceive.id.slice(-6), 16),
+                title: docReceive.subject,
+                description: docReceive.document_summary || 'หนังสือรับ - PDF อัปโหลด',
+                requester: docReceive.author_name,
+                department: docReceive.author_position,
+                status: docReceive.status,
+                created_at: docReceive.created_at,
+                document_number: docReceive.doc_number,
+                urgency: 'normal',
+                source_type: 'pdf_upload'
+              }))}
+              docReceiveList={docReceiveList}
+              onReject={onReject}
+              onAssignNumber={onAssignNumber}
+              onSetSigners={onSetSigners}
+              onRefresh={onRefresh}
+            />
+          )}
+
+          {/* Memo List สำหรับธุรการเท่านั้น - รายการบันทึกข้อความ (ไม่รวม doc_receive) */}
+          {permissions.position === "clerk_teacher" && (
+            <MemoList
+              memoList={realMemos.filter(memo => !memo.__source_table || memo.__source_table !== 'doc_receive')}
+              onRefresh={onRefresh}
+            />
+          )}
+
           {/* Personal Document List สำหรับธุรการ */}
           <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} />
         </>
       ) : (
         <>
+          {/* Assigned Documents List สำหรับบุคลากรทุกคน - งานที่ได้รับมอบหมาย */}
+          <Card className="bg-white border border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <ClipboardList className="h-5 w-5 text-green-600" />
+                <span>งานที่ได้รับมอบหมาย</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AssignedDocumentsList />
+            </CardContent>
+          </Card>
+
           {/* สำหรับผู้ช่วยผอ, รองผอ: เอกสารส่วนตัวก่อน */}
           {["assistant_director", "deputy_director"].includes(permissions.position) && (
             <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} />
           )}
-          
+
           {/* Document List สำหรับบทบาทอื่น */}
-          <DocumentList 
-            documents={documents} 
+          <DocumentList
+            documents={documents}
             realMemos={realMemos}
+            docReceiveList={docReceiveList}
             onReject={onReject}
             onAssignNumber={onAssignNumber}
             onSetSigners={onSetSigners}

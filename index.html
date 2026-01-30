@@ -4,9 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RSEC6 OfficeHub</title>
-    <link rel="icon" type="image/png" href="/lovable-uploads/iconLogo.png" />
+    <link rel="icon" type="image/png" href="/fastdocIcon.png" />
     <meta name="description" content="ระบบจัดการเอกสารดิจิทัล ศูนย์การศึกษาพิเศษ เขตการศึกษา 6" />
     <meta name="author" content="RSEC6 OfficeHub" />
+
+    <!-- ป้องกัน Browser Cache -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -19,10 +24,10 @@
     <meta name="apple-mobile-web-app-title" content="RSEC6 Hub" />
     
     <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="/lovable-uploads/iconLogo.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/lovable-uploads/iconLogo.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/lovable-uploads/iconLogo.png" />
-    <link rel="apple-touch-icon" sizes="167x167" href="/lovable-uploads/iconLogo.png" />
+    <link rel="apple-touch-icon" href="/fastdocIcon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/fastdocIcon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/fastdocIcon.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/fastdocIcon.png" />
 
     <meta property="og:title" content="rsec6-nexus-hub" />
     <meta property="og:description" content="Lovable Generated Project" />
@@ -38,17 +43,48 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration with Auto-Update -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
               console.log('SW registered: ', registration);
+
+              // ตรวจสอบอัปเดททุก 60 วินาที
+              setInterval(() => {
+                registration.update();
+              }, 60000);
+
+              // เมื่อมี SW ใหม่พร้อม ให้อัปเดทอัตโนมัติ
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // มี SW ใหม่พร้อมแล้ว
+                    console.log('New Service Worker available. Updating...');
+
+                    // แจ้งเตือนผู้ใช้ (สามารถปรับเป็น UI ที่สวยกว่านี้ได้)
+                    if (confirm('มีเวอร์ชันใหม่ของระบบ คุณต้องการรีเฟรชหน้าเพื่ออัปเดทหรือไม่?')) {
+                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+                      window.location.reload();
+                    }
+                  }
+                });
+              });
             })
             .catch((registrationError) => {
               console.log('SW registration failed: ', registrationError);
             });
+
+          // เมื่อ SW ถูกเปลี่ยนแล้ว ให้รีโหลดหน้า
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+              refreshing = true;
+              window.location.reload();
+            }
+          });
         });
       }
     </script>

@@ -492,6 +492,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   );
 
   const roleColors = {
+    clerk: 'bg-purple-500',
     author: 'bg-blue-500',
     assistant_director: 'bg-green-500',
     deputy_director: 'bg-yellow-500',
@@ -660,6 +661,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             
               {currentPagePositions.map((pos, index) => {
                 console.log(`🔍 Processing signature pin ${index} on page ${currentPageNumber}`);
+                const isClerk = pos.signer.role === 'clerk';
                 const roleColor = roleColors[pos.signer.role as keyof typeof roleColors] || 'bg-gray-500';
                 
                 // Use the correct page element selector - use data-testid which is more reliable
@@ -697,27 +699,26 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const standardPageHeight = 842; // A4 height in points
                 const currentZoom = scale; // ใช้ scale state จาก zoomPlugin แทนการคำนวณใหม่
                 
-                // Calculate pin size based on actual PDF scale/zoom
-                const basePinSizePt = 100; // Base size in PDF points (smaller base size)
-                const minPinSize = 40; // Minimum size in pixels
-                const maxPinSize = 300; // Maximum size in pixels
+                // Calculate pin size based on current PDF page dimensions
+                const basePinSizePt = 180; // Base pin size in points (increased for more content space)
                 
-                // Scale pin size with PDF scale
-                const calculatedSize = basePinSizePt * scale * (96/72); // Convert pt to px and scale
+                // Use current PDF page dimensions directly for calculation
+                const currentPageWidth = pageRect.width; // Current PDF page width in pixels
+                const currentPageHeight = pageRect.height; // Current PDF page height in pixels
+                
+                // Scale pin size proportionally with PDF page size
+                // Use the smaller dimension to maintain square pins
+                const pdfSizeScale = Math.min(currentPageWidth, currentPageHeight) / 500; // Normalize against 500px base
+                
+                const calculatedSize = basePinSizePt * pdfSizeScale;
+                
+                // Apply min/max constraints
+                const minPinSize = 30; // Minimum size in pixels
+                const maxPinSize = 200; // Maximum size in pixels
                 const basePinSize = Math.max(minPinSize, Math.min(maxPinSize, calculatedSize));
                 const pinWidth = basePinSize;
                 const pinHeight = basePinSize;
                 
-                // Debug log for pin sizing and PDF dimensions
-                console.log(`📌 Pin size debug - Page ${currentPageNumber}:
-                  - scale: ${scale}x
-                  - PDF pageRect: ${pageRect.width.toFixed(1)} x ${pageRect.height.toFixed(1)}px
-                  - viewerRect: ${viewerRect.width.toFixed(1)} x ${viewerRect.height.toFixed(1)}px
-                  - basePinSizePt: ${basePinSizePt}pt
-                  - calculatedSize: ${calculatedSize.toFixed(1)}px
-                  - basePinSize (final): ${basePinSize.toFixed(1)}px
-                  - scaleFactors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}`);
-
                 // Calculate position that sticks to the PDF page
                 // pos.x, pos.y อยู่ในหน่วย PDF points แล้ว แต่ Y-axis ถูก flipped
                 // ต้องแปลงกลับเป็น DOM pixels โดย flip Y-axis กลับ
@@ -725,6 +726,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 // Calculate scale factors to convert PDF points back to DOM pixels
                 const scaleX = pageRect.width / standardPageWidth;   // DOM width / PDF width
                 const scaleY = pageRect.height / standardPageHeight; // DOM height / PDF height
+
+                // Debug log for pin sizing using current PDF dimensions (after scaleX/Y declared)
+                console.log(`📌 Pin ${index} PDF-based size calculation - Page ${currentPageNumber}:
+                  - Current PDF page: ${currentPageWidth.toFixed(1)} x ${currentPageHeight.toFixed(1)}px
+                  - PDF size scale: ${pdfSizeScale.toFixed(3)}x (min dimension / 500)
+                  - basePinSizePt: ${basePinSizePt}pt
+                  - calculatedSize: ${calculatedSize.toFixed(1)}px
+                  - basePinSize (final): ${basePinSize.toFixed(1)}px
+                  - fontSize: ${Math.max(8, basePinSize * 0.12).toFixed(1)}px
+                  - nameFont: ${Math.max(10, basePinSize * 0.15).toFixed(1)}px
+                  - signatureHeight: ${Math.max(40, basePinSize * 0.7).toFixed(1)}px`);
                 
                 // Convert PDF coordinates back to DOM coordinates
                 const displayX = pos.x * scaleX; // Convert PDF points to DOM pixels
@@ -794,6 +806,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
                 // Get role color RGB values for transparency
                 const roleColorMap = {
+                  'bg-purple-500': '168, 85, 247',
                   'bg-blue-500': '59, 130, 246',
                   'bg-green-500': '34, 197, 94',
                   'bg-yellow-500': '234, 179, 8',
@@ -850,71 +863,109 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       className="rounded-lg text-center w-full h-full flex flex-col justify-center relative"
                       onClick={(e) => e.stopPropagation()} // ป้องกันการ propagate click
                       style={{
-                        fontSize: `${Math.max(10, basePinSize * 0.15)}px`, // Font size based on pin size (15%)
+                        fontSize: '8px', // Fixed font size at 8px
                         padding: `${Math.max(2, basePinSize * 0.03)}px ${Math.max(3, basePinSize * 0.04)}px`, // Padding based on pin size
                         background: 'rgba(255, 255, 255, 0.3)', // Much more transparent white background
                         backdropFilter: 'blur(2px)', // Reduced blur
                         border: '1px solid rgba(0, 0, 0, 0.05)', // Very light border
-                        color: '#1f2937' // Dark gray text for better contrast
+                        color: '#1f2937', // Dark gray text for better contrast
+                        fontFamily: 'system-ui, -apple-system, sans-serif', // Better Thai font support
+                        textRendering: 'optimizeLegibility', // Better text rendering
+                        WebkitFontSmoothing: 'antialiased' // Smooth font rendering
                       }}
                     >
                       {/* ลบ ปุ่ม X ที่เคยอยู่ที่นี่ */}
-                      
-                      {/* ลายเซ็น - อยู่บนสุดขนาดใหญ่พอดีกรอบ */}
-                      {pos.signer.signature_url && (
-                        <div className="mb-2 flex justify-center items-center">
-                          <img 
-                            src={pos.signer.signature_url}
-                            alt="ลายเซ็น"
-                            style={{
-                              maxWidth: '95%', // เพิ่มเป็น 95% ให้ใหญ่พอดีกรอบ
-                              maxHeight: `${Math.max(35, basePinSize * 0.5)}px`, // Scale signature height with pin size (50%)
-                              width: 'auto',
-                              height: 'auto',
-                              objectFit: 'contain',
-                              opacity: 0.9,
-                              margin: '0 auto'
-                            }}
-                          />
-                        </div>
+
+                      {/* แสดงเนื้อหาต่างกันตาม role */}
+                      {isClerk ? (
+                        /* สำหรับธุรการ - แสดงไอคอนตราประทับแทนลายเซ็น */
+                        <>
+                          <div className="mb-2 flex justify-center items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              style={{
+                                width: `${Math.max(40, basePinSize * 0.5)}px`,
+                                height: `${Math.max(40, basePinSize * 0.5)}px`,
+                                color: '#9333ea' // Purple color for clerk
+                              }}
+                            >
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                          </div>
+                          <div className="font-semibold truncate leading-tight text-purple-600" style={{ fontSize: '14px' }}>
+                            ตำแหน่งตราประทับ
+                          </div>
+                          <div className="truncate leading-tight text-gray-600" style={{ fontSize: '12px' }}>
+                            ธุรการ
+                          </div>
+                        </>
+                      ) : (
+                        /* สำหรับผู้ลงนามทั่วไป - แสดงลายเซ็นและชื่อ */
+                        <>
+                          {/* ลายเซ็น - อยู่บนสุดขนาดใหญ่พอดีกรอบ */}
+                          {pos.signer.signature_url && (
+                            <div className="mb-2 flex justify-center items-center">
+                              <img
+                                src={pos.signer.signature_url}
+                                alt="ลายเซ็น"
+                                style={{
+                                  maxWidth: '95%', // เพิ่มเป็น 95% ให้ใหญ่พอดีกรอบ
+                                  maxHeight: `${Math.max(40, basePinSize * 0.7)}px`, // Scale signature height with pin size (70%)
+                                  width: 'auto',
+                                  height: 'auto',
+                                  objectFit: 'contain',
+                                  opacity: 0.9,
+                                  margin: '0 auto'
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {/* ชื่อ - แสดงตามที่มีอยู่พร้อมหมายเลขตำแหน่ง */}
+                          <div className="font-semibold truncate leading-tight text-gray-800" style={{ fontSize: '14px' }}>
+                            {pos.signer.name}
+                            {(pos.signer as any).positionIndex && (pos.signer as any).positionIndex > 1 && (
+                              <span className="ml-1 text-blue-600 font-bold">
+                                ({(pos.signer as any).positionIndex})
+                              </span>
+                            )}
+                          </div>
+
+                          {/* ตำแหน่ง - แตกต่างตามบทบาท */}
+                          <div
+                            className="truncate leading-tight text-gray-600"
+                            style={{ fontSize: '12px' }} // Fixed font size for position
+                          >
+                            {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.position || ''}`}
+                            {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
+                            {pos.signer.role === 'deputy_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
+                            {pos.signer.role === 'director' && `ผู้อำนวยการศูนย์การศึกษาพิเศษ`}
+                          </div>
+
+                          {/* บรรทัดเพิ่มเติม - แตกต่างตามบทบาท */}
+                          <div
+                            className="leading-tight text-gray-500"
+                            style={{ fontSize: '12px' }} // Fixed font size for additional info
+                          >
+                            {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ'}`}
+                            {pos.signer.role === 'deputy_director' && (memo?.updated_at ? formatThaiDate(memo.updated_at) : '๑๑ กรกฎาคม ๒๕๖๘')}
+                            {pos.signer.role === 'director' && `เขตการศึกษา ๖ จังหวัดลพบุรี`}
+                          </div>
+                        </>
                       )}
-                      
-                      {/* ชื่อ - แสดงตามที่มีอยู่พร้อมหมายเลขตำแหน่ง */}
-                      <div className="font-semibold truncate leading-tight text-gray-800" style={{ fontSize: `${Math.max(12, basePinSize * 0.18)}px` }}>
-                        {pos.signer.name}
-                        {(pos.signer as any).positionIndex && (pos.signer as any).positionIndex > 1 && (
-                          <span className="ml-1 text-blue-600 font-bold">
-                            ({(pos.signer as any).positionIndex})
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* ตำแหน่ง - แตกต่างตามบทบาท */}
-                      <div 
-                        className="truncate leading-tight text-gray-600"
-                        style={{ fontSize: `${Math.max(8, basePinSize * 0.12)}px` }} // Font size based on pin size (12%)
-                      >
-                        {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.position || ''}`}
-                        {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
-                        {pos.signer.role === 'deputy_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
-                        {pos.signer.role === 'director' && `ผู้อำนวยการศูนย์การศึกษาพิเศษ`}
-                      </div>
-                      
-                      {/* บรรทัดเพิ่มเติม - แตกต่างตามบทบาท */}
-                      <div 
-                        className="leading-tight text-gray-500"
-                        style={{ fontSize: `${Math.max(8, basePinSize * 0.12)}px` }} // Font size based on pin size (12%)
-                      >
-                        {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ'}`}
-                        {pos.signer.role === 'deputy_director' && (memo?.updated_at ? formatThaiDate(memo.updated_at) : '๑๑ กรกฎาคม ๒๕๖๘')}
-                        {pos.signer.role === 'director' && `เขตการศึกษา ๖ จังหวัดลพบุรี`}
-                      </div>
                       
                       {/* พิกัด API */}
                       <div 
                         key={`coords-${index}-${pos.x}-${pos.y}-${pinHeight}`}
                         className="leading-tight text-gray-400"
-                        style={{ fontSize: `${Math.max(7, basePinSize * 0.1)}px` }} // Font size based on pin size (coordinates)
+                        style={{ fontSize: '12px' }} // Fixed font size for API coordinates
                       >
                         P{currentPageNumber} (API: {apiX},{apiY})
                       </div>

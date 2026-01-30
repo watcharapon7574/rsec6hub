@@ -89,9 +89,9 @@ const TopBar = () => {
           <div className="flex items-center space-x-2 sm:space-x-6 flex-1 min-w-0">
             {/* Logo - Fixed size to prevent compression */}
             <Link to="/dashboard" className="flex-shrink-0">
-              <img 
-                src="/lovable-uploads/3b2c647d-8825-446f-b513-8e6e04c912b7.png" 
-                alt="RSEC6 OfficeHub Logo" 
+              <img
+                src="/fastdoc.png"
+                alt="RSEC6 OfficeHub Logo"
                 className="h-10 sm:h-12 w-auto object-contain"
               />
             </Link>

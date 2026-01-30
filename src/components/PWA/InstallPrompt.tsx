@@ -92,9 +92,9 @@ const InstallPrompt: React.FC = () => {
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
-              <img 
-                src="/lovable-uploads/iconLogo.png" 
-                alt="RSEC6 OfficeHub" 
+              <img
+                src="/fastdocIcon.png"
+                alt="RSEC6 OfficeHub"
                 className="h-8 w-8"
               />
               <h3 className="font-semibold text-gray-900">ติดตั้งแอป</h3>

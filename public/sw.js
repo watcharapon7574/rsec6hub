@@ -1,11 +1,17 @@
-const CACHE_NAME = 'rsec6-officehub-v1';
+// เพิ่มเวอร์ชันทุกครั้งที่ deploy ใหม่ เพื่อบังคับให้ล้างแคชเก่า
+const CACHE_NAME = 'rsec6-officehub-v1.4.5';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/lovable-uploads/iconLogo.png',
-  '/lovable-uploads/3b2c647d-8825-446f-b513-8e6e04c912b7.png',
+  '/fastdocIcon.png',
+  '/fastdoc.png',
   '/manifest.json'
+];
+
+// ไฟล์ที่ต้องการให้โหลดใหม่ทุกครั้ง (ไม่ต้องแคช)
+const NETWORK_FIRST_URLS = [
+  '/assets/', // JS และ CSS files
+  '/api/',    // API calls
+  '/src/'     // Source files
 ];
 
 // Install event - cache resources
@@ -44,7 +50,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - ใช้ Network First Strategy สำหรับไฟล์สำคัญ
 self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
@@ -56,39 +62,61 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
-          console.log('Serving from cache:', event.request.url);
-          return response;
-        }
+  // ตรวจสอบว่าเป็น URL ที่ต้องการ Network First หรือไม่
+  const shouldUseNetworkFirst = NETWORK_FIRST_URLS.some(url =>
+    event.request.url.includes(url)
+  );
 
-        console.log('Fetching from network:', event.request.url);
-        return fetch(event.request).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+  if (shouldUseNetworkFirst) {
+    // Network First Strategy - ลองโหลดจาก network ก่อน ถ้าไม่ได้ค่อยใช้ cache
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // ถ้าโหลดสำเร็จ ให้เก็บไว้ใน cache ด้วย
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // ถ้าโหลดจาก network ไม่ได้ ค่อยใช้ cache
+          console.log('Network failed, serving from cache:', event.request.url);
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // Cache First Strategy - สำหรับไฟล์ static ที่ไม่ค่อยเปลี่ยน
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          if (response) {
+            console.log('Serving from cache:', event.request.url);
             return response;
           }
 
-          // Clone the response
-          const responseToCache = response.clone();
+          console.log('Fetching from network:', event.request.url);
+          return fetch(event.request).then((response) => {
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
 
-          caches.open(CACHE_NAME)
-            .then((cache) => {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, responseToCache);
             });
 
-          return response;
-        }).catch(() => {
-          // Return offline fallback for navigation requests
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
-          }
-        });
-      })
-  );
+            return response;
+          }).catch(() => {
+            if (event.request.mode === 'navigate') {
+              return caches.match('/');
+            }
+          });
+        })
+    );
+  }
 });
 
 // Background sync for offline actions
@@ -103,3 +131,11 @@ async function syncDocuments() {
   // Implement background sync logic for documents
   console.log('Syncing documents in background...');
 }
+
+// รับข้อความจาก client (เมื่อต้องการอัปเดท SW ทันที)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('Received SKIP_WAITING message. Activating new service worker...');
+    self.skipWaiting();
+  }
+});

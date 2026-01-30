@@ -14,25 +14,111 @@ import { supabase } from '@/integrations/supabase/client';
 interface PDFFormData {
   date: string;
   subject: string;
+  docNumber: string;
   pdfFile: File | null;
 }
 
 const PDFSignaturePage = () => {
   const navigate = useNavigate();
-  const { profile } = useEmployeeAuth();
+  const { profile, getPermissions } = useEmployeeAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<PDFFormData>({
     date: new Date().toISOString().split('T')[0],
     subject: '',
+    docNumber: '',
     pdfFile: null
   });
+  const [suggestedDocNumber, setSuggestedDocNumber] = useState<string>('');
+
+  // ตรวจสอบสิทธิ์ - เฉพาะธุรการเท่านั้น
+  const permissions = getPermissions();
+
+  // Fetch suggested doc number on mount
+  useEffect(() => {
+    const fetchSuggestedDocNumber = async () => {
+      try {
+        const currentYear = new Date().getFullYear() + 543; // Thai Buddhist year
+
+        // Get max doc_number for current year
+        const { data: existingDocs, error: fetchError } = await (supabase as any)
+          .from('doc_receive')
+          .select('doc_number')
+          .ilike('doc_number', `${currentYear}/%`)
+          .order('created_at', { ascending: false });
+
+        if (fetchError) {
+          console.error('Error fetching existing docs:', fetchError);
+          return;
+        }
+
+        // Extract max number
+        let maxNumber = 0;
+        if (existingDocs && existingDocs.length > 0) {
+          for (const doc of existingDocs) {
+            const match = doc.doc_number.match(/\/(\d+)$/);
+            if (match) {
+              const num = parseInt(match[1], 10);
+              if (num > maxNumber) maxNumber = num;
+            }
+          }
+        }
+
+        const nextNumber = maxNumber + 1;
+        const suggested = `${currentYear}/${nextNumber.toString().padStart(3, '0')}`;
+        setSuggestedDocNumber(suggested);
+      } catch (error) {
+        console.error('Error fetching suggested doc number:', error);
+      }
+    };
+
+    fetchSuggestedDocNumber();
+  }, []);
+
+  // Redirect ถ้าไม่ใช่ธุรการ
+  useEffect(() => {
+    if (profile && permissions.position !== 'clerk_teacher') {
+      toast({
+        title: "ไม่มีสิทธิ์เข้าถึง",
+        description: "เฉพาะธุรการเท่านั้นที่สามารถใช้ระบบหนังสือรับได้",
+        variant: "destructive",
+      });
+      navigate('/documents');
+      return;
+    }
+  }, [profile, permissions.position, navigate, toast]);
+
+  // แสดง loading ขณะตรวจสอบสิทธิ์
+  if (!profile || permissions.position !== 'clerk_teacher') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <div className="glass-card p-8 rounded-3xl animate-pulse">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-4 text-center text-apple">กำลังตรวจสอบสิทธิ์...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (field: keyof Omit<PDFFormData, 'pdfFile'>, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const getDocNumberValue = () => {
+    const currentYear = new Date().getFullYear() + 543;
+    // If user typed something, use it. Otherwise use suggested number
+    const numPart = formData.docNumber || getSuggestedNumber();
+    return `${currentYear}/${numPart}`;
+  };
+
+  const getSuggestedNumber = () => {
+    if (!suggestedDocNumber) return '';
+    // Extract just the number part from suggested (e.g., "2568/001" -> "001")
+    const match = suggestedDocNumber.match(/\/(\d+)$/);
+    return match ? match[1] : '';
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,7 +149,7 @@ const PDFSignaturePage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!profile?.user_id) {
       toast({
         title: "เกิดข้อผิดพลาด",
@@ -93,8 +179,23 @@ const PDFSignaturePage = () => {
 
     setLoading(true);
     try {
-      // Upload PDF to Supabase Storage first
-      // Generate safe filename (URL safe, no Thai characters)
+      // Step 1: Get document number (from form or suggested)
+      const documentNumber = getDocNumberValue().trim();
+
+      if (!documentNumber) {
+        toast({
+          title: "กรุณากรอกเลขรับ",
+          description: "กรุณากรอกเลขรับเอกสาร",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log('📋 Using document number:', documentNumber);
+
+      // Step 2: Upload PDF to Supabase Storage
+      console.log('📤 Uploading PDF to storage...');
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2, 8);
       const fileName = `pdf_upload_${timestamp}_${randomId}.pdf`;
@@ -115,46 +216,131 @@ const PDFSignaturePage = () => {
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
         .getPublicUrl(filePath);
+      console.log('✅ PDF uploaded to:', publicUrl);
 
-      // Create memo record in database
-      const { data: memoData, error: memoError } = await supabase
-        .from('memos')
+      // Step 3: Call /receive_num API to stamp PDF
+      console.log('🎨 Calling /receive_num API to stamp PDF...');
+      const now = new Date();
+      const thaiDate = now.toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'short',
+        year: '2-digit'
+      });
+      const thaiTime = now.toLocaleTimeString('th-TH', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }) + ' น.';
+
+      // Fetch the uploaded PDF
+      const pdfRes = await fetch(publicUrl);
+      const pdfBlob = await pdfRes.blob();
+
+      // Prepare FormData for /receive_num API
+      const receiveNumFormData = new FormData();
+      receiveNumFormData.append('pdf', pdfBlob, 'document.pdf');
+
+      const payload = {
+        page: 0,
+        color: [2, 53, 139],
+        register_no: documentNumber,
+        date: thaiDate,
+        time: thaiTime,
+        receiver: `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+      };
+      receiveNumFormData.append('payload', JSON.stringify(payload));
+
+      console.log('📝 Stamp payload:', payload);
+
+      const stampRes = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num', {
+        method: 'POST',
+        body: receiveNumFormData
+      });
+
+      if (!stampRes.ok) {
+        const errorText = await stampRes.text();
+        console.error('❌ /receive_num API error:', errorText);
+        throw new Error(`Failed to stamp PDF: ${errorText}`);
+      }
+
+      const stampedPdfBlob = await stampRes.blob();
+      console.log('✅ PDF stamped successfully, size:', stampedPdfBlob.size);
+
+      // Step 4: Overwrite the original file with stamped PDF
+      console.log('🔄 Overwriting original PDF with stamped version...');
+      const { error: updateError } = await supabase.storage
+        .from('documents')
+        .update(filePath, stampedPdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (updateError) {
+        throw new Error(`Failed to update PDF: ${updateError.message}`);
+      }
+      console.log('✅ PDF overwritten successfully');
+
+      // IMPORTANT: Get fresh public URL after overwrite to ensure cache busting
+      // Add timestamp to force browser to fetch the new version
+      const { data: { publicUrl: finalPublicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      // Add cache-busting query parameter
+      const stampedPdfUrl = `${finalPublicUrl}?t=${timestamp}`;
+      console.log('✅ Final stamped PDF URL:', stampedPdfUrl);
+
+      // Step 5: Create doc_receive record in database
+      console.log('💾 Creating doc_receive record...');
+      const { data: docReceiveData, error: docReceiveError } = await (supabase as any)
+        .from('doc_receive')
         .insert({
-          doc_number: '', // Add empty doc_number to satisfy not-null constraint
+          doc_number: documentNumber,
           subject: formData.subject,
           date: formData.date,
           author_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'ไม่ระบุชื่อ',
           author_position: profile.current_position || profile.job_position || profile.position || 'ไม่ระบุตำแหน่ง',
           user_id: profile.user_id,
-          pdf_draft_path: publicUrl,
+          created_by: profile.user_id, // Add created_by for consistency
+          pdf_draft_path: stampedPdfUrl,
           status: 'draft',
           current_signer_order: 1,
+          signature_positions: [], // Initialize empty array
+          signer_list_progress: [], // Initialize empty array
           form_data: {
             type: 'pdf_upload',
             original_filename: formData.pdfFile.name,
             subject_text: formData.subject,
-            upload_date: new Date().toISOString()
+            upload_date: new Date().toISOString(),
+            stamped_info: {
+              register_no: documentNumber,
+              date: thaiDate,
+              time: thaiTime,
+              receiver: payload.receiver
+            }
           }
         })
         .select()
         .single();
 
-      if (memoError) {
-        // Clean up uploaded file if memo creation fails
+      if (docReceiveError) {
+        // Clean up uploaded file if doc_receive creation fails
         await supabase.storage
           .from('documents')
           .remove([filePath]);
-        throw new Error(`Failed to create memo: ${memoError.message}`);
+        throw new Error(`Failed to create document: ${docReceiveError.message}`);
       }
+      console.log('✅ doc_receive created with ID:', docReceiveData.id);
 
       toast({
         title: "อัพโหลดสำเร็จ",
-        description: "ไฟล์ PDF ได้ถูกอัพโหลดและสร้างเป็นเอกสารแล้ว",
+        description: `ลงทะเบียนเอกสารหมายเลข ${documentNumber} เรียบร้อยแล้ว`,
       });
 
+      // Step 6: Redirect to /documents
       navigate('/documents');
     } catch (error) {
-      console.error('Error uploading PDF:', error);
+      console.error('❌ Error uploading PDF:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
         description: error instanceof Error ? error.message : "ไม่สามารถอัพโหลดไฟล์ได้",
@@ -219,7 +405,7 @@ const PDFSignaturePage = () => {
                 
                 {/* Title */}
                 <h1 className="text-3xl font-bold mb-3 tracking-tight">
-                  อัพโหลด PDF สำหรับลงนาม
+                  หนังสือรับ
                 </h1>
                 
                 {/* Subtitle */}
@@ -314,6 +500,33 @@ const PDFSignaturePage = () => {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="docNumber" className="text-sm font-medium text-gray-700">
+                        เลขรับ *
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 font-medium whitespace-nowrap">
+                          <span className="text-sm"> {new Date().getFullYear() + 543} /</span>
+                        </div>
+                        <Input
+                          id="docNumber"
+                          value={formData.docNumber}
+                          onChange={(e) => handleInputChange('docNumber', e.target.value)}
+                          placeholder={getSuggestedNumber() || '001'}
+                          className="flex-1 border-gray-300 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                        />
+                      </div>
+                      {suggestedDocNumber && !formData.docNumber && (
+                        <p className="text-xs text-green-600 font-medium">
+                          ✓ ใช้เลขรับที่แนะนำ: {getSuggestedNumber()} (หรือพิมพ์เลขใหม่เพื่อแก้ไข)
+                        </p>
+                      )}
+                      {formData.docNumber && (
+                        <p className="text-xs text-blue-600 font-medium">
+                          ✓ ใช้เลขรับ: {formData.docNumber}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="subject" className="text-sm font-medium text-gray-700">
                         เรื่อง *
                       </Label>
@@ -400,6 +613,7 @@ const PDFSignaturePage = () => {
         </div>
       </div>
       <div className="h-10" />
+
     </div>
   );
 };

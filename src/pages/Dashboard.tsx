@@ -63,9 +63,9 @@ const Dashboard = () => {
             <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 rounded-t-2xl opacity-90"></div>
             <div className="pt-20">
               <div className="flex justify-center mb-4">
-                <img 
-                  src="/lovable-uploads/iconLogo.png" 
-                  alt="RSEC6 OfficeHub Icon" 
+                <img
+                  src="/fastdocIcon.png"
+                  alt="RSEC6 OfficeHub Icon"
                   className="h-12 w-12 object-contain"
                 />
               </div>

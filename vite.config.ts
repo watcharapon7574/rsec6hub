@@ -19,4 +19,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // สร้าง hash ให้ไฟล์ทุกครั้งที่ build ใหม่
+    rollupOptions: {
+      output: {
+        // เพิ่ม hash ให้กับไฟล์ชื่อเพื่อบังคับให้โหลดไฟล์ใหม่
+        entryFileNames: `assets/[name].[hash].js`,
+        chunkFileNames: `assets/[name].[hash].js`,
+        assetFileNames: `assets/[name].[hash].[ext]`
+      }
+    }
+  }
 }));

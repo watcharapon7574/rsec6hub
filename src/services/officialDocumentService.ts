@@ -55,24 +55,79 @@ export const officialDocumentService = {
   // ดึงบันทึกข้อความตาม role และเงื่อนไข
   async fetchMemos(userProfile?: any): Promise<any[]> {
     console.log('📝 Fetching memos for profile:', userProfile);
-    // ดึง memos ทั้งหมด ไม่ filter ตาม user/role
-    let query = supabase
+
+    // แสดงเอกสารย้อนหลัง 30 วัน เพื่อไม่ให้พลาดเอกสารข้ามเดือน
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const startDate = thirtyDaysAgo.toISOString();
+
+    // ดึง memos ทั้งหมด พร้อม task_assignments
+    const { data, error } = await supabase
       .from('memos')
-      .select('*')
+      .select(`
+        *,
+        task_assignments!task_assignments_memo_id_fkey(
+          id,
+          status,
+          deleted_at
+        )
+      `)
+      .is('doc_del', null)
+      .gte('created_at', startDate)
       .order('created_at', { ascending: false });
-    const { data, error } = await query;
-    console.log('📊 Memos query result:', { 
-      dataCount: data?.length || 0, 
-      error,
-      userPosition: userProfile?.position,
-      userId: userProfile?.user_id,
-      firstMemoUserId: data?.[0]?.user_id
-    });
+
     if (error) {
       console.error('❌ Memos database error:', error);
       throw error;
     }
-    return data || [];
+
+    // Transform data to add has_in_progress_task and has_active_tasks fields
+    const transformedData = (data || []).map((memo: any) => {
+      const tasks = memo.task_assignments || [];
+      // Check for in_progress tasks that are not deleted
+      const hasInProgressTask = tasks.some((task: any) =>
+        task.status === 'in_progress' && task.deleted_at === null
+      );
+      // Check for active tasks (pending or in_progress, not completed or cancelled)
+      const hasActiveTasks = tasks.some((task: any) =>
+        (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
+      );
+
+      // Debug log
+      if (memo.is_assigned) {
+        console.log('🔍 officialDocumentService memo transformation:', {
+          memoId: memo.id,
+          subject: memo.subject,
+          is_assigned: memo.is_assigned,
+          tasks: tasks,
+          tasksLength: tasks.length,
+          hasInProgressTask: hasInProgressTask,
+          hasActiveTasks: hasActiveTasks
+        });
+      }
+
+      // Remove task_assignments from the object to keep it clean
+      const { task_assignments, ...memoWithoutTasks } = memo;
+
+      return {
+        ...memoWithoutTasks,
+        has_in_progress_task: hasInProgressTask,
+        has_active_tasks: hasActiveTasks
+      };
+    });
+
+    console.log('📊 Memos query result:', {
+      dataCount: transformedData.length,
+      userPosition: userProfile?.position,
+      userId: userProfile?.user_id,
+      assignedMemos: transformedData.filter((m: any) => m.is_assigned).map((m: any) => ({
+        id: m.id,
+        subject: m.subject,
+        has_in_progress_task: m.has_in_progress_task
+      }))
+    });
+
+    return transformedData;
   },
 
   // ตีกลับเอกสาร (สำหรับธุรการ)

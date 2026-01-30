@@ -30,7 +30,7 @@ const DocumentManagePage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profiles } = useProfiles();
-  const { getMemoById, updateMemoStatus, updateMemoSigners } = useAllMemos();
+  const { getMemoById, updateMemoStatus, updateMemoSigners, refetch } = useAllMemos();
 
   // State
   const [documentNumber, setDocumentNumber] = useState('');
@@ -48,7 +48,12 @@ const DocumentManagePage: React.FC = () => {
   });
   const [isAssigningNumber, setIsAssigningNumber] = useState(false);
   const [isNumberAssigned, setIsNumberAssigned] = useState(false);
-  const [suggestedDocNumber, setSuggestedDocNumber] = useState("4568/68");
+
+  // Calculate current year dynamically
+  const currentBuddhistYear = new Date().getFullYear() + 543;
+  const yearShort = currentBuddhistYear.toString().slice(-2); // เอา 2 ตัวท้าย เช่น 69
+
+  const [suggestedDocNumber, setSuggestedDocNumber] = useState(`xxx/${yearShort}`);
   const [docNumberSuffix, setDocNumberSuffix] = useState('');
 
   // Get user profile for API calls
@@ -110,9 +115,9 @@ const DocumentManagePage: React.FC = () => {
           const match = docToProcess.match(/(\d+)\/(\d+)$/);
           if (match) {
             const lastNumber = parseInt(match[1]);
-            const year = match[2];
             const nextNumber = lastNumber + 1;
-            setSuggestedDocNumber(`${nextNumber}/${year}`);
+            // ใช้ปีปัจจุบันแทนปีจากเอกสารเก่า
+            setSuggestedDocNumber(`${nextNumber}/${yearShort}`);
           }
         }
       }
@@ -300,8 +305,8 @@ const DocumentManagePage: React.FC = () => {
       }
     }
 
-    // 4. ผู้อำนวยการ (เสมอ)
-    const director = directors.find(d => d.first_name === 'อานนท์');
+    // 4. ผู้อำนวยการ (เสมอ) - user_id: 28ef1822-628a-4dfd-b7ea-2defa97d755b
+    const director = directors.find(d => d.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') || directors[0];
     if (director) {
       const fullName = `${director.prefix || ''}${director.first_name} ${director.last_name}`.trim();
       list.push({
@@ -311,7 +316,7 @@ const DocumentManagePage: React.FC = () => {
         position: director.current_position || director.position,
         role: 'director',
         academic_rank: director.academic_rank,
-        org_structure_role: director.org_structure_role,
+        org_structure_role: 'ผู้อำนวยการ', // บังคับให้เป็น ผู้อำนวยการ เสมอ
         prefix: director.prefix,
         signature_url: director.signature_url
       });
@@ -573,8 +578,12 @@ const DocumentManagePage: React.FC = () => {
                 title: "รวมไฟล์สำเร็จ",
                 description: "รวมไฟล์เอกสารหลักกับไฟล์แนบเรียบร้อยแล้ว ไฟล์แนบถูกลบออกแล้ว",
               });
-              
+
               console.log('✅ PDF merge completed and memo updated successfully');
+
+              // Refresh memo data เพื่ออัปเดต UI
+              await refetch();
+              console.log('🔄 Memo data refreshed after merge');
             } catch (dbError) {
               console.error('Database update error after merge:', dbError);
               toast({
@@ -618,7 +627,7 @@ const DocumentManagePage: React.FC = () => {
         const signerListProgress: SignerProgress[] = signers.map(signer => {
           // Find profile for first_name and last_name
           const signerProfile = profiles.find(p => p.user_id === signer.user_id);
-          
+
           return {
             order: signer.order,
             position: signer.position || signer.role,
@@ -724,26 +733,47 @@ const DocumentManagePage: React.FC = () => {
       })));
 
       // 1.5. บันทึกสรุปเนื้อหาเอกสาร
+      console.log('🔍 Attempting to save document summary:', {
+        hasComment: !!comment.trim(),
+        commentLength: comment.trim().length,
+        comment: comment.trim(),
+        memoId
+      });
+
       if (comment.trim()) {
         try {
           const { error: updateError } = await supabase
             .from('memos')
-            .update({ 
+            .update({
               document_summary: comment.trim(),
               updated_at: new Date().toISOString()
             })
             .eq('id', memoId);
-          
+
           if (updateError) {
-            console.error('Error updating document summary:', updateError);
-            // ไม่หยุดการทำงาน แค่ log error
+            console.error('❌ Error updating document summary:', updateError);
+            toast({
+              title: "คำเตือน",
+              description: `ไม่สามารถบันทึกความหมายโดยสรุปได้: ${updateError.message}`,
+              variant: "destructive",
+            });
           } else {
-            console.log('✅ Document summary updated successfully');
+            console.log('✅ Document summary updated successfully:', comment.trim());
+            toast({
+              title: "บันทึกสำเร็จ",
+              description: "บันทึกความหมายโดยสรุปของเอกสารเรียบร้อยแล้ว",
+            });
           }
         } catch (err) {
-          console.error('Failed to update document summary:', err);
-          // ไม่หยุดการทำงาน แค่ log error
+          console.error('❌ Failed to update document summary:', err);
+          toast({
+            title: "เกิดข้อผิดพลาด",
+            description: "ไม่สามารถบันทึกความหมายโดยสรุปได้",
+            variant: "destructive",
+          });
         }
+      } else {
+        console.log('⚠️ No document summary provided - skipping save');
       }
 
       // 2. อัปเดต signers/ตำแหน่ง

@@ -5,14 +5,19 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw, Trash2, FileInput, ClipboardList } from 'lucide-react';
 import ClerkDocumentActions from './ClerkDocumentActions';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
+import { getDocumentManageRoute, getDocumentEditRoute, isPDFUploadMemo } from '@/utils/memoUtils';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import Accordion from './Accordion';
+import { MemoService } from '@/services/memoService';
 
 // ประเภทเอกสารจาก mock data
 interface Document {
@@ -30,43 +35,58 @@ interface Document {
 interface DocumentListProps {
   documents: Document[];
   realMemos?: any[];
+  docReceiveList?: any[];
   onReject?: (documentId: string, reason: string) => void;
   onAssignNumber?: (documentId: string, number: string) => void;
   onSetSigners?: (documentId: string, signers: any[]) => void;
   onRefresh?: () => void;
 }
 
-const DocumentList: React.FC<DocumentListProps> = ({ 
-  documents, 
-  realMemos = [], 
+const DocumentList: React.FC<DocumentListProps> = ({
+  documents,
+  realMemos = [],
+  docReceiveList = [],
   onReject,
   onAssignNumber,
   onSetSigners,
-  onRefresh 
+  onRefresh
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
   const permissions = getPermissions();
   const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
+
   // State สำหรับ pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   // State สำหรับ realtime updates
   const [localMemos, setLocalMemos] = useState(realMemos);
+  const [localDocReceive, setLocalDocReceive] = useState(docReceiveList);
+
+  // State สำหรับ delete modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<any>(null);
+  const [phoneVerification, setPhoneVerification] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // อัพเดท localMemos เมื่อ realMemos เปลี่ยน
   useEffect(() => {
     setLocalMemos(realMemos);
   }, [realMemos]);
+
+  // อัพเดท localDocReceive เมื่อ docReceiveList เปลี่ยน
+  useEffect(() => {
+    setLocalDocReceive(docReceiveList);
+  }, [docReceiveList]);
 
   // Setup realtime listeners สำหรับผู้ช่วยผอและรองผอ
   useEffect(() => {
@@ -145,6 +165,77 @@ const DocumentList: React.FC<DocumentListProps> = ({
     const clerkProfile = profiles.find(p => p.user_id === clerkId);
     if (!clerkProfile) return '-';
     return `${clerkProfile.first_name} ${clerkProfile.last_name}`;
+  };
+
+  // ฟังก์ชันสำหรับลบเอกสาร
+  const handleDeleteClick = (memo: any) => {
+    setDocumentToDelete(memo);
+    setPhoneVerification('');
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!documentToDelete || !profile?.phone || !profile?.user_id) {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถลบเอกสารได้",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get last 4 digits of user's phone
+    const last4Digits = profile.phone.slice(-4);
+
+    if (phoneVerification !== last4Digits) {
+      toast({
+        title: "เบอร์โทรศัพท์ไม่ถูกต้อง",
+        description: `กรุณากรอก 4 ตัวท้ายของเบอร์โทรศัพท์ที่ลงทะเบียนไว้`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      // Check if this is from doc_receive table (marked with __source_table)
+      const isDocReceive = documentToDelete?.__source_table === 'doc_receive';
+
+      // Soft delete using appropriate service method
+      const userName = `${profile.first_name} ${profile.last_name}`;
+      const { success, error: deleteError } = isDocReceive
+        ? await MemoService.softDeleteDocReceive(documentToDelete.id, profile.user_id, userName)
+        : await MemoService.softDeleteMemo(documentToDelete.id, profile.user_id, userName);
+
+      if (!success || deleteError) {
+        throw new Error(`Failed to delete document: ${deleteError}`);
+      }
+
+      // Close modal first
+      setDeleteModalOpen(false);
+      setDocumentToDelete(null);
+      setPhoneVerification('');
+
+      // Refresh data to remove soft-deleted document
+      if (onRefresh) {
+        await onRefresh();
+      }
+
+      // Show success toast after refresh
+      toast({
+        title: "ลบเอกสารสำเร็จ",
+        description: `ลบเอกสาร "${documentToDelete.subject || documentToDelete.form_data?.to || 'ไม่ระบุ'}" เรียบร้อยแล้ว`,
+      });
+    } catch (error) {
+      console.error('Error deleting memo:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error instanceof Error ? error.message : "ไม่สามารถลบเอกสารได้",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
@@ -241,17 +332,24 @@ const DocumentList: React.FC<DocumentListProps> = ({
   };
 
   // กรองเอกสารสำหรับแสดงใน DocumentList
-  // สำหรับ clerk_teacher, ผู้ช่วยผอ, รองผอ ไม่แสดงเอกสารส่วนตัวใน DocumentList
+  // สำหรับ clerk_teacher: แสดงเอกสารทุกฉบับ (เพราะต้องจัดการเอกสารทั้งหมดของสถานศึกษา)
+  // สำหรับ ผู้ช่วยผอ, รองผอ: ไม่แสดงเอกสารส่วนตัวใน DocumentList
   // เพราะจะแสดงใน PersonalDocumentList แยกต่างหาก
   const shouldShowMemo = (memo: any) => {
-    // สำหรับ clerk_teacher: ไม่แสดงเอกสารส่วนตัวใน DocumentList (เหมือนเดิม)
+    // สำหรับ clerk_teacher: แสดงเอกสารทุกฉบับ (รวมทั้งเอกสารของตัวเอง)
+    // เพราะ DocumentList คือตารางจัดการเอกสารทั้งหมดของสถานศึกษา
     if (permissions.position === "clerk_teacher") {
-      // แสดงเฉพาะเอกสารของคนอื่น (ไม่ใช่เอกสารของตนเอง)
-      return memo.user_id !== profile?.user_id;
+      return true;
     }
     
     // สำหรับผู้ช่วยผอและรองผอ: แสดงเฉพาะเอกสารที่มีชื่อตัวเองใน signer_list_progress
+    // หรือถ้าเป็น PDF Upload ให้แสดงทุกคน
     if (["assistant_director", "deputy_director"].includes(permissions.position)) {
+      // ถ้าเป็น PDF Upload ให้แสดงได้เสมอ
+      if (isPDFUploadMemo(memo)) {
+        return true;
+      }
+      
       // ตรวจสอบว่ามีชื่อตัวเองใน signer_list_progress หรือไม่
       if (memo.signer_list_progress && Array.isArray(memo.signer_list_progress)) {
         const hasUserInSignerList = memo.signer_list_progress.some((signer: any) => 
@@ -282,6 +380,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const filteredAndSortedMemos = useMemo(() => {
     // กรองตาม shouldShowMemo ก่อน
     let filtered = localMemos.filter(memo => {
+      // กรองเอกสารที่ถูก soft delete ออก
+      if (memo.doc_del) {
+        return false;
+      }
+
       // ตรวจสอบสิทธิ์การแสดงผลก่อน
       if (!shouldShowMemo(memo)) {
         return false;
@@ -504,7 +607,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-gray-400' : 'text-purple-500'}`} />
+                  {memo.__source_table === 'doc_receive' ? (
+                    <FileInput className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-gray-400' : 'text-green-500'}`} />
+                  ) : (
+                    <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-gray-400' : 'text-purple-500'}`} />
+                  )}
                   <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-gray-600 group-hover:text-gray-700' : 'text-gray-900 group-hover:text-purple-700'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
@@ -586,17 +693,17 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     <>
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                          memo.current_signer_order === 5 
+                          memo.current_signer_order === 5
                             ? 'text-gray-400'
                             : (memo.current_signer_order === 1 ? 'text-purple-700' : 'text-purple-400')
-                        }`}>ตรวจทาน</span>
+                        }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
-                          memo.current_signer_order === 5 
+                          memo.current_signer_order === 5
                             ? 'text-gray-400'
                             : (memo.current_signer_order === 1 ? 'text-purple-700 font-bold' : 'text-purple-400')
                         }`}>
                           {(() => {
-                            // ดึงชื่อธุรการผู้ตรวจทานจาก clerk_id
+                            // ดึงชื่อผู้ตรวจทาน/ผู้เสนอจาก clerk_id (first_name + last_name)
                             try {
                               if (memo.clerk_id) {
                                 const clerkProfile = profiles.find(p => p.user_id === memo.clerk_id);
@@ -604,7 +711,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   return `${clerkProfile.first_name} ${clerkProfile.last_name}`;
                                 }
                               }
-                              
+
                               return 'ไม่ระบุ';
                             } catch (error) {
                               console.error('Error getting clerk name:', error);
@@ -613,71 +720,56 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           })()}
                         </span>
                         <div className={`w-2 h-2 rounded-full mt-1 ${
-                          memo.current_signer_order === 5 
+                          memo.current_signer_order === 5
                             ? 'bg-gray-200'
                             : (memo.current_signer_order === 1 ? 'bg-purple-500' : 'bg-purple-200')
                         }`}></div>
                       </div>
                       <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-gray-200' : 'bg-purple-200'}`} />
-                      
+
                       {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author) */}
                       {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
                         memo.signer_list_progress
-                          .filter(signer => signer.role !== 'author') // ข้ามผู้เขียน
+                          .filter(signer => signer.role !== 'author' && signer.role !== 'clerk') // ข้ามผู้เขียนและธุรการ
                           .sort((a, b) => a.order - b.order)
                           .map((signer, idx, arr) => (
                             <React.Fragment key={signer.order}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                                  memo.current_signer_order === 5 
+                                  memo.current_signer_order === 5
                                     ? 'text-gray-400'
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700' : 'text-purple-400')
                                 }`}>
                                   {(() => {
+                                    // ตรวจสอบ user_id: ถ้าเป็น 28ef1822-628a-4dfd-b7ea-2defa97d755b ให้แสดงเป็น ผู้อำนวยการ เสมอ
+                                    if (signer.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') {
+                                      return 'ผู้อำนวยการ';
+                                    }
+
                                     // แสดงตำแหน่งตาม role
                                     switch (signer.role) {
                                       case 'assistant_director':
                                         return signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ';
-                                      case 'deputy_director': 
+                                      case 'deputy_director':
                                         return 'รองผู้อำนวยการ';
-                                      case 'director': 
+                                      case 'director':
                                         return 'ผู้อำนวยการ';
-                                      default: 
+                                      default:
                                         return signer.position || '-';
                                     }
                                   })()}
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] ${
-                                  memo.current_signer_order === 5 
+                                  memo.current_signer_order === 5
                                     ? 'text-gray-400'
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
                                 }`}>{(() => {
-                                  // Try first_name + last_name first
-                                  const firstName = signer.first_name || '';
-                                  const lastName = signer.last_name || '';
-                                  if (firstName || lastName) {
-                                    return `${firstName} ${lastName}`.trim();
-                                  }
-                                  
-                                  // Fallback: extract from full name by removing prefix
-                                  const fullName = signer.name || '-';
-                                  if (fullName === '-') return '-';
-                                  
-                                  // Find profile from profiles list for additional info
+                                  // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);
                                   if (userProfile) {
                                     return `${userProfile.first_name} ${userProfile.last_name}`.trim();
                                   }
-                                  
-                                  // Last resort: extract from name field
-                                  const parts = fullName.trim().split(/\s+/);
-                                  if (parts.length >= 3) {
-                                    return parts.slice(-2).join(' ');
-                                  } else if (parts.length === 2) {
-                                    return parts.join(' ');
-                                  } else {
-                                    return parts[0] || '-';
-                                  }
+                                  return '-';
                                 })()}</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5 
@@ -749,52 +841,96 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   )}
                 </div>
                 <div className="flex gap-1 ml-auto">
-                  {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
+                  {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
-                      onClick={() => {
-                        const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                        navigate('/pdf-just-preview', { 
-                          state: { 
-                            fileUrl, 
-                            fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                            memoId: memo.id 
-                          } 
-                        });
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span className="text-xs font-medium">ดูเอกสาร</span>
-                    </Button>
-                  ) : (
                     <>
-                      {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
                         onClick={() => {
-                          const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                          navigate('/pdf-just-preview', { 
-                            state: { 
-                              fileUrl, 
-                              fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                              memoId: memo.id 
-                            } 
+                          const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+                          navigate('/document-detail', {
+                            state: {
+                              documentId: memo.id,
+                              documentType: documentType
+                            }
                           });
                         }}
                       >
                         <Eye className="h-4 w-4" />
-                        <span className="text-xs font-medium">ดูเอกสาร</span>
                       </Button>
-                      {/* Edit button - only show for memo author */}
-                      {profile?.user_id === memo.user_id && (
+                      {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ */}
+                      {profile?.position === 'clerk_teacher' && (
+                        <>
+                          {!memo.is_assigned ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+                                navigate(`/task-assignment?documentId=${memo.id}&documentType=${documentType}`);
+                              }}
+                              className="h-7 px-2 flex items-center gap-1 bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
+                            >
+                              <ClipboardList className="h-4 w-4" />
+                              <span className="text-xs font-medium">มอบหมายงาน</span>
+                            </Button>
+                          ) : memo.has_active_tasks ? (
+                            <div className="relative">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled
+                                className="h-7 px-2 flex items-center gap-1 bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed"
+                              >
+                                <ClipboardList className="h-4 w-4" />
+                                <span className="text-xs font-medium">มอบหมายแล้ว</span>
+                              </Button>
+                              {/* Show "ทราบแล้ว" badge when task is in progress */}
+                              {(() => {
+                                console.log('🔍 DEBUG has_in_progress_task:', {
+                                  memoId: memo.id,
+                                  subject: memo.subject,
+                                  has_in_progress_task: memo.has_in_progress_task,
+                                  is_assigned: memo.is_assigned
+                                });
+                                return null;
+                              })()}
+                              {memo.has_in_progress_task && (
+                                <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10">
+                                  ทราบแล้ว
+                                </span>
+                              )}
+                            </div>
+                          ) : null}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
+                        onClick={() => {
+                          const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+                          navigate('/document-detail', {
+                            state: {
+                              documentId: memo.id,
+                              documentType: documentType
+                            }
+                          });
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {/* Edit button - only show for memo author and not yet proposed (current_signer_order <= 1) */}
+                      {profile?.user_id === memo.user_id && memo.current_signer_order <= 1 && (
                         <div className="relative">
-                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-purple-200 text-purple-600"
+                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-purple-200 text-purple-600"
                             onClick={() => {
-                              // Navigate to edit memo page with memo id
-                              navigate(`/create-memo?edit=${memo.id}`);
+                              // Navigate to edit page based on document type
+                              const editRoute = getDocumentEditRoute(memo, memo.id);
+                              navigate(editRoute);
                             }}
                           >
                             <Edit className="h-4 w-4" />
-                            <span className="text-xs font-medium">แก้ไข</span>
                           </Button>
                           {/* Show "ตีกลับ" badge for rejected memos on top-right corner */}
                           {memo.status === 'rejected' && (
@@ -819,8 +955,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             }`}
                             onClick={() => {
                               if (memo.current_signer_order <= 1) {
-                                console.log('🔍 Navigating to document-manage for memo:', memo.id);
-                                navigate(`/document-manage/${memo.id}`);
+                                const manageRoute = getDocumentManageRoute(memo, memo.id);
+                                console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
+                                navigate(manageRoute);
                               }
                             }}
                             disabled={memo.status === 'rejected' || memo.current_signer_order > 1}
@@ -840,6 +977,31 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         </div>
                       )}
                     </>
+                  )}
+                  {/* Delete button - แสดงเฉพาะธุรการเท่านั้น */}
+                  {(() => {
+                    const shouldShow = profile?.position === 'clerk_teacher';
+                    console.log('🗑️ DocumentList Delete Button Check:', {
+                      position: profile?.position,
+                      isClerkTeacher: shouldShow,
+                      memoId: memo.id,
+                      willRender: shouldShow ? 'YES - BUTTON WILL RENDER' : 'NO - BUTTON HIDDEN'
+                    });
+                    return null;
+                  })()}
+                  {profile?.position === 'clerk_teacher' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        console.log('🗑️ Delete button clicked for memo:', memo.id);
+                        handleDeleteClick(memo);
+                      }}
+                      title="ลบเอกสาร"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   )}
                 </div>
               </div>
@@ -915,6 +1077,90 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </div>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              ยืนยันการลบเอกสาร
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              คุณกำลังจะลบเอกสาร: <span className="font-semibold text-gray-800">"{documentToDelete?.form_data?.to || documentToDelete?.subject || 'ไม่ระบุ'}"</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800">
+                ⚠️ <strong>คำเตือน:</strong> การลบเอกสารนี้จะไม่สามารถกู้คืนได้
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone-verification-memo" className="text-sm font-medium">
+                กรุณากรอก 4 ตัวท้ายของเบอร์โทรศัพท์ของคุณเพื่อยืนยัน
+              </Label>
+              <Input
+                id="phone-verification-memo"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={phoneVerification}
+                onChange={(e) => setPhoneVerification(e.target.value.replace(/\D/g, ''))}
+                onPaste={(e) => e.preventDefault()}
+                onCopy={(e) => e.preventDefault()}
+                onCut={(e) => e.preventDefault()}
+                onDrop={(e) => e.preventDefault()}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                placeholder="XXXX"
+                className="text-center text-lg tracking-widest"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 text-center">
+                เบอร์โทรของคุณลงท้ายด้วย: {profile?.phone ? `****${profile.phone.slice(-4)}` : 'ไม่พบข้อมูล'}
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteModalOpen(false);
+                setDocumentToDelete(null);
+                setPhoneVerification('');
+              }}
+              disabled={isDeleting}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting || phoneVerification.length !== 4}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  กำลังลบ...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  ยืนยันการลบ
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

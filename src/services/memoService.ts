@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Memo, MemoFormData, SignaturePosition, MemoSignature } from '@/types/memo';
 import { extractPdfUrl } from '@/utils/fileUpload';
+import { getDeviceFingerprint } from '@/utils/deviceInfo';
 
 export class MemoService {
   // Helper function to upload files to storage
@@ -196,7 +197,7 @@ export class MemoService {
             author_position: formData.author_position,
             fact: formData.fact,
             proposal: formData.proposal,
-            form_data: formData as any,
+            form_data: { ...formData as any, type: 'create_memo' },
             pdf_draft_path: publicUrl,
             status: 'draft',
             attached_files: JSON.stringify(attachedFileUrls),
@@ -224,7 +225,7 @@ export class MemoService {
             fact: formData.fact,
             proposal: formData.proposal,
             user_id: userId,
-            form_data: formData as any,
+            form_data: { ...formData as any, type: 'create_memo' },
             pdf_draft_path: publicUrl,
             status: 'draft',
             attached_files: JSON.stringify(attachedFileUrls),
@@ -271,6 +272,10 @@ export class MemoService {
 
   static async signMemo(memoId: string, userId: string, comment: string, action: 'approve' | 'reject'): Promise<{ success: boolean; error?: string }> {
     try {
+      // Capture device fingerprint when signing
+      const deviceInfo = getDeviceFingerprint();
+      console.log('📱 Device fingerprint captured:', deviceInfo);
+
       // Get current memo
       const { data: memo, error: fetchError } = await supabase
         .from('memos')
@@ -282,7 +287,7 @@ export class MemoService {
 
       const currentSignatures = (memo.signatures as any) || [];
       const positions = (memo.signature_positions as any) as SignaturePosition[] || [];
-      
+
       // Find current user's position
       const userPosition = positions.find((p: SignaturePosition) => p.user_id === userId);
       if (!userPosition) {
@@ -327,13 +332,14 @@ export class MemoService {
         }
       }
 
-      // Update memo
+      // Update memo with device info
       const { error: updateError } = await supabase
         .from('memos')
         .update({
           signatures: updatedSignatures as any,
           status: newStatus,
-          current_signer_order: nextSignerOrder
+          current_signer_order: nextSignerOrder,
+          device_info: deviceInfo // Store device fingerprint
         })
         .eq('id', memoId);
 
@@ -493,6 +499,68 @@ export class MemoService {
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
+  }
+
+  /**
+   * Soft delete a memo by marking it as deleted instead of removing from database
+   * @param memoId - The ID of the memo to delete
+   * @param userId - The ID of the user performing the delete action
+   * @param userName - The name of the user performing the delete action
+   * @returns Promise with success status and optional error message
+   */
+  static async softDeleteMemo(memoId: string, userId: string, userName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const deletionMetadata = {
+        deleted_at: new Date().toISOString(),
+        deleted_by: userId,
+        deleted_by_name: userName
+      };
+
+      const { error } = await supabase
+        .from('memos')
+        .update({
+          doc_del: deletionMetadata
+        })
+        .eq('id', memoId);
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error soft deleting memo:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Soft delete a doc_receive by marking it as deleted instead of removing from database
+   * @param docReceiveId - The ID of the doc_receive to delete
+   * @param userId - The ID of the user performing the delete action
+   * @param userName - The name of the user performing the delete action
+   * @returns Promise with success status and optional error message
+   */
+  static async softDeleteDocReceive(docReceiveId: string, userId: string, userName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const deletionMetadata = {
+        deleted_at: new Date().toISOString(),
+        deleted_by: userId,
+        deleted_by_name: userName
+      };
+
+      const { error } = await supabase
+        .from('doc_receive')
+        .update({
+          doc_del: deletionMetadata
+        })
+        .eq('id', docReceiveId);
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error soft deleting doc_receive:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
   }
 
 }

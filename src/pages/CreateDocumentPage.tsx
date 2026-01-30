@@ -2,9 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Signature } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 
 const CreateDocumentPage = () => {
   const navigate = useNavigate();
+  const { getPermissions } = useEmployeeAuth();
+  const permissions = getPermissions();
 
   const documentOptions = [
     {
@@ -15,14 +18,15 @@ const CreateDocumentPage = () => {
       color: 'bg-blue-500 hover:bg-blue-600',
       path: '/create-memo'
     },
-    {
+    // แสดงหนังสือรับเฉพาะธุรการเท่านั้น
+    ...(permissions.position === 'clerk_teacher' ? [{
       id: 'pdf-sign',
       title: 'หนังสือรับ',
       description: 'หนังสือรับมาเป็น PDF เพื่อเกษียนหนังสือภายในสถานศึกษา',
       icon: Signature,
       color: 'bg-green-500 hover:bg-green-600',
       path: '/pdf-signature'
-    }
+    }] : [])
   ];
 
   return (

@@ -1,0 +1,92 @@
+import React from 'react';
+import { FileText } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
+
+interface Step1DocumentPreviewProps {
+  subject: string;
+  docNumber: string | null;
+  authorName: string;
+  pdfUrl: string | null;
+  directorComment?: string;
+}
+
+const Step1DocumentPreview: React.FC<Step1DocumentPreviewProps> = ({
+  subject,
+  docNumber,
+  authorName,
+  pdfUrl,
+  directorComment
+}) => {
+  return (
+    <div className="space-y-6">
+      {/* PDF Preview */}
+      <Card className="bg-white border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow">
+        <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
+          <CardTitle className="text-lg text-green-900">ตัวอย่างเอกสาร</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {pdfUrl ? (
+            <div className="h-[500px] border-2 border-green-200 rounded-lg overflow-hidden shadow-inner">
+              <PDFViewer
+                fileUrl={pdfUrl}
+                fileName={subject || 'เอกสาร'}
+                editMode={false}
+                showSignatureMode={false}
+                showZoomControls={true}
+              />
+            </div>
+          ) : (
+            <div className="h-[500px] border-2 border-green-200 rounded-lg flex items-center justify-center bg-green-50">
+              <div className="text-center text-green-600">
+                <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="font-medium">ไม่มีไฟล์ PDF</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Document Info */}
+      <Card className="bg-white border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow">
+        <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
+          <CardTitle className="flex items-center text-lg text-green-900">
+            <FileText className="h-5 w-5 mr-2 text-green-600" />
+            ข้อมูลเอกสาร
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-6">
+          <div>
+            <div className="text-sm text-green-600 font-medium">เรื่อง</div>
+            <div className="font-medium text-gray-900">{subject}</div>
+          </div>
+
+          {docNumber && (
+            <div>
+              <div className="text-sm text-green-600 font-medium">เลขที่</div>
+              <div className="font-medium text-gray-900">{docNumber}</div>
+            </div>
+          )}
+
+          <div>
+            <div className="text-sm text-green-600 font-medium">ผู้สร้างเอกสาร</div>
+            <div className="font-medium text-gray-900">{authorName}</div>
+          </div>
+
+          {directorComment && (
+            <div className="pt-3 border-t border-green-200">
+              <div className="text-sm text-green-600 font-medium mb-2">
+                💬 ความเห็นจากผู้อำนวยการ
+              </div>
+              <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 text-sm text-gray-700">
+                {directorComment}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default Step1DocumentPreview;

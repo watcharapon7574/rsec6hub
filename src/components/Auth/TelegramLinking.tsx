@@ -36,9 +36,9 @@ const TelegramLinking: React.FC<TelegramLinkingProps> = ({ phone, onLinked, onBa
   return (
     <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
       <div className="flex justify-center pt-6 pb-4">
-        <img 
-          src="/lovable-uploads/3b2c647d-8825-446f-b513-8e6e04c912b7.png" 
-          alt="RSEC6 OfficeHub Logo" 
+        <img
+          src="/fastdoc.png"
+          alt="RSEC6 OfficeHub Logo"
           className="h-16 w-auto"
         />
       </div>

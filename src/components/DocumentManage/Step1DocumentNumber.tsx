@@ -38,6 +38,9 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
   isRejecting,
   isStepComplete
 }) => {
+  // Document number prefix - ศธ ๐๔๐๐๗.๖๐๐/
+  const docNumberPrefix = 'ศธ ๐๔๐๐๗.๖๐๐/';
+
   // Get attached files for accordion
   const getAttachedFiles = () => {
     let attachedFiles = [];
@@ -73,7 +76,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
             <Label htmlFor="doc-number">เลขหนังสือราชการ</Label>
             <div className="flex items-stretch">
               <div className="text-lg font-medium text-gray-700 bg-gray-50 px-4 rounded-l-md border border-r-0 border-gray-300 flex items-center">
-                ศธ ๐๔๐๐๗.๖๐๐/
+                {docNumberPrefix}
               </div>
               <Input
                 id="doc-number"
@@ -92,20 +95,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
             {isNumberAssigned && (
               <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
                 <CheckCircle className="h-4 w-4" />
-                เลขหนังสือถูกลงแล้ว: {(() => {
-                  // ลบ prefix ที่ซ้ำออกก่อน จากนั้นสร้าง document number ใหม่
-                  const prefix = 'ศธ ๐๔๐๐๗.๖๐๐/';
-                  let cleanNumber = documentNumber;
-                  
-                  // ถ้ามี prefix ซ้ำ ให้แยกเอาเฉพาะส่วน suffix
-                  const match = cleanNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
-                  if (match) {
-                    cleanNumber = match[1]; // เอาเฉพาะส่วนหลัง /
-                  }
-                  
-                  const displayNumber = `${prefix}${cleanNumber}`;
-                  return displayNumber.replace(/\d/g, (d) => '๐๑๒๓๔๕๖๗๘๙'[parseInt(d)]);
-                })()}
+                เลขหนังสือถูกลงแล้ว: {docNumberPrefix}{documentNumber}
               </p>
             )}
           </div>

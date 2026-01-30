@@ -127,8 +127,8 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   // กรองเอกสารส่วนตัวเฉพาะของผู้ใช้ปัจจุบัน
   const personalMemos = useMemo(() => {
     return localMemos.filter(memo => {
-      // กรองเฉพาะเอกสารที่ผู้ใช้เป็นเจ้าของ
-      return memo.user_id === profile?.user_id;
+      // กรองเฉพาะเอกสารที่ผู้ใช้เป็นเจ้าของและไม่ถูก soft delete
+      return memo.user_id === profile?.user_id && !memo.doc_del;
     });
   }, [localMemos, profile?.user_id]);
 
@@ -425,14 +425,14 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                           memo.current_signer_order === 5 
                             ? 'text-gray-400'
                             : (memo.current_signer_order === 1 ? 'text-blue-700' : 'text-blue-400')
-                        }`}>ตรวจทาน</span>
+                        }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
-                          memo.current_signer_order === 5 
+                          memo.current_signer_order === 5
                             ? 'text-gray-400'
                             : (memo.current_signer_order === 1 ? 'text-blue-700 font-bold' : 'text-blue-400')
                         }`}>
                           {(() => {
-                            // ดึงชื่อธุรการผู้ตรวจทานจาก clerk_id
+                            // ดึงชื่อผู้เสนอจาก clerk_id (first_name + last_name)
                             try {
                               if (memo.clerk_id) {
                                 const clerkProfile = profiles.find(p => p.user_id === memo.clerk_id);
@@ -440,7 +440,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                   return `${clerkProfile.first_name} ${clerkProfile.last_name}`;
                                 }
                               }
-                              
+
                               return 'ไม่ระบุ';
                             } catch (error) {
                               console.error('Error getting clerk name:', error);
@@ -480,36 +480,16 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                   })()}
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] ${
-                                  memo.current_signer_order === 5 
+                                  memo.current_signer_order === 5
                                     ? 'text-gray-400'
                                     : (memo.current_signer_order === signer.order ? 'text-blue-700 font-bold' : 'text-blue-400')
                                 }`}>{(() => {
-                                  // Try first_name + last_name first
-                                  const firstName = signer.first_name || '';
-                                  const lastName = signer.last_name || '';
-                                  if (firstName || lastName) {
-                                    return `${firstName} ${lastName}`.trim();
-                                  }
-                                  
-                                  // Fallback: extract from full name by removing prefix
-                                  const fullName = signer.name || '-';
-                                  if (fullName === '-') return '-';
-                                  
-                                  // Find profile from profiles list for additional info
+                                  // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);
                                   if (userProfile) {
                                     return `${userProfile.first_name} ${userProfile.last_name}`.trim();
                                   }
-                                  
-                                  // Last resort: extract from name field
-                                  const parts = fullName.trim().split(/\s+/);
-                                  if (parts.length >= 3) {
-                                    return parts.slice(-2).join(' ');
-                                  } else if (parts.length === 2) {
-                                    return parts.join(' ');
-                                  } else {
-                                    return parts[0] || '-';
-                                  }
+                                  return '-';
                                 })()}</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5 
@@ -584,50 +564,47 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                 <div className="flex gap-1 ml-auto">
                   {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
+                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
                       onClick={() => {
                         const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                        navigate('/pdf-just-preview', { 
-                          state: { 
-                            fileUrl, 
+                        navigate('/pdf-just-preview', {
+                          state: {
+                            fileUrl,
                             fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                            memoId: memo.id 
-                          } 
+                            memoId: memo.id
+                          }
                         });
                       }}
                     >
                       <Eye className="h-4 w-4" />
-                      <span className="text-xs font-medium">ดูเอกสาร</span>
                     </Button>
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                          navigate('/pdf-just-preview', { 
-                            state: { 
-                              fileUrl, 
+                          navigate('/pdf-just-preview', {
+                            state: {
+                              fileUrl,
                               fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                              memoId: memo.id 
-                            } 
+                              memoId: memo.id
+                            }
                           });
                         }}
                       >
                         <Eye className="h-4 w-4" />
-                        <span className="text-xs font-medium">ดูเอกสาร</span>
                       </Button>
 
                       {/* Edit button - แสดงเสมอเนื่องจากเป็นเอกสารของตนเอง */}
                       <div className="relative">
-                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
+                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
                           onClick={() => {
                             // Navigate to edit memo page with memo id
                             navigate(`/create-memo?edit=${memo.id}`);
                           }}
                         >
                           <Edit className="h-4 w-4" />
-                          <span className="text-xs font-medium">แก้ไข</span>
                         </Button>
                         {/* Show "ตีกลับ" badge for rejected memos on top-right corner */}
                         {memo.status === 'rejected' && (

@@ -11,6 +11,7 @@ import DocumentCards from '@/components/OfficialDocuments/DocumentCards';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 
 const OfficialDocumentsPage = () => {
@@ -30,8 +31,87 @@ const OfficialDocumentsPage = () => {
   } = useOfficialDocuments();
 
   const [pdfFiles, setPdfFiles] = useState<any[]>([]);
+  const [docReceiveList, setDocReceiveList] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+
+  // Fetch doc_receive data (ย้อนหลัง 30 วัน)
+  const fetchDocReceive = useCallback(async () => {
+    try {
+      // แสดงหนังสือรับย้อนหลัง 30 วัน
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const startDate = thirtyDaysAgo.toISOString();
+
+      // Query with task_assignments to check for in_progress tasks
+      const { data, error } = await supabase
+        .from('doc_receive')
+        .select(`
+          *,
+          task_assignments!task_assignments_doc_receive_id_fkey(
+            id,
+            status,
+            deleted_at
+          )
+        `)
+        .is('doc_del', null)
+        .gte('created_at', startDate)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching doc_receive:', error);
+        return;
+      }
+
+      // Add has_in_progress_task and has_active_tasks fields to each document
+      const docsWithTaskStatus = (data || []).map((doc: any) => {
+        const tasks = doc.task_assignments || [];
+        // Check for in_progress tasks that are not deleted
+        const hasInProgressTask = tasks.some((task: any) =>
+          task.status === 'in_progress' && task.deleted_at === null
+        );
+        // Check for active tasks (pending or in_progress, not completed or cancelled)
+        const hasActiveTasks = tasks.some((task: any) =>
+          (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
+        );
+
+        // Debug log
+        if (doc.is_assigned) {
+          console.log('🔍 DEBUG doc_receive task status:', {
+            docId: doc.id,
+            subject: doc.subject,
+            is_assigned: doc.is_assigned,
+            tasks: tasks,
+            hasInProgressTask: hasInProgressTask,
+            hasActiveTasks: hasActiveTasks
+          });
+        }
+
+        // Remove task_assignments from the object to keep it clean
+        const { task_assignments, ...docWithoutTasks } = doc;
+
+        return {
+          ...docWithoutTasks,
+          has_in_progress_task: hasInProgressTask,
+          has_active_tasks: hasActiveTasks
+        };
+      });
+
+      setDocReceiveList(docsWithTaskStatus);
+      console.log('📋 Fetched doc_receive:', {
+        count: docsWithTaskStatus?.length || 0,
+        items: docsWithTaskStatus?.map((d: any) => ({
+          id: d.id,
+          subject: d.subject,
+          status: d.status,
+          current_signer_order: d.current_signer_order,
+          has_in_progress_task: d.has_in_progress_task
+        }))
+      });
+    } catch (error) {
+      console.error('Error fetching doc_receive:', error);
+    }
+  }, []);
 
   // Manual refresh function
   const handleManualRefresh = async () => {
@@ -43,7 +123,8 @@ const OfficialDocumentsPage = () => {
       // Refresh all data sources
       await Promise.all([
         refetch(),
-        loadAllData()
+        loadAllData(),
+        fetchDocReceive()
       ]);
       
       toast({
@@ -62,11 +143,14 @@ const OfficialDocumentsPage = () => {
     }
   };
 
-  // Document list refresh function (ใช้ useAllMemos refetch)
+  // Document list refresh function (ใช้ useAllMemos refetch และ fetchDocReceive)
   const handleDocumentRefresh = async () => {
     try {
-      console.log('🔄 Starting document refresh with useAllMemos...');
-      await refetchMemos();
+      console.log('🔄 Starting document refresh with useAllMemos and doc_receive...');
+      await Promise.all([
+        refetchMemos(),
+        fetchDocReceive()
+      ]);
       console.log('✅ Document refresh completed');
     } catch (error) {
       console.error('❌ Error refreshing documents:', error);
@@ -93,9 +177,10 @@ const OfficialDocumentsPage = () => {
       setIsLoadingData(true);
       
       // Load all data concurrently but handle errors gracefully
-      const [memosResult, pdfFilesResult] = await Promise.allSettled([
+      const [memosResult, pdfFilesResult, docReceiveResult] = await Promise.allSettled([
         loadUserMemos(),
-        officialDocumentService.fetchMemoPDFFiles()
+        officialDocumentService.fetchMemoPDFFiles(),
+        fetchDocReceive()
       ]);
 
       // Handle PDF files result
@@ -147,7 +232,7 @@ const OfficialDocumentsPage = () => {
     }
   }, [profile?.user_id, isAuthenticated, isLoadingData, loadUserMemos, navigate, toast]);
 
-  // รวมข้อมูลจาก official documents และ memos และ PDF files
+  // รวมข้อมูลจาก official documents และ memos และ PDF files และ doc_receive
   const allDocuments = ReactUseMemo(() => [
     ...officialDocuments.map(doc => ({
       id: parseInt(doc.id.slice(-6), 16), // แปลง UUID เป็นตัวเลข
@@ -171,6 +256,18 @@ const OfficialDocumentsPage = () => {
       document_number: memo.doc_number,
       urgency: 'normal'
     })),
+    ...docReceiveList.map(docReceive => ({
+      id: parseInt(docReceive.id.slice(-6), 16),
+      title: docReceive.subject,
+      description: docReceive.document_summary || 'หนังสือรับ - PDF อัปโหลด',
+      requester: docReceive.author_name,
+      department: docReceive.author_position,
+      status: docReceive.status,
+      created_at: docReceive.created_at,
+      document_number: docReceive.doc_number,
+      urgency: 'normal',
+      source_type: 'pdf_upload'
+    })),
     ...pdfFiles.map(file => ({
       id: parseInt(file.id.slice(-6), 16),
       title: file.file_name.replace('.pdf', ''),
@@ -183,27 +280,75 @@ const OfficialDocumentsPage = () => {
       urgency: 'normal',
       pdf_url: file.public_url
     }))
-  ], [officialDocuments, memos, pdfFiles]);
+  ], [officialDocuments, memos, docReceiveList, pdfFiles]);
 
-  // ฟิลเตอร์ memos เฉพาะเดือนนี้ (เหมือนการ์ดเอกสารทั้งหมด)
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
-  const firstDay = `${year}-${month}-01T00:00:00.000Z`;
-  const nextMonth = new Date(year, now.getMonth() + 1, 1);
-  const lastDay = nextMonth.toISOString();
-  const memosThisMonth = allMemos.filter(m => m.created_at >= firstDay && m.created_at < lastDay);
-  const pendingCount = memosThisMonth.filter(m => [2, 3, 4].includes(m.current_signer_order)).length;
-  const approvedCount = memosThisMonth.filter(m => m.current_signer_order === 5).length;
-  const inProgressCount = memosThisMonth.filter(m => m.current_signer_order === 1 || m.current_signer_order === 0).length;
+  // รวม memos ปกติ + doc_receive สำหรับ PendingDocumentCard
+  const allMemosWithDocReceive = ReactUseMemo(() => {
+    // กรองเอกสารที่ถูก soft delete ออก
+    const filteredMemos = memos.filter(memo => !memo.doc_del);
+    const filteredDocReceive = docReceiveList.filter(doc => !doc.doc_del);
+
+    // Mark doc_receive items with a flag so routing knows which table to use
+    const markedDocReceive = filteredDocReceive.map(doc => ({
+      ...doc,
+      __source_table: 'doc_receive' // marker field
+    }));
+    const combined = [...filteredMemos, ...markedDocReceive];
+
+    console.log('🔗 Combined memos + doc_receive:', {
+      memosCount: memos.length,
+      filteredMemosCount: filteredMemos.length,
+      docReceiveCount: docReceiveList.length,
+      filteredDocReceiveCount: filteredDocReceive.length,
+      combinedCount: combined.length,
+      pendingSignDocs: combined.filter(m => m.status === 'pending_sign').map(m => ({
+        id: m.id,
+        subject: m.subject,
+        status: m.status,
+        current_signer_order: m.current_signer_order,
+        source: m.__source_table || 'memos'
+      }))
+    });
+
+    return combined;
+  }, [memos, docReceiveList]);
+
+  // Mark doc_receive items for DocReceiveList component (fix routing bug)
+  const markedDocReceiveList = ReactUseMemo(() => {
+    return docReceiveList.map(doc => ({
+      ...doc,
+      __source_table: 'doc_receive' // marker field for getDocumentManageRoute
+    }));
+  }, [docReceiveList]);
+
+  // นับสถิติจากเอกสารย้อนหลัง 30 วัน (รวม memos + doc_receive)
+  const combinedForStats = ReactUseMemo(() => {
+    return [...allMemos, ...docReceiveList.filter(doc => !doc.doc_del)];
+  }, [allMemos, docReceiveList]);
+
+  const totalCount = combinedForStats.length;
+  const pendingCount = combinedForStats.filter(m => [2, 3, 4].includes(m.current_signer_order)).length;
+  const approvedCount = combinedForStats.filter(m => m.current_signer_order === 5).length;
+  const inProgressCount = combinedForStats.filter(m => m.current_signer_order === 1 || m.current_signer_order === 0).length;
 
   // Use the getPermissions function from useEmployeeAuth hook
   const permissions = ReactUseMemo(() => getPermissions(), [getPermissions]);
 
   // Load data only once when component mounts and user is authenticated
   useEffect(() => {
-    if (profile?.user_id && isAuthenticated && !isLoadingData) {
+    console.log('🎯 OfficialDocumentsPage useEffect triggered:', {
+      profileUserId: profile?.user_id,
+      isAuthenticated,
+      isLoadingData
+    });
+
+    if (profile?.user_id && isAuthenticated) {
+      console.log('🚀 OfficialDocumentsPage: Loading all data...');
+      setIsLoadingData(true);
       loadAllData();
+      fetchDocReceive();
+      console.log('✅ OfficialDocumentsPage: Triggered fetchDocReceive');
+      setIsLoadingData(false);
     }
   }, [profile?.user_id, isAuthenticated]); // เอา loadAllData ออกเพื่อป้องกัน infinite loop
 
@@ -268,18 +413,19 @@ const OfficialDocumentsPage = () => {
         </div>
 
         {/* Statistics Cards */}
-        <StatisticsCards 
-          totalCount={memosThisMonth.length}
+        <StatisticsCards
+          totalCount={totalCount}
           pendingCount={pendingCount}
           approvedCount={approvedCount}
           inProgressCount={inProgressCount}
-          memosThisMonth={memosThisMonth}
+          memosThisMonth={combinedForStats}
         />
 
-        {/* Document Management Cards */}
-        <DocumentCards 
+        {/* Document Management Cards - เอกสารปกติและหนังสือรับ */}
+        <DocumentCards
           documents={allDocuments}
-          realMemos={allMemos} // ใช้ allMemos จาก useAllMemos แทน
+          realMemos={allMemosWithDocReceive} // รวม memos ปกติ + doc_receive
+          docReceiveList={markedDocReceiveList} // รายการหนังสือรับ (marked with __source_table for routing)
           onDocumentSubmit={handleDocumentSubmit}
           permissions={permissions}
           onReject={rejectDocument}

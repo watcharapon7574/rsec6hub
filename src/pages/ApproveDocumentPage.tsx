@@ -41,12 +41,139 @@ const ApproveDocumentPage: React.FC = () => {
   const [showLoadingModal, setShowLoadingModal] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false); // สำหรับ RejectionCard
   const [hasShownPermissionToast, setHasShownPermissionToast] = useState(false); // ป้องกัน toast ซ้ำ
+  const [docReceive, setDocReceive] = useState<any>(null); // สำหรับเอกสาร doc_receive
+  const [isDocReceive, setIsDocReceive] = useState(false); // flag ว่าเป็น doc_receive หรือไม่
 
-  // Get memo data
-  const memo = memoId ? getMemoById(memoId) : null;
+  // Try to get memo from memos table first
+  let memoFromMemosTable = memoId ? getMemoById(memoId) : null;
 
-  // Check if user can comment (only deputy and director)
-  const canComment = profile?.position === 'deputy_director' || profile?.position === 'director';
+  // If not found in memos table, try doc_receive table
+  useEffect(() => {
+    const fetchDocReceive = async () => {
+      if (!memoId) return;
+      if (memoFromMemosTable) {
+        // Found in memos table, not doc_receive
+        setIsDocReceive(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await (supabase as any)
+          .from('doc_receive')
+          .select('*')
+          .eq('id', memoId)
+          .single();
+
+        if (!error && data) {
+          setDocReceive(data);
+          setIsDocReceive(true);
+        }
+      } catch (err) {
+        console.error('Error fetching doc_receive:', err);
+      }
+    };
+
+    fetchDocReceive();
+  }, [memoId, memoFromMemosTable]);
+
+  // Use either memo or docReceive
+  const memo = isDocReceive ? docReceive : memoFromMemosTable;
+
+  // Wrapper functions for updating either memos or doc_receive
+  const updateDocumentStatus = async (docId: string, status: string, docNumber?: string, rejectionReason?: string, currentSignerOrder?: number, newPdfDraftPath?: string, clerkId?: string) => {
+    if (isDocReceive) {
+      // Update doc_receive table
+      try {
+        const updates: any = { status };
+        if (docNumber) updates.doc_number = docNumber;
+        if (typeof currentSignerOrder === 'number') updates.current_signer_order = currentSignerOrder;
+        if (newPdfDraftPath) updates.pdf_draft_path = newPdfDraftPath;
+        if (clerkId) updates.clerk_id = clerkId;
+
+        if (rejectionReason && status === 'rejected' && profile) {
+          const { data: currentDoc } = await (supabase as any)
+            .from('doc_receive')
+            .select('form_data')
+            .eq('id', docId)
+            .single();
+
+          if (currentDoc) {
+            const currentFormData = currentDoc.form_data as any || {};
+            updates.form_data = {
+              ...currentFormData,
+              rejection_reason: rejectionReason,
+              rejected_at: new Date().toISOString()
+            };
+          }
+
+          const rejectedNameComment = {
+            name: `${profile.first_name} ${profile.last_name}`,
+            comment: rejectionReason,
+            rejected_at: new Date().toISOString(),
+            position: profile.current_position || profile.job_position || profile.position || ''
+          };
+          updates.rejected_name_comment = JSON.stringify(rejectedNameComment);
+        }
+
+        const { error } = await (supabase as any)
+          .from('doc_receive')
+          .update(updates)
+          .eq('id', docId);
+
+        if (error) throw error;
+        return { success: true };
+      } catch (error) {
+        console.error('Error updating doc_receive:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    } else {
+      // Use existing updateMemoStatus for memos table
+      return await updateMemoStatus(docId, status, docNumber, rejectionReason, currentSignerOrder, newPdfDraftPath, clerkId);
+    }
+  };
+
+  const updateDocumentApproval = async (docId: string, action: 'approve' | 'reject', rejectionReason?: string) => {
+    if (isDocReceive) {
+      // Handle doc_receive approval/rejection
+      try {
+        const updates: any = {};
+
+        if (action === 'reject') {
+          updates.status = 'rejected';
+          updates.current_signer_order = 0;
+
+          if (rejectionReason && profile) {
+            const rejectedNameComment = {
+              name: `${profile.first_name} ${profile.last_name}`,
+              comment: rejectionReason,
+              rejected_at: new Date().toISOString(),
+              position: profile.current_position || profile.job_position || profile.position || ''
+            };
+            updates.rejected_name_comment = JSON.stringify(rejectedNameComment);
+          }
+        }
+
+        const { error } = await (supabase as any)
+          .from('doc_receive')
+          .update(updates)
+          .eq('id', docId);
+
+        if (error) throw error;
+        return { success: true };
+      } catch (error) {
+        console.error('Error updating doc_receive approval:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    } else {
+      // Use existing updateMemoApproval for memos table
+      return await updateMemoApproval(docId, action, rejectionReason);
+    }
+  };
+
+  // Check if user can comment (assistant_director, deputy_director, and director)
+  const canComment = profile?.position === 'assistant_director' ||
+                     profile?.position === 'deputy_director' ||
+                     profile?.position === 'director';
 
   // Debug: แสดงข้อมูลสำหรับการ debug (ลบออกได้หลังจากแก้ไขเสร็จ)
   useEffect(() => {
@@ -57,7 +184,10 @@ const ApproveDocumentPage: React.FC = () => {
           status: memo.status,
           current_signer_order: memo.current_signer_order,
           signature_positions: memo.signature_positions,
-          signer_list_progress: (memo as any).signer_list_progress
+          signer_list_progress: (memo as any).signer_list_progress,
+          document_summary: memo.document_summary,
+          has_document_summary: !!memo.document_summary,
+          isDocReceive
         },
         profile: {
           user_id: profile.user_id,
@@ -66,7 +196,7 @@ const ApproveDocumentPage: React.FC = () => {
         }
       });
     }
-  }, [memo, profile]);
+  }, [memo, profile, isDocReceive]);
 
   // Get current user's signature info - ใช้ signer_list_progress แทน signature_positions
   const signerListProgress = Array.isArray((memo as any)?.signer_list_progress) 
@@ -119,7 +249,22 @@ const ApproveDocumentPage: React.FC = () => {
     } else {
       // ตรวจสอบลำดับสำหรับผู้ใช้ทั่วไป
       const userOrder = currentUserSigner?.order || currentUserSignature?.signer?.order;
+      console.log('🔍 Regular user check:', {
+        isManagementRole,
+        hasSignatureInDocument,
+        userOrder,
+        currentSignerOrder: memo.current_signer_order,
+        userCanSign,
+        userPosition: profile?.position
+      });
+      
       if (userOrder !== memo.current_signer_order) {
+        // เพิ่มเงื่อนไขป้องกัน: ถ้าผู้ใช้สามารถลงนามได้แสดงว่าถึงลำดับแล้ว
+        if (userCanSign) {
+          console.log('⚠️ User can sign but order check failed - allowing access');
+          return;
+        }
+        
         setHasShownPermissionToast(true);
         toast({
           title: "ไม่สามารถเข้าถึงได้", 
@@ -137,13 +282,14 @@ const ApproveDocumentPage: React.FC = () => {
 
     setIsRejecting(true);
     try {
-      console.log('🔄 ApproveDocumentPage: Calling updateMemoApproval for rejection', {
+      console.log('🔄 ApproveDocumentPage: Calling updateDocumentApproval for rejection', {
         memoId,
         rejectionReason,
+        isDocReceive,
         profile: { name: `${profile.first_name} ${profile.last_name}`, position: profile.position }
       });
-      
-      const result = await updateMemoApproval(memoId, 'reject', rejectionReason);
+
+      const result = await updateDocumentApproval(memoId, 'reject', rejectionReason);
       
       if (result.success) {
         toast({
@@ -218,13 +364,31 @@ const ApproveDocumentPage: React.FC = () => {
           const fullName = `${profile.prefix || ''}${profile.first_name} ${profile.last_name}`.trim();
           
           if (profile.position === 'assistant_director') {
-            linesWithComment = [
-              { type: "image", file_key: "sig1" },
-              { type: "name", value: fullName },
-              { type: "academic_rank", value: `ตำแหน่ง ${profile.academic_rank || ""}` },
-              { type: "org_structure_role", value: `ปฏิบัติหน้าที่${profile.org_structure_role || ""}` }
-            ];
-            linesWithoutComment = [...linesWithComment]; // ผู้ช่วยไม่มี comment อยู่แล้ว
+            // ถ้ามี comment ให้แสดง comment ในตำแหน่งแรก
+            if (comment && comment.trim()) {
+              linesWithComment = [
+                { type: "comment", value: `- ${comment.trim()}` },
+                { type: "image", file_key: "sig1" },
+                { type: "name", value: fullName },
+                { type: "academic_rank", value: `ตำแหน่ง ${profile.academic_rank || ""}` },
+                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${profile.org_structure_role || ""}` }
+              ];
+              linesWithoutComment = [
+                { type: "image", file_key: "sig1" },
+                { type: "name", value: fullName },
+                { type: "academic_rank", value: `ตำแหน่ง ${profile.academic_rank || ""}` },
+                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${profile.org_structure_role || ""}` }
+              ];
+            } else {
+              // ถ้าไม่มี comment ก็ไม่ต้องแสดง
+              linesWithComment = [
+                { type: "image", file_key: "sig1" },
+                { type: "name", value: fullName },
+                { type: "academic_rank", value: `ตำแหน่ง ${profile.academic_rank || ""}` },
+                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${profile.org_structure_role || ""}` }
+              ];
+              linesWithoutComment = [...linesWithComment];
+            }
           } else if (profile.position === 'deputy_director') {
             linesWithComment = [
               { type: "comment", value: `- ${comment || "เห็นชอบ"}` },
@@ -400,7 +564,7 @@ const ApproveDocumentPage: React.FC = () => {
             newStatus = nextSignerOrder > maxOrder ? 'completed' : 'pending_sign';
           }
           
-          await updateMemoStatus(memoId, newStatus, undefined, undefined, nextSignerOrder, newPublicUrl);
+          await updateDocumentStatus(memoId, newStatus, undefined, undefined, nextSignerOrder, newPublicUrl);
           // --- ลบไฟล์เก่า ---
           const { error: removeError } = await supabase.storage
             .from('documents')
@@ -415,16 +579,17 @@ const ApproveDocumentPage: React.FC = () => {
         }
       }
       // ... กรณี approve แบบไม่มีลายเซ็น ...
-      console.log('🔄 ApproveDocumentPage: Calling updateMemoApproval for approval', {
+      console.log('🔄 ApproveDocumentPage: Calling updateDocumentApproval for approval', {
         memoId,
         approvalAction,
+        isDocReceive,
         comment: comment.trim(),
         profile: profile ? { name: `${profile.first_name} ${profile.last_name}`, position: profile.position } : null
       });
-      
-      const result = await updateMemoApproval(
-        memoId, 
-        approvalAction, 
+
+      const result = await updateDocumentApproval(
+        memoId,
+        approvalAction,
         comment.trim() || undefined
       );
       if (result.success) {
@@ -543,16 +708,30 @@ const ApproveDocumentPage: React.FC = () => {
                 <Separator />
                 <div>
                   <span className="font-medium text-gray-600">ความหมายโดยสรุปของเอกสารฉบับนี้:</span>
-                  {memo.document_summary ? (
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-gray-800 leading-relaxed">{memo.document_summary}</p>
-                    </div>
-                  ) : (
-                    <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <p className="text-sm text-gray-500 italic">ยังไม่มีข้อมูลสรุปจากธุรการ</p>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">ข้อมูลสรุปจากธุรการเพื่อช่วยให้เข้าใจเนื้อหาเอกสาร</p>
+                  {(() => {
+                    // สำหรับ doc_receive: ใช้ subject เป็นข้อมูลสรุป
+                    // สำหรับ memos: ใช้ document_summary
+                    const summaryText = isDocReceive ? memo.subject : memo.document_summary;
+
+                    return summaryText ? (
+                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-gray-800 leading-relaxed">{summaryText}</p>
+                      </div>
+                    ) : (
+                      <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-500 italic">
+                          {isDocReceive
+                            ? 'ยังไม่มีข้อมูลเรื่อง'
+                            : 'ยังไม่มีข้อมูลสรุปจากธุรการ'}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                  <p className="text-xs text-gray-500 mt-1">
+                    {isDocReceive
+                      ? 'เรื่องของหนังสือรับจากภายนอก'
+                      : 'ข้อมูลสรุปจากธุรการเพื่อช่วยให้เข้าใจเนื้อหาเอกสาร'}
+                  </p>
                 </div>
               </CardContent>
             </Card>

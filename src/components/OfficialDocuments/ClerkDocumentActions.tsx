@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  ArrowLeft, 
-  FileText, 
-  Users, 
+import {
+  ArrowLeft,
+  FileText,
+  Users,
   MapPin,
-  Send
+  Send,
+  ClipboardList
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -21,6 +23,9 @@ import SignaturePositionSelector from './SignaturePositionSelector';
 interface ClerkDocumentActionsProps {
   documentId: string;
   documentTitle: string;
+  documentType: 'memo' | 'doc_receive';
+  currentSignerOrder?: number;
+  isAssigned?: boolean;
   pdfUrl?: string;
   onReject: (documentId: string, reason: string) => void;
   onAssignNumber: (documentId: string, number: string) => void;
@@ -30,11 +35,15 @@ interface ClerkDocumentActionsProps {
 const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
   documentId,
   documentTitle,
+  documentType,
+  currentSignerOrder,
+  isAssigned = false,
   pdfUrl,
   onReject,
   onAssignNumber,
   onSetSigners
 }) => {
+  const navigate = useNavigate();
   const [rejectReason, setRejectReason] = useState('');
   const [documentNumber, setDocumentNumber] = useState('');
   const [selectedSigners, setSelectedSigners] = useState<any[]>([]);
@@ -114,6 +123,43 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
       selectedSigners[index]?.user_id !== userId
     ));
   };
+
+  // เช็คว่าเอกสารเกษียนหนังสือแล้วหรือยัง (current_signer_order = 5)
+  // และยังไม่ได้มอบหมายงาน (is_assigned = false)
+  const isDocumentCompleted = currentSignerOrder === 5;
+  const canAssignTask = isDocumentCompleted && !isAssigned;
+
+  // ถ้าเอกสารเกษียนแล้วและยังไม่ได้มอบหมาย ให้แสดงปุ่ม "มอบหมายงาน"
+  if (canAssignTask) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          navigate(`/task-assignment?documentId=${documentId}&documentType=${documentType}`);
+        }}
+        className="bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
+      >
+        <ClipboardList className="h-4 w-4 mr-1" />
+        มอบหมายงาน
+      </Button>
+    );
+  }
+
+  // ถ้าเอกสารมอบหมายแล้ว แสดงปุ่มสถานะ "มอบหมายแล้ว" (disabled)
+  if (isDocumentCompleted && isAssigned) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        disabled
+        className="bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed"
+      >
+        <ClipboardList className="h-4 w-4 mr-1" />
+        มอบหมายแล้ว
+      </Button>
+    );
+  }
 
   return (
     <Dialog>

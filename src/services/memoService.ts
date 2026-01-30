@@ -2,31 +2,35 @@ import { supabase } from '@/integrations/supabase/client';
 import { Memo, MemoFormData, SignaturePosition, MemoSignature } from '@/types/memo';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDeviceFingerprint } from '@/utils/deviceInfo';
+import { requestQueue } from '@/utils/requestQueue';
 
 export class MemoService {
   // Helper function to upload files to storage
   static async uploadAttachedFiles(files: File[], userId: string): Promise<string[]> {
     const uploadedUrls: string[] = [];
-    
+
     for (const file of files) {
       try {
         const fileExtension = file.name.split('.').pop();
         const fileName = `attachment_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
         const filePath = `memos/${userId}/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, file, {
-            contentType: file.type,
-            upsert: false
-          });
+        // Use request queue for storage upload
+        const { error: uploadError } = await requestQueue.enqueue(() =>
+          supabase.storage
+            .from('documents')
+            .upload(filePath, file, {
+              contentType: file.type,
+              upsert: false
+            })
+        );
 
         if (uploadError) {
           console.error('Error uploading file:', uploadError);
           continue;
         }
 
-        // Get public URL
+        // Get public URL (no queue needed - just reads metadata)
         const { data: { publicUrl } } = supabase.storage
           .from('documents')
           .getPublicUrl(filePath);
@@ -53,12 +57,14 @@ export class MemoService {
 
       // Check if this is an update (edit mode) and determine if we need to regenerate PDF
       if (formData.memo_id) {
-        // Get existing memo to check what changed
-        const { data: existingMemo, error: fetchError } = await supabase
-          .from('memos')
-          .select('*')
-          .eq('id', formData.memo_id)
-          .single();
+        // Get existing memo to check what changed (use queue)
+        const { data: existingMemo, error: fetchError } = await requestQueue.enqueue(() =>
+          supabase
+            .from('memos')
+            .select('*')
+            .eq('id', formData.memo_id)
+            .single()
+        );
 
         if (fetchError) {
           console.warn('Could not fetch existing memo for comparison:', fetchError);
@@ -134,16 +140,18 @@ export class MemoService {
           throw new Error('Received empty PDF response');
         }
         
-        // Upload PDF to Supabase Storage
+        // Upload PDF to Supabase Storage (use queue)
         const fileName = `memo_${Date.now()}_${formData.doc_number.replace(/[^\w]/g, '_')}.pdf`;
         const filePath = `memos/${userId}/${fileName}`;
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, pdfBlob, {
-            contentType: 'application/pdf',
-            upsert: true
-          });
+        const { data: uploadData, error: uploadError } = await requestQueue.enqueue(() =>
+          supabase.storage
+            .from('documents')
+            .upload(filePath, pdfBlob, {
+              contentType: 'application/pdf',
+              upsert: true
+            })
+        );
 
         if (uploadError) {
           throw new Error(`Failed to upload PDF: ${uploadError.message}`);
@@ -184,55 +192,59 @@ export class MemoService {
 
       // Check if this is an update (edit mode)
       if (formData.memo_id) {
-        // Update existing memo and reset current_signer_order to 1
-        const { data, error } = await supabase
-          .from('memos')
-          .update({
-            doc_number: formData.doc_number,
-            subject: formData.subject,
-            date: formData.date,
-            attachment_title: formData.attachment_title,
-            introduction: formData.introduction,
-            author_name: formData.author_name,
-            author_position: formData.author_position,
-            fact: formData.fact,
-            proposal: formData.proposal,
-            form_data: { ...formData as any, type: 'create_memo' },
-            pdf_draft_path: publicUrl,
-            status: 'draft',
-            attached_files: JSON.stringify(attachedFileUrls),
-            current_signer_order: 1, // Reset to 1 after edit
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', formData.memo_id)
-          .select()
-          .single();
+        // Update existing memo and reset current_signer_order to 1 (use queue)
+        const { data, error } = await requestQueue.enqueue(() =>
+          supabase
+            .from('memos')
+            .update({
+              doc_number: formData.doc_number,
+              subject: formData.subject,
+              date: formData.date,
+              attachment_title: formData.attachment_title,
+              introduction: formData.introduction,
+              author_name: formData.author_name,
+              author_position: formData.author_position,
+              fact: formData.fact,
+              proposal: formData.proposal,
+              form_data: { ...formData as any, type: 'create_memo' },
+              pdf_draft_path: publicUrl,
+              status: 'draft',
+              attached_files: JSON.stringify(attachedFileUrls),
+              current_signer_order: 1, // Reset to 1 after edit
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', formData.memo_id)
+            .select()
+            .single()
+        );
 
         if (error) throw error;
         return { success: true, data };
       } else {
-        // Create new memo
-        const { data, error } = await supabase
-          .from('memos')
-          .insert({
-            doc_number: formData.doc_number,
-            subject: formData.subject,
-            date: formData.date,
-            attachment_title: formData.attachment_title,
-            introduction: formData.introduction,
-            author_name: formData.author_name,
-            author_position: formData.author_position,
-            fact: formData.fact,
-            proposal: formData.proposal,
-            user_id: userId,
-            form_data: { ...formData as any, type: 'create_memo' },
-            pdf_draft_path: publicUrl,
-            status: 'draft',
-            attached_files: JSON.stringify(attachedFileUrls),
-            current_signer_order: 1 // Set to 1 for new memo
-          })
-          .select()
-          .single();
+        // Create new memo (use queue)
+        const { data, error } = await requestQueue.enqueue(() =>
+          supabase
+            .from('memos')
+            .insert({
+              doc_number: formData.doc_number,
+              subject: formData.subject,
+              date: formData.date,
+              attachment_title: formData.attachment_title,
+              introduction: formData.introduction,
+              author_name: formData.author_name,
+              author_position: formData.author_position,
+              fact: formData.fact,
+              proposal: formData.proposal,
+              user_id: userId,
+              form_data: { ...formData as any, type: 'create_memo' },
+              pdf_draft_path: publicUrl,
+              status: 'draft',
+              attached_files: JSON.stringify(attachedFileUrls),
+              current_signer_order: 1 // Set to 1 for new memo
+            })
+            .select()
+            .single()
+        );
 
         if (error) throw error;
         return { success: true, data };

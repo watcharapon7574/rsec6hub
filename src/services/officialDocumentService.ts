@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { OfficialDocument } from '@/types/officialDocument';
+import { requestQueue } from '@/utils/requestQueue';
 
 export const officialDocumentService = {
   // ดึงเอกสารราชการตาม role และเงื่อนไข
@@ -61,20 +62,22 @@ export const officialDocumentService = {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const startDate = thirtyDaysAgo.toISOString();
 
-    // ดึง memos ทั้งหมด พร้อม task_assignments
-    const { data, error } = await supabase
-      .from('memos')
-      .select(`
-        *,
-        task_assignments!task_assignments_memo_id_fkey(
-          id,
-          status,
-          deleted_at
-        )
-      `)
-      .is('doc_del', null)
-      .gte('created_at', startDate)
-      .order('created_at', { ascending: false });
+    // ดึง memos ทั้งหมด พร้อม task_assignments (use queue)
+    const { data, error } = await requestQueue.enqueue(() =>
+      supabase
+        .from('memos')
+        .select(`
+          *,
+          task_assignments!task_assignments_memo_id_fkey(
+            id,
+            status,
+            deleted_at
+          )
+        `)
+        .is('doc_del', null)
+        .gte('created_at', startDate)
+        .order('created_at', { ascending: false })
+    );
 
     if (error) {
       console.error('❌ Memos database error:', error);

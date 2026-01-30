@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEmployeeAuth } from "@/hooks/useEmployeeAuth";
 import TopBar from "@/components/Layout/TopBar";
 import FloatingNavbar from "@/components/Layout/FloatingNavbar";
+import { LoadingQueue } from "@/components/ui/LoadingQueue";
 import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
@@ -193,6 +194,7 @@ const App = () => (
         <BrowserRouter>
           <AppContent />
           <InstallPrompt />
+          <LoadingQueue />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

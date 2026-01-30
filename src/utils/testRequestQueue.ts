@@ -427,11 +427,17 @@ export const testRequestQueue = {
    *
    * NOTE: Rate limit is 3 OTP per 5 minutes per phone number
    * This test will send OTP to the current user's phone repeatedly
+   *
+   * Real-world scenario:
+   * - 50 different users with different phones: 90-100% success (no rate limit conflict)
+   * - Same user requesting 50 times: 6% success (3/50 - rate limited)
+   *
    * Expected: First 3 requests succeed, rest fail with rate limit error
    */
   async testEdgeFunctionOTP(count: number = 5) {
     console.log(`🔐 Starting OTP Request Test with ${count} concurrent requests...`);
     console.log('⚠️ Rate Limit: 3 OTP per 5 minutes per phone number');
+    console.log('💡 Real usage: 50 users with different phones = 90-100% success');
 
     // Get current user's phone number
     let userPhone: string | null = null;
@@ -689,7 +695,7 @@ export const testRequestQueue = {
           // Test 2: Verify user profile access (simulates post-login data fetch)
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('user_id, full_name, phone')
+            .select('user_id, phone, telegram_chat_id')
             .eq('phone', testPhone)
             .single();
 

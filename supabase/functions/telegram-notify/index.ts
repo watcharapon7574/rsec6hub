@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 interface NotificationPayload {
-  type: 'document_pending' | 'document_approved' | 'document_rejected' | 'document_ready' | 'document_created' | 'document_completed_clerk' | 'task_assigned'
+  type: 'document_pending' | 'document_approved' | 'document_rejected' | 'document_ready' | 'document_created' | 'document_completed_clerk' | 'task_assigned' | 'task_completed'
   document_id: string
   document_type: 'memo' | 'doc_receive'
   subject: string
@@ -23,6 +23,7 @@ interface NotificationPayload {
   urgency?: string
   assigned_by?: string // For task_assigned: name of person who assigned
   note?: string // For task_assigned: assignment note
+  completed_by?: string // For task_completed: name of person who completed the task
   chat_id?: string // Optional: specific chat to send to
 }
 
@@ -58,6 +59,7 @@ function formatMessage(payload: NotificationPayload): string {
     document_created: '🆕',
     document_completed_clerk: '✅',
     task_assigned: '📋',
+    task_completed: '✅',
   }
 
   const icon = emoji[payload.type] || '📄'
@@ -144,6 +146,18 @@ function formatMessage(payload: NotificationPayload): string {
       }
       message += `\n📋 กรุณาเข้าระบบเพื่อดำเนินการงาน`
       break
+
+    case 'task_completed':
+      message += `<b>งานเสร็จสิ้นแล้ว</b>\n`
+      message += `เรื่อง: ${payload.subject}\n`
+      if (payload.doc_number) {
+        message += `เลขที่หนังสือ: ${payload.doc_number}\n`
+      }
+      if (payload.completed_by) {
+        message += `ดำเนินการโดย: ${payload.completed_by}\n`
+      }
+      message += `\n✅ งานที่มอบหมายได้รับการดำเนินการเรียบร้อยแล้ว`
+      break
   }
 
   message += `\n🔗 ID: ${payload.document_id}`
@@ -162,8 +176,10 @@ serve(async (req) => {
     const botToken = '7677125075:AAGH-NAyoaHdtkmizGuVM3EQeGrwBfnz2fQ'
     // Bot token for completed documents (only clerks use this bot)
     const completedBotToken = '8085934203:AAEYJaJvHC-ohuvFaIoeHz8xZJZ7jVPVsUo'
+    // Bot token for task completion reports (notify executives when tasks are done)
+    const reportBotToken = '8255772208:AAFR4SKC_Yq1ObnaIzd5zT-xzguKMksV-vE'
 
-    if (!botToken || !completedBotToken) {
+    if (!botToken || !completedBotToken || !reportBotToken) {
       throw new Error('TELEGRAM_BOT_TOKEN is not set')
     }
 
@@ -182,10 +198,22 @@ serve(async (req) => {
     const chatId = payload.chat_id
 
     // Determine which bot to use based on notification type
-    // For clerk notifications (document_created, document_completed_clerk), use FastDoc_clerk_bot
-    // For user notifications (document_approved, document_rejected, document_pending, task_assigned), use the regular bot
-    const isClerkNotification = payload.type === 'document_completed_clerk' || payload.type === 'document_created'
-    const selectedBotToken = isClerkNotification ? completedBotToken : botToken
+    // 1. FastDoc_clerk_bot: document_created, document_completed_clerk
+    // 2. FastDoc_report_bot: task_completed (notify executives when tasks are done)
+    // 3. Regular bot: document_approved, document_rejected, document_pending, task_assigned
+    let selectedBotToken: string
+    let botUsed: string
+
+    if (payload.type === 'document_completed_clerk' || payload.type === 'document_created') {
+      selectedBotToken = completedBotToken
+      botUsed = 'clerk_bot'
+    } else if (payload.type === 'task_completed') {
+      selectedBotToken = reportBotToken
+      botUsed = 'report_bot'
+    } else {
+      selectedBotToken = botToken
+      botUsed = 'regular_bot'
+    }
 
     // Format and send message
     const message = formatMessage(payload)
@@ -195,7 +223,7 @@ serve(async (req) => {
       type: payload.type,
       document_id: payload.document_id,
       chat_id: chatId,
-      bot_used: isClerkNotification ? 'clerk_bot' : 'regular_bot',
+      bot_used: botUsed,
       result
     })
 

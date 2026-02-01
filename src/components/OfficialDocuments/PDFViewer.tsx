@@ -954,7 +954,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             className="leading-tight text-gray-500"
                             style={{ fontSize: '12px' }} // Fixed font size for additional info
                           >
-                            {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ'}`}
+                            {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'หัวหน้าฝ่าย'}`}
                             {pos.signer.role === 'deputy_director' && (memo?.updated_at ? formatThaiDate(memo.updated_at) : '๑๑ กรกฎาคม ๒๕๖๘')}
                             {pos.signer.role === 'director' && `เขตการศึกษา ๖ จังหวัดลพบุรี`}
                           </div>

@@ -634,6 +634,138 @@ export const testRequestQueue = {
   },
 
   /**
+   * Test Task Completed Notification (FastDoc_report_bot)
+   * Tests sending task completion notifications to executives/signers
+   * Uses the new FastDoc_report_bot for executive notifications
+   */
+  async testTaskCompletedNotification(count: number = 5) {
+    console.log(`📬 Starting Task Completed Notification Test with ${count} notifications...`);
+    console.log('⚠️ Note: This will send REAL notifications via FastDoc_report_bot');
+
+    // Get current user info for testing
+    let testChatId: string | null = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('No authenticated user - please login first to run this test');
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('telegram_chat_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.telegram_chat_id) {
+        throw new Error('No telegram_chat_id found in profile - please link your Telegram account first');
+      }
+
+      testChatId = profile.telegram_chat_id;
+      console.log(`📱 Using test chat_id: ${testChatId}`);
+    } catch (error: any) {
+      console.error('❌ Failed to get user data:', error.message);
+      throw new Error('Cannot test notification without authenticated user with Telegram');
+    }
+
+    console.log('⏰ Start time:', new Date().toLocaleTimeString());
+
+    const startTime = Date.now();
+    const promises: Promise<any>[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const promise = requestQueue.enqueue(async () => {
+        console.log(`📤 Task Completed Notification ${i + 1} started`);
+
+        try {
+          // Call Telegram Notify Edge Function with task_completed type
+          const response = await supabase.functions.invoke('telegram-notify', {
+            body: {
+              type: 'task_completed',
+              document_id: `test_doc_${Date.now()}_${i}`,
+              document_type: 'doc_receive',
+              subject: `[ทดสอบ] เอกสารทดสอบที่ ${i + 1}`,
+              author_name: 'ระบบทดสอบ',
+              doc_number: `TEST-${Date.now()}-${i + 1}`,
+              completed_by: 'ผู้ปฏิบัติงานทดสอบ',
+              chat_id: testChatId
+            }
+          });
+
+          if (response.error) {
+            throw new Error(`Edge Function Error: ${response.error.message}`);
+          }
+
+          console.log(`✅ Task Completed Notification ${i + 1} sent successfully`);
+          return { requestId: i + 1, success: true };
+        } catch (error: any) {
+          console.error(`❌ Task Completed Notification ${i + 1} failed:`, error.message);
+          throw error;
+        }
+      }, `📬 Task Completed Notification #${i + 1}`);
+
+      promises.push(promise);
+    }
+
+    // Wait for all requests to complete
+    const results = await Promise.allSettled(promises);
+
+    const endTime = Date.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+    // Calculate statistics
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const successRate = ((successful / count) * 100).toFixed(1);
+
+    // Analyze error types
+    const errorTypes: Record<string, number> = {};
+    results.forEach(r => {
+      if (r.status === 'rejected') {
+        const errorMsg = r.reason?.message || 'Unknown error';
+        errorTypes[errorMsg] = (errorTypes[errorMsg] || 0) + 1;
+      }
+    });
+
+    console.log('\n📊 Task Completed Notification Test Results:');
+    console.log('='.repeat(50));
+    console.log(`✅ Successful: ${successful}/${count} (${successRate}%)`);
+    console.log(`❌ Failed: ${failed}/${count}`);
+    console.log(`⏱️  Duration: ${duration} seconds`);
+    console.log(`📈 Throughput: ${(count / parseFloat(duration)).toFixed(2)} notifications/second`);
+    console.log('⏰ End time:', new Date().toLocaleTimeString());
+
+    if (failed > 0) {
+      console.log('\n❌ Error breakdown:');
+      Object.entries(errorTypes).forEach(([error, count]) => {
+        console.log(`  - ${error}: ${count} occurrences`);
+      });
+    }
+
+    console.log('='.repeat(50));
+
+    if (parseFloat(successRate) === 100) {
+      console.log('✅ Task Completed notifications sent successfully! 🎉');
+      console.log('💡 Check your Telegram (FastDoc_report_bot) for notifications');
+    } else if (parseFloat(successRate) >= 90) {
+      console.log('✅ Most notifications sent successfully ✓');
+    } else {
+      console.error('❌ Task Completed notification system needs attention');
+      console.warn('💡 Check Telegram bot token and user chat_id');
+    }
+
+    return {
+      total: count,
+      successful,
+      failed,
+      successRate: parseFloat(successRate),
+      duration: parseFloat(duration),
+      throughput: count / parseFloat(duration),
+      errorTypes,
+      results
+    };
+  },
+
+  /**
    * Test Login Edge Function with Concurrent Requests
    * Simulates multiple users logging in simultaneously using OTP authentication
    *

@@ -10,6 +10,7 @@ interface OTPStepProps {
   onResendOTP: () => void;
   loading: boolean;
   error?: string;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 const OTPStep: React.FC<OTPStepProps> = ({
@@ -18,7 +19,8 @@ const OTPStep: React.FC<OTPStepProps> = ({
   onBackToPhone,
   onResendOTP,
   loading,
-  error
+  error,
+  onSubmittingChange
 }) => {
   const [resetOTP, setResetOTP] = useState(false);
 
@@ -34,6 +36,7 @@ const OTPStep: React.FC<OTPStepProps> = ({
   const handleOTPReset = () => {
     setResetOTP(false);
   };
+
   return (
     <div className="space-y-5">
       <div className="text-center space-y-2">
@@ -43,13 +46,14 @@ const OTPStep: React.FC<OTPStepProps> = ({
         </p>
       </div>
 
-      <OTPInput 
+      <OTPInput
         length={6}
         onComplete={handleOTPComplete}
         disabled={loading}
         className="mb-4"
         reset={resetOTP}
         onReset={handleOTPReset}
+        onSubmittingChange={onSubmittingChange}
       />
 
       {/* Error message */}

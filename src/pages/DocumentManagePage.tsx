@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Progress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { SignerProgress } from '@/types/memo';
+import { railwayPDFQueue } from '@/utils/requestQueue';
 
 // Import step components
 import Step1DocumentNumber from '@/components/DocumentManage/Step1DocumentNumber';
@@ -389,27 +390,36 @@ const DocumentManagePage: React.FC = () => {
         attached_files: memo.attached_files || []
       };
 
-      // Call external API to generate new PDF with document number
-      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/pdf',
+      // Call Railway PDF API with queue + retry logic
+      const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/pdf',
+            },
+            mode: 'cors',
+            credentials: 'omit',
+            body: JSON.stringify(formData),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error: ${response.status} - ${errorText}`);
+          }
+
+          const blob = await response.blob();
+          if (blob.size === 0) {
+            throw new Error('Received empty PDF response');
+          }
+
+          return blob;
         },
-        mode: 'cors',
-        credentials: 'omit',
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
-      }
-
-      const pdfBlob = await response.blob();
-      if (pdfBlob.size === 0) {
-        throw new Error('Received empty PDF response');
-      }
+        'PDF Generation (Document Number)',
+        3,
+        1000
+      );
       
       // Upload new PDF to Supabase Storage (overwrite existing)
       const fileName = `memo_${Date.now()}_${docSuffix.replace(/[^\w]/g, '_')}.pdf`;
@@ -834,20 +844,29 @@ const DocumentManagePage: React.FC = () => {
             console.log(`📝 Signatures payload for /add_signature_v2:`, signaturesPayload.map(sig => ({ x: sig.x, y: sig.y, page: sig.page, lines: sig.lines?.length })));
             console.log(`📝 signatures (${authorPositions.length} positions):`, JSON.stringify(signaturesPayload, null, 2));
             // ---
-            const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
-              method: 'POST',
-              body: formData
-            });
-            console.log('API response object:', res);
-            console.log('API response type:', res.headers.get('content-type'));
-            if (!res.ok) {
-              const errorText = await res.text();
-              console.error('API error:', errorText);
-              toast({ title: 'API error', description: errorText });
-              setShowLoadingModal(false);
-              return;
-            }
-            signedPdfBlob = await res.blob();
+
+            // Call Railway add_signature_v2 API with queue + retry logic
+            signedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
+              async () => {
+                const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
+                  method: 'POST',
+                  body: formData
+                });
+                console.log('API response object:', res);
+                console.log('API response type:', res.headers.get('content-type'));
+
+                if (!res.ok) {
+                  const errorText = await res.text();
+                  console.error('API error:', errorText);
+                  throw new Error(errorText);
+                }
+
+                return await res.blob();
+              },
+              'Add Signature V2',
+              3,
+              1000
+            );
             signSuccess = true;
           }
         } catch (e) {

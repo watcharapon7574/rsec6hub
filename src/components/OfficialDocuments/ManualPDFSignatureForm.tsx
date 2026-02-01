@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateSignedPDF, downloadGeneratedPDF } from '@/services/signedPDFService';
 import { Upload, FileText, Plus, X, Download } from 'lucide-react';
+import { railwayPDFQueue } from '@/utils/requestQueue';
 
 interface SignatureFile {
   id: string;
@@ -147,18 +148,25 @@ const ManualPDFSignatureForm: React.FC = () => {
         formData.append(sigFile.key, sigFile.file, sigFile.file.name);
       });
 
-      // เรียก API
-      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature', {
-        method: 'POST',
-        body: formData,
-      });
+      // Call Railway add_signature API with queue + retry logic
+      const signedBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature', {
+            method: 'POST',
+            body: formData,
+          });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
-      }
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error: ${response.status} - ${errorText}`);
+          }
 
-      const signedBlob = await response.blob();
+          return await response.blob();
+        },
+        'Manual PDF Signature',
+        3,
+        1000
+      );
       downloadGeneratedPDF(signedBlob, `signed_${pdfFile.name}`);
 
       toast({

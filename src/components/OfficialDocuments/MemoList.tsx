@@ -443,7 +443,7 @@ const MemoList: React.FC<MemoListProps> = ({
                                     }
                                     switch (signer.role) {
                                       case 'assistant_director':
-                                        return signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ';
+                                        return signer.org_structure_role || 'หัวหน้าฝ่าย';
                                       case 'deputy_director':
                                         return 'รองผู้อำนวยการ';
                                       case 'director':

@@ -28,6 +28,7 @@ export interface MemoRecord {
   signatures?: any;
   attached_files?: string[];
   has_in_progress_task?: boolean;
+  revision_count?: number; // จำนวนครั้งที่เอกสารถูกตีกลับ/แก้ไข
 }
 
 export const useAllMemos = () => {
@@ -152,10 +153,10 @@ export const useAllMemos = () => {
 
       // If there's a rejection reason, store it in form_data and rejected_name_comment
       if (rejectionReason && status === 'rejected' && profile) {
-        // Get current memo to preserve existing form_data
+        // Get current memo to preserve existing form_data and get current revision_count
         const { data: currentMemo } = await supabase
           .from('memos')
-          .select('form_data')
+          .select('form_data, revision_count')
           .eq('id', memoId)
           .single();
 
@@ -166,6 +167,10 @@ export const useAllMemos = () => {
             rejection_reason: rejectionReason,
             rejected_at: new Date().toISOString()
           };
+
+          // Increment revision_count
+          const currentRevisionCount = currentMemo.revision_count || 0;
+          updates.revision_count = currentRevisionCount + 1;
         }
 
         // Add rejected_name_comment JSONB data
@@ -307,7 +312,7 @@ export const useAllMemos = () => {
         updated_at: new Date().toISOString()
       };
 
-      // If rejecting, add rejected_name_comment
+      // If rejecting, add rejected_name_comment and increment revision_count
       if (action === 'reject' && profile) {
         const rejectedNameComment = {
           name: `${profile.first_name} ${profile.last_name}`,
@@ -316,6 +321,10 @@ export const useAllMemos = () => {
           position: profile.current_position || profile.job_position || profile.position || ''
         };
         updateData.rejected_name_comment = JSON.stringify(rejectedNameComment);
+
+        // Increment revision_count
+        const currentRevisionCount = memo.revision_count || 0;
+        updateData.revision_count = currentRevisionCount + 1;
       }
 
       // Update signature positions with approval info

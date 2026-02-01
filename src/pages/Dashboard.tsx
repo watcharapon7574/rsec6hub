@@ -42,7 +42,7 @@ const Dashboard = () => {
     const positions: Record<string, string> = {
       'director': 'ผู้อำนวยการ',
       'deputy_director': 'รองผู้อำนวยการ',
-      'assistant_director': 'ผู้ช่วยผู้อำนวยการ',
+      'assistant_director': 'หัวหน้าฝ่าย',
       'government_teacher': 'ข้าราชการครู',
       'government_employee': 'พนักงานราชการ',
       'contract_teacher': 'ครูอัตราจ้าง',

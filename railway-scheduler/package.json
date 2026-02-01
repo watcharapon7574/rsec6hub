@@ -1,0 +1,23 @@
+{
+  "name": "railway-mcp-server",
+  "version": "1.0.0",
+  "description": "Railway MCP Server for controlling Railway services",
+  "main": "railway-mcp-server.js",
+  "type": "module",
+  "bin": {
+    "railway-mcp-server": "./railway-mcp-server.js"
+  },
+  "scripts": {
+    "start": "node railway-mcp-server.js",
+    "schedule:start": "node scheduler.js start",
+    "schedule:stop": "node scheduler.js stop",
+    "test": "node test-railway-api.js"
+  },
+  "keywords": ["railway", "mcp", "scheduler"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "node-fetch": "^3.3.2"
+  }
+}

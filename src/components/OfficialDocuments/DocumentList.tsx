@@ -749,7 +749,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     // แสดงตำแหน่งตาม role
                                     switch (signer.role) {
                                       case 'assistant_director':
-                                        return signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ';
+                                        return signer.org_structure_role || 'หัวหน้าฝ่าย';
                                       case 'deputy_director':
                                         return 'รองผู้อำนวยการ';
                                       case 'director':
@@ -934,7 +934,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           </Button>
                           {/* Show "ตีกลับ" badge for rejected memos on top-right corner */}
                           {memo.status === 'rejected' && (
-                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white z-10">ใหม่</span>
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white z-10">
+                              ใหม่{memo.revision_count ? `(${memo.revision_count})` : ''}
+                            </span>
                           )}
                         </div>
                       )}
@@ -969,7 +971,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             </span>
                           </Button>
                           {memo.status === 'draft' && memo.current_signer_order <= 1 && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                              ใหม่{memo.revision_count ? `(${memo.revision_count})` : ''}
+                            </span>
                           )}
                           {memo.current_signer_order > 1 && memo.current_signer_order < 5 && (
                             <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">เสนอแล้ว</span>

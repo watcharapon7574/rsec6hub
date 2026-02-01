@@ -8,15 +8,17 @@ interface OTPInputProps {
   className?: string;
   reset?: boolean;
   onReset?: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
-const OTPInput: React.FC<OTPInputProps> = ({ 
-  length = 6, 
-  onComplete, 
+const OTPInput: React.FC<OTPInputProps> = ({
+  length = 6,
+  onComplete,
   disabled = false,
   className,
   reset = false,
-  onReset
+  onReset,
+  onSubmittingChange
 }) => {
   const [otp, setOtp] = useState<string[]>(new Array(length).fill(''));
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,6 +98,9 @@ const OTPInput: React.FC<OTPInputProps> = ({
     setOtp(new Array(length).fill(''));
     setIsSubmitting(false);
     setHasSubmitted(false);
+    if (onSubmittingChange) {
+      onSubmittingChange(false);
+    }
     if (submitTimeoutRef.current) {
       clearTimeout(submitTimeoutRef.current);
     }
@@ -127,21 +132,26 @@ const OTPInput: React.FC<OTPInputProps> = ({
     if (otpString.length === length && onComplete && !isSubmitting && !hasSubmitted) {
       setIsSubmitting(true);
       setHasSubmitted(true);
-      
+
+      // Notify parent immediately that we're submitting
+      if (onSubmittingChange) {
+        onSubmittingChange(true);
+      }
+
       // Clear any existing timeout
       if (submitTimeoutRef.current) {
         clearTimeout(submitTimeoutRef.current);
       }
-      
+
       // Submit immediately
       onComplete(otpString);
-      
+
       // Reset submitting state after a delay
       setTimeout(() => {
         setIsSubmitting(false);
       }, 3000);
     }
-  }, [otp, length, onComplete, isSubmitting, hasSubmitted]);
+  }, [otp, length, onComplete, isSubmitting, hasSubmitted, onSubmittingChange]);
 
   // Reset submitting state when OTP changes
   useEffect(() => {

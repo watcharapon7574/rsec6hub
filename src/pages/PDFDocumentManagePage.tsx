@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Progress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { SignerProgress } from '@/types/memo';
+import { railwayPDFQueue } from '@/utils/requestQueue';
 
 // Import step components
 import Step1DocumentNumber from '@/components/DocumentManage/Step1DocumentNumber';
@@ -640,21 +641,30 @@ const PDFDocumentManagePage: React.FC = () => {
             formData.append('signatures', JSON.stringify(signaturesPayload));
 
             console.log('🚀 Calling signature API...');
-            const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
-              method: 'POST',
-              body: formData
-            });
+            // Call Railway add_signature_v2 API with queue + retry logic
+            signedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
+              async () => {
+                const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
+                  method: 'POST',
+                  body: formData
+                });
 
-            console.log('📡 API response status:', res.status);
-            if (!res.ok) {
-              const errorText = await res.text();
-              console.error('❌ API error:', errorText);
-              toast({ title: 'API error', description: errorText });
-              return;
-            }
-            signedPdfBlob = await res.blob();
+                console.log('📡 API response status:', res.status);
+                if (!res.ok) {
+                  const errorText = await res.text();
+                  console.error('❌ API error:', errorText);
+                  throw new Error(errorText);
+                }
+
+                const blob = await res.blob();
+                console.log('✅ Signature successful, blob size:', blob.size);
+                return blob;
+              },
+              'Add Signature V2 (PDF Document)',
+              3,
+              1000
+            );
             signSuccess = true;
-            console.log('✅ Signature successful, blob size:', signedPdfBlob.size);
           } else {
             console.warn('⚠️ No author positions found - cannot sign document');
           }

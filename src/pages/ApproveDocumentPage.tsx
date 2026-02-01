@@ -23,6 +23,7 @@ import { submitPDFSignature } from '@/services/pdfSignatureService';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { railwayPDFQueue } from '@/utils/requestQueue';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
@@ -507,17 +508,24 @@ const ApproveDocumentPage: React.FC = () => {
           
           console.log(`📝 User signature positions (${userSignaturePositions.length} positions):`, userSignaturePositions.map(pos => ({ x: pos.x, y: pos.y, page: pos.page })));
           console.log(`📝 Signatures payload:`, JSON.stringify(signaturesPayload, null, 2));
-          const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
-            method: 'POST',
-            body: formData
-          });
-          if (!res.ok) {
-            const errorText = await res.text();
-            setShowLoadingModal(false);
-            toast({ title: 'API error', description: errorText });
-            return;
-          }
-          signedPdfBlob = await res.blob();
+
+          // Call Railway add_signature_v2 API with queue + retry logic
+          signedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
+            async () => {
+              const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
+                method: 'POST',
+                body: formData
+              });
+              if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(errorText);
+              }
+              return await res.blob();
+            },
+            'Add Signature V2 (Approve)',
+            3,
+            1000
+          );
           signSuccess = true;
         } catch (e) {
           setShowLoadingModal(false);

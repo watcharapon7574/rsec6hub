@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Download, Loader2, Zap, Plus, Trash2 } from 'lucide-react';
+import { railwayPDFQueue } from '@/utils/requestQueue';
 
 interface SignatureFile {
   key: string;
@@ -187,17 +188,25 @@ const SinglePDFSignatureForm: React.FC = () => {
         formData.append(sigFile.key, sigFile.file, sigFile.file.name);
       });
 
-      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/generate_signed_pdf', {
-        method: 'POST',
-        body: formData,
-      });
+      // Call Railway generate_signed_pdf API with queue + retry logic
+      const signedBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/generate_signed_pdf', {
+            method: 'POST',
+            body: formData,
+          });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
-      }
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error: ${response.status} - ${errorText}`);
+          }
 
-      const signedBlob = await response.blob();
+          return await response.blob();
+        },
+        'Generate Signed PDF (Single)',
+        3,
+        1000
+      );
       
       // Download signed PDF
       const downloadUrl = URL.createObjectURL(signedBlob);

@@ -32,3 +32,6 @@ export const getPermissions = (profile: Profile | null): UserPermissions => {
     displayName: getPositionDisplayName(profile.position)
   };
 };
+
+// Re-export for convenience
+export { getPositionDisplayName };

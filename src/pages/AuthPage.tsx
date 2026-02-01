@@ -10,10 +10,12 @@ import PhoneStep from '@/components/Auth/PhoneStep';
 import OTPStep from '@/components/Auth/OTPStep';
 import AuthHeader from '@/components/Auth/AuthHeader';
 import AuthInfoPanel from '@/components/Auth/AuthInfoPanel';
+import LoadingModal from '@/components/Auth/LoadingModal';
 import { AuthStep } from '@/types/auth';
 
 const AuthPage = () => {
   const [loading, setLoading] = useState(false);
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
   const [step, setStep] = useState<AuthStep>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [telegramChatId, setTelegramChatId] = useState('');
@@ -90,17 +92,17 @@ const AuthPage = () => {
   };
 
   const handleVerifyOTP = async (otp: string) => {
-    if (loading) {
+    if (verifyingOTP) {
       return;
     }
-    
-    setLoading(true);
+
+    setVerifyingOTP(true);
     setOtpError(''); // Clear previous errors
-    
+
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
       const { error } = await signIn(formattedPhone, otp);
-      
+
       if (error) {
         console.log('❌ Sign in error:', error.message);
         setOtpError(error.message);
@@ -126,7 +128,7 @@ const AuthPage = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setVerifyingOTP(false);
     }
   };
 
@@ -219,8 +221,15 @@ const AuthPage = () => {
     setTelegramChatId('');
   };
 
+  const handleOTPSubmittingChange = (isSubmitting: boolean) => {
+    setVerifyingOTP(isSubmitting);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-sky-50 flex items-center justify-center p-4">
+      {/* Loading Modal */}
+      <LoadingModal isOpen={verifyingOTP} message="กำลังตรวจสอบรหัส OTP" />
+
       <div className="max-w-md space-y-6 mx-auto">
         {step === 'telegram' ? (
           <TelegramLinking
@@ -245,7 +254,7 @@ const AuthPage = () => {
           <>
             <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm min-w-[260px] max-w-[340px] mx-auto">
               <AuthHeader />
-              
+
               <CardContent className="space-y-6 px-6">
                 {step === 'phone' ? (
                   <PhoneStep
@@ -260,8 +269,9 @@ const AuthPage = () => {
                     onVerifyOTP={handleVerifyOTP}
                     onBackToPhone={handleBackToPhone}
                     onResendOTP={handleResendOTP}
-                    loading={loading}
+                    loading={verifyingOTP}
                     error={otpError}
+                    onSubmittingChange={handleOTPSubmittingChange}
                   />
                 )}
 

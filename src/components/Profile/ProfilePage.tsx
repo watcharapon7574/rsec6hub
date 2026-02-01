@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +13,7 @@ import SignatureUpload from './SignatureUpload';
 import { useProfileUpload } from '@/hooks/useProfileUpload';
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const { profile: authProfile, isAuthenticated, getPermissions } = useEmployeeAuth();
   const [profile, setProfile] = useState<Partial<ProfileType>>({});
   const [editing, setEditing] = useState(false);
@@ -109,7 +111,7 @@ const ProfilePage = () => {
         showAllProfiles={showAllProfiles}
         editing={editing}
         loading={loading}
-        onToggleAllProfiles={() => setShowAllProfiles(!showAllProfiles)}
+        onToggleAllProfiles={() => navigate('/admin/profiles')}
         onExportPDF={exportToPDF}
         onToggleEdit={handleToggleEdit}
       />

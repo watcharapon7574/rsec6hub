@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { railwayPDFQueue } from '@/utils/requestQueue';
 
 interface PDFFormData {
   date: string;
@@ -252,19 +253,28 @@ const PDFSignaturePage = () => {
 
       console.log('📝 Stamp payload:', payload);
 
-      const stampRes = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num', {
-        method: 'POST',
-        body: receiveNumFormData
-      });
+      // Call Railway receive_num API with queue + retry logic
+      const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const stampRes = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num', {
+            method: 'POST',
+            body: receiveNumFormData
+          });
 
-      if (!stampRes.ok) {
-        const errorText = await stampRes.text();
-        console.error('❌ /receive_num API error:', errorText);
-        throw new Error(`Failed to stamp PDF: ${errorText}`);
-      }
+          if (!stampRes.ok) {
+            const errorText = await stampRes.text();
+            console.error('❌ /receive_num API error:', errorText);
+            throw new Error(`Failed to stamp PDF: ${errorText}`);
+          }
 
-      const stampedPdfBlob = await stampRes.blob();
-      console.log('✅ PDF stamped successfully, size:', stampedPdfBlob.size);
+          const blob = await stampRes.blob();
+          console.log('✅ PDF stamped successfully, size:', blob.size);
+          return blob;
+        },
+        'Receive Number Stamp',
+        3,
+        1000
+      );
 
       // Step 4: Overwrite the original file with stamped PDF
       console.log('🔄 Overwriting original PDF with stamped version...');

@@ -87,14 +87,15 @@ export const isTeacher = (position: Position): boolean => {
   return ['government_teacher', 'contract_teacher'].includes(position);
 };
 
-export const getPositionDisplayName = (position: Position): string => {
+export const getPositionDisplayName = (position: Position, orgStructureRole?: string): string => {
   switch (position) {
     case 'director':
       return 'ผู้อำนวยการ';
     case 'deputy_director':
       return 'รองผู้อำนวยการ';
     case 'assistant_director':
-      return 'ผู้ช่วยผู้อำนวยการ';
+      // ใช้ org_structure_role แทน "ผู้ช่วยผู้อำนวยการ"
+      return orgStructureRole || 'หัวหน้าฝ่าย';
     case 'government_teacher':
       return 'ครูข้าราชการ';
     case 'government_employee':

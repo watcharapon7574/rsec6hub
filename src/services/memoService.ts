@@ -15,14 +15,18 @@ export class MemoService {
         const fileName = `attachment_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
         const filePath = `memos/${userId}/${fileName}`;
 
-        // Use request queue for storage upload
-        const { error: uploadError } = await requestQueue.enqueue(() =>
-          supabase.storage
-            .from('documents')
-            .upload(filePath, file, {
-              contentType: file.type,
-              upsert: false
-            })
+        // Use request queue + retry for storage upload
+        const { error: uploadError } = await requestQueue.enqueueWithRetry(
+          () =>
+            supabase.storage
+              .from('documents')
+              .upload(filePath, file, {
+                contentType: file.type,
+                upsert: false
+              }),
+          'Storage Upload (Attachment)',
+          2, // max 2 retries
+          500 // initial delay 500ms
         );
 
         if (uploadError) {
@@ -118,44 +122,53 @@ export class MemoService {
       if (shouldGenerateNewPdf) {
         console.log('📄 Generating new PDF...');
 
-        // NOTE: Railway PDF API is already throttled by railwayPDFQueue (max 2 concurrent)
-        // The fetch itself doesn't need enqueue because the Railway server handles queueing
-        // But if we see 500 errors, we should wrap this in railwayPDFQueue.enqueue()
+        // Call Railway PDF API with queue + retry logic (max 3 retries with exponential backoff)
+        // This ensures high success rate even under load (Railway can only handle 2 concurrent)
+        const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
+          async () => {
+            const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/pdf',
+              },
+              mode: 'cors',
+              credentials: 'omit',
+              body: JSON.stringify(formData),
+            });
 
-        // Call external API to generate PDF draft with CORS handling
-        const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/pdf',
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`API Error: ${response.status} - ${errorText}`);
+            }
 
+            const blob = await response.blob();
+            if (blob.size === 0) {
+              throw new Error('Received empty PDF response');
+            }
+
+            return blob;
           },
-          mode: 'cors',
-          credentials: 'omit',
-          body: JSON.stringify(formData),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API Error: ${response.status} - ${errorText}`);
-        }
-
-        const pdfBlob = await response.blob();
-        if (pdfBlob.size === 0) {
-          throw new Error('Received empty PDF response');
-        }
+          'PDF Generation',
+          3, // max retries
+          1000 // initial delay (1s, 2s, 4s)
+        );
         
-        // Upload PDF to Supabase Storage (use queue)
+        // Upload PDF to Supabase Storage (use queue + retry)
         const fileName = `memo_${Date.now()}_${formData.doc_number.replace(/[^\w]/g, '_')}.pdf`;
         const filePath = `memos/${userId}/${fileName}`;
 
-        const { data: uploadData, error: uploadError } = await requestQueue.enqueue(() =>
-          supabase.storage
-            .from('documents')
-            .upload(filePath, pdfBlob, {
-              contentType: 'application/pdf',
-              upsert: true
-            })
+        const { data: uploadData, error: uploadError } = await requestQueue.enqueueWithRetry(
+          () =>
+            supabase.storage
+              .from('documents')
+              .upload(filePath, pdfBlob, {
+                contentType: 'application/pdf',
+                upsert: true
+              }),
+          'Storage Upload (PDF)',
+          2, // max 2 retries
+          500 // initial delay 500ms
         );
 
         if (uploadError) {
@@ -417,17 +430,24 @@ export class MemoService {
 
       formData.append('signatures', JSON.stringify(signaturesArray));
 
-      // Call add_signature API
-      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature', {
-        method: 'POST',
-        body: formData
-      });
+      // Call Railway add_signature API with queue + retry logic
+      const finalPdfBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature', {
+            method: 'POST',
+            body: formData
+          });
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
+          if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+          }
 
-      const finalPdfBlob = await response.blob();
+          return await response.blob();
+        },
+        'Add Signature',
+        3, // max retries
+        1000 // initial delay
+      );
       
       // Upload final PDF to Supabase Storage
       const finalFileName = `memo_final_${Date.now()}_${memo.doc_number.replace(/[^\w]/g, '_')}.pdf`;

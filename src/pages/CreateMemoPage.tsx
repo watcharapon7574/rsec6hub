@@ -44,7 +44,11 @@ const CreateMemoPage = () => {
     applied?: boolean
   }>>([]);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
-  
+
+  // Rate limiting: 10 requests per minute per user
+  const [grammarRequestCount, setGrammarRequestCount] = useState(0);
+  const [grammarRequestResetTime, setGrammarRequestResetTime] = useState(Date.now() + 60000);
+
   const [formData, setFormData] = useState<MemoFormData>({
     doc_number: '', // ธุรการจะเป็นคนใส่
     date: new Date().toISOString().split('T')[0],
@@ -202,7 +206,25 @@ const CreateMemoPage = () => {
 
   const correctGrammar = async () => {
     if (grammarLoading) return;
-    
+
+    // Check rate limit (10 requests per minute)
+    const now = Date.now();
+    if (now > grammarRequestResetTime) {
+      // Reset counter after 1 minute
+      setGrammarRequestCount(0);
+      setGrammarRequestResetTime(now + 60000);
+    }
+
+    if (grammarRequestCount >= 10) {
+      const secondsRemaining = Math.ceil((grammarRequestResetTime - now) / 1000);
+      toast({
+        title: "ใช้งานบ่อยเกินไป",
+        description: `กรุณารอ ${secondsRemaining} วินาที ก่อนใช้งานคุณสมบัตินี้อีกครั้ง (จำกัด 10 ครั้ง/นาที)`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const fieldsToCorrect = [
       { field: 'subject', label: 'เรื่อง' },
       { field: 'attachment_title', label: 'สิ่งที่ส่งมาด้วย' },
@@ -211,7 +233,7 @@ const CreateMemoPage = () => {
       { field: 'proposal', label: 'ข้อเสนอและพิจารณา' }
     ];
 
-    const hasContent = fieldsToCorrect.some(({ field }) => 
+    const hasContent = fieldsToCorrect.some(({ field }) =>
       formData[field as keyof MemoFormData]?.toString().trim()
     );
 
@@ -224,6 +246,9 @@ const CreateMemoPage = () => {
       return;
     }
 
+    // Increment request count
+    setGrammarRequestCount(prev => prev + 1);
+
     setGrammarLoading(true);
     const allSuggestions: Array<{
       field: string,
@@ -235,14 +260,23 @@ const CreateMemoPage = () => {
     }> = [];
 
     try {
+      // ใช้ Google Gemini Flash 1.5 API (Free tier: 1,500 requests/day)
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+      if (!apiKey) {
+        throw new Error('API key not configured. Please check .env.local file.');
+      }
+
       for (const { field, label } of fieldsToCorrect) {
         const content = formData[field as keyof MemoFormData]?.toString().trim();
         if (!content) continue;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyAvl5ACEnCTduXuwBjucHo6Nplx7lABl58`, {
+        // Call Gemini API (using gemini-2.5-flash - stable June 2025 release with Thai support)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
           },
           body: JSON.stringify({
             contents: [{
@@ -267,42 +301,36 @@ const CreateMemoPage = () => {
         });
 
         if (!response.ok) {
-          throw new Error('API request failed');
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
 
-        const result = await response.json();
-        const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        const data = await response.json();
+        const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
 
-        if (responseText) {
-          try {
-            // Clean the response to extract JSON
-            const jsonText = responseText.replace(/```json\n?|\n?```/g, '').trim();
-            const wordCorrections = JSON.parse(jsonText);
+        // Parse JSON response
+        const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
+        const wordCorrections = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
 
-            if (Array.isArray(wordCorrections) && wordCorrections.length > 0) {
-              console.log('Word corrections for', label, ':', wordCorrections);
-              wordCorrections.forEach((correction: any) => {
-                if (correction.originalWord && correction.correctedWord && correction.originalWord !== correction.correctedWord) {
-                  const words = content.split(/\s+/);
-                  const contextStart = Math.max(0, correction.wordIndex - 3);
-                  const contextEnd = Math.min(words.length, correction.wordIndex + 4);
-                  const contextWords = words.slice(contextStart, contextEnd);
-                  
-                  allSuggestions.push({
-                    field,
-                    fieldLabel: label,
-                    originalWord: correction.originalWord.trim(),
-                    correctedWord: correction.correctedWord.trim(),
-                    context: contextWords.join(' '),
-                    wordIndex: correction.wordIndex,
-                    applied: false
-                  });
-                }
+        if (wordCorrections.length > 0) {
+          console.log('✅ Gemini found corrections for', label, ':', wordCorrections);
+          wordCorrections.forEach((correction: any) => {
+            if (correction.originalWord && correction.correctedWord && correction.originalWord !== correction.correctedWord) {
+              const words = content.split(/\s+/);
+              const contextStart = Math.max(0, correction.wordIndex - 3);
+              const contextEnd = Math.min(words.length, correction.wordIndex + 4);
+              const contextWords = words.slice(contextStart, contextEnd);
+
+              allSuggestions.push({
+                field,
+                fieldLabel: label,
+                originalWord: correction.originalWord.trim(),
+                correctedWord: correction.correctedWord.trim(),
+                context: contextWords.join(' '),
+                wordIndex: correction.wordIndex,
+                applied: false
               });
             }
-          } catch (parseError) {
-            console.warn('Could not parse word corrections for:', label, parseError);
-          }
+          });
         }
       }
 

@@ -29,6 +29,9 @@ import TaskAssignmentPage from "@/pages/TaskAssignmentPage";
 import AssignedTasksPage from "@/pages/AssignedTasksPage";
 import DocumentDetailPage from "@/pages/DocumentDetailPage";
 import TestRequestQueuePage from "@/pages/TestRequestQueuePage";
+import QueueRealtimePage from "@/pages/QueueRealtimePage";
+import AdminProfileManagementPage from "@/pages/AdminProfileManagementPage";
+import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
 
 
@@ -176,6 +179,21 @@ const AppContent = () => {
       <Route path="/test-queue" element={
         <ProtectedRoute>
           <TestRequestQueuePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/QRealtime" element={
+        <ProtectedRoute>
+          <QueueRealtimePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/profiles" element={
+        <ProtectedRoute>
+          <AdminProfileManagementPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/railway" element={
+        <ProtectedRoute>
+          <RailwayManagementPage />
         </ProtectedRoute>
       } />
       <Route path="/" element={

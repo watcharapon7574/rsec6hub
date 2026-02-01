@@ -253,6 +253,50 @@ const TestRequestQueuePage: React.FC = () => {
     }
   };
 
+  const runTaskCompletedNotificationTest = async (count: number) => {
+    try {
+      setIsRunning(true);
+      setResults(null);
+      setLogs([]);
+      setShowLogs(true);
+
+      addLog(`📬 เริ่มทดสอบ Task Completed Notification ด้วย ${count} notifications`, 'info');
+      addLog(`⚙️ Max concurrent: 8 requests`, 'info');
+      addLog(`🤖 Bot: FastDoc_report_bot (ผู้บริหาร)`, 'info');
+      addLog(`⚠️ การทดสอบนี้จะส่งการแจ้งเตือนจริงผ่าน Telegram`, 'info');
+
+      const result = await testRequestQueue.testTaskCompletedNotification(count);
+      setResults(result);
+
+      if (result.successRate === 100) {
+        addLog(`✅ ทดสอบสำเร็จ! ส่งการแจ้งเตือนได้ ${result.successful} ครั้ง 🎉`, 'success');
+        addLog(`💡 ตรวจสอบ Telegram ของคุณ (FastDoc_report_bot)`, 'success');
+      } else if (result.successRate >= 90) {
+        addLog(`✅ ส่งการแจ้งเตือนได้ส่วนใหญ่ ✓`, 'success');
+        addLog(`⚠️ Success Rate: ${result.successRate}% (${result.failed} ล้มเหลว)`, 'error');
+      } else {
+        addLog(`❌ มีปัญหา: Success Rate ${result.successRate}% (${result.failed} ล้มเหลว)`, 'error');
+        addLog(`💡 ตรวจสอบ: Bot token หรือ telegram_chat_id ใน profiles`, 'error');
+      }
+
+      addLog(`⏱️ ใช้เวลา: ${result.duration.toFixed(2)} วินาที`, 'info');
+      addLog(`📈 Throughput: ${result.throughput.toFixed(2)} notifications/second`, 'info');
+
+      // Show error breakdown if any
+      if (result.failed > 0 && result.errorTypes) {
+        addLog(`\n📋 สาเหตุของ Error:`, 'info');
+        Object.entries(result.errorTypes).forEach(([error, count]) => {
+          addLog(`  - ${error}: ${count} ครั้ง`, 'error');
+        });
+      }
+    } catch (error) {
+      console.error('Task Completed Notification test failed:', error);
+      addLog(`❌ เกิดข้อผิดพลาด: ${error}`, 'error');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
@@ -506,7 +550,7 @@ const TestRequestQueuePage: React.FC = () => {
             </div>
 
             {/* Concurrent Login Tests */}
-            <div>
+            <div className="mb-3">
               <div className="text-xs font-medium text-purple-700 mb-2">👥 Concurrent Login (Auth & DB Access)</div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <Button
@@ -544,6 +588,49 @@ const TestRequestQueuePage: React.FC = () => {
                   className="border-purple-300"
                 >
                   100 Logins
+                </Button>
+              </div>
+            </div>
+
+            {/* Task Completed Notification Tests */}
+            <div>
+              <div className="text-xs font-medium text-purple-700 mb-2">📬 Task Completed (FastDoc_report_bot)</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button
+                  onClick={() => runTaskCompletedNotificationTest(3)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  3 แจ้งเตือน
+                </Button>
+                <Button
+                  onClick={() => runTaskCompletedNotificationTest(5)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300 font-bold"
+                >
+                  5 แจ้งเตือน
+                </Button>
+                <Button
+                  onClick={() => runTaskCompletedNotificationTest(10)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  10 แจ้งเตือน
+                </Button>
+                <Button
+                  onClick={() => runTaskCompletedNotificationTest(20)}
+                  disabled={isRunning}
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300"
+                >
+                  20 แจ้งเตือน
                 </Button>
               </div>
             </div>

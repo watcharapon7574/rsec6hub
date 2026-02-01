@@ -1,0 +1,44 @@
+# Railway Service Scheduler - Crontab Example
+# วิธีใช้: crontab -e แล้วเพิ่ม lines เหล่านี้
+
+# ตั้งค่า environment variables
+RAILWAY_API_TOKEN=your_railway_api_token_here
+RAILWAY_ENVIRONMENT_ID=your_environment_id_here
+RAILWAY_SERVICE_IDS=service-id-1,service-id-2,service-id-3
+
+# เปิด services ทุกวันเวลา 08:00 น.
+0 8 * * * cd /path/to/railway-scheduler && /usr/local/bin/node scheduler.js start >> /tmp/railway-start.log 2>&1
+
+# ปิด services ทุกวันเวลา 18:00 น.
+0 18 * * * cd /path/to/railway-scheduler && /usr/local/bin/node scheduler.js stop >> /tmp/railway-stop.log 2>&1
+
+# ตรวจสอบสถานะทุก 1 ชั่วโมง
+0 * * * * cd /path/to/railway-scheduler && /usr/local/bin/node scheduler.js status >> /tmp/railway-status.log 2>&1
+
+# ========================================
+# ตัวอย่างเวลาอื่นๆ:
+# ========================================
+
+# เปิดเฉพาะวันจันทร์-ศุกร์ เวลา 08:00 น.
+# 0 8 * * 1-5 cd /path/to/railway-scheduler && node scheduler.js start
+
+# ปิดเฉพาะวันจันทร์-ศุกร์ เวลา 20:00 น.
+# 0 20 * * 1-5 cd /path/to/railway-scheduler && node scheduler.js stop
+
+# เปิดตอนเช้า ปิดตอนกลางคืน (จันทร์-ศุกร์)
+# 0 7 * * 1-5 cd /path/to/railway-scheduler && node scheduler.js start
+# 0 22 * * 1-5 cd /path/to/railway-scheduler && node scheduler.js stop
+
+# ปิดทุกวันเสาร์-อาทิตย์
+# 0 0 * * 6 cd /path/to/railway-scheduler && node scheduler.js stop
+
+# ========================================
+# Cron format:
+# ========================================
+# * * * * *
+# │ │ │ │ │
+# │ │ │ │ └─── วันในสัปดาห์ (0-7, 0 และ 7 = อาทิตย์)
+# │ │ │ └───── เดือน (1-12)
+# │ │ └─────── วันที่ (1-31)
+# │ └───────── ชั่วโมง (0-23)
+# └─────────── นาที (0-59)

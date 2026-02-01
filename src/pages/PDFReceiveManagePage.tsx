@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { extractPdfUrl } from '@/utils/fileUpload';
+import { railwayPDFQueue } from '@/utils/requestQueue';
 
 // Import step components
 import Step2SelectSigners from '@/components/DocumentManage/Step2SelectSigners';
@@ -257,20 +258,27 @@ const PDFReceiveManagePage: React.FC = () => {
       console.log('📦 Summary payload with position:', summaryPayload);
       formData.append('payload', JSON.stringify(summaryPayload));
 
-      // Call /stamp_summary API
+      // Call Railway stamp_summary API with queue + retry logic
       console.log('🚀 Calling /stamp_summary API...');
-      const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/stamp_summary', {
-        method: 'POST',
-        body: formData
-      });
+      const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/stamp_summary', {
+            method: 'POST',
+            body: formData
+          });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('❌ API error:', errorText);
-        throw new Error(`API Error: ${errorText}`);
-      }
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error('❌ API error:', errorText);
+            throw new Error(`API Error: ${errorText}`);
+          }
 
-      const stampedPdfBlob = await res.blob();
+          return await res.blob();
+        },
+        'Stamp Summary',
+        3,
+        1000
+      );
       console.log('✅ Stamp successful, blob size:', stampedPdfBlob.size);
 
       // Upload stamped PDF back to storage

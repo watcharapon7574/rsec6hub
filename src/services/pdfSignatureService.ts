@@ -1,4 +1,5 @@
 import { SignatureBlock } from '@/types/pdfSignature';
+import { railwayPDFQueue } from '@/utils/requestQueue';
 
 const API_BASE_URL = 'https://pdf-memo-docx-production-25de.up.railway.app';
 
@@ -61,22 +62,28 @@ export const submitPDFSignature = async (
 
   formData.append('signatures', JSON.stringify(signatures));
 
-  
-  const response = await fetch(`${API_BASE_URL}/add_signature`, {
-    method: 'POST',
-    body: formData,
-    // Don't set Content-Type for FormData, let browser set it with boundary
-  });
+  // Call Railway add_signature API with queue + retry logic
+  const signedBlob = await railwayPDFQueue.enqueueWithRetry(
+    async () => {
+      const response = await fetch(`${API_BASE_URL}/add_signature`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type for FormData, let browser set it with boundary
+      });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
+      }
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('API Error Response:', errorText);
-    throw new Error(`API Error: ${response.status} - ${errorText}`);
-  }
+      return await response.blob();
+    },
+    'PDF Signature',
+    3, // max retries
+    1000 // initial delay
+  );
 
-  const signedBlob = await response.blob();
-  
   return signedBlob;
 };
 

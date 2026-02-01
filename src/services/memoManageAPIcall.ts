@@ -1,3 +1,5 @@
+import { railwayPDFQueue } from '@/utils/requestQueue';
+
 // types.ts
 interface MergeResponse {
   error?: string;
@@ -48,32 +50,37 @@ export async function mergeMemoWithAttachments(memoData: MemoMergeRequest): Prom
       formData.append('pdf2', attachedBlobs[i], `attachment_${i + 1}.pdf`);
 
       console.log(`📤 Sending merge request ${i + 1}/${attachedBlobs.length} to PDFmerge API...`);
-      
-      const response: Response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/PDFmerge', {
-        method: 'POST',
-        mode: 'cors',
-        credentials: 'omit',
-        body: formData
-      });
 
-      if (response.ok) {
-        currentPdfBlob = await response.blob();
-        console.log(`✅ Merge ${i + 1} successful, new size:`, currentPdfBlob.size);
-      } else {
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        try {
-          const errorData = await response.text();
-          console.error('❌ PDF merge failed:', errorData);
-          errorMessage = errorData || errorMessage;
-        } catch {
-          // If response is not text, use the status message
-        }
-        
-        return {
-          success: false,
-          error: `Failed to merge attachment ${i + 1}: ${errorMessage}`
-        };
-      }
+      // Call Railway PDFmerge API with queue + retry logic
+      currentPdfBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const response: Response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/PDFmerge', {
+            method: 'POST',
+            mode: 'cors',
+            credentials: 'omit',
+            body: formData
+          });
+
+          if (!response.ok) {
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            try {
+              const errorData = await response.text();
+              console.error('❌ PDF merge failed:', errorData);
+              errorMessage = errorData || errorMessage;
+            } catch {
+              // If response is not text, use the status message
+            }
+            throw new Error(errorMessage);
+          }
+
+          const blob = await response.blob();
+          console.log(`✅ Merge ${i + 1} successful, new size:`, blob.size);
+          return blob;
+        },
+        'PDF Merge',
+        3, // max retries
+        1000 // initial delay
+      );
     }
 
     // All merges completed successfully, currentPdfBlob now contains the final merged PDF

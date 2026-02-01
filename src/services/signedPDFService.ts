@@ -1,3 +1,5 @@
+import { railwayPDFQueue } from '@/utils/requestQueue';
+
 const API_BASE_URL = 'https://pdf-memo-docx-production-25de.up.railway.app';
 
 export interface SignedPDFRequest {
@@ -31,21 +33,28 @@ export const generateSignedPDF = async (data: SignedPDFRequest): Promise<Blob> =
     }
   });
 
-  const response = await fetch(`${API_BASE_URL}/generate_signed_pdf`, {
-    method: 'POST',
-    body: formData,
-    // ไม่ต้องตั้ง Content-Type เพราะ browser จะตั้งค่า boundary ให้เอง
-  });
+  // Call Railway generate_signed_pdf API with queue + retry logic
+  const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
+    async () => {
+      const response = await fetch(`${API_BASE_URL}/generate_signed_pdf`, {
+        method: 'POST',
+        body: formData,
+        // ไม่ต้องตั้ง Content-Type เพราะ browser จะตั้งค่า boundary ให้เอง
+      });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
+      }
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('API Error Response:', errorText);
-    throw new Error(`API Error: ${response.status} - ${errorText}`);
-  }
+      return await response.blob();
+    },
+    'Generate Signed PDF',
+    3, // max retries
+    1000 // initial delay
+  );
 
-  const pdfBlob = await response.blob();
-  
   return pdfBlob;
 };
 

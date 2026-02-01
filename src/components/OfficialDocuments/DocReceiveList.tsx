@@ -693,12 +693,12 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                     // แสดงตำแหน่งตาม role
                                     switch (signer.role) {
                                       case 'assistant_director':
-                                        return signer.org_structure_role || 'ผู้ช่วยผู้อำนวยการ';
-                                      case 'deputy_director': 
+                                        return signer.org_structure_role || 'หัวหน้าฝ่าย';
+                                      case 'deputy_director':
                                         return 'รองผู้อำนวยการ';
-                                      case 'director': 
+                                      case 'director':
                                         return 'ผู้อำนวยการ';
-                                      default: 
+                                      default:
                                         return signer.position || '-';
                                     }
                                   })()}

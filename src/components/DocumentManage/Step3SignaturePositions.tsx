@@ -95,7 +95,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                       <p className="text-xs text-gray-500 mt-1">
                         {signer.role === 'clerk' && 'ตำแหน่งตราประทับธุรการ'}
                         {signer.role === 'author' && 'ผู้เขียน'}
-                        {signer.role === 'assistant_director' && 'ผู้ช่วยผู้อำนวยการ'}
+                        {signer.role === 'assistant_director' && 'หัวหน้าฝ่าย'}
                         {signer.role === 'deputy_director' && 'รองผู้อำนวยการ'}
                         {signer.role === 'director' && 'ผู้อำนวยการ'}
                       </p>

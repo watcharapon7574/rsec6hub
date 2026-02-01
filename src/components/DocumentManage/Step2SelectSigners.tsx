@@ -42,10 +42,10 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>ผู้ช่วยผู้อำนวยการ (เลือก 1 คน หรือไม่ระบุ)</Label>
+            <Label>หัวหน้าฝ่าย (เลือก 1 คน หรือไม่ระบุ)</Label>
             <Select value={selectedAssistant} onValueChange={onSelectedAssistantChange}>
               <SelectTrigger>
-                <SelectValue placeholder="เลือกผู้ช่วยผู้อำนวยการ หรือไม่ระบุ" />
+                <SelectValue placeholder="เลือกหัวหน้าฝ่าย หรือไม่ระบุ" />
               </SelectTrigger>
               <SelectContent className="bg-white border border-blue-200 z-50 shadow-lg">
                 <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
@@ -105,9 +105,9 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
         {/* คำอธิบายการข้าม */}
         <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
           <p className="font-medium mb-1">หมายเหตุ:</p>
-          <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามผู้ช่วยหรือรองผู้อำนวยการได้</p>
+          <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามหัวหน้าฝ่ายหรือรองผู้อำนวยการได้</p>
           <p>• หมายเลขลำดับจะปรับให้ต่อเนื่องตามคนที่เลือกจริง</p>
-          <p>• ตัวอย่าง: ข้ามทั้งคู่ → 1(ผู้เขียน), 2(ผอ.) หรือข้ามผู้ช่วย → 1(ผู้เขียน), 2(รองผอ.), 3(ผอ.)</p>
+          <p>• ตัวอย่าง: ข้ามทั้งคู่ → 1(ผู้เขียน), 2(ผอ.) หรือข้ามหัวหน้าฝ่าย → 1(ผู้เขียน), 2(รองผอ.), 3(ผอ.)</p>
           <p>• ผู้เขียนและผู้อำนวยการจะอยู่เสมอ</p>
         </div>
 

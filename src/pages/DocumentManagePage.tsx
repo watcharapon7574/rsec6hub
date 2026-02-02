@@ -719,6 +719,13 @@ const DocumentManagePage: React.FC = () => {
       return;
     }
 
+    // เปิด loading modal ทันทีที่เริ่มกระบวนการ
+    setLoadingMessage({
+      title: "กำลังดำเนินการส่งเสนอเอกสาร",
+      description: "กรุณารอสักครู่..."
+    });
+    setShowLoadingModal(true);
+
     if (memoId) {
       // 1. อัปเดต signature positions ให้รวม prefix ในชื่อ
       const updatedSignaturePositions = signaturePositions.map(pos => {
@@ -765,25 +772,25 @@ const DocumentManagePage: React.FC = () => {
 
           if (updateError) {
             console.error('❌ Error updating document summary:', updateError);
+            setShowLoadingModal(false);
             toast({
               title: "คำเตือน",
               description: `ไม่สามารถบันทึกความหมายโดยสรุปได้: ${updateError.message}`,
               variant: "destructive",
             });
+            return;
           } else {
             console.log('✅ Document summary updated successfully:', comment.trim());
-            toast({
-              title: "บันทึกสำเร็จ",
-              description: "บันทึกความหมายโดยสรุปของเอกสารเรียบร้อยแล้ว",
-            });
           }
         } catch (err) {
           console.error('❌ Failed to update document summary:', err);
+          setShowLoadingModal(false);
           toast({
             title: "เกิดข้อผิดพลาด",
             description: "ไม่สามารถบันทึกความหมายโดยสรุปได้",
             variant: "destructive",
           });
+          return;
         }
       } else {
         console.log('⚠️ No document summary provided - skipping save');
@@ -880,11 +887,11 @@ const DocumentManagePage: React.FC = () => {
       }
       // 3. ถ้าเซ็นสำเร็จ → อัปเดตสถานะ/ลำดับ
       if (signSuccess && signedPdfBlob && memo?.pdf_draft_path) {
+        // อัปเดตข้อความ loading
         setLoadingMessage({
           title: "กำลังส่งเสนอต่อผู้ลงนามลำดับถัดไป",
           description: "ระบบกำลังบันทึกไฟล์และอัพเดตสถานะเอกสาร กรุณารอสักครู่..."
         });
-        setShowLoadingModal(true);
         try {
           // --- อัปโหลดไฟล์ใหม่ (ชื่อใหม่) ---
           const extractedPdfUrl = extractPdfUrl(memo.pdf_draft_path);
@@ -922,14 +929,7 @@ const DocumentManagePage: React.FC = () => {
           console.log('📝 Recording clerk_id:', clerkId, 'for memo:', memoId);
           
           await updateMemoStatus(memoId, 'pending_sign', documentNumber, undefined, 2, newPublicUrl, clerkId);
-          
-          // แสดงข้อความสำเร็จพร้อมจำนวนลายเซ็นที่ประมวลผล
-          const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
-          toast({
-            title: "ส่งเอกสารสำเร็จ",
-            description: `ลงลายเซ็นเรียบร้อยแล้ว ${authorPositions.length} ตำแหน่ง และส่งให้ผู้อนุมัติถัดไป`,
-          });
-          
+
           // --- ลบไฟล์เก่า ---
           const { error: removeError } = await supabase.storage
             .from('documents')
@@ -941,8 +941,17 @@ const DocumentManagePage: React.FC = () => {
         } finally {
           setShowLoadingModal(false);
         }
+
+        // แสดง toast หลังปิด modal
+        const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
+        toast({
+          title: "ส่งเอกสารสำเร็จ",
+          description: `ลงลายเซ็นเรียบร้อยแล้ว ${authorPositions.length} ตำแหน่ง และส่งให้ผู้อนุมัติถัดไป`,
+        });
+
         navigate('/documents');
       } else if (!signSuccess) {
+        setShowLoadingModal(false);
         toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถเซ็นเอกสารได้' });
       }
     }

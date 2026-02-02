@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Shield, Download, Edit, Save, KeyRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import AdminSettingsButton from './AdminSettingsButton';
 
 interface ProfileHeaderProps {
   isProfileIncomplete: boolean;
@@ -51,6 +52,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="flex items-center space-x-2">
         {isAdmin && (
           <>
+            <AdminSettingsButton />
+
             <Button
               onClick={onToggleAllProfiles}
               variant="outline"

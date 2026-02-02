@@ -1,6 +1,6 @@
 {
-  "name": "RSEC6 OfficeHub",
-  "short_name": "RSEC6 Hub",
+  "name": "FastDoc",
+  "short_name": "FastDoc",
   "description": "ระบบจัดการเอกสารดิจิทัล ศูนย์การศึกษาพิเศษ เขตการศึกษา 6",
   "start_url": "/",
   "display": "standalone",

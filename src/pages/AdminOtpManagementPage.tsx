@@ -87,12 +87,13 @@ export default function AdminOtpManagementPage() {
     try {
       setLoading(true);
       const data = await getAdminRecipients(ADMIN_PHONE);
-      setRecipients(data);
+      setRecipients(data || []);
     } catch (err: any) {
       console.error('Error loading recipients:', err);
+      setRecipients([]); // Set empty array on error to prevent white screen
       toast({
         title: 'เกิดข้อผิดพลาด',
-        description: err.message || 'ไม่สามารถโหลดรายชื่อ recipients ได้',
+        description: err.message || 'ไม่สามารถโหลดรายชื่อ recipients ได้ (ตารางอาจยังไม่ถูกสร้าง)',
         variant: 'destructive',
       });
     } finally {
@@ -105,12 +106,13 @@ export default function AdminOtpManagementPage() {
     try {
       setLogsLoading(true);
       const data = await getAdminLoginLogs(ADMIN_PHONE, 50);
-      setLoginLogs(data);
+      setLoginLogs(data || []);
     } catch (err: any) {
       console.error('Error loading login logs:', err);
+      setLoginLogs([]); // Set empty array on error to prevent white screen
       toast({
         title: 'เกิดข้อผิดพลาด',
-        description: err.message || 'ไม่สามารถโหลด login logs ได้',
+        description: err.message || 'ไม่สามารถโหลด login logs ได้ (ตารางอาจยังไม่ถูกสร้าง)',
         variant: 'destructive',
       });
     } finally {

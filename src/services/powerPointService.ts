@@ -1,4 +1,5 @@
 import PptxGenJS from 'pptxgenjs';
+import { formatThaiDateFull } from '@/utils/dateUtils';
 
 interface MemoFormData {
   doc_number: string;
@@ -63,18 +64,9 @@ export class PowerPointService {
   }
 
   private mapFormDataToSlide(formData: MemoFormData) {
-    const formatDate = (date: Date | null) => {
-      if (!date) return '';
-      return date.toLocaleDateString('th-TH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    };
-
     return {
       '[doc_number]': formData.doc_number,
-      '[date]': formatDate(formData.date),
+      '[date]': formatThaiDateFull(formData.date),
       '[subject]': formData.subject,
       '[attachment1_title]': formData.attachment1_title,
       '[attachment1_count]': formData.attachment1_count.toString(),

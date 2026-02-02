@@ -3,6 +3,7 @@ import { Memo, MemoFormData, SignaturePosition, MemoSignature } from '@/types/me
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDeviceFingerprint } from '@/utils/deviceInfo';
 import { requestQueue, railwayPDFQueue } from '@/utils/requestQueue';
+import { formatThaiDateFull } from '@/utils/dateUtils';
 
 export class MemoService {
   // Helper function to upload files to storage
@@ -126,6 +127,12 @@ export class MemoService {
         // This ensures high success rate even under load (Railway can only handle 2 concurrent)
         const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
           async () => {
+            // Format date to Thai before sending to API
+            const formDataWithThaiDate = {
+              ...formData,
+              date: formData.date ? formatThaiDateFull(formData.date) : formData.date
+            };
+
             const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
               method: 'POST',
               headers: {
@@ -134,7 +141,7 @@ export class MemoService {
               },
               mode: 'cors',
               credentials: 'omit',
-              body: JSON.stringify(formData),
+              body: JSON.stringify(formDataWithThaiDate),
             });
 
             if (!response.ok) {

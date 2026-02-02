@@ -51,29 +51,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
       <div className="flex items-center space-x-2">
         {isAdmin && (
-          <>
-            <AdminSettingsButton />
-
-            <Button
-              onClick={onToggleAllProfiles}
-              variant="outline"
-              size="sm"
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              {showAllProfiles ? 'โปรไฟล์ของฉัน' : 'จัดการทุกโปรไฟล์'}
-            </Button>
-
-            <Button
-              onClick={() => navigate('/admin/otp-management')}
-              variant="outline"
-              size="sm"
-              className="text-orange-600 border-orange-600 hover:bg-orange-50"
-            >
-              <KeyRound className="h-4 w-4 mr-2" />
-              จัดการ Admin OTP
-            </Button>
-          </>
+          <AdminSettingsButton
+            showAllProfiles={showAllProfiles}
+            onToggleAllProfiles={onToggleAllProfiles}
+          />
         )}
 
         <Button

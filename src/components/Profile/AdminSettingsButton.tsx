@@ -8,6 +8,7 @@ import {
   TestTube,
   Power,
   ChevronDown,
+  Shield,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -19,7 +20,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
-const AdminSettingsButton: React.FC = () => {
+interface AdminSettingsButtonProps {
+  showAllProfiles: boolean;
+  onToggleAllProfiles: () => void;
+}
+
+const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
+  showAllProfiles,
+  onToggleAllProfiles,
+}) => {
   const navigate = useNavigate();
 
   const menuItems = [
@@ -27,6 +36,12 @@ const AdminSettingsButton: React.FC = () => {
       label: 'การจัดการผู้ใช้',
       icon: Users,
       items: [
+        {
+          label: showAllProfiles ? 'โปรไฟล์ของฉัน' : 'จัดการทุกโปรไฟล์',
+          icon: Shield,
+          action: onToggleAllProfiles,
+          description: showAllProfiles ? 'กลับไปดูเฉพาะโปรไฟล์ของฉัน' : 'ดูและจัดการโปรไฟล์พนักงานทั้งหมด',
+        },
         {
           label: 'จัดการโปรไฟล์พนักงาน',
           icon: Users,
@@ -73,6 +88,14 @@ const AdminSettingsButton: React.FC = () => {
     },
   ];
 
+  const handleItemClick = (item: any) => {
+    if (item.action) {
+      item.action();
+    } else if (item.path) {
+      navigate(item.path);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -86,17 +109,19 @@ const AdminSettingsButton: React.FC = () => {
           <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel className="flex items-center gap-2">
-          <Settings className="h-4 w-4" />
-          เมนูตั้งค่าแอดมิน
+      <DropdownMenuContent
+        align="end"
+        className="w-80 bg-white shadow-lg border border-gray-200"
+      >
+        <DropdownMenuLabel className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 py-3">
+          <Settings className="h-4 w-4 text-blue-600" />
+          <span className="font-semibold text-gray-800">เมนูตั้งค่าแอดมิน</span>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
 
         {menuItems.map((section, sectionIndex) => (
           <React.Fragment key={sectionIndex}>
-            <div className="px-2 py-1.5">
-              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="px-3 py-2 bg-gray-50">
+              <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 <section.icon className="h-3 w-3" />
                 {section.label}
               </div>
@@ -104,19 +129,19 @@ const AdminSettingsButton: React.FC = () => {
             {section.items.map((item, itemIndex) => (
               <DropdownMenuItem
                 key={itemIndex}
-                onClick={() => navigate(item.path)}
-                className="cursor-pointer flex flex-col items-start py-3 px-3 hover:bg-slate-50"
+                onClick={() => handleItemClick(item)}
+                className="cursor-pointer flex flex-col items-start py-3 px-3 hover:bg-blue-50 focus:bg-blue-50 bg-white"
               >
                 <div className="flex items-center gap-2 w-full">
-                  <item.icon className="h-4 w-4 text-slate-600" />
-                  <span className="font-medium text-sm">{item.label}</span>
+                  <item.icon className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-sm text-gray-800">{item.label}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 ml-6">
+                <p className="text-xs text-gray-500 mt-1 ml-6">
                   {item.description}
                 </p>
               </DropdownMenuItem>
             ))}
-            {sectionIndex < menuItems.length - 1 && <DropdownMenuSeparator />}
+            {sectionIndex < menuItems.length - 1 && <DropdownMenuSeparator className="bg-gray-200" />}
           </React.Fragment>
         ))}
       </DropdownMenuContent>

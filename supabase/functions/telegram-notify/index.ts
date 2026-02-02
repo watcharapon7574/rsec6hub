@@ -19,6 +19,8 @@ interface NotificationPayload {
   current_signer_name?: string
   current_signer_position?: string
   reject_reason?: string
+  rejector_name?: string // Name of person who rejected the document
+  rejector_position?: string // Position of person who rejected the document
   doc_number?: string
   urgency?: string
   assigned_by?: string // For task_assigned: name of person who assigned
@@ -94,6 +96,13 @@ function formatMessage(payload: NotificationPayload): string {
       message += `<b>เอกสารถูกปฏิเสธ</b>\n`
       message += `เรื่อง: ${payload.subject}\n`
       message += `ผู้สร้าง: ${payload.author_name}\n`
+      if (payload.rejector_name) {
+        message += `ปฏิเสธโดย: ${payload.rejector_name}`
+        if (payload.rejector_position) {
+          message += ` (${payload.rejector_position})`
+        }
+        message += `\n`
+      }
       if (payload.reject_reason) {
         message += `เหตุผล: ${payload.reject_reason}\n`
       }

@@ -53,7 +53,6 @@ export const useEmployeeAuth = () => {
               if (profileData) {
                 const profile = {
                   ...profileData,
-                  gender: profileData.gender as Profile['gender'],
                   marital_status: profileData.marital_status as Profile['marital_status'],
                   position: profileData.position as Profile['position']
                 } as Profile;

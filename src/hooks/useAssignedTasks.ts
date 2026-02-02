@@ -45,7 +45,8 @@ export const useAssignedTasks = (
     async (
       assignmentId: string,
       newStatus: TaskStatus,
-      completionNote?: string
+      completionNote?: string,
+      reportFileUrl?: string
     ) => {
       setLoading(true);
       setError(null);
@@ -54,7 +55,8 @@ export const useAssignedTasks = (
         await taskAssignmentService.updateTaskStatus(
           assignmentId,
           newStatus,
-          completionNote
+          completionNote,
+          reportFileUrl
         );
 
         const statusText = {

@@ -9,7 +9,6 @@ export type Position =
   | 'clerk_teacher'
   | 'disability_aide';
 
-export type Gender = 'male' | 'female' | 'other';
 export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'in_progress';
 export type LeaveType = 'sick_leave' | 'personal_leave' | 'annual_leave' | 'maternity_leave' | 'ordination_leave';
@@ -27,7 +26,6 @@ export interface Profile {
   email?: string;
   phone?: string;
   birth_date?: string;
-  gender?: Gender;
   address?: string;
   postal_code?: string;
   profile_picture_url?: string;

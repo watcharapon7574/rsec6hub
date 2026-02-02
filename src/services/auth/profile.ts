@@ -80,7 +80,6 @@ export const refreshProfile = async (phone: string): Promise<Profile | null> => 
 
         const profile: Profile = {
           ...createdProfile,
-          gender: createdProfile.gender as Profile['gender'],
           marital_status: createdProfile.marital_status as Profile['marital_status'],
           position: createdProfile.position as Profile['position']
         };
@@ -94,7 +93,6 @@ export const refreshProfile = async (phone: string): Promise<Profile | null> => 
 
     const profile: Profile = {
       ...profileData,
-      gender: profileData.gender as Profile['gender'],
       marital_status: profileData.marital_status as Profile['marital_status'],
       position: profileData.position as Profile['position']
     };

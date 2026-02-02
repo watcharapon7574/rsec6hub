@@ -23,7 +23,6 @@ export const getCurrentProfile = (): Profile | null => {
     // Return profile with proper type casting
     return {
       ...authData.profile,
-      gender: authData.profile.gender as Profile['gender'],
       marital_status: authData.profile.marital_status as Profile['marital_status'],
       position: authData.profile.position as Profile['position']
     };

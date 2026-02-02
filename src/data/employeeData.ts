@@ -1,5 +1,5 @@
 
-import { Profile, Position, Gender, MaritalStatus } from '@/types/database';
+import { Profile, Position, MaritalStatus } from '@/types/database';
 
 interface EmployeeData {
   employee_id: string;
@@ -9,7 +9,6 @@ interface EmployeeData {
   email: string;
   phone?: string;
   birth_date?: string;
-  gender?: Gender;
   address?: string;
   postal_code?: string;
   position: Position;
@@ -51,7 +50,6 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'male',
     marital_status: 'single',
     number_of_children: 0
   },
@@ -70,7 +68,6 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'male',
     marital_status: 'married',
     number_of_children: 2
   },
@@ -89,7 +86,6 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'male',
     marital_status: 'married',
     number_of_children: 1
   },
@@ -108,7 +104,6 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'female',
     marital_status: 'married',
     number_of_children: 2
   },
@@ -126,7 +121,6 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'female',
     marital_status: 'single',
     number_of_children: 0
   },
@@ -144,7 +138,6 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'male',
     marital_status: 'married',
     number_of_children: 1
   },
@@ -162,7 +155,6 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'female',
     marital_status: 'divorced',
     number_of_children: 1
   },
@@ -180,7 +172,6 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'male',
     marital_status: 'single',
     number_of_children: 0
   },
@@ -198,26 +189,25 @@ export const EMPLOYEES: Record<string, EmployeeData> = {
     nationality: 'ไทย',
     ethnicity: 'ไทย',
     religion: 'พุทธ',
-    gender: 'male',
     marital_status: 'married',
     number_of_children: 2
   },
   
   // Enhanced remaining employees with complete data
-  'RSEC604': { employee_id: 'RSEC604', first_name: 'ภัทราพร', last_name: 'ฝั้นอิ่นแก้ว', email: 'rsec604@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'single', number_of_children: 0 },
-  'RSEC605': { employee_id: 'RSEC605', first_name: 'กาญจนา', last_name: 'จันทอุปรี', email: 'rsec605@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'married', number_of_children: 1 },
-  'RSEC606': { employee_id: 'RSEC606', first_name: 'นาวิน', last_name: 'นาคดี', email: 'rsec606@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'male', marital_status: 'single', number_of_children: 0 },
-  'RSEC607': { employee_id: 'RSEC607', first_name: 'ณัฐิยา', last_name: 'พูลทอง', email: 'rsec607@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'married', number_of_children: 3 },
-  'RSEC608': { employee_id: 'RSEC608', first_name: 'ภิชดา', last_name: 'สีดำ', email: 'rsec608@rsec6.ac.th', position: 'clerk_teacher', job_position: 'ธุรการ', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'single', number_of_children: 0 },
-  'RSEC610': { employee_id: 'RSEC610', first_name: 'ชูชีพ', last_name: 'ร่มโพธิ์', email: 'rsec610@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'male', marital_status: 'widowed', number_of_children: 2 },
-  'RSEC611': { employee_id: 'RSEC611', first_name: 'ครรชิต', last_name: 'มหาโคตร', email: 'rsec611@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'male', marital_status: 'married', number_of_children: 1 },
-  'RSEC612': { employee_id: 'RSEC612', first_name: 'จิระ', last_name: 'ม่วงมา', email: 'rsec612@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'single', number_of_children: 0 },
-  'RSEC614': { employee_id: 'RSEC614', first_name: 'ศุภณัฎ', last_name: 'คลังกรณ์', email: 'rsec614@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'male', marital_status: 'married', number_of_children: 2 },
-  'RSEC616': { employee_id: 'RSEC616', first_name: 'อัจฉราพรรณ', last_name: 'แสนอะทะ', email: 'rsec616@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'married', number_of_children: 1 },
-  'RSEC617': { employee_id: 'RSEC617', first_name: 'นภาวัลย์', last_name: 'ซิ่วนัส', email: 'rsec617@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'single', number_of_children: 0 },
-  'RSEC618': { employee_id: 'RSEC618', first_name: 'รังสินี', last_name: 'ตุ่นทอง', email: 'rsec618@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'divorced', number_of_children: 1 },
-  'RSEC619': { employee_id: 'RSEC619', first_name: 'ปวีนา', last_name: 'จ่าแก้ว', email: 'rsec619@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'female', marital_status: 'married', number_of_children: 2 },
-  'RSEC620': { employee_id: 'RSEC620', first_name: 'พงศกร', last_name: 'สมบัติพิบูลย์', email: 'rsec620@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', gender: 'male', marital_status: 'single', number_of_children: 0 }
+  'RSEC604': { employee_id: 'RSEC604', first_name: 'ภัทราพร', last_name: 'ฝั้นอิ่นแก้ว', email: 'rsec604@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'single', number_of_children: 0 },
+  'RSEC605': { employee_id: 'RSEC605', first_name: 'กาญจนา', last_name: 'จันทอุปรี', email: 'rsec605@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'married', number_of_children: 1 },
+  'RSEC606': { employee_id: 'RSEC606', first_name: 'นาวิน', last_name: 'นาคดี', email: 'rsec606@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'single', number_of_children: 0 },
+  'RSEC607': { employee_id: 'RSEC607', first_name: 'ณัฐิยา', last_name: 'พูลทอง', email: 'rsec607@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'married', number_of_children: 3 },
+  'RSEC608': { employee_id: 'RSEC608', first_name: 'ภิชดา', last_name: 'สีดำ', email: 'rsec608@rsec6.ac.th', position: 'clerk_teacher', job_position: 'ธุรการ', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'single', number_of_children: 0 },
+  'RSEC610': { employee_id: 'RSEC610', first_name: 'ชูชีพ', last_name: 'ร่มโพธิ์', email: 'rsec610@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'widowed', number_of_children: 2 },
+  'RSEC611': { employee_id: 'RSEC611', first_name: 'ครรชิต', last_name: 'มหาโคตร', email: 'rsec611@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'married', number_of_children: 1 },
+  'RSEC612': { employee_id: 'RSEC612', first_name: 'จิระ', last_name: 'ม่วงมา', email: 'rsec612@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'single', number_of_children: 0 },
+  'RSEC614': { employee_id: 'RSEC614', first_name: 'ศุภณัฎ', last_name: 'คลังกรณ์', email: 'rsec614@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'married', number_of_children: 2 },
+  'RSEC616': { employee_id: 'RSEC616', first_name: 'อัจฉราพรรณ', last_name: 'แสนอะทะ', email: 'rsec616@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'married', number_of_children: 1 },
+  'RSEC617': { employee_id: 'RSEC617', first_name: 'นภาวัลย์', last_name: 'ซิ่วนัส', email: 'rsec617@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'single', number_of_children: 0 },
+  'RSEC618': { employee_id: 'RSEC618', first_name: 'รังสินี', last_name: 'ตุ่นทอง', email: 'rsec618@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'divorced', number_of_children: 1 },
+  'RSEC619': { employee_id: 'RSEC619', first_name: 'ปวีนา', last_name: 'จ่าแก้ว', email: 'rsec619@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'married', number_of_children: 2 },
+  'RSEC620': { employee_id: 'RSEC620', first_name: 'พงศกร', last_name: 'สมบัติพิบูลย์', email: 'rsec620@rsec6.ac.th', position: 'government_teacher', workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6', nationality: 'ไทย', ethnicity: 'ไทย', religion: 'พุทธ', marital_status: 'single', number_of_children: 0 }
 };
 
 // Helper function to get employee data as Profile format with all required fields
@@ -233,7 +223,6 @@ export const getEmployeeAsProfile = (employeeKey: string): Partial<Profile> | nu
     email: employee.email,
     phone: employee.phone,
     birth_date: employee.birth_date,
-    gender: employee.gender,
     address: employee.address,
     postal_code: employee.postal_code,
     position: employee.position,

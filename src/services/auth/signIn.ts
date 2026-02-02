@@ -87,7 +87,6 @@ export const signIn = async (phone: string, otp: string): Promise<AuthResult> =>
     // Cast the profile data to Profile type with proper type casting
     const profile: Profile = {
       ...profileData,
-      gender: profileData.gender as Profile['gender'],
       marital_status: profileData.marital_status as Profile['marital_status'],
       position: profileData.position as Profile['position']
     };

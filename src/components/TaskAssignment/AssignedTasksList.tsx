@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, User, Calendar, CheckCircle, Clock, XCircle, PlayCircle, Eye, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, User, Calendar, CheckCircle, Clock, XCircle, PlayCircle, Eye, Search, ChevronLeft, ChevronRight, Upload, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAssignedTasks } from '@/hooks/useAssignedTasks';
 import { TaskStatus } from '@/services/taskAssignmentService';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const AssignedTasksList = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const AssignedTasksList = () => {
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState<TaskStatus>('in_progress');
   const [completionNote, setCompletionNote] = useState('');
+  const [reportFile, setReportFile] = useState<File | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   // State สำหรับการค้นหาและกรอง
@@ -135,7 +137,26 @@ const AssignedTasksList = () => {
     setSelectedTask(task);
     setNewStatus(status);
     setCompletionNote('');
+    setReportFile(null);
     setShowStatusDialog(true);
+  };
+
+  // Handle file upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // ตรวจสอบขนาดไฟล์ (จำกัดที่ 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('ไฟล์มีขนาดใหญ่เกิน 10MB');
+        return;
+      }
+      setReportFile(file);
+    }
+  };
+
+  // Remove selected file
+  const handleRemoveFile = () => {
+    setReportFile(null);
   };
 
   // Update task status
@@ -145,17 +166,47 @@ const AssignedTasksList = () => {
     setUpdatingStatus(true);
 
     try {
+      let reportFileUrl: string | undefined;
+
+      // อัปโหลดไฟล์รายงานถ้ามี
+      if (reportFile && newStatus === 'completed') {
+        const fileName = `${Date.now()}_${reportFile.name}`;
+        const filePath = `task_reports/${selectedTask.assignment_id}/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, reportFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          throw new Error(`ไม่สามารถอัปโหลดไฟล์ได้: ${uploadError.message}`);
+        }
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+
+        reportFileUrl = publicUrlData.publicUrl;
+      }
+
+      // อัปเดตสถานะและบันทึก URL ไฟล์
       await updateTaskStatus(
         selectedTask.assignment_id,
         newStatus,
-        completionNote || undefined
+        completionNote || undefined,
+        reportFileUrl
       );
 
       setShowStatusDialog(false);
       setSelectedTask(null);
       setCompletionNote('');
-    } catch (error) {
+      setReportFile(null);
+    } catch (error: any) {
       console.error('Error updating status:', error);
+      alert(error.message || 'เกิดข้อผิดพลาดในการอัปเดตสถานะ');
     } finally {
       setUpdatingStatus(false);
     }
@@ -472,17 +523,66 @@ const AssignedTasksList = () => {
           </DialogHeader>
 
           {newStatus === 'completed' && (
-            <div className="py-4">
-              <label className="text-sm font-medium mb-2 block">
-                หมายเหตุการดำเนินการ (ถ้ามี)
-              </label>
-              <Textarea
-                placeholder="ระบุรายละเอียดการดำเนินการ..."
-                value={completionNote}
-                onChange={(e) => setCompletionNote(e.target.value)}
-                rows={4}
-                className="resize-none"
-              />
+            <div className="py-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  หมายเหตุการดำเนินการ (ถ้ามี)
+                </label>
+                <Textarea
+                  placeholder="ระบุรายละเอียดการดำเนินการ..."
+                  value={completionNote}
+                  onChange={(e) => setCompletionNote(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  แนบไฟล์รายงาน (ถ้ามี)
+                </label>
+                {reportFile ? (
+                  <div className="flex items-center gap-2 p-3 border-2 border-green-200 bg-green-50 rounded-lg">
+                    <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm text-green-700 flex-1 truncate">
+                      {reportFile.name}
+                    </span>
+                    <span className="text-xs text-green-600">
+                      {(reportFile.size / 1024).toFixed(1)} KB
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleRemoveFile}
+                      className="h-6 w-6 p-0 hover:bg-red-100"
+                    >
+                      <X className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      id="report-file"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                    />
+                    <label
+                      htmlFor="report-file"
+                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
+                    >
+                      <Upload className="h-5 w-5 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        คลิกเพื่อเลือกไฟล์ (สูงสุด 10MB)
+                      </span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">
+                      รองรับ: PDF, Word, Excel, รูปภาพ
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

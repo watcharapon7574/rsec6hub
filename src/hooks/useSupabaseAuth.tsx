@@ -15,7 +15,6 @@ export const useSupabaseAuth = () => {
     
     return {
       ...data,
-      gender: data.gender as Profile['gender'],
       marital_status: data.marital_status as Profile['marital_status'],
       position: data.position as Profile['position']
     } as Profile;

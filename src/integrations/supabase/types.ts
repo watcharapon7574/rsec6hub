@@ -486,7 +486,6 @@ export type Database = {
           father_name: string | null
           father_occupation: string | null
           first_name: string
-          gender: string | null
           id: string
           is_admin: boolean | null
           job_position: string | null
@@ -531,7 +530,6 @@ export type Database = {
           father_name?: string | null
           father_occupation?: string | null
           first_name: string
-          gender?: string | null
           id?: string
           is_admin?: boolean | null
           job_position?: string | null
@@ -576,7 +574,6 @@ export type Database = {
           father_name?: string | null
           father_occupation?: string | null
           first_name?: string
-          gender?: string | null
           id?: string
           is_admin?: boolean | null
           job_position?: string | null

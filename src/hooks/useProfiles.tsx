@@ -26,7 +26,6 @@ export const useProfiles = () => {
       // Cast the data to Profile type with proper type casting
       const castedProfiles = data?.map(profile => ({
         ...profile,
-        gender: profile.gender as Profile['gender'],
         marital_status: profile.marital_status as Profile['marital_status'],
         position: profile.position as Profile['position']
       })) || [];

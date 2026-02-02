@@ -150,13 +150,15 @@ class TaskAssignmentService {
   async updateTaskStatus(
     assignmentId: string,
     newStatus: TaskStatus,
-    completionNote?: string
+    completionNote?: string,
+    reportFileUrl?: string
   ): Promise<boolean> {
     try {
       const { data, error } = await supabase.rpc('update_task_status', {
         p_assignment_id: assignmentId,
         p_new_status: newStatus,
-        p_completion_note: completionNote || null
+        p_completion_note: completionNote || null,
+        p_report_file_url: reportFileUrl || null
       });
 
       if (error) {

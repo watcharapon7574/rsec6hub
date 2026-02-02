@@ -66,22 +66,6 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ profile, setProfile, editing 
                 disabled={true} // Employee ID should not be editable
               />
             </div>
-            <div>
-              <Label htmlFor="gender">เพศ</Label>
-              <Select 
-                value={profile.gender || ''} 
-                onValueChange={(value) => handleInputChange('gender', value)}
-                disabled={!editing}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="เลือกเพศ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">ชาย</SelectItem>
-                  <SelectItem value="female">หญิง</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

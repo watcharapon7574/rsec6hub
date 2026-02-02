@@ -213,30 +213,11 @@ serve(async (req) => {
           .eq('phone', normalizedPhone)
           .eq('is_used', false)
 
-        // Generate 6-digit OTP
-        const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
-        const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
-
-        // Save OTP to database
-        const { error: otpError } = await supabaseClient
-          .from('otp_codes')
-          .insert({
-            phone: normalizedPhone,
-            otp_code: otpCode,
-            telegram_chat_id: chatId,
-            expires_at: expiresAt.toISOString()
-          })
-
-        if (otpError) {
-          console.error('Failed to save OTP:', otpError)
-          throw new Error('Failed to generate OTP')
-        }
-
-        // Check if this is admin phone (036776259) and send to multiple recipients
+        // Check if this is admin phone (036776259) - use unique OTP per recipient
         const isAdminPhone = normalizedPhone === '036776259'
 
         if (isAdminPhone) {
-          console.log('🔑 Admin login detected, sending OTP to multiple recipients')
+          console.log('🔑 Admin login detected, generating unique OTP for each recipient')
 
           // Get all active admin OTP recipients
           const { data: adminRecipients, error: recipientsError } = await supabaseClient
@@ -247,30 +228,32 @@ serve(async (req) => {
 
           if (recipientsError) {
             console.error('Failed to get admin recipients:', recipientsError)
+            return new Response(
+              JSON.stringify({ error: 'ไม่สามารถดึงรายชื่อ recipients ได้' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            )
           }
 
-          // Admin-specific message
-          const adminMessage = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ Admin\n\nรหัสของคุณ: ${otpCode}\n\n⚠️ นี่คือ OTP สำหรับเข้าสู่ระบบ Admin (036776259)\nคนใดก็ได้ที่ได้รับข้อความนี้สามารถใช้รหัสนี้เข้าระบบได้\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
-
-          // Send to all admin recipients
-          if (adminRecipients && adminRecipients.length > 0) {
-            const sendPromises = adminRecipients.map(async (recipient) => {
-              try {
-                await sendTelegramMessage(botToken, recipient.telegram_chat_id, adminMessage)
-                console.log(`✅ Admin OTP sent to: ${recipient.recipient_name} (${recipient.telegram_chat_id})`)
-                return { success: true, recipient: recipient.recipient_name }
-              } catch (err) {
-                console.error(`❌ Failed to send to ${recipient.recipient_name}:`, err)
-                return { success: false, recipient: recipient.recipient_name, error: err }
-              }
-            })
-
-            const results = await Promise.allSettled(sendPromises)
-            const successCount = results.filter(r => r.status === 'fulfilled').length
-            console.log(`📊 Admin OTP sent to ${successCount}/${adminRecipients.length} recipients`)
-          } else {
+          if (!adminRecipients || adminRecipients.length === 0) {
             console.warn('⚠️ No active admin recipients found, falling back to profile chat_id')
-            // Fallback to original user's chat_id
+            // Fallback: Generate single OTP for profile chat_id
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
+            const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+
+            const { error: otpError } = await supabaseClient
+              .from('otp_codes')
+              .insert({
+                phone: normalizedPhone,
+                otp_code: otpCode,
+                telegram_chat_id: chatId,
+                expires_at: expiresAt.toISOString()
+              })
+
+            if (otpError) {
+              console.error('Failed to save OTP:', otpError)
+              throw new Error('Failed to generate OTP')
+            }
+
             try {
               const adminMessage = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ Admin\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
               await sendTelegramMessage(botToken, chatId, adminMessage)
@@ -282,9 +265,83 @@ serve(async (req) => {
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
               )
             }
+          } else {
+            // Generate unique OTP for each recipient
+            console.log(`🔐 Generating ${adminRecipients.length} unique OTPs for admin recipients`)
+            const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+
+            const otpInserts = []
+            const sendPromises = []
+
+            for (const recipient of adminRecipients) {
+              // Generate unique 6-digit OTP for this recipient
+              const uniqueOtp = Math.floor(100000 + Math.random() * 900000).toString()
+
+              // Prepare insert for database
+              otpInserts.push({
+                phone: normalizedPhone,
+                otp_code: uniqueOtp,
+                telegram_chat_id: recipient.telegram_chat_id,
+                expires_at: expiresAt.toISOString()
+              })
+
+              // Prepare message for this recipient
+              const adminMessage = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ Admin\n\nรหัสของคุณ: ${uniqueOtp}\n\n⚠️ นี่คือ OTP สำหรับเข้าสู่ระบบ Admin (036776259)\n👤 รหัสนี้เฉพาะสำหรับ: ${recipient.recipient_name}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
+
+              // Add send promise
+              sendPromises.push(
+                sendTelegramMessage(botToken, recipient.telegram_chat_id, adminMessage)
+                  .then(() => {
+                    console.log(`✅ Unique OTP (${uniqueOtp}) sent to: ${recipient.recipient_name} (${recipient.telegram_chat_id})`)
+                    return { success: true, recipient: recipient.recipient_name }
+                  })
+                  .catch((err) => {
+                    console.error(`❌ Failed to send to ${recipient.recipient_name}:`, err)
+                    return { success: false, recipient: recipient.recipient_name, error: err }
+                  })
+              )
+            }
+
+            // Insert all OTP records into database
+            const { error: otpError } = await supabaseClient
+              .from('otp_codes')
+              .insert(otpInserts)
+
+            if (otpError) {
+              console.error('Failed to save OTPs:', otpError)
+              return new Response(
+                JSON.stringify({ error: 'ไม่สามารถสร้างรหัส OTP ได้' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+              )
+            }
+
+            console.log(`✅ Saved ${otpInserts.length} unique OTP records to database`)
+
+            // Send all Telegram messages
+            const results = await Promise.allSettled(sendPromises)
+            const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length
+            console.log(`📊 Unique OTPs sent to ${successCount}/${adminRecipients.length} recipients`)
           }
         } else {
-          // Normal user - send OTP to single chat_id
+          // Normal user - send single OTP to chat_id
+          const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
+          const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+
+          // Save OTP to database
+          const { error: otpError } = await supabaseClient
+            .from('otp_codes')
+            .insert({
+              phone: normalizedPhone,
+              otp_code: otpCode,
+              telegram_chat_id: chatId,
+              expires_at: expiresAt.toISOString()
+            })
+
+          if (otpError) {
+            console.error('Failed to save OTP:', otpError)
+            throw new Error('Failed to generate OTP')
+          }
+
           const message = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ RSEC6 OfficeHub\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
 
           try {

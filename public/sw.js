@@ -1,5 +1,5 @@
 // เพิ่มเวอร์ชันทุกครั้งที่ deploy ใหม่ เพื่อบังคับให้ล้างแคชเก่า
-const CACHE_NAME = 'rsec6-officehub-v1.4.5';
+const CACHE_NAME = 'rsec6-officehub-v1.4.6';
 const urlsToCache = [
   '/',
   '/fastdocIcon.png',
@@ -7,11 +7,15 @@ const urlsToCache = [
   '/manifest.json'
 ];
 
-// ไฟล์ที่ต้องการให้โหลดใหม่ทุกครั้ง (ไม่ต้องแคช)
+// ไฟล์ที่ต้องการให้โหลดใหม่ทุกครั้ง (Network First - ไม่ใช้ cache ก่อน)
 const NETWORK_FIRST_URLS = [
-  '/assets/', // JS และ CSS files
-  '/api/',    // API calls
-  '/src/'     // Source files
+  '/assets/',   // JS และ CSS files
+  '/api/',      // API calls
+  '/src/',      // Source files
+  '.js',        // JavaScript files
+  '.css',       // CSS files
+  '/index.',    // index.html และ index.*.js
+  'QzfacJHb'    // Fix for the specific JS bundle
 ];
 
 // Install event - cache resources

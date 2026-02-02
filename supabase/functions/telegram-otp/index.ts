@@ -232,18 +232,71 @@ serve(async (req) => {
           throw new Error('Failed to generate OTP')
         }
 
-        // Send OTP via Telegram
-        const message = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ RSEC6 OfficeHub\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
+        // Check if this is admin phone (036776259) and send to multiple recipients
+        const isAdminPhone = normalizedPhone === '036776259'
 
-        try {
-          await sendTelegramMessage(botToken, chatId, message)
-          console.log('✅ OTP sent successfully to:', normalizedPhone)
-        } catch (telegramError) {
-          console.error('Failed to send Telegram message:', telegramError)
-          return new Response(
-            JSON.stringify({ error: 'ไม่สามารถส่งรหัส OTP ได้ กรุณาตรวจสอบ Telegram Chat ID' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-          )
+        if (isAdminPhone) {
+          console.log('🔑 Admin login detected, sending OTP to multiple recipients')
+
+          // Get all active admin OTP recipients
+          const { data: adminRecipients, error: recipientsError } = await supabaseClient
+            .from('admin_otp_recipients')
+            .select('telegram_chat_id, recipient_name')
+            .eq('admin_phone', normalizedPhone)
+            .eq('is_active', true)
+
+          if (recipientsError) {
+            console.error('Failed to get admin recipients:', recipientsError)
+          }
+
+          // Admin-specific message
+          const adminMessage = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ Admin\n\nรหัสของคุณ: ${otpCode}\n\n⚠️ นี่คือ OTP สำหรับเข้าสู่ระบบ Admin (036776259)\nคนใดก็ได้ที่ได้รับข้อความนี้สามารถใช้รหัสนี้เข้าระบบได้\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
+
+          // Send to all admin recipients
+          if (adminRecipients && adminRecipients.length > 0) {
+            const sendPromises = adminRecipients.map(async (recipient) => {
+              try {
+                await sendTelegramMessage(botToken, recipient.telegram_chat_id, adminMessage)
+                console.log(`✅ Admin OTP sent to: ${recipient.recipient_name} (${recipient.telegram_chat_id})`)
+                return { success: true, recipient: recipient.recipient_name }
+              } catch (err) {
+                console.error(`❌ Failed to send to ${recipient.recipient_name}:`, err)
+                return { success: false, recipient: recipient.recipient_name, error: err }
+              }
+            })
+
+            const results = await Promise.allSettled(sendPromises)
+            const successCount = results.filter(r => r.status === 'fulfilled').length
+            console.log(`📊 Admin OTP sent to ${successCount}/${adminRecipients.length} recipients`)
+          } else {
+            console.warn('⚠️ No active admin recipients found, falling back to profile chat_id')
+            // Fallback to original user's chat_id
+            try {
+              const adminMessage = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ Admin\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
+              await sendTelegramMessage(botToken, chatId, adminMessage)
+              console.log('✅ OTP sent to profile chat_id')
+            } catch (telegramError) {
+              console.error('Failed to send Telegram message:', telegramError)
+              return new Response(
+                JSON.stringify({ error: 'ไม่สามารถส่งรหัส OTP ได้ กรุณาตรวจสอบ Telegram Chat ID' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+              )
+            }
+          }
+        } else {
+          // Normal user - send OTP to single chat_id
+          const message = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ RSEC6 OfficeHub\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
+
+          try {
+            await sendTelegramMessage(botToken, chatId, message)
+            console.log('✅ OTP sent successfully to:', normalizedPhone)
+          } catch (telegramError) {
+            console.error('Failed to send Telegram message:', telegramError)
+            return new Response(
+              JSON.stringify({ error: 'ไม่สามารถส่งรหัส OTP ได้ กรุณาตรวจสอบ Telegram Chat ID' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            )
+          }
         }
 
         return new Response(

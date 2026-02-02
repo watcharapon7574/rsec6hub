@@ -31,6 +31,7 @@ import DocumentDetailPage from "@/pages/DocumentDetailPage";
 import TestRequestQueuePage from "@/pages/TestRequestQueuePage";
 import QueueRealtimePage from "@/pages/QueueRealtimePage";
 import AdminProfileManagementPage from "@/pages/AdminProfileManagementPage";
+import AdminOtpManagementPage from "@/pages/AdminOtpManagementPage";
 import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
 
@@ -189,6 +190,11 @@ const AppContent = () => {
       <Route path="/admin/profiles" element={
         <ProtectedRoute>
           <AdminProfileManagementPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/otp-management" element={
+        <ProtectedRoute>
+          <AdminOtpManagementPage />
         </ProtectedRoute>
       } />
       <Route path="/railway" element={

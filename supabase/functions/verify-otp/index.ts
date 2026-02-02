@@ -243,11 +243,42 @@ serve(async (req) => {
       .update({ is_used: true })
       .eq('id', otpRecord.id)
 
+    // Log admin login if this is admin phone (036776259)
+    if (normalizedPhone === '036776259') {
+      console.log('📝 Logging admin login for phone:', normalizedPhone)
+
+      // Get recipient name from admin_otp_recipients
+      const { data: recipient } = await supabaseAdmin
+        .from('admin_otp_recipients')
+        .select('recipient_name')
+        .eq('telegram_chat_id', otpRecord.telegram_chat_id)
+        .eq('is_active', true)
+        .maybeSingle()
+
+      // Insert admin login log
+      const { error: logError } = await supabaseAdmin
+        .from('admin_login_logs')
+        .insert({
+          admin_phone: normalizedPhone,
+          telegram_chat_id: otpRecord.telegram_chat_id,
+          recipient_name: recipient?.recipient_name || 'Unknown',
+          otp_code: otp,
+          login_success: true,
+          logged_in_at: new Date().toISOString()
+        })
+
+      if (logError) {
+        console.error('⚠️ Failed to log admin login:', logError)
+      } else {
+        console.log('✅ Admin login logged successfully')
+      }
+    }
+
     console.log('🎉 Authentication completed successfully')
 
     // Return session data
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         session: session,
         profile: profile,

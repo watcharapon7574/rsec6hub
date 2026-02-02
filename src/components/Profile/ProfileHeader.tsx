@@ -1,5 +1,6 @@
 import React from 'react';
-import { User, Shield, Download, Edit, Save } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Shield, Download, Edit, Save, KeyRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -26,6 +27,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onExportPDF,
   onToggleEdit
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-4">
@@ -44,20 +47,32 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </Badge>
         )}
       </div>
-      
+
       <div className="flex items-center space-x-2">
         {isAdmin && (
-          <Button
-            onClick={onToggleAllProfiles}
-            variant="outline"
-            size="sm"
-            className="text-purple-600 border-purple-600 hover:bg-purple-50"
-          >
-            <Shield className="h-4 w-4 mr-2" />
-            {showAllProfiles ? 'โปรไฟล์ของฉัน' : 'จัดการทุกโปรไฟล์'}
-          </Button>
+          <>
+            <Button
+              onClick={onToggleAllProfiles}
+              variant="outline"
+              size="sm"
+              className="text-purple-600 border-purple-600 hover:bg-purple-50"
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              {showAllProfiles ? 'โปรไฟล์ของฉัน' : 'จัดการทุกโปรไฟล์'}
+            </Button>
+
+            <Button
+              onClick={() => navigate('/admin/otp-management')}
+              variant="outline"
+              size="sm"
+              className="text-orange-600 border-orange-600 hover:bg-orange-50"
+            >
+              <KeyRound className="h-4 w-4 mr-2" />
+              จัดการ Admin OTP
+            </Button>
+          </>
         )}
-        
+
         <Button
           onClick={onExportPDF}
           variant="outline"
@@ -67,7 +82,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           <Download className="h-4 w-4 mr-2" />
           ส่งออก PDF
         </Button>
-        
+
         {!showAllProfiles && (
           <Button
             onClick={onToggleEdit}

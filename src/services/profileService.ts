@@ -16,6 +16,7 @@ export interface ProfileFormData {
   job_position: string;
   academic_rank: string;
   org_structure_role: string;
+  telegram_chat_id?: string;
 }
 
 export interface CreateProfileData extends ProfileFormData {
@@ -45,7 +46,7 @@ export async function getAllProfiles(): Promise<Profile[]> {
 export async function getAllProfilesSummary() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, employee_id, prefix, first_name, last_name, phone, position, job_position, academic_rank, org_structure_role, is_admin, created_at, updated_at')
+    .select('id, employee_id, prefix, first_name, last_name, phone, position, job_position, academic_rank, org_structure_role, is_admin, telegram_chat_id, created_at, updated_at')
     .order('employee_id', { ascending: true });
 
   if (error) {
@@ -210,19 +211,27 @@ export async function updateProfile(
   profileId: string,
   data: Partial<ProfileFormData>
 ): Promise<Profile> {
+  // Build update object, only include telegram_chat_id if provided
+  const updateData: any = {
+    prefix: data.prefix,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    phone: data.phone,
+    position: data.position as any,
+    job_position: data.job_position,
+    academic_rank: data.academic_rank,
+    org_structure_role: data.org_structure_role,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Only update telegram_chat_id if it's provided in data
+  if (data.telegram_chat_id !== undefined) {
+    updateData.telegram_chat_id = data.telegram_chat_id;
+  }
+
   const { data: updatedProfile, error } = await supabase
     .from('profiles')
-    .update({
-      prefix: data.prefix,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      phone: data.phone,
-      position: data.position as any,
-      job_position: data.job_position,
-      academic_rank: data.academic_rank,
-      org_structure_role: data.org_structure_role,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq('id', profileId)
     .select()
     .single();

@@ -28,6 +28,7 @@ interface ProfileSummary {
   is_admin: boolean;
   created_at: string;
   updated_at: string;
+  telegram_chat_id?: string;
 }
 
 const AdminProfileManagementPage: React.FC = () => {

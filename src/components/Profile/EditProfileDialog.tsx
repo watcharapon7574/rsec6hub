@@ -43,6 +43,7 @@ interface ProfileSummary {
   job_position: string;
   academic_rank: string;
   org_structure_role: string;
+  telegram_chat_id?: string;
 }
 
 interface EditProfileDialogProps {
@@ -73,7 +74,11 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     job_position: profile.job_position || '',
     academic_rank: profile.academic_rank || '',
     org_structure_role: profile.org_structure_role || '',
+    telegram_chat_id: profile.telegram_chat_id || '',
   });
+
+  // Check if profile has telegram_chat_id
+  const hasTelegramChatId = Boolean(profile.telegram_chat_id && profile.telegram_chat_id.trim());
 
   // Reset form when profile changes
   useEffect(() => {
@@ -86,6 +91,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
       job_position: profile.job_position || '',
       academic_rank: profile.academic_rank || '',
       org_structure_role: profile.org_structure_role || '',
+      telegram_chat_id: profile.telegram_chat_id || '',
     });
     setError('');
   }, [profile]);
@@ -299,6 +305,26 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
               placeholder="เช่น หัวหน้ากลุ่มสาระ, หัวหน้าระดับชั้น, ฯลฯ"
             />
           </div>
+
+          {/* Row 7: Telegram Chat ID (แสดงเฉพาะเมื่อมีค่าอยู่แล้ว) */}
+          {hasTelegramChatId && (
+            <div className="space-y-2">
+              <Label htmlFor="telegram_chat_id" className="flex items-center gap-2">
+                Telegram Chat ID
+                <span className="text-xs text-blue-600 font-normal">(แก้ไขได้เฉพาะคนที่มี Chat ID)</span>
+              </Label>
+              <Input
+                id="telegram_chat_id"
+                value={formData.telegram_chat_id}
+                onChange={(e) => handleChange('telegram_chat_id', e.target.value)}
+                placeholder="เช่น 123456789"
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Chat ID สำหรับรับการแจ้งเตือนผ่าน Telegram Bot
+              </p>
+            </div>
+          )}
 
           <Alert className="bg-blue-50 border-blue-200">
             <AlertCircle className="h-4 w-4 text-blue-600" />

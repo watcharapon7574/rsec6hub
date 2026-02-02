@@ -27,7 +27,7 @@ const Step1DocumentPreview: React.FC<Step1DocumentPreviewProps> = ({
         </CardHeader>
         <CardContent className="pt-6">
           {pdfUrl ? (
-            <div className="h-[500px] border-2 border-green-200 rounded-lg overflow-hidden shadow-inner">
+            <div className="h-[calc(100vh-350px)] min-h-[600px] border-2 border-green-200 rounded-lg overflow-hidden shadow-inner">
               <PDFViewer
                 fileUrl={pdfUrl}
                 fileName={subject || 'เอกสาร'}
@@ -37,7 +37,7 @@ const Step1DocumentPreview: React.FC<Step1DocumentPreviewProps> = ({
               />
             </div>
           ) : (
-            <div className="h-[500px] border-2 border-green-200 rounded-lg flex items-center justify-center bg-green-50">
+            <div className="h-[calc(100vh-350px)] min-h-[600px] border-2 border-green-200 rounded-lg flex items-center justify-center bg-green-50">
               <div className="text-center text-green-600">
                 <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">ไม่มีไฟล์ PDF</p>

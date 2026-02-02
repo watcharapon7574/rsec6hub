@@ -162,115 +162,126 @@ const AdminProfileManagementPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <Users className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold">จัดการโปรไฟล์ทั้งหมด</h1>
-              <p className="text-muted-foreground">
-                จัดการข้อมูลบุคลากรทั้งหมด (Admin Only)
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Page Header */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex justify-between items-start">
+            <div className="border-l-4 border-blue-500 pl-4 flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">จัดการโปรไฟล์ทั้งหมด</h1>
+              <p className="text-gray-600">จัดการข้อมูลบุคลากรทั้งหมดในระบบ (Admin Only)</p>
+              {profile && (
+                <div className="mt-2 text-sm text-blue-600">
+                  ผู้ใช้: {profile.first_name} {profile.last_name}
+                  {permissions.isAdmin && " | ผู้ดูแลระบบ"}
+                </div>
+              )}
             </div>
-          </div>
-          <Button onClick={() => setIsAddDialogOpen(true)} size="lg">
-            <UserPlus className="h-5 w-5 mr-2" />
-            เพิ่มโปรไฟล์ใหม่
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              จำนวนโปรไฟล์ทั้งหมด
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{profiles.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">รายการทั้งหมดในระบบ</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              ผลการค้นหา
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{filteredProfiles.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {searchTerm ? `ผลการค้นหา "${searchTerm}"` : 'แสดงทั้งหมด'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Admin
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {profiles.filter((p) => p.is_admin).length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">ผู้ดูแลระบบ</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search Bar */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="ค้นหาด้วย รหัสบุคลากร, ชื่อ, นามสกุล, เบอร์โทร, ตำแหน่ง..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-            />
-            {searchTerm && (
+            <div className="ml-4">
               <Button
-                variant="ghost"
-                onClick={() => setSearchTerm('')}
-                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                onClick={() => setIsAddDialogOpen(true)}
+                size="lg"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
               >
-                ล้าง
+                <UserPlus className="h-5 w-5 mr-2" />
+                เพิ่มโปรไฟล์ใหม่
               </Button>
-            )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Info Alert */}
-      <Alert className="mb-6 bg-blue-50 border-blue-200">
-        <AlertCircle className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-800">
-          <strong>หมายเหตุ:</strong> รหัสบุคลากร (employee_id) จะถูกสร้างอัตโนมัติและไม่สามารถแก้ไขได้
-          • เพิ่มโปรไฟล์ใหม่จะสร้าง Supabase Auth account อัตโนมัติ
-          • ไม่สามารถลบโปรไฟล์ได้ (เพื่อรักษาประวัติข้อมูล)
-        </AlertDescription>
-      </Alert>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm font-medium">จำนวนโปรไฟล์ทั้งหมด</p>
+                  <h3 className="text-4xl font-bold mt-2">{profiles.length}</h3>
+                  <p className="text-blue-100 text-xs mt-1">รายการทั้งหมดในระบบ</p>
+                </div>
+                <Users className="h-12 w-12 text-blue-200 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            รายการโปรไฟล์ทั้งหมด
-            <Badge variant="outline" className="ml-auto">
-              {filteredProfiles.length} รายการ
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">ผลการค้นหา</p>
+                  <h3 className="text-4xl font-bold mt-2">{filteredProfiles.length}</h3>
+                  <p className="text-purple-100 text-xs mt-1">
+                    {searchTerm ? `ผลการค้นหา "${searchTerm}"` : 'แสดงทั้งหมด'}
+                  </p>
+                </div>
+                <Search className="h-12 w-12 text-purple-200 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm font-medium">ผู้ดูแลระบบ</p>
+                  <h3 className="text-4xl font-bold mt-2">
+                    {profiles.filter((p) => p.is_admin).length}
+                  </h3>
+                  <p className="text-green-100 text-xs mt-1">Admin</p>
+                </div>
+                <AlertCircle className="h-12 w-12 text-green-200 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search Bar */}
+        <Card className="shadow-lg">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-gray-400" />
+              <Input
+                placeholder="ค้นหาด้วย รหัสบุคลากร, ชื่อ, นามสกุล, เบอร์โทร, ตำแหน่ง..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setSearchTerm('')}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  ล้าง
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Info Alert */}
+        <Alert className="bg-blue-50 border-blue-200 shadow">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <strong>หมายเหตุ:</strong> รหัสบุคลากร (employee_id) จะถูกสร้างอัตโนมัติและไม่สามารถแก้ไขได้
+            • เพิ่มโปรไฟล์ใหม่จะสร้าง Supabase Auth account อัตโนมัติ
+            • ไม่สามารถลบโปรไฟล์ได้ (เพื่อรักษาประวัติข้อมูล)
+          </AlertDescription>
+        </Alert>
+
+        {/* Table */}
+        <Card className="shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-t-lg">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Users className="h-5 w-5" />
+              รายการโปรไฟล์ทั้งหมด
+              <Badge variant="secondary" className="ml-auto bg-white text-blue-600 font-semibold px-3 py-1">
+                {filteredProfiles.length} รายการ
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
           {filteredProfiles.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -297,9 +308,9 @@ const AdminProfileManagementPage: React.FC = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between border-t pt-4">
-                  <div className="text-sm text-muted-foreground">
-                    แสดง {startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)} จาก {filteredProfiles.length} รายการ
+                <div className="mt-6 flex items-center justify-between border-t border-blue-100 pt-4 bg-blue-50/30 rounded-b-lg px-4 py-3">
+                  <div className="text-sm text-gray-600">
+                    แสดง <span className="font-semibold text-blue-600">{startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)}</span> จาก <span className="font-semibold text-blue-600">{filteredProfiles.length}</span> รายการ
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -307,6 +318,7 @@ const AdminProfileManagementPage: React.FC = () => {
                       size="sm"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
+                      className="border-blue-200 hover:bg-blue-50 disabled:opacity-50"
                     >
                       ก่อนหน้า
                     </Button>
@@ -330,7 +342,11 @@ const AdminProfileManagementPage: React.FC = () => {
                             variant={currentPage === pageNumber ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => handlePageChange(pageNumber)}
-                            className="w-10"
+                            className={`w-10 ${
+                              currentPage === pageNumber
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                                : 'border-blue-200 hover:bg-blue-50'
+                            }`}
                           >
                             {pageNumber}
                           </Button>
@@ -343,6 +359,7 @@ const AdminProfileManagementPage: React.FC = () => {
                       size="sm"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
+                      className="border-blue-200 hover:bg-blue-50 disabled:opacity-50"
                     >
                       ถัดไป
                     </Button>
@@ -351,24 +368,26 @@ const AdminProfileManagementPage: React.FC = () => {
               )}
             </>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Dialogs */}
-      <AddProfileDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onSuccess={handleProfileAdded}
-      />
-
-      {selectedProfile && (
-        <EditProfileDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          profile={selectedProfile}
-          onSuccess={handleProfileUpdated}
+        {/* Dialogs */}
+        <AddProfileDialog
+          open={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          onSuccess={handleProfileAdded}
         />
-      )}
+
+        {selectedProfile && (
+          <EditProfileDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            profile={selectedProfile}
+            onSuccess={handleProfileUpdated}
+          />
+        )}
+      </div>
+      <div className="h-10" />
     </div>
   );
 };

@@ -50,57 +50,56 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Service Worker Registration with Force Unregister Old Cache -->
+    <!-- Service Worker Registration -->
     <script>
       if ('serviceWorker' in navigator) {
+        // ใช้ sessionStorage เพื่อป้องกัน infinite reload loop
+        const SW_RELOAD_KEY = 'sw_reload_timestamp';
+        const RELOAD_COOLDOWN = 5000; // 5 วินาที
+
         window.addEventListener('load', async () => {
           try {
-            // 🔥 FORCE UNREGISTER ALL OLD SERVICE WORKERS
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            console.log(`Found ${registrations.length} service workers. Unregistering all...`);
+            // ตรวจสอบว่า reload บ่อยเกินไปหรือไม่
+            const lastReload = sessionStorage.getItem(SW_RELOAD_KEY);
+            const now = Date.now();
 
-            for (const registration of registrations) {
-              await registration.unregister();
-              console.log('Unregistered old service worker:', registration);
+            if (lastReload && (now - parseInt(lastReload)) < RELOAD_COOLDOWN) {
+              console.log('⚠️ Reload too frequent, skipping SW operations');
+              return;
             }
 
-            // 🧹 CLEAR ALL CACHES
-            const cacheNames = await caches.keys();
-            console.log(`Found ${cacheNames.length} caches. Clearing all...`);
-
-            for (const cacheName of cacheNames) {
-              await caches.delete(cacheName);
-              console.log('Deleted cache:', cacheName);
-            }
-
-            console.log('✅ All service workers and caches cleared!');
-
-            // 🆕 REGISTER NEW SERVICE WORKER
+            // 🆕 REGISTER SERVICE WORKER
             const registration = await navigator.serviceWorker.register('/sw.js');
-            console.log('✅ New SW registered:', registration);
+            console.log('✅ SW registered:', registration);
 
             // ตรวจสอบอัปเดททุก 60 วินาที
             setInterval(() => {
               registration.update();
             }, 60000);
 
-            // เมื่อมี SW ใหม่พร้อม ให้อัปเดทอัตโนมัติ
+            // เมื่อมี SW ใหม่พร้อม
             registration.addEventListener('updatefound', () => {
               const newWorker = registration.installing;
+              if (!newWorker) return;
+
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('New Service Worker available. Updating...');
+                  console.log('🆕 New Service Worker available');
+                  // บันทึกเวลาก่อน reload
+                  sessionStorage.setItem(SW_RELOAD_KEY, Date.now().toString());
                   newWorker.postMessage({ type: 'SKIP_WAITING' });
-                  window.location.reload();
                 }
               });
             });
 
-            // เมื่อ SW ถูกเปลี่ยนแล้ว ให้รีโหลดหน้า
+            // เมื่อ SW ถูกเปลี่ยนแล้ว ให้รีโหลดหน้า (เพียงครั้งเดียว)
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
               if (!refreshing) {
                 refreshing = true;
+                console.log('🔄 Controller changed, reloading...');
+                // บันทึกเวลาก่อน reload
+                sessionStorage.setItem(SW_RELOAD_KEY, Date.now().toString());
                 window.location.reload();
               }
             });

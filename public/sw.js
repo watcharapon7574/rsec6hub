@@ -1,5 +1,5 @@
 // เพิ่มเวอร์ชันทุกครั้งที่ deploy ใหม่ เพื่อบังคับให้ล้างแคชเก่า
-const CACHE_NAME = 'rsec6-officehub-v1.4.7';
+const CACHE_NAME = 'fastdoc-v1.4.8';
 const urlsToCache = [
   '/',
   '/fastdocIcon.png',
@@ -33,7 +33,8 @@ self.addEventListener('install', (event) => {
         console.log('Cache failed:', error);
       })
   );
-  self.skipWaiting();
+  // ไม่ skip waiting อัตโนมัติ รอให้ client ส่ง message มาก่อน
+  // self.skipWaiting();
 });
 
 // Activate event - clean up old caches

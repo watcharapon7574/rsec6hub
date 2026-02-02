@@ -39,7 +39,7 @@ export const refreshProfile = async (phone: string): Promise<Profile | null> => 
           first_name: 'ผู้ใช้งานใหม่',
           last_name: '',
           employee_id: `USER_${Date.now()}`, // Temporary employee ID
-          position: 'teacher', // Default position
+          position: 'government_teacher', // Default position
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };

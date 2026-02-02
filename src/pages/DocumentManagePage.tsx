@@ -509,6 +509,9 @@ const DocumentManagePage: React.FC = () => {
         throw error;
       }
 
+      // Refetch เพื่ออัปเดต memo state ให้เป็นค่าล่าสุดจาก database
+      await refetch();
+
       setIsNumberAssigned(true);
       toast({
         title: "ลงเลขหนังสือสำเร็จ",

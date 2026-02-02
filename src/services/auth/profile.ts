@@ -8,18 +8,39 @@ import { updateStoredProfile } from './storage';
 export const refreshProfile = async (phone: string): Promise<Profile | null> => {
   try {
     console.log('🔍 Refreshing profile for phone:', phone);
-    
+
     // Check current session first
     const { data: { session } } = await supabase.auth.getSession();
     console.log('🔐 Current session user_id:', session?.user?.id);
-    
-    const { data: profileData, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('phone', phone)
-      .maybeSingle(); // Use maybeSingle instead of single
 
-    console.log('📊 Profile query result:', { data: !!profileData, error: error?.message });
+    // 🔧 Try to find profile by user_id first (more reliable)
+    let profileData = null;
+    let error = null;
+
+    if (session?.user?.id) {
+      const result = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      profileData = result.data;
+      error = result.error;
+      console.log('📊 Profile query by user_id:', { found: !!profileData, error: error?.message });
+    }
+
+    // If not found by user_id, try phone number
+    if (!profileData && !error) {
+      const result = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      profileData = result.data;
+      error = result.error;
+      console.log('📊 Profile query by phone:', { found: !!profileData, error: error?.message });
+    }
 
     if (error) {
       console.error('❌ Error refreshing profile:', error);
@@ -27,7 +48,7 @@ export const refreshProfile = async (phone: string): Promise<Profile | null> => 
     }
 
     if (!profileData) {
-      console.log('⚠️ No profile found for phone:', phone);
+      console.log('⚠️ No profile found for user_id or phone');
 
       // 🔧 สร้าง profile อัตโนมัติถ้ามี session (ล็อกอินสำเร็จแล้ว)
       if (session?.user?.id) {

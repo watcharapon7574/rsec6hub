@@ -64,8 +64,8 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   const [error, setError] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // Form state
-  const [formData, setFormData] = useState({
+  // Form state with lazy initialization
+  const [formData, setFormData] = useState(() => ({
     prefix: profile.prefix || '',
     first_name: profile.first_name || '',
     last_name: profile.last_name || '',
@@ -75,7 +75,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     academic_rank: profile.academic_rank || '',
     org_structure_role: profile.org_structure_role || '',
     telegram_chat_id: profile.telegram_chat_id || '',
-  });
+  }));
 
   // Check if profile has telegram_chat_id
   const hasTelegramChatId = Boolean(profile.telegram_chat_id && profile.telegram_chat_id.trim());

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +37,6 @@ const AdminProfileManagementPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [profiles, setProfiles] = useState<ProfileSummary[]>([]);
-  const [filteredProfiles, setFilteredProfiles] = useState<ProfileSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProfile, setSelectedProfile] = useState<ProfileSummary | null>(null);
@@ -49,37 +48,31 @@ const AdminProfileManagementPage: React.FC = () => {
   const itemsPerPage = 20;
 
   const permissions = getPermissions(profile);
+  const isAdmin = profile?.is_admin ?? false;
 
-  // Authorization Check
-  useEffect(() => {
-    // Wait for both auth loading and profile to be loaded
-    if (!authLoading && profile && !permissions.isAdmin) {
-      toast({
-        title: 'Access Denied',
-        description: 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้ เฉพาะ Admin เท่านั้น',
-        variant: 'destructive',
-      });
-      navigate('/');
+  // Compute filtered profiles during render (no useEffect needed)
+  const filteredProfiles = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return profiles;
     }
-  }, [authLoading, profile, permissions.isAdmin, navigate, toast]);
 
-  // Load profiles
-  useEffect(() => {
-    loadProfiles();
-  }, []);
-
-  // Filter profiles when search term changes
-  useEffect(() => {
-    filterProfiles();
-    setCurrentPage(1); // Reset to first page when filtering
+    const term = searchTerm.toLowerCase();
+    return profiles.filter(
+      (p) =>
+        p.employee_id.toLowerCase().includes(term) ||
+        p.first_name.toLowerCase().includes(term) ||
+        p.last_name.toLowerCase().includes(term) ||
+        p.phone?.toLowerCase().includes(term) ||
+        p.position.toLowerCase().includes(term)
+    );
   }, [searchTerm, profiles]);
 
-  const loadProfiles = async () => {
+  // Load profiles with useCallback
+  const loadProfiles = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getAllProfilesSummary();
       setProfiles(data);
-      setFilteredProfiles(data);
     } catch (error: any) {
       console.error('Error loading profiles:', error);
       toast({
@@ -90,33 +83,32 @@ const AdminProfileManagementPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const filterProfiles = () => {
-    if (!searchTerm.trim()) {
-      setFilteredProfiles(profiles);
-      return;
+  // Authorization Check
+  useEffect(() => {
+    // Wait for both auth loading and profile to be loaded
+    if (!authLoading && profile && !isAdmin) {
+      toast({
+        title: 'Access Denied',
+        description: 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้ เฉพาะ Admin เท่านั้น',
+        variant: 'destructive',
+      });
+      navigate('/');
     }
+  }, [authLoading, profile, isAdmin, navigate, toast]);
 
-    const term = searchTerm.toLowerCase();
-    const filtered = profiles.filter(
-      (p) =>
-        p.employee_id.toLowerCase().includes(term) ||
-        p.first_name.toLowerCase().includes(term) ||
-        p.last_name.toLowerCase().includes(term) ||
-        p.phone?.toLowerCase().includes(term) ||
-        p.position.toLowerCase().includes(term)
-    );
+  // Load profiles on mount
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
 
-    setFilteredProfiles(filtered);
-  };
-
-  const handleEditProfile = (profile: ProfileSummary) => {
+  const handleEditProfile = useCallback((profile: ProfileSummary) => {
     setSelectedProfile(profile);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleProfileUpdated = () => {
+  const handleProfileUpdated = useCallback(() => {
     loadProfiles();
     setIsEditDialogOpen(false);
     setSelectedProfile(null);
@@ -124,16 +116,16 @@ const AdminProfileManagementPage: React.FC = () => {
       title: 'Success',
       description: 'อัพเดทข้อมูลโปรไฟล์เรียบร้อยแล้ว',
     });
-  };
+  }, [loadProfiles, toast]);
 
-  const handleProfileAdded = () => {
+  const handleProfileAdded = useCallback(() => {
     loadProfiles();
     setIsAddDialogOpen(false);
     toast({
       title: 'Success',
       description: 'เพิ่มโปรไฟล์ใหม่เรียบร้อยแล้ว',
     });
-  };
+  }, [loadProfiles, toast]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredProfiles.length / itemsPerPage);
@@ -141,10 +133,10 @@ const AdminProfileManagementPage: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentProfiles = filteredProfiles.slice(startIndex, endIndex);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
   // Don't render if not admin (but wait for profile to load first)
   if (!authLoading && profile && !permissions.isAdmin) {
@@ -245,13 +237,19 @@ const AdminProfileManagementPage: React.FC = () => {
               <Input
                 placeholder="ค้นหาด้วย รหัสบุคลากร, ชื่อ, นามสกุล, เบอร์โทร, ตำแหน่ง..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); // Reset to first page when searching
+                }}
                 className="flex-1 border-gray-200 focus:border-blue-400 focus:ring-blue-400"
               />
               {searchTerm && (
                 <Button
                   variant="ghost"
-                  onClick={() => setSearchTerm('')}
+                  onClick={() => {
+                    setSearchTerm('');
+                    setCurrentPage(1);
+                  }}
                   className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                 >
                   ล้าง

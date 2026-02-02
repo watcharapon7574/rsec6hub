@@ -28,6 +28,45 @@ export const refreshProfile = async (phone: string): Promise<Profile | null> => 
 
     if (!profileData) {
       console.log('⚠️ No profile found for phone:', phone);
+
+      // 🔧 สร้าง profile อัตโนมัติถ้ามี session (ล็อกอินสำเร็จแล้ว)
+      if (session?.user?.id) {
+        console.log('🔨 Auto-creating profile for user:', session.user.id);
+
+        const newProfile = {
+          user_id: session.user.id,
+          phone: phone,
+          first_name: 'ผู้ใช้งานใหม่',
+          last_name: '',
+          employee_id: `USER_${Date.now()}`, // Temporary employee ID
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        const { data: createdProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert(newProfile)
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('❌ Failed to create profile:', createError);
+          return null;
+        }
+
+        console.log('✅ Profile created successfully:', createdProfile.employee_id);
+
+        const profile: Profile = {
+          ...createdProfile,
+          gender: createdProfile.gender as Profile['gender'],
+          marital_status: createdProfile.marital_status as Profile['marital_status'],
+          position: createdProfile.position as Profile['position']
+        };
+
+        updateStoredProfile(profile);
+        return profile;
+      }
+
       return null;
     }
 

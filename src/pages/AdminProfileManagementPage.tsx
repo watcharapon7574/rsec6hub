@@ -43,6 +43,10 @@ const AdminProfileManagementPage: React.FC = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
   const permissions = getPermissions(profile);
 
   // Authorization Check
@@ -66,6 +70,7 @@ const AdminProfileManagementPage: React.FC = () => {
   // Filter profiles when search term changes
   useEffect(() => {
     filterProfiles();
+    setCurrentPage(1); // Reset to first page when filtering
   }, [searchTerm, profiles]);
 
   const loadProfiles = async () => {
@@ -127,6 +132,17 @@ const AdminProfileManagementPage: React.FC = () => {
       title: 'Success',
       description: 'เพิ่มโปรไฟล์ใหม่เรียบร้อยแล้ว',
     });
+  };
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredProfiles.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProfiles = filteredProfiles.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Don't render if not admin (but wait for profile to load first)
@@ -273,10 +289,67 @@ const AdminProfileManagementPage: React.FC = () => {
               </p>
             </div>
           ) : (
-            <ProfileManagementTable
-              profiles={filteredProfiles}
-              onEdit={handleEditProfile}
-            />
+            <>
+              <ProfileManagementTable
+                profiles={currentProfiles}
+                onEdit={handleEditProfile}
+              />
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between border-t pt-4">
+                  <div className="text-sm text-muted-foreground">
+                    แสดง {startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)} จาก {filteredProfiles.length} รายการ
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      ก่อนหน้า
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNumber;
+                        if (totalPages <= 5) {
+                          pageNumber = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNumber = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNumber = totalPages - 4 + i;
+                        } else {
+                          pageNumber = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <Button
+                            key={pageNumber}
+                            variant={currentPage === pageNumber ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handlePageChange(pageNumber)}
+                            className="w-10"
+                          >
+                            {pageNumber}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      ถัดไป
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

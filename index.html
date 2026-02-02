@@ -43,48 +43,64 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Service Worker Registration with Auto-Update -->
+    <!-- Service Worker Registration with Force Unregister Old Cache -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
+        window.addEventListener('load', async () => {
+          try {
+            // 🔥 FORCE UNREGISTER ALL OLD SERVICE WORKERS
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            console.log(`Found ${registrations.length} service workers. Unregistering all...`);
 
-              // ตรวจสอบอัปเดททุก 60 วินาที
-              setInterval(() => {
-                registration.update();
-              }, 60000);
+            for (const registration of registrations) {
+              await registration.unregister();
+              console.log('Unregistered old service worker:', registration);
+            }
 
-              // เมื่อมี SW ใหม่พร้อม ให้อัปเดทอัตโนมัติ
-              registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // มี SW ใหม่พร้อมแล้ว
-                    console.log('New Service Worker available. Updating...');
+            // 🧹 CLEAR ALL CACHES
+            const cacheNames = await caches.keys();
+            console.log(`Found ${cacheNames.length} caches. Clearing all...`);
 
-                    // แจ้งเตือนผู้ใช้ (สามารถปรับเป็น UI ที่สวยกว่านี้ได้)
-                    if (confirm('มีเวอร์ชันใหม่ของระบบ คุณต้องการรีเฟรชหน้าเพื่ออัปเดทหรือไม่?')) {
-                      newWorker.postMessage({ type: 'SKIP_WAITING' });
-                      window.location.reload();
-                    }
-                  }
-                });
+            for (const cacheName of cacheNames) {
+              await caches.delete(cacheName);
+              console.log('Deleted cache:', cacheName);
+            }
+
+            console.log('✅ All service workers and caches cleared!');
+
+            // 🆕 REGISTER NEW SERVICE WORKER
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('✅ New SW registered:', registration);
+
+            // ตรวจสอบอัปเดททุก 60 วินาที
+            setInterval(() => {
+              registration.update();
+            }, 60000);
+
+            // เมื่อมี SW ใหม่พร้อม ให้อัปเดทอัตโนมัติ
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('New Service Worker available. Updating...');
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  window.location.reload();
+                }
               });
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
             });
 
-          // เมื่อ SW ถูกเปลี่ยนแล้ว ให้รีโหลดหน้า
-          let refreshing = false;
-          navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!refreshing) {
-              refreshing = true;
-              window.location.reload();
-            }
-          });
+            // เมื่อ SW ถูกเปลี่ยนแล้ว ให้รีโหลดหน้า
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+              }
+            });
+
+          } catch (error) {
+            console.error('SW setup failed:', error);
+          }
         });
       }
     </script>

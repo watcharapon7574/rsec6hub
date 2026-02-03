@@ -251,7 +251,10 @@ serve(async (req) => {
 
             if (otpError) {
               console.error('Failed to save OTP:', otpError)
-              throw new Error('Failed to generate OTP')
+              return new Response(
+                JSON.stringify({ error: 'ไม่สามารถสร้างรหัส OTP ได้ กรุณาลองใหม่อีกครั้ง' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+              )
             }
 
             try {
@@ -339,7 +342,10 @@ serve(async (req) => {
 
           if (otpError) {
             console.error('Failed to save OTP:', otpError)
-            throw new Error('Failed to generate OTP')
+            return new Response(
+              JSON.stringify({ error: 'ไม่สามารถสร้างรหัส OTP ได้ กรุณาลองใหม่อีกครั้ง' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            )
           }
 
           const message = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ RSEC6 OfficeHub\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
@@ -646,9 +652,16 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('❌ Unhandled error:', error)
+    const err = error as Error
+    console.error('Error stack:', err.stack)
+    console.error('Error name:', err.name)
+    console.error('Error message:', err.message)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: err.message || 'Internal server error',
+        details: err.toString()
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

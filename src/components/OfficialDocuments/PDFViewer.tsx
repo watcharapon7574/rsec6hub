@@ -389,13 +389,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   }, [positionsHash]);
 
-  // Add refresh timer for signature pins
+  // Add refresh timer for signature pins - reduced to 100ms for smoother tracking
   useEffect(() => {
     if (signaturePositions.length === 0) return;
 
     const refreshInterval = setInterval(() => {
       setRefreshKey(prev => prev + 1);
-    }, 500); // Refresh every 0.5 seconds
+    }, 100); // Refresh every 100ms for smoother pin positioning
 
     return () => {
       clearInterval(refreshInterval);
@@ -657,10 +657,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
               className="absolute inset-0 pointer-events-none z-40"
               style={{ overflow: 'visible' }}
             >
-              {console.log(`📍 About to render ${currentPagePositions.length} pins on page ${currentPageNumber} (total ${signaturePositions.length} positions)`)}
-            
               {currentPagePositions.map((pos, index) => {
-                console.log(`🔍 Processing signature pin ${index} on page ${currentPageNumber}`);
                 const isClerk = pos.signer.role === 'clerk';
                 const roleColor = roleColors[pos.signer.role as keyof typeof roleColors] || 'bg-gray-500';
                 
@@ -681,9 +678,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 }
                 
                 if (!pageElement) {
-                  console.warn(`Could not find page element for page ${currentPageIndex}. Available pages:`, 
-                    viewerRef.current?.querySelectorAll('.rpv-core__page-layer').length);
-                  return null;
+                  return null; // Silently skip if page not found
                 }
 
                 const pageRect = pageElement.getBoundingClientRect();
@@ -727,28 +722,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const scaleX = pageRect.width / standardPageWidth;   // DOM width / PDF width
                 const scaleY = pageRect.height / standardPageHeight; // DOM height / PDF height
 
-                // Debug log for pin sizing using current PDF dimensions (after scaleX/Y declared)
-                console.log(`📌 Pin ${index} PDF-based size calculation - Page ${currentPageNumber}:
-                  - Current PDF page: ${currentPageWidth.toFixed(1)} x ${currentPageHeight.toFixed(1)}px
-                  - PDF size scale: ${pdfSizeScale.toFixed(3)}x (min dimension / 500)
-                  - basePinSizePt: ${basePinSizePt}pt
-                  - calculatedSize: ${calculatedSize.toFixed(1)}px
-                  - basePinSize (final): ${basePinSize.toFixed(1)}px
-                  - fontSize: ${Math.max(8, basePinSize * 0.12).toFixed(1)}px
-                  - nameFont: ${Math.max(10, basePinSize * 0.15).toFixed(1)}px
-                  - signatureHeight: ${Math.max(40, basePinSize * 0.7).toFixed(1)}px`);
+                // Pin sizing calculation (logging disabled for performance)
                 
-                // Convert PDF coordinates back to DOM coordinates
-                const displayX = pos.x * scaleX; // Convert PDF points to DOM pixels
-                
-                // Flip Y-axis back to DOM coordinate system
-                // pos.y is in flipped PDF coordinates, convert back to DOM
-                const pdfY_DOM = standardPageHeight - pos.y; // Flip back from API coordinates
-                const displayY = pdfY_DOM * scaleY; // Convert to DOM pixels
-                
-                // คำนวณตำแหน่ง relative to the viewer container (not viewport)
-                const finalX = displayX + pageRect.left - viewerRect.left;
-                const finalY = displayY + pageRect.top - viewerRect.top;
+                // Calculate position as PERCENTAGE of PDF page (sticks naturally!)
+                const leftPercent = (pos.x / standardPageWidth) * 100;
+                const pdfY_DOM = standardPageHeight - pos.y;
+                const topPercent = (pdfY_DOM / standardPageHeight) * 100;
+
+                // Position relative to PDF page element (not viewer)
+                const finalX = displayX;
+                const finalY = displayY;
 
                 // Check if pin is visible in viewport
                 const viewportHeight = window.innerHeight;
@@ -765,30 +748,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const apiX = Math.round(pos.x); // This is the actual X that API will use
                 const apiY = Math.round(pos.y); // This is the actual Y that API will use
 
-                // Debug logging for position calculation
-                console.log(`🎯 Pin ${index} rendering debug:
-                  - Stored PDF coords: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}) [PDF points, flipped Y]
-                  - Current scale: ${scale}x
-                  - A4 dimensions: ${standardPageWidth} x ${standardPageHeight} points
-                  - Page rect: left=${pageRect.left.toFixed(1)}, top=${pageRect.top.toFixed(1)}, w=${pageRect.width.toFixed(1)}, h=${pageRect.height.toFixed(1)}
-                  - Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}
-                  - Viewer rect: left=${viewerRect.left.toFixed(1)}, top=${viewerRect.top.toFixed(1)}
-                  - PDF Y (DOM): ${pdfY_DOM.toFixed(1)} [before flip]
-                  - Display coords: (${displayX.toFixed(1)}, ${displayY.toFixed(1)}) [DOM pixels]
-                  - Final position: (${finalX.toFixed(1)}, ${finalY.toFixed(1)}) [Relative to viewer]
-                  - Visible: ${isVisible}`);
-
-                // Log for debugging zoom calculation
-                if (index === 0) { // Log only for first pin to reduce noise
-                  console.log(`📍 Pin position calculation (zoom: ${scale}x):
-                    - Stored position: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}) [PDF coordinates, flipped Y]
-                    - A4 standard: ${standardPageWidth} x ${standardPageHeight} points
-                    - Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}
-                    - Display position: (${displayX.toFixed(1)}, ${displayY.toFixed(1)}) [DOM pixels]
-                    - Final position: (${finalX.toFixed(1)}, ${finalY.toFixed(1)}) [Relative to viewer]
-                    - API coordinates: (${apiX}, ${apiY})
-                    - Visible: ${isVisible}`);
-                }
+                // Position calculation (logging disabled for performance)
 
                 // Only render pin if it's visible or close to viewport
                 if (!isVisible) {

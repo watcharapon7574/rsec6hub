@@ -124,19 +124,6 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                     {signer.org_structure_role || signer.position}
                   </p>
                 </div>
-                {signer.role !== 'director' && (
-                  <Badge variant={
-                    signer.role === 'author' ? 'default' :
-                    signer.role === 'assistant_director' ? 'secondary' :
-                    signer.role === 'deputy_director' ? 'secondary' :
-                    'destructive'
-                  }>
-                    {signer.role === 'author' ? 'ผู้เขียน' :
-                     signer.role === 'assistant_director' ? 'ผู้ช่วยผอ.' :
-                     signer.role === 'deputy_director' ? 'รองผอ.' :
-                     'ผอ.'}
-                  </Badge>
-                )}
               </div>
             ))}
           </div>

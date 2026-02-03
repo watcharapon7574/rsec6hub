@@ -440,7 +440,7 @@ const AssignedTasksList = () => {
                         className="text-xs"
                       >
                         <PlayCircle className="h-3.5 w-3.5 mr-1" />
-                        เริ่มดำเนินการ
+                        ทราบ
                       </Button>
                     )}
 
@@ -451,7 +451,7 @@ const AssignedTasksList = () => {
                         className="text-xs bg-green-600 hover:bg-green-700"
                       >
                         <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                        ทำเสร็จแล้ว
+                        รายงาน
                       </Button>
                     )}
                   </div>
@@ -513,12 +513,12 @@ const AssignedTasksList = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {newStatus === 'in_progress' ? 'เริ่มดำเนินการ' : 'ทำงานเสร็จสิ้น'}
+              {newStatus === 'in_progress' ? 'ทราบแล้ว' : 'รายงานผล'}
             </DialogTitle>
             <DialogDescription>
               {newStatus === 'in_progress'
-                ? 'ยืนยันการเริ่มดำเนินการงานนี้'
-                : 'กรุณาระบุรายละเอียดการดำเนินการ'}
+                ? 'ยืนยันการรับทราบงานนี้'
+                : 'กรุณาระบุรายละเอียดการรายงานผล'}
             </DialogDescription>
           </DialogHeader>
 

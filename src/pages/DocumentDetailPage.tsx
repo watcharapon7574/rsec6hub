@@ -302,9 +302,8 @@ const DocumentDetailPage: React.FC = () => {
 
                           {reportFileUrl && (
                             <Button
-                              variant="outline"
                               size="sm"
-                              className="mt-2"
+                              className="mt-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all"
                               onClick={() => window.open(reportFileUrl, '_blank')}
                             >
                               <FileText className="h-4 w-4 mr-2" />

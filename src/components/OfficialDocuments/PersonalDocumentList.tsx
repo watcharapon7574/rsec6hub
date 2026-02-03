@@ -608,7 +608,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                         </Button>
                         {/* Show "ตีกลับ" badge for rejected memos on top-right corner */}
                         {memo.status === 'rejected' && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white z-10">ใหม่</span>
+                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white z-10">ใหม่</span>
                         )}
                       </div>
                     </>

@@ -729,9 +729,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const pdfY_DOM = standardPageHeight - pos.y;
                 const topPercent = (pdfY_DOM / standardPageHeight) * 100;
 
-                // Position relative to PDF page element (not viewer)
-                const finalX = displayX;
-                const finalY = displayY;
+                // Convert to DOM pixels for now (will use percentage later)
+                const displayX = pos.x * scaleX;
+                const displayY = pdfY_DOM * scaleY;
+
+                // Position relative to the viewer container
+                const finalX = displayX + pageRect.left - viewerRect.left;
+                const finalY = displayY + pageRect.top - viewerRect.top;
 
                 // Check if pin is visible in viewport
                 const viewportHeight = window.innerHeight;

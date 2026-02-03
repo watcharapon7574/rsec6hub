@@ -81,7 +81,8 @@ export const useProfiles = () => {
   };
 
   const getDirectorProfiles = (): Profile[] => {
-    return profiles.filter(profile => profile.position === 'director');
+    // ผอ. ต้องเป็น user_id นี้เท่านั้น
+    return profiles.filter(profile => profile.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
   };
 
   const getDeputyDirectorProfiles = (): Profile[] => {

@@ -19,7 +19,8 @@ export const useAvailableSigners = (): AvailableSigners => {
       employee_id: p.employee_id,
       signature_url: p.signature_url
     })) || [],
-    director: profiles?.filter(p => p.position === 'director').map(p => ({
+    // ผอ. ต้องเป็น user_id นี้เท่านั้น
+    director: profiles?.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b').map(p => ({
       id: p.id,
       name: `${p.first_name} ${p.last_name}`,
       position: p.job_position || 'ผู้อำนวยการ',

@@ -246,7 +246,8 @@ const PDFDocumentManagePage: React.FC = () => {
   // Get profiles by position
   const assistantDirectors = profiles.filter(p => p.position === 'assistant_director');
   const deputyDirectors = profiles.filter(p => p.position === 'deputy_director');
-  const directors = profiles.filter(p => p.position === 'director');
+  // ผอ. ต้องเป็น user_id นี้เท่านั้น
+  const directors = profiles.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
 
   // Find author profile - try both created_by and user_id fields
   const authorProfile = docReceive

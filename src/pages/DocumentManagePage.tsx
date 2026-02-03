@@ -822,7 +822,7 @@ const DocumentManagePage: React.FC = () => {
           const lines = [
             { type: "image", file_key: "sig1" },
             { type: "name", value: authorNameWithPrefix },
-            { type: "academic_rank", value: `ตำแหน่ง ${authorProfile.academic_rank || authorProfile.position || ''}` }
+            { type: "academic_rank", value: `ตำแหน่ง ${authorProfile.academic_rank || authorProfile.job_position || authorProfile.position || ''}` }
           ];
           // ดาวน์โหลด PDF
           const pdfRes = await fetch(extractedPdfUrl);

@@ -269,7 +269,7 @@ const AssignedDocumentsList = () => {
                       className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                      เสร็จ
+                      รายงาน
                     </Button>
                   )}
                 </div>
@@ -283,9 +283,9 @@ const AssignedDocumentsList = () => {
       <Dialog open={completionDialogOpen} onOpenChange={setCompletionDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>✅ ยืนยันการทำงานเสร็จสิ้น</DialogTitle>
+            <DialogTitle>✅ รายงานผล</DialogTitle>
             <DialogDescription>
-              กรุณากรอกรายงานผลการดำเนินการหรือบันทึกสรุปงานที่ได้ทำเสร็จแล้ว
+              กรุณากรอกรายงานผลการดำเนินการหรือบันทึกสรุปงาน
             </DialogDescription>
           </DialogHeader>
 

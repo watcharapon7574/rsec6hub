@@ -95,7 +95,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
             {isNumberAssigned && (
               <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
                 <CheckCircle className="h-4 w-4" />
-                เลขหนังสือถูกลงแล้ว: {docNumberPrefix}{documentNumber}
+                เลขหนังสือถูกลงแล้ว: {documentNumber}
               </p>
             )}
           </div>

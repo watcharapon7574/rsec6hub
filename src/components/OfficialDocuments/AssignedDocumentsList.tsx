@@ -258,7 +258,7 @@ const AssignedDocumentsList = () => {
                       className="h-7 text-xs px-2.5 bg-blue-600 hover:bg-blue-700"
                     >
                       <PlayCircle className="h-3.5 w-3.5 mr-1" />
-                      เริ่ม
+                      ทราบ
                     </Button>
                   )}
 

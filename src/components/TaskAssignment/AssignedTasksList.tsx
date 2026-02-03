@@ -427,10 +427,10 @@ const AssignedTasksList = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => handleViewDocument(task.document_id, task.document_type)}
-                      className="text-xs"
+                      className="text-xs w-8 h-8 p-0"
+                      title="ดูเอกสาร"
                     >
-                      <Eye className="h-3.5 w-3.5 mr-1" />
-                      ดู
+                      <Eye className="h-4 w-4" />
                     </Button>
 
                     {task.status === 'pending' && (

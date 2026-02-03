@@ -245,10 +245,10 @@ const AssignedDocumentsList = () => {
                     size="sm"
                     variant="outline"
                     onClick={() => handleViewDocument(task)}
-                    className="h-7 text-xs px-2.5"
+                    className="h-7 w-7 p-0"
+                    title="ดูเอกสาร"
                   >
-                    <Eye className="h-3.5 w-3.5 mr-1" />
-                    ดู
+                    <Eye className="h-4 w-4" />
                   </Button>
 
                   {task.status === 'pending' && (

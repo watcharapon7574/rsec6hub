@@ -409,11 +409,13 @@ const ApproveDocumentPage: React.FC = () => {
               { type: "comment", value: `- ${comment || "เห็นชอบ"}` },
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
+              { type: "job_position", value: profile.job_position || profile.position || "" },
               { type: "org_structure_role", value: profile.org_structure_role || "" }
             ];
             linesWithoutComment = [
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
+              { type: "job_position", value: profile.job_position || profile.position || "" },
               { type: "org_structure_role", value: profile.org_structure_role || "" }
             ];
           } else {

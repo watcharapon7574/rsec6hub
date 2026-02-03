@@ -1,5 +1,5 @@
 // เพิ่มเวอร์ชันทุกครั้งที่ deploy ใหม่ เพื่อบังคับให้ล้างแคชเก่า
-const CACHE_NAME = 'fastdoc-v1.4.10';
+const CACHE_NAME = 'fastdoc-v1.4.11';
 const urlsToCache = [
   '/',
   '/fastdocIcon.png',
@@ -15,7 +15,12 @@ const NETWORK_FIRST_URLS = [
   '.js',        // JavaScript files
   '.css',       // CSS files
   '/index.',    // index.html และ index.*.js
-  'QzfacJHb'    // Fix for the specific JS bundle
+  '.html'       // HTML files
+];
+
+// URLs ที่ต้องโหลดจาก network เสมอ (ไม่ใช้ cache เลย)
+const ALWAYS_NETWORK_URLS = [
+  '/'           // Root index.html - ต้องโหลดใหม่เสมอเพื่อให้ได้ JS bundle ล่าสุด
 ];
 
 // Install event - cache resources
@@ -64,6 +69,28 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // ตรวจสอบว่าเป็น navigation request ไปยัง root (index.html)
+  // ต้องโหลดจาก network เสมอเพื่อให้ได้ JS bundle ล่าสุด
+  const url = new URL(event.request.url);
+  const isRootNavigation = event.request.mode === 'navigate' && url.pathname === '/';
+  
+  if (isRootNavigation) {
+    // Network Only Strategy - ไม่ใช้ cache เลยสำหรับ root
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          console.log('Fetched fresh index.html from network');
+          return response;
+        })
+        .catch(() => {
+          // Offline fallback
+          console.log('Network failed for root, serving offline page');
+          return caches.match('/offline.html') || caches.match('/');
+        })
+    );
     return;
   }
 

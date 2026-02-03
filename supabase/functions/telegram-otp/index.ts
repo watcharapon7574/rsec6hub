@@ -1,3 +1,6 @@
+// @ts-nocheck
+// This file runs in Deno runtime (Supabase Edge Functions)
+// TypeScript errors for Deno imports are expected in IDE but work at runtime
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -129,7 +132,22 @@ serve(async (req) => {
           })
         }
 
-        const { phone, telegram_chat_id } = body
+        const { phone, telegram_chat_id: rawTelegramChatId } = body
+        // Ensure telegram_chat_id is a number (database expects bigint)
+        let telegram_chat_id: number | null = null
+        if (rawTelegramChatId) {
+          const parsed = Number(rawTelegramChatId)
+          if (!isNaN(parsed)) {
+            telegram_chat_id = parsed
+          } else {
+            console.error('❌ Invalid telegram_chat_id format:', rawTelegramChatId)
+            return new Response(
+              JSON.stringify({ error: 'Telegram Chat ID ไม่ถูกต้อง' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            )
+          }
+        }
+        console.log('📱 telegram_chat_id from request:', rawTelegramChatId, '-> parsed:', telegram_chat_id)
 
         // Normalize phone number for database lookup
         // Convert +66925717574 to 0925717574 for database comparison
@@ -194,7 +212,9 @@ serve(async (req) => {
         }
 
         // ใช้ telegram_chat_id จาก profile หรือจากที่ผู้ใช้ส่งมา (สำหรับผู้ใช้ใหม่)
+        // telegram_chat_id is already validated as number above
         const chatId = profile?.telegram_chat_id || telegram_chat_id
+        console.log('🔑 Using chatId:', chatId, 'from profile:', !!profile?.telegram_chat_id)
 
         if (!chatId) {
           return new Response(

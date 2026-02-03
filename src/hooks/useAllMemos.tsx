@@ -325,6 +325,54 @@ export const useAllMemos = () => {
         // Increment revision_count
         const currentRevisionCount = memo.revision_count || 0;
         updateData.revision_count = currentRevisionCount + 1;
+
+        // ลบ PDF และเอกสารแนบทันทีเมื่อถูกตีกลับ
+        console.log('🗑️ Deleting PDF and attachments due to rejection');
+
+        // ลบ PDF draft
+        if (memo.pdf_draft_path) {
+          try {
+            const pdfPath = memo.pdf_draft_path.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
+            const { error: deletePdfError } = await supabase.storage
+              .from('documents')
+              .remove([pdfPath]);
+
+            if (deletePdfError) {
+              console.error('❌ Error deleting PDF:', deletePdfError);
+            } else {
+              console.log('✅ Deleted PDF:', pdfPath);
+            }
+          } catch (err) {
+            console.error('❌ Error processing PDF deletion:', err);
+          }
+        }
+
+        // ลบเอกสารแนบทั้งหมด
+        if (memo.attachments && Array.isArray(memo.attachments) && memo.attachments.length > 0) {
+          try {
+            const attachmentPaths = memo.attachments.map((att: any) =>
+              att.file_path?.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '')
+            ).filter(Boolean);
+
+            if (attachmentPaths.length > 0) {
+              const { error: deleteAttachmentsError } = await supabase.storage
+                .from('documents')
+                .remove(attachmentPaths);
+
+              if (deleteAttachmentsError) {
+                console.error('❌ Error deleting attachments:', deleteAttachmentsError);
+              } else {
+                console.log(`✅ Deleted ${attachmentPaths.length} attachment(s)`);
+              }
+            }
+          } catch (err) {
+            console.error('❌ Error processing attachments deletion:', err);
+          }
+        }
+
+        // ล้างค่า pdf_draft_path และ attachments ใน database
+        updateData.pdf_draft_path = null;
+        updateData.attachments = [];
       }
 
       // Update signature positions with approval info

@@ -802,7 +802,9 @@ const DocumentManagePage: React.FC = () => {
       // 2. เรียก API ลายเซ็นสำหรับธุการ (author)
       let signSuccess = false;
       let signedPdfBlob: Blob | null = null;
-      if (memo && memo.pdf_draft_path && authorProfile && authorProfile.signature_url) {
+      const shouldSign = memo && memo.pdf_draft_path && authorProfile && authorProfile.signature_url;
+
+      if (shouldSign) {
         const extractedPdfUrl = extractPdfUrl(memo.pdf_draft_path);
         if (!extractedPdfUrl) {
           toast({
@@ -947,6 +949,20 @@ const DocumentManagePage: React.FC = () => {
         toast({
           title: "ส่งเอกสารสำเร็จ",
           description: `ลงลายเซ็นเรียบร้อยแล้ว ${authorPositions.length} ตำแหน่ง และส่งให้ผู้อนุมัติถัดไป`,
+        });
+
+        navigate('/documents');
+      } else if (!shouldSign) {
+        // กรณีเอกสารถูกตีกลับ (ไม่มี PDF) - อัปเดตข้อมูลและส่งต่อโดยไม่ต้องเซ็น
+        setShowLoadingModal(false);
+
+        // บันทึก clerk_id
+        const clerkId = profile?.user_id;
+        await updateMemoStatus(memoId, 'pending_sign', documentNumber, undefined, 2, undefined, clerkId);
+
+        toast({
+          title: "ส่งเอกสารสำเร็จ",
+          description: "ส่งเสนอเอกสารให้ผู้อนุมัติถัดไปเรียบร้อยแล้ว",
         });
 
         navigate('/documents');

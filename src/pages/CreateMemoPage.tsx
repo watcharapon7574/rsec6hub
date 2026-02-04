@@ -271,7 +271,8 @@ const CreateMemoPage = () => {
       originalWord: string,
       correctedWord: string,
       context: string,
-      wordIndex: number
+      wordIndex: number,
+      applied?: boolean
     }> = [];
 
     try {
@@ -922,12 +923,8 @@ const CreateMemoPage = () => {
                       <Label htmlFor="proposal" className="text-sm font-medium text-gray-700">
                         ข้อเสนอและพิจารณา
                       </Label>
-                      <div className="text-xs text-gray-500 bg-gray-50 rounded-md p-2 border border-gray-200">
-                        <span className="font-medium">เครื่องหมายพิเศษ:</span>
-                        <ul className="mt-1 space-y-0.5 ml-2">
-                          <li><code className="bg-gray-200 px-1 rounded">!</code> ขึ้นบรรทัดใหม่แบบหัวข้อย่อย (จะมี "- " นำหน้า)</li>
-                          <li><code className="bg-gray-200 px-1 rounded">?</code> ขึ้นบรรทัดใหม่</li>
-                        </ul>
+                      <div className="text-xs text-blue-700 bg-blue-50 rounded-md p-2 border border-blue-200">
+                        <span className="font-semibold">เครื่องหมายพิเศษ:</span> <code className="bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">!</code> ขึ้นบรรทัดใหม่ย่อหน้า (จะมี "- " นำหน้า)
                       </div>
                       <Textarea
                         id="proposal"

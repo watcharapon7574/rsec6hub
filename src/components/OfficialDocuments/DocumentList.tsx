@@ -78,6 +78,14 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const [phoneVerification, setPhoneVerification] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // State สำหรับ modal ดูรายชื่อผู้รับมอบหมาย
+  const [showAssigneesModal, setShowAssigneesModal] = useState(false);
+  const [selectedMemoForAssignees, setSelectedMemoForAssignees] = useState<any>(null);
+  const [assigneesList, setAssigneesList] = useState<any[]>([]);
+  const [assigneesPage, setAssigneesPage] = useState(1);
+  const [isLoadingAssignees, setIsLoadingAssignees] = useState(false);
+  const assigneesPerPage = 5;
+
   // อัพเดท localMemos เมื่อ realMemos เปลี่ยน
   useEffect(() => {
     setLocalMemos(realMemos);
@@ -235,6 +243,51 @@ const DocumentList: React.FC<DocumentListProps> = ({
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // ฟังก์ชันสำหรับดูรายชื่อผู้รับมอบหมาย
+  const handleViewAssignees = async (memo: any) => {
+    setSelectedMemoForAssignees(memo);
+    setAssigneesPage(1);
+    setIsLoadingAssignees(true);
+    setShowAssigneesModal(true);
+
+    try {
+      const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+
+      const { data, error } = await supabase
+        .from('task_assignments')
+        .select(`
+          id,
+          assignee_id,
+          assignee_name,
+          note,
+          status,
+          completion_note,
+          assigned_at,
+          completed_at
+        `)
+        .eq('memo_id', memo.id)
+        .eq('document_type', documentType)
+        .is('deleted_at', null)
+        .order('assigned_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching assignees:', error);
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่สามารถดึงรายชื่อผู้รับมอบหมายได้",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAssigneesList(data || []);
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setIsLoadingAssignees(false);
     }
   };
 
@@ -878,22 +931,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                disabled
-                                className="h-7 px-2 flex items-center gap-1 bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed"
+                                onClick={() => handleViewAssignees(memo)}
+                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
                               >
                                 <ClipboardList className="h-4 w-4" />
-                                <span className="text-xs font-medium">มอบหมายแล้ว</span>
+                                <span className="text-xs font-medium">ดูรายชื่อ</span>
                               </Button>
                               {/* Show "ทราบแล้ว" badge when task is in progress */}
-                              {(() => {
-                                console.log('🔍 DEBUG has_in_progress_task:', {
-                                  memoId: memo.id,
-                                  subject: memo.subject,
-                                  has_in_progress_task: memo.has_in_progress_task,
-                                  is_assigned: memo.is_assigned
-                                });
-                                return null;
-                              })()}
                               {memo.has_in_progress_task && (
                                 <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10">
                                   ทราบแล้ว
@@ -1161,6 +1205,126 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   ยืนยันการลบ
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal ดูรายชื่อผู้รับมอบหมาย */}
+      <Dialog open={showAssigneesModal} onOpenChange={setShowAssigneesModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-blue-600" />
+              รายชื่อผู้ได้รับมอบหมาย
+            </DialogTitle>
+            {selectedMemoForAssignees && (
+              <DialogDescription className="text-gray-600">
+                เอกสาร: <span className="font-semibold">{selectedMemoForAssignees.subject}</span>
+              </DialogDescription>
+            )}
+          </DialogHeader>
+
+          <div className="py-4">
+            {isLoadingAssignees ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-500">กำลังโหลดข้อมูล...</p>
+              </div>
+            ) : assigneesList.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <User className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">ไม่พบรายชื่อผู้รับมอบหมาย</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {assigneesList
+                  .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
+                  .map((assignee) => (
+                    <div
+                      key={assignee.id}
+                      className="p-3 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-500" />
+                          <span className="font-medium text-gray-900">{assignee.assignee_name}</span>
+                        </div>
+                        <Badge
+                          className={`text-xs ${
+                            assignee.status === 'completed'
+                              ? 'bg-green-100 text-green-700 border-green-300'
+                              : assignee.status === 'in_progress'
+                              ? 'bg-blue-100 text-blue-700 border-blue-300'
+                              : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                          }`}
+                        >
+                          {assignee.status === 'completed'
+                            ? 'เสร็จสิ้น'
+                            : assignee.status === 'in_progress'
+                            ? 'ทราบแล้ว'
+                            : 'รอดำเนินการ'}
+                        </Badge>
+                      </div>
+                      {assignee.note && (
+                        <p className="text-sm text-gray-600 mt-2 pl-6">
+                          <span className="text-blue-600">📝</span> {assignee.note}
+                        </p>
+                      )}
+                      {assignee.completion_note && (
+                        <p className="text-sm text-green-700 mt-1 pl-6 bg-green-50 p-2 rounded">
+                          <span className="font-medium">รายงานผล:</span> {assignee.completion_note}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-2 pl-6">
+                        มอบหมายเมื่อ: {new Date(assignee.assigned_at).toLocaleDateString('th-TH', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  ))}
+
+                {/* Pagination */}
+                {assigneesList.length > assigneesPerPage && (
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAssigneesPage((p) => Math.max(1, p - 1))}
+                      disabled={assigneesPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      ก่อนหน้า
+                    </Button>
+                    <span className="text-sm text-gray-500">
+                      หน้า {assigneesPage} / {Math.ceil(assigneesList.length / assigneesPerPage)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setAssigneesPage((p) =>
+                          Math.min(Math.ceil(assigneesList.length / assigneesPerPage), p + 1)
+                        )
+                      }
+                      disabled={assigneesPage >= Math.ceil(assigneesList.length / assigneesPerPage)}
+                    >
+                      ถัดไป
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssigneesModal(false)}>
+              ปิด
             </Button>
           </DialogFooter>
         </DialogContent>

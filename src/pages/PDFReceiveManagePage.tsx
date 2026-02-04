@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { railwayPDFQueue } from '@/utils/requestQueue';
 
-// Import step components
-import Step2SelectSigners from '@/components/DocumentManage/Step2SelectSigners';
+// Import step components for doc_receive (3 steps)
+import Step1DocReceive, { DepartmentOption, trimDepartmentPrefix } from '@/components/DocumentManage/Step1DocReceive';
 import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
 import Step4Review from '@/components/DocumentManage/Step4Review';
 
@@ -24,7 +24,7 @@ const PDFReceiveManagePage: React.FC = () => {
   const { profile } = useEmployeeAuth();
 
   // State
-  const [selectedAssistant, setSelectedAssistant] = useState<string>('');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [selectedDeputy, setSelectedDeputy] = useState<string>('');
   const [signaturePositions, setSignaturePositions] = useState<any[]>([]);
   const [comment, setComment] = useState('');
@@ -75,12 +75,33 @@ const PDFReceiveManagePage: React.FC = () => {
   // Get clerk profile (current user)
   const clerkProfile = profile;
 
-  // Build signers list (4 people: clerk + 3 executives)
+  // สร้าง departmentOptions จาก assistantDirectors - แสดงเฉพาะชื่อฝ่าย ไม่แสดงชื่อคน
+  const departmentOptions: DepartmentOption[] = React.useMemo(() => {
+    return assistantDirectors
+      .filter(p => p.org_structure_role) // เฉพาะคนที่มี org_structure_role
+      .map(p => {
+        const trimmedName = trimDepartmentPrefix(p.org_structure_role);
+        return {
+          value: trimmedName, // ชื่อตัดแล้ว เช่น "ฝ่ายบริหารงานบุคคล"
+          label: trimmedName, // แสดงเหมือน value
+          fullName: p.org_structure_role, // ชื่อเต็ม เช่น "หัวหน้าฝ่ายบริหารงานบุคคล"
+          userId: p.user_id
+        };
+      });
+  }, [assistantDirectors]);
+
+  // Handle department change - เก็บฝ่ายที่เลือกเพื่อคัดกรองประเภทหนังสือรับ (ไม่เพิ่มในผู้ลงนาม)
+  const handleDepartmentChange = (departmentValue: string) => {
+    setSelectedDepartment(departmentValue);
+  };
+
+  // Build signers list - สำหรับหนังสือรับ ไม่มีหัวหน้าฝ่ายในบทบาทการลงนาม
+  // ลำดับ: ธุรการ → รองผอ. (optional) → ผอ.
   const signers = React.useMemo(() => {
     const list = [];
     let currentOrder = 1;
 
-    // 1. ธุรการ (clerk - current user)
+    // 1. ธุรการ (clerk - current user) - เสมอ
     if (clerkProfile) {
       const fullName = `${clerkProfile.prefix || ''}${clerkProfile.first_name} ${clerkProfile.last_name}`.trim();
       list.push({
@@ -96,26 +117,7 @@ const PDFReceiveManagePage: React.FC = () => {
       });
     }
 
-    // 2. ผู้ช่วยผู้อำนวยการที่เลือก (ถ้ามี)
-    if (selectedAssistant && selectedAssistant !== 'skip') {
-      const assistant = assistantDirectors.find(p => p.user_id === selectedAssistant);
-      if (assistant) {
-        const fullName = `${assistant.prefix || ''}${assistant.first_name} ${assistant.last_name}`.trim();
-        list.push({
-          order: currentOrder++,
-          user_id: assistant.user_id,
-          name: fullName,
-          position: assistant.current_position || assistant.position,
-          role: 'assistant_director',
-          academic_rank: assistant.academic_rank,
-          org_structure_role: assistant.org_structure_role,
-          prefix: assistant.prefix,
-          signature_url: assistant.signature_url
-        });
-      }
-    }
-
-    // 3. รองผู้อำนวยการที่เลือก (ถ้ามี)
+    // 2. รองผู้อำนวยการที่เลือก (ถ้ามี)
     if (selectedDeputy && selectedDeputy !== 'skip') {
       const deputy = deputyDirectors.find(p => p.user_id === selectedDeputy);
       if (deputy) {
@@ -134,14 +136,12 @@ const PDFReceiveManagePage: React.FC = () => {
       }
     }
 
-    // 4. ผู้อำนวยการ (เสมอ) - user_id: 28ef1822-628a-4dfd-b7ea-2defa97d755b
+    // 3. ผู้อำนวยการ (เสมอ) - user_id: 28ef1822-628a-4dfd-b7ea-2defa97d755b
     if (directors.length > 0) {
-      // หาผู้อำนวยการจาก user_id
       let director = directors.find(d =>
         d.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b'
       );
 
-      // ถ้าไม่เจอให้ใช้คนแรก
       if (!director) {
         director = directors[0];
       }
@@ -161,7 +161,7 @@ const PDFReceiveManagePage: React.FC = () => {
     }
 
     return list;
-  }, [clerkProfile, selectedAssistant, selectedDeputy, assistantDirectors, deputyDirectors, directors]);
+  }, [clerkProfile, selectedDeputy, deputyDirectors, directors]);
 
   const isStepComplete = (step: number): boolean => {
     switch (step) {
@@ -490,16 +490,25 @@ const PDFReceiveManagePage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="space-y-6">
           {currentStep === 1 && (
-            <Step2SelectSigners
-              selectedAssistant={selectedAssistant}
+            <Step1DocReceive
+              memo={docReceive}
+              departmentOptions={departmentOptions}
+              selectedDepartment={selectedDepartment}
+              onDepartmentChange={handleDepartmentChange}
               selectedDeputy={selectedDeputy}
-              assistantDirectors={assistantDirectors}
               deputyDirectors={deputyDirectors}
-              signers={signers}
-              onSelectedAssistantChange={setSelectedAssistant}
               onSelectedDeputyChange={setSelectedDeputy}
-              onPrevious={() => navigate('/documents')}
+              signers={signers}
               onNext={handleNext}
+              onReject={async (reason: string) => {
+                // TODO: Implement reject functionality if needed
+                toast({
+                  title: "ไม่สามารถตีกลับได้",
+                  description: "ฟังก์ชันนี้ยังไม่พร้อมใช้งาน",
+                  variant: "destructive",
+                });
+              }}
+              isRejecting={false}
               isStepComplete={isStepComplete(1)}
             />
           )}

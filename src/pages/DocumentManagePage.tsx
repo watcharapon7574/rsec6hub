@@ -179,18 +179,27 @@ const DocumentManagePage: React.FC = () => {
         setIsNumberAssigned(statusAssigned);
         if ((data as any).doc_number) {
           const docNumber = (data as any).doc_number;
-          
+
           // ตรวจสอบว่า doc_number เป็น full format หรือ suffix only
           if (docNumber.startsWith('ศธ ๐๔๐๐๗.๖๐๐/') || docNumber.includes('ศธ')) {
-            // กรณีที่เป็น full format (เก่า)
+            // กรณีที่เป็น full format - extract suffix เท่านั้น
             const fullDocNumber = docNumber;
             setDocumentNumber(fullDocNumber);
+            // ลอง extract suffix ด้วยหลายรูปแบบ regex
             const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
             if (match) {
               setDocNumberSuffix(match[1]);
             } else {
-              // ถ้า regex ไม่ match ให้ใช้แค่ docNumber โดยตรง แทนที่จะใช้ fullDocNumber
-              setDocNumberSuffix(docNumber);
+              // ถ้า regex ไม่ match ลองตัด prefix ออกโดยตรง
+              const prefixPatterns = ['ศธ ๐๔๐๐๗.๖๐๐/', 'ศธ๐๔๐๐๗.๖๐๐/', 'ศธ ๐๔๐๐๗.๖๐๐ /'];
+              let suffix = docNumber;
+              for (const prefix of prefixPatterns) {
+                if (docNumber.includes(prefix)) {
+                  suffix = docNumber.split(prefix).pop() || docNumber;
+                  break;
+                }
+              }
+              setDocNumberSuffix(suffix);
             }
           } else {
             // กรณีที่เป็น suffix only (ใหม่)
@@ -229,18 +238,27 @@ const DocumentManagePage: React.FC = () => {
         setIsNumberAssigned(true);
         if (memo.doc_number) {
           const docNumber = memo.doc_number;
-          
+
           // ตรวจสอบว่า doc_number เป็น full format หรือ suffix only
           if (docNumber.startsWith('ศธ ๐๔๐๐๗.๖๐๐/') || docNumber.includes('ศธ')) {
-            // กรณีที่เป็น full format (เก่า)
+            // กรณีที่เป็น full format - extract suffix เท่านั้น
             const fullDocNumber = docNumber;
             setDocumentNumber(fullDocNumber);
+            // ลอง extract suffix ด้วยหลายรูปแบบ regex
             const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
             if (match) {
               setDocNumberSuffix(match[1]);
             } else {
-              // ถ้า regex ไม่ match ให้ใช้แค่ docNumber โดยตรง แทนที่จะใช้ fullDocNumber
-              setDocNumberSuffix(docNumber);
+              // ถ้า regex ไม่ match ลองตัด prefix ออกโดยตรง
+              const prefixPatterns = ['ศธ ๐๔๐๐๗.๖๐๐/', 'ศธ๐๔๐๐๗.๖๐๐/', 'ศธ ๐๔๐๐๗.๖๐๐ /'];
+              let suffix = docNumber;
+              for (const prefix of prefixPatterns) {
+                if (docNumber.includes(prefix)) {
+                  suffix = docNumber.split(prefix).pop() || docNumber;
+                  break;
+                }
+              }
+              setDocNumberSuffix(suffix);
             }
           } else {
             // กรณีที่เป็น suffix only (ใหม่)

@@ -200,9 +200,41 @@ export async function createProfileWithAuth(data: CreateProfileData): Promise<Pr
 }
 
 /**
+ * ลบ phone ออกจาก auth.users เก่าที่ใช้เบอร์นี้อยู่
+ * ใช้สำหรับกรณีที่ admin ย้ายคนจากที่หนึ่งไปอีกที่หนึ่ง
+ *
+ * @param phone เบอร์โทรที่ต้องการ clear
+ */
+export async function clearPhoneFromAuthUsers(phone: string): Promise<void> {
+  if (!phone || phone.trim() === '') return;
+
+  try {
+    const { data, error } = await supabase.rpc('clear_phone_from_auth_users', {
+      phone_to_clear: phone,
+    });
+
+    if (error) {
+      console.warn('Warning: Could not clear phone from auth.users:', error.message);
+      // Don't throw - this is not critical, profile update should still succeed
+      return;
+    }
+
+    if (data?.cleared) {
+      console.log(`✅ Phone ${phone} cleared from auth.users (${data.affected_email})`);
+    } else {
+      console.log(`ℹ️ No auth user found with phone ${phone}`);
+    }
+  } catch (err) {
+    console.warn('Warning: Error in clearPhoneFromAuthUsers:', err);
+    // Don't throw - this is not critical
+  }
+}
+
+/**
  * อัพเดทข้อมูลโปรไฟล์
  *
  * Note: employee_id ไม่สามารถแก้ไขได้
+ * Note: ถ้า phone เปลี่ยน จะ clear phone เก่าออกจาก auth.users โดยอัตโนมัติ
  *
  * @param profileId ID ของโปรไฟล์
  * @param data ข้อมูลที่ต้องการอัพเดท
@@ -211,6 +243,23 @@ export async function updateProfile(
   profileId: string,
   data: Partial<ProfileFormData>
 ): Promise<Profile> {
+  // Get current profile to check if phone changed
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('phone')
+    .eq('id', profileId)
+    .single();
+
+  const oldPhone = currentProfile?.phone;
+  const newPhone = data.phone;
+
+  // If phone is changing, clear the new phone from any existing auth.users
+  // This allows the phone to be used by a different user
+  if (newPhone && newPhone !== oldPhone) {
+    console.log(`📱 Phone changing from "${oldPhone}" to "${newPhone}" - clearing from auth.users`);
+    await clearPhoneFromAuthUsers(newPhone);
+  }
+
   // Build update object, only include telegram_chat_id if provided
   const updateData: any = {
     prefix: data.prefix,

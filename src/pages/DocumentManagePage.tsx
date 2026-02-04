@@ -998,8 +998,9 @@ const DocumentManagePage: React.FC = () => {
           // บันทึก clerk_id (user_id ของธุรการที่จัดการเอกสาร)
           const clerkId = profile?.user_id;
           console.log('📝 Recording clerk_id:', clerkId, 'for memo:', memoId);
-          
-          await updateMemoStatus(memoId, 'pending_sign', documentNumber, undefined, 2, newPublicUrl, clerkId);
+
+          // ส่งแค่ docNumberSuffix (เช่น 4606/69) ไม่ใช่ full documentNumber เพราะ template มี prefix อยู่แล้ว
+          await updateMemoStatus(memoId, 'pending_sign', docNumberSuffix, undefined, 2, newPublicUrl, clerkId);
 
           // --- ลบไฟล์เก่า ---
           const { error: removeError } = await supabase.storage
@@ -1027,7 +1028,8 @@ const DocumentManagePage: React.FC = () => {
 
         // บันทึก clerk_id
         const clerkId = profile?.user_id;
-        await updateMemoStatus(memoId, 'pending_sign', documentNumber, undefined, 2, undefined, clerkId);
+        // ส่งแค่ docNumberSuffix (เช่น 4606/69) ไม่ใช่ full documentNumber เพราะ template มี prefix อยู่แล้ว
+        await updateMemoStatus(memoId, 'pending_sign', docNumberSuffix, undefined, 2, undefined, clerkId);
 
         toast({
           title: "ส่งเอกสารสำเร็จ",

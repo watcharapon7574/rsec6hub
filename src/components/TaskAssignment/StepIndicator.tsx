@@ -52,7 +52,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
               {index < totalSteps - 1 && (
                 <div
                   className={`
-                    flex-1 h-1 mx-2
+                    flex-1 h-1 mx-2 mb-7
                     ${stepNumber < currentStep ? 'bg-pink-500' : 'bg-gray-200'}
                   `}
                 />

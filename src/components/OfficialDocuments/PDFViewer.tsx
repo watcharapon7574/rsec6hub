@@ -389,18 +389,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   }, [positionsHash]);
 
-  // Add refresh timer for signature pins - reduced to 100ms for smoother tracking
-  useEffect(() => {
-    if (signaturePositions.length === 0) return;
-
-    const refreshInterval = setInterval(() => {
-      setRefreshKey(prev => prev + 1);
-    }, 100); // Refresh every 100ms for smoother pin positioning
-
-    return () => {
-      clearInterval(refreshInterval);
-    };
-  }, [signaturePositions.length]);
+  // Removed auto-refresh interval - only refresh on actual changes (page, zoom, positions)
+  // This prevents unnecessary re-renders that make X button hard to click
 
 
   // Force refresh when page changes
@@ -781,7 +771,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
                 return (
                   <div
-                    key={`signature-pin-${index}-page-${currentPageNumber}-${refreshKey}`}
+                    key={`signature-pin-${index}-page-${currentPageNumber}-${pos.signer.order}`}
                     className={`absolute rounded-xl border border-white/50 shadow-2xl flex flex-col items-center justify-center backdrop-blur-sm`}
                     style={{
                       position: 'absolute',

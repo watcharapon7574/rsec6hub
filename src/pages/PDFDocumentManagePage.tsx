@@ -1,19 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  ArrowLeft, 
-  CheckCircle,
-  AlertCircle
-} from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAllMemos } from '@/hooks/useAllMemos';
-
-// Get updateMemoStatus from useAllMemos hook - will be called inside component
-import { submitPDFSignature } from '@/services/pdfSignatureService';
-import { mergeMemoWithAttachments } from '@/services/memoManageAPIcall';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -22,9 +14,8 @@ import { extractPdfUrl } from '@/utils/fileUpload';
 import { SignerProgress } from '@/types/memo';
 import { railwayPDFQueue } from '@/utils/requestQueue';
 
-// Import step components
-import Step1DocumentNumber from '@/components/DocumentManage/Step1DocumentNumber';
-import Step2SelectSigners from '@/components/DocumentManage/Step2SelectSigners';
+// Import step components for doc_receive (3 steps)
+import Step1DocReceive, { DepartmentOption, trimDepartmentPrefix } from '@/components/DocumentManage/Step1DocReceive';
 import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
 import Step4Review from '@/components/DocumentManage/Step4Review';
 
@@ -35,10 +26,12 @@ const PDFDocumentManagePage: React.FC = () => {
   const { toast } = useToast();
   const { profiles } = useProfiles();
   const { updateMemoStatus } = useAllMemos();
+
   // State
   const [documentNumber, setDocumentNumber] = useState('');
   const [selectedAssistant, setSelectedAssistant] = useState<string>('');
   const [selectedDeputy, setSelectedDeputy] = useState<string>('');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [signaturePositions, setSignaturePositions] = useState<any[]>([]);
   const [comment, setComment] = useState('');
   const [selectedSignerIndex, setSelectedSignerIndex] = useState<number>(0);
@@ -48,17 +41,13 @@ const PDFDocumentManagePage: React.FC = () => {
     title: "กำลังดำเนินการ",
     description: "กรุณารอสักครู่..."
   });
-  const [isAssigningNumber, setIsAssigningNumber] = useState(false);
-  const [isNumberAssigned, setIsNumberAssigned] = useState(false);
-  const [suggestedDocNumber, setSuggestedDocNumber] = useState("1");
-  const [docNumberSuffix, setDocNumberSuffix] = useState('');
 
   // Get user profile for API calls
   const { profile } = useEmployeeAuth();
 
   // Doc receive data
   const [docReceive, setDocReceive] = useState<any>(null);
-  
+
   // Check if we should show loading modal from navigation
   const showInitialLoading = location.state?.showLoadingModal;
   const [showLoadingModal, setShowLoadingModal] = useState(showInitialLoading || false);
@@ -66,17 +55,22 @@ const PDFDocumentManagePage: React.FC = () => {
   // Fetch doc_receive data
   const fetchDocReceive = React.useCallback(async () => {
     if (!memoId) return;
-    
+
     try {
       const { data, error } = await (supabase as any)
         .from('doc_receive')
         .select('*')
         .eq('id', memoId)
         .single();
-      
+
       if (error) throw error;
       setDocReceive(data);
-      
+
+      // Set document number from data
+      if (data?.doc_number) {
+        setDocumentNumber(data.doc_number);
+      }
+
       // Hide loading modal when data is loaded
       if (showLoadingModal) {
         setShowLoadingModal(false);
@@ -89,168 +83,49 @@ const PDFDocumentManagePage: React.FC = () => {
         variant: "destructive",
       });
     }
-  }, [memoId, toast]);
+  }, [memoId, toast, showLoadingModal]);
 
-  // Get latest document number and generate suggestion (เฉพาะ doc_receive เท่านั้น)
-  const getLatestDocNumber = React.useCallback(async () => {
-    try {
-      // Get latest doc numbers from doc_receive table only
-      const { data: docReceiveResult, error } = await (supabase as any)
-        .from('doc_receive')
-        .select('doc_number, doc_number_status')
-        .not('doc_number_status', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) {
-        console.error('Error fetching latest doc numbers:', error);
-        return;
-      }
-
-      if (docReceiveResult && docReceiveResult.length > 0) {
-        let latestDoc = null;
-        let latestTimestamp = null;
-
-        for (const docData of docReceiveResult) {
-          if (docData.doc_number && docData.doc_number_status) {
-            let timestamp = null;
-            
-            if (typeof docData.doc_number_status === 'object' && docData.doc_number_status.assigned_at) {
-              timestamp = docData.doc_number_status.assigned_at;
-            }
-            
-            if (timestamp && (!latestTimestamp || timestamp > latestTimestamp)) {
-              latestTimestamp = timestamp;
-              latestDoc = docData.doc_number;
-            }
-          }
-        }
-
-        if (latestDoc) {
-          // Parse doc_receive format: ปี/เลข (e.g., ๒๕๖๘/1, ๒๕๖๘/2)
-          const match = latestDoc.match(/(.+)\/(\d+)$/);
-          if (match) {
-            const lastNumber = parseInt(match[2]);
-            const nextNumber = lastNumber + 1;
-            setSuggestedDocNumber(nextNumber.toString()); // แสดงเฉพาะตัวเลข
-          }
-        } else {
-          // If no previous document, start with 1
-          setSuggestedDocNumber('1'); // แสดงเฉพาะตัวเลข
-        }
-      }
-    } catch (error) {
-      console.error('Error processing latest doc number:', error);
-    }
-  }, []);
-
-  // Get suggestion when component mounts
+  // Fetch data when component mounts
   React.useEffect(() => {
-    getLatestDocNumber();
     fetchDocReceive();
-  }, [getLatestDocNumber, fetchDocReceive]);
-
-  // Check document number status from database
-  const checkDocumentNumberStatus = React.useCallback(async () => {
-    if (!memoId) return;
-    
-    try {
-      const { data, error } = await (supabase as any)
-        .from('doc_receive')
-        .select('doc_number, doc_number_status')
-        .eq('id', memoId)
-        .single();
-
-      if (error) {
-        console.error('Error checking document number status:', error);
-        return;
-      }
-
-      if (data) {
-        let statusAssigned = false;
-        
-        if ((data as any).doc_number_status) {
-          const statusData = (data as any).doc_number_status;
-          if (typeof statusData === 'object' && statusData.status) {
-            statusAssigned = statusData.status === 'ลงเลขหนังสือแล้ว';
-          } else if (typeof statusData === 'string') {
-            statusAssigned = statusData === 'ลงเลขหนังสือแล้ว';
-          }
-        }
-        
-        setIsNumberAssigned(statusAssigned);
-        if ((data as any).doc_number) {
-          const docNumber = (data as any).doc_number;
-          
-          if (docNumber.startsWith('ศธ ๐๔๐๐๗.๖๐๐/') || docNumber.includes('ศธ')) {
-            const fullDocNumber = docNumber;
-            setDocumentNumber(fullDocNumber);
-            const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
-            if (match) {
-              setDocNumberSuffix(match[1]);
-            } else {
-              setDocNumberSuffix(docNumber);
-            }
-          } else {
-            const suffix = docNumber;
-            const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${suffix}`;
-            setDocumentNumber(fullDocNumber);
-            setDocNumberSuffix(suffix);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching document status:', error);
-    }
-  }, [memoId]);
-
-  // Check status when component mounts and when memoId changes
-  React.useEffect(() => {
-    checkDocumentNumberStatus();
-  }, [checkDocumentNumberStatus]);
-
-  // Also check from memo data as backup
-  React.useEffect(() => {
-    if (docReceive?.doc_number_status) {
-      let isAssigned = false;
-      const statusData = docReceive?.doc_number_status;
-      
-      if (typeof statusData === 'object' && (statusData as any).status) {
-        isAssigned = (statusData as any).status === 'ลงเลขหนังสือแล้ว';
-      } else if (typeof statusData === 'string') {
-        isAssigned = statusData === 'ลงเลขหนังสือแล้ว';
-      }
-      
-      if (isAssigned) {
-        setIsNumberAssigned(true);
-        if (docReceive.doc_number) {
-          const docNumber = docReceive.doc_number;
-          
-          if (docNumber.startsWith('ศธ ๐๔๐๐๗.๖๐๐/') || docNumber.includes('ศธ')) {
-            const fullDocNumber = docNumber;
-            setDocumentNumber(fullDocNumber);
-            const match = fullDocNumber.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
-            if (match) {
-              setDocNumberSuffix(match[1]);
-            } else {
-              setDocNumberSuffix(docNumber);
-            }
-          } else {
-            const suffix = docNumber;
-            const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${suffix}`;
-            setDocumentNumber(fullDocNumber);
-            setDocNumberSuffix(suffix);
-          }
-        }
-      }
-    }
-  }, [docReceive]);
+  }, [fetchDocReceive]);
 
   // Get profiles by position
   const assistantDirectors = profiles.filter(p => p.position === 'assistant_director');
   const deputyDirectors = profiles.filter(p => p.position === 'deputy_director');
   // ผอ. ต้องเป็น user_id นี้เท่านั้น
   const directors = profiles.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
+
+  // สร้าง departmentOptions จาก assistantDirectors
+  const departmentOptions: DepartmentOption[] = React.useMemo(() => {
+    return assistantDirectors
+      .filter(p => p.org_structure_role) // เฉพาะคนที่มี org_structure_role
+      .map(p => {
+        const trimmedName = trimDepartmentPrefix(p.org_structure_role);
+        return {
+          value: trimmedName, // ชื่อตัดแล้ว เช่น "ฝ่ายบริหารงานบุคคล"
+          label: trimmedName, // แสดงเหมือน value
+          fullName: p.org_structure_role, // ชื่อเต็ม เช่น "หัวหน้าฝ่ายบริหารงานบุคคล"
+          userId: p.user_id
+        };
+      });
+  }, [assistantDirectors]);
+
+  // Handle department change - auto-select the matching assistant director
+  const handleDepartmentChange = (departmentValue: string) => {
+    setSelectedDepartment(departmentValue);
+
+    if (departmentValue === 'skip' || !departmentValue) {
+      setSelectedAssistant('skip');
+      return;
+    }
+
+    // หา assistant director ที่ตรงกับฝ่ายที่เลือก
+    const matchingDept = departmentOptions.find(d => d.value === departmentValue);
+    if (matchingDept) {
+      setSelectedAssistant(matchingDept.userId);
+    }
+  };
 
   // Find author profile - try both created_by and user_id fields
   const authorProfile = docReceive
@@ -270,7 +145,7 @@ const PDFDocumentManagePage: React.FC = () => {
   const signers = React.useMemo(() => {
     const list = [];
     let currentOrder = 1;
-    
+
     // 1. ผู้เขียน (เสมอ)
     if (authorProfile) {
       const fullName = `${authorProfile.prefix || ''}${authorProfile.first_name} ${authorProfile.last_name}`.trim();
@@ -347,102 +222,19 @@ const PDFDocumentManagePage: React.FC = () => {
 
   const isStepComplete = (step: number) => {
     switch (step) {
-      case 1: return (docNumberSuffix.trim() !== '' || suggestedDocNumber !== '') && isNumberAssigned;
-      case 2: return true; // ไม่บังคับให้เลือก - สามารถข้ามได้
-      case 3: return signaturePositions.length >= 1; // เปลี่ยนเป็นมีลายเซ็นอย่างน้อย 1 ตำแหน่ง
+      case 1: return true; // ไม่บังคับให้เลือกฝ่าย/รองผอ. - สามารถข้ามได้
+      case 2: return signaturePositions.length >= 1; // ต้องมีลายเซ็นอย่างน้อย 1 ตำแหน่ง
       default: return false;
     }
   };
 
-  // Function to convert date to Thai format
-  const formatThaiDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const thaiMonths = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-    ];
-    
-    const day = date.getDate();
-    const month = thaiMonths[date.getMonth()];
-    const year = date.getFullYear() + 543;
-    
-    return `${day} ${month} ${year}`;
-  };
-
-  // Function to assign document number (สำหรับ PDF ที่อัพโหลดเข้ามา ไม่ต้องสร้าง PDF ใหม่)
-  const handleAssignNumber = async () => {
-    let finalDocSuffix = docNumberSuffix.trim() || suggestedDocNumber;
-    
-    const match = finalDocSuffix.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
-    if (match) {
-      finalDocSuffix = match[1];
-    }
-    
-    if (!finalDocSuffix) {
-      toast({
-        title: "กรุณากรอกเลขหนังสือ",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!memoId) return;
-
-    const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${finalDocSuffix}`;
-    setDocumentNumber(fullDocNumber);
-    setDocNumberSuffix(finalDocSuffix);
-
-    setIsAssigningNumber(true);
-    try {
-      const now = new Date().toISOString();
-      const docNumberStatusData = {
-        status: 'ลงเลขหนังสือแล้ว',
-        assigned_at: now
-      };
-
-      // Update memo with document number and status (ไม่ต้องสร้าง PDF ใหม่เพราะใช้ PDF ที่อัพโหลดมา)
-      const updateData: any = {
-        doc_number: finalDocSuffix,
-        doc_number_status: docNumberStatusData,
-        clerk_id: profile?.user_id,
-        updated_at: now
-      };
-
-      const { error } = await (supabase as any)
-        .from('doc_receive')
-        .update(updateData)
-        .eq('id', memoId);
-
-      if (error) {
-        throw error;
-      }
-
-      setIsNumberAssigned(true);
-      toast({
-        title: "ลงเลขหนังสือสำเร็จ",
-        description: `เลขหนังสือ ${fullDocNumber} ถูกบันทึกแล้ว`,
-      });
-    } catch (error) {
-      console.error('Error assigning document number:', error);
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: error instanceof Error ? error.message : "ไม่สามารถลงเลขหนังสือได้",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAssigningNumber(false);
-    }
-  };
-
   const handleNext = async () => {
-    // PDF ที่อัพโหลดเข้ามาไม่ต้องผ่านขั้นตอน merge ไฟล์แนบ (ข้าม step 1 to step 2 merge)
-    
-    // If moving from step 2 to step 3, save signer_list_progress
-    if (currentStep === 2 && docReceive && memoId) {
+    // If moving from step 1 to step 2, save signer_list_progress
+    if (currentStep === 1 && docReceive && memoId) {
       try {
         const signerListProgress: SignerProgress[] = signers.map(signer => {
           const signerProfile = profiles.find(p => p.user_id === signer.user_id);
-          
+
           return {
             order: signer.order,
             position: signer.position || signer.role,
@@ -488,7 +280,7 @@ const PDFDocumentManagePage: React.FC = () => {
       }
     }
 
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
   };
 
   const handlePrevious = () => {
@@ -496,14 +288,6 @@ const PDFDocumentManagePage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!documentNumber.trim()) {
-      toast({
-        title: "กรุณากรอกเลขหนังสือ",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (signaturePositions.length < 1) {
       toast({
         title: "กรุณาวางตำแหน่งลายเซ็น",
@@ -520,7 +304,7 @@ const PDFDocumentManagePage: React.FC = () => {
         if (signer && signer.prefix) {
           const nameWithoutPrefix = pos.signer.name.replace(new RegExp(`^${signer.prefix}`), '').trim();
           const nameWithPrefix = `${signer.prefix}${nameWithoutPrefix}`;
-          
+
           return {
             ...pos,
             signer: {
@@ -609,11 +393,11 @@ const PDFDocumentManagePage: React.FC = () => {
           });
           return;
         }
-        
+
         try {
           const authorSigner = signers.find(s => s.role === 'author');
           const authorNameWithPrefix = authorSigner?.name || `${authorProfile.first_name} ${authorProfile.last_name}`;
-          
+
           const lines = [
             { type: "image", file_key: "sig1" },
             { type: "name", value: authorNameWithPrefix },
@@ -634,7 +418,7 @@ const PDFDocumentManagePage: React.FC = () => {
           }
           const pdfBlob = await pdfRes.blob();
           console.log('✅ PDF fetched successfully, size:', pdfBlob.size, 'bytes');
-          
+
           // ตรวจสอบว่า blob เป็น PDF จริง
           if (pdfBlob.type !== 'application/pdf' && !pdfBlob.type.includes('pdf')) {
             console.error('❌ Invalid PDF blob type:', pdfBlob.type);
@@ -646,7 +430,7 @@ const PDFDocumentManagePage: React.FC = () => {
             });
             return;
           }
-          
+
           console.log('📥 Fetching signature from:', authorProfile.signature_url);
           const sigRes = await fetch(authorProfile.signature_url);
           if (!sigRes.ok) {
@@ -664,7 +448,7 @@ const PDFDocumentManagePage: React.FC = () => {
           const formData = new FormData();
           formData.append('pdf', pdfBlob, 'document.pdf');
           formData.append('sig1', sigBlob, 'signature.png');
-          
+
           const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
           console.log('✍️ Author positions found:', authorPositions.length);
 
@@ -734,7 +518,7 @@ const PDFDocumentManagePage: React.FC = () => {
           description: "ระบบกำลังบันทึกไฟล์และอัพเดตสถานะเอกสาร กรุณารอสักครู่..."
         });
         setShowLoadingModal(true);
-        
+
         try {
           const extractedPdfUrl = extractPdfUrl(docReceive.pdf_draft_path);
           if (!extractedPdfUrl) {
@@ -750,8 +534,8 @@ const PDFDocumentManagePage: React.FC = () => {
           const oldFilePath = extractedPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
           const newFileName = `signed_${Date.now()}_${oldFilePath.split('/').pop()}`;
           const newFilePath = oldFilePath.replace(/[^/]+$/, newFileName);
-          
-          const { data: uploadData, error: uploadError } = await supabase.storage
+
+          const { error: uploadError } = await supabase.storage
             .from('documents')
             .upload(newFilePath, signedPdfBlob, {
               contentType: 'application/pdf',
@@ -768,7 +552,7 @@ const PDFDocumentManagePage: React.FC = () => {
           const { data: { publicUrl: newPublicUrl } } = supabase.storage
             .from('documents')
             .getPublicUrl(newFilePath);
-          
+
           const clerkId = profile?.user_id;
           // Update doc_receive table (not memos table)
           const { error: updateError } = await (supabase as any)
@@ -798,7 +582,7 @@ const PDFDocumentManagePage: React.FC = () => {
             title: "ส่งเอกสารสำเร็จ",
             description: `ลงลายเซ็นเรียบร้อยแล้ว ${authorPositions.length} ตำแหน่ง และส่งให้ผู้อนุมัติถัดไป`,
           });
-          
+
           // Remove old file
           const { error: removeError } = await supabase.storage
             .from('documents')
@@ -857,7 +641,7 @@ const PDFDocumentManagePage: React.FC = () => {
   const handlePositionRemove = (index: number) => {
     const removedPosition = signaturePositions[index];
     setSignaturePositions(signaturePositions.filter((_, i) => i !== index));
-    
+
     const removedSignerIndex = signers.findIndex(s => s.order === removedPosition.signer.order);
     if (removedSignerIndex !== -1) {
       setSelectedSignerIndex(removedSignerIndex);
@@ -866,7 +650,7 @@ const PDFDocumentManagePage: React.FC = () => {
 
   const handleReject = async (reason: string) => {
     if (!memoId) return;
-    
+
     setIsRejecting(true);
     try {
       const updateResult = await updateMemoStatus(memoId, 'rejected', undefined, reason);
@@ -916,8 +700,8 @@ const PDFDocumentManagePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => navigate('/documents')}
               >
@@ -925,21 +709,21 @@ const PDFDocumentManagePage: React.FC = () => {
                 กลับ
               </Button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">จัดการเอกสาร PDF</h1>
+                <h1 className="text-xl font-semibold text-gray-900">จัดการหนังสือรับ</h1>
                 <p className="text-sm text-gray-500">{docReceive?.subject}</p>
               </div>
             </div>
-            
-            {/* Progress Steps */}
+
+            {/* Progress Steps - 3 steps for doc_receive */}
             <div className="flex items-center gap-2">
-              {[1, 2, 3, 4].map((step) => (
+              {[1, 2, 3].map((step) => (
                 <div key={step} className="flex items-center">
                   <button
                     onClick={() => setCurrentStep(step)}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors hover:scale-105 ${
-                      currentStep === step 
-                        ? 'bg-blue-600 text-white' 
-                        : isStepComplete(step) 
+                      currentStep === step
+                        ? 'bg-blue-600 text-white'
+                        : isStepComplete(step)
                           ? 'bg-green-600 text-white hover:bg-green-700'
                           : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                     }`}
@@ -950,7 +734,7 @@ const PDFDocumentManagePage: React.FC = () => {
                       step
                     )}
                   </button>
-                  {step < 4 && <div className="w-6 h-0.5 bg-gray-200 mx-1" />}
+                  {step < 3 && <div className="w-6 h-0.5 bg-gray-200 mx-1" />}
                 </div>
               ))}
             </div>
@@ -960,17 +744,17 @@ const PDFDocumentManagePage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto p-6">
         <div className="w-full">
-          {/* Render appropriate step component */}
+          {/* Render appropriate step component - 3 steps for doc_receive */}
           {currentStep === 1 && (
-            <Step1DocumentNumber
-              documentNumber={documentNumber}
-              suggestedDocNumber={suggestedDocNumber}
-              docNumberSuffix={docNumberSuffix}
-              isNumberAssigned={isNumberAssigned}
-              isAssigningNumber={isAssigningNumber}
+            <Step1DocReceive
               memo={docReceive}
-              onDocNumberSuffixChange={setDocNumberSuffix}
-              onAssignNumber={handleAssignNumber}
+              departmentOptions={departmentOptions}
+              selectedDepartment={selectedDepartment}
+              onDepartmentChange={handleDepartmentChange}
+              selectedDeputy={selectedDeputy}
+              deputyDirectors={deputyDirectors}
+              onSelectedDeputyChange={setSelectedDeputy}
+              signers={signers}
               onNext={handleNext}
               onReject={handleReject}
               isRejecting={isRejecting}
@@ -979,21 +763,6 @@ const PDFDocumentManagePage: React.FC = () => {
           )}
 
           {currentStep === 2 && (
-            <Step2SelectSigners
-              selectedAssistant={selectedAssistant}
-              selectedDeputy={selectedDeputy}
-              assistantDirectors={assistantDirectors}
-              deputyDirectors={deputyDirectors}
-              signers={signers}
-              onSelectedAssistantChange={setSelectedAssistant}
-              onSelectedDeputyChange={setSelectedDeputy}
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              isStepComplete={isStepComplete(2)}
-            />
-          )}
-
-          {currentStep === 3 && (
             <Step3SignaturePositions
               signers={signers}
               signaturePositions={signaturePositions}
@@ -1006,11 +775,11 @@ const PDFDocumentManagePage: React.FC = () => {
               onPositionRemove={handlePositionRemove}
               onPrevious={handlePrevious}
               onNext={handleNext}
-              isStepComplete={isStepComplete(3)}
+              isStepComplete={isStepComplete(2)}
             />
           )}
 
-          {currentStep === 4 && (
+          {currentStep === 3 && (
             <Step4Review
               memo={docReceive}
               documentNumber={documentNumber}
@@ -1041,8 +810,8 @@ const PDFDocumentManagePage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={showLoadingModal && docReceive}>
+
+      <Dialog open={showLoadingModal && !!docReceive}>
         <DialogContent>
           <DialogTitle>{loadingMessage.title}</DialogTitle>
           <DialogDescription>

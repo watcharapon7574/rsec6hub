@@ -20,10 +20,10 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
   onUsersChange
 }) => {
   return (
-    <Card className="bg-white border-2 border-green-200 shadow-lg hover:shadow-xl transition-shadow overflow-visible">
-      <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
-        <CardTitle className="flex items-center text-lg text-green-900">
-          <Users className="h-5 w-5 mr-2 text-green-600" />
+    <Card className="bg-white border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow overflow-visible">
+      <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
+        <CardTitle className="flex items-center text-lg text-pink-900">
+          <Users className="h-5 w-5 mr-2 text-pink-600" />
           เลือกผู้รับมอบหมาย
         </CardTitle>
       </CardHeader>

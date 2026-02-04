@@ -74,11 +74,9 @@ const TaskAssignmentPage = () => {
           throw new Error('ไม่พบเอกสาร');
         }
 
-        // สำหรับ memos ใช้ pdf_draft_path, สำหรับ doc_receive ใช้ pdf_url
+        // ทั้ง memos และ doc_receive ใช้ pdf_draft_path หรือ pdf_final_path
         // ใช้ extractPdfUrl เพื่อ parse URL ที่อาจเป็น JSON object
-        const rawPdfUrl = documentType === 'memo'
-          ? data.pdf_draft_path || data.pdf_final_path
-          : data.pdf_url;
+        const rawPdfUrl = data.pdf_draft_path || data.pdf_final_path;
         const pdfUrl = extractPdfUrl(rawPdfUrl);
 
         console.log('📄 Document loaded:', { documentType, pdfUrl, data });
@@ -186,10 +184,10 @@ const TaskAssignmentPage = () => {
 
   if (loadingDocument) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-slate-100 pt-20 pb-24 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-pink-50 to-slate-100 pt-20 pb-24 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
             <div className="text-lg text-gray-600">กำลังโหลดข้อมูลเอกสาร...</div>
           </div>
         </div>
@@ -202,7 +200,7 @@ const TaskAssignmentPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-slate-100 pt-20 pb-24 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-pink-50 to-slate-100 pt-20 pb-24 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -217,7 +215,7 @@ const TaskAssignmentPage = () => {
 
           <div className="flex items-center space-x-3 mb-2">
             <div className="p-3 bg-white rounded-2xl shadow-lg">
-              <Users className="h-6 w-6 text-green-600" />
+              <Users className="h-6 w-6 text-pink-500" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">มอบหมายงาน</h1>
@@ -275,7 +273,7 @@ const TaskAssignmentPage = () => {
             variant="outline"
             onClick={handlePrevious}
             disabled={currentStep === 1 || loading}
-            className="px-6 border-green-300 hover:bg-green-50 relative z-0"
+            className="px-6 border-pink-300 hover:bg-pink-50 relative z-0"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             ย้อนกลับ
@@ -295,7 +293,7 @@ const TaskAssignmentPage = () => {
               <Button
                 onClick={handleNext}
                 disabled={loading}
-                className="px-6 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md hover:shadow-lg transition-all relative z-0"
+                className="px-6 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white shadow-md hover:shadow-lg transition-all relative z-0"
               >
                 ถัดไป
                 <ChevronRight className="h-4 w-4 ml-2" />
@@ -304,7 +302,7 @@ const TaskAssignmentPage = () => {
               <Button
                 onClick={handleAssignTasks}
                 disabled={loading || selectedUsers.length === 0}
-                className="px-6 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md hover:shadow-lg transition-all relative z-0"
+                className="px-6 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white shadow-md hover:shadow-lg transition-all relative z-0"
               >
                 {loading ? (
                   <>
@@ -331,7 +329,7 @@ const TaskAssignmentPage = () => {
             กรุณารอสักครู่... ระบบกำลังมอบหมายงานให้กับผู้ที่คุณเลือก
           </DialogDescription>
           <div className="flex flex-col items-center gap-4 mt-4">
-            <svg className="animate-spin h-12 w-12 text-green-600" viewBox="0 0 24 24">
+            <svg className="animate-spin h-12 w-12 text-pink-500" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>

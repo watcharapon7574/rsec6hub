@@ -25,7 +25,9 @@ interface NotificationPayload {
   urgency?: string
   assigned_by?: string // For task_assigned: name of person who assigned
   note?: string // For task_assigned: assignment note
-  completed_by?: string // For task_completed: name of person who completed the task
+  completed_by?: string // For task_completed: name of person who completed the task (deprecated)
+  reporter_name?: string // For task_completed: name of person who reported the task
+  completion_note?: string // For task_completed: the completion note/report
   chat_id?: string // Optional: specific chat to send to
 }
 
@@ -157,15 +159,25 @@ function formatMessage(payload: NotificationPayload): string {
       break
 
     case 'task_completed':
-      message += `<b>งานเสร็จสิ้นแล้ว</b>\n`
+      message += `<b>มีรายงานผลงานใหม่</b>\n`
       message += `เรื่อง: ${payload.subject}\n`
       if (payload.doc_number) {
         message += `เลขที่หนังสือ: ${payload.doc_number}\n`
       }
-      if (payload.completed_by) {
+      if (payload.reporter_name) {
+        message += `รายงานโดย: ${payload.reporter_name}\n`
+      } else if (payload.completed_by) {
+        // Fallback for backward compatibility
         message += `ดำเนินการโดย: ${payload.completed_by}\n`
       }
-      message += `\n✅ งานที่มอบหมายได้รับการดำเนินการเรียบร้อยแล้ว`
+      if (payload.completion_note) {
+        // Truncate long notes
+        const note = payload.completion_note.length > 200
+          ? payload.completion_note.substring(0, 200) + '...'
+          : payload.completion_note
+        message += `\n📋 รายละเอียด:\n${note}\n`
+      }
+      message += `\n✅ กรุณาเข้าระบบเพื่อตรวจสอบรายงานผลงาน`
       break
   }
 
@@ -194,9 +206,13 @@ serve(async (req) => {
 
     const payload: NotificationPayload = await req.json()
 
-    // Validate payload
-    if (!payload.type || !payload.document_id || !payload.subject || !payload.author_name) {
+    // Validate payload - author_name is not required for task_completed (uses reporter_name instead)
+    if (!payload.type || !payload.document_id || !payload.subject) {
       throw new Error('Missing required fields in payload')
+    }
+    // For non-task_completed types, author_name is required
+    if (payload.type !== 'task_completed' && !payload.author_name) {
+      throw new Error('Missing required field: author_name')
     }
 
     // chat_id is required in payload (from database)

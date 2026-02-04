@@ -12,13 +12,11 @@ interface TelegramChatIdStepProps {
 }
 
 const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
-  phoneNumber,
   onSubmit,
   onBack,
   loading
 }) => {
   const [chatId, setChatId] = useState('');
-  const [showHelp, setShowHelp] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,34 +49,16 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <MessageCircle className="w-12 h-12 mx-auto text-blue-500" />
+    <div className="space-y-4">
+      <div className="text-center space-y-1">
+        <MessageCircle className="w-10 h-10 mx-auto text-blue-500" />
         <h3 className="text-lg font-semibold text-gray-900">เข้าใช้งานครั้งแรก</h3>
-        <p className="text-sm text-gray-600">
-          ยินดีต้อนรับ {phoneNumber}
-        </p>
         <p className="text-sm text-gray-600">
           กรุณาใส่ Telegram Chat ID เพื่อรับรหัส OTP
         </p>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-2">
-          <HelpCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="space-y-2 text-sm">
-            <p className="font-medium text-blue-900">วิธีหา Chat ID:</p>
-            <ol className="text-blue-700 space-y-1 ml-4 list-decimal">
-              <li>เปิด Telegram และค้นหา <code className="bg-blue-100 px-1 rounded">@userinfobot</code></li>
-              <li>กดปุ่ม Start หรือส่งข้อความอะไรก็ได้</li>
-              <li>Bot จะส่งข้อมูลของคุณมา รวมถึง Chat ID</li>
-              <li>คัดลอก ID มาใส่ในช่องด้านล่าง</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-2">
           <label htmlFor="chatId" className="text-sm font-medium text-gray-700">
             Telegram Chat ID
@@ -92,15 +72,14 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
             disabled={loading}
             className="text-center text-lg tracking-wider"
           />
-          <p className="text-xs text-gray-500">
-            Chat ID เป็นตัวเลขชุดหนึ่งที่ Telegram ให้กับคุณ
-          </p>
         </div>
 
+        {/* ปุ่มยืนยันหลัก - เด่นชัด */}
         <Button
           type="submit"
-          className="w-full"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-lg"
           disabled={loading}
+          size="lg"
         >
           {loading ? (
             <div className="flex items-center space-x-2">
@@ -108,31 +87,46 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
               <span>กำลังส่งรหัส OTP...</span>
             </div>
           ) : (
-            "ส่งรหัส OTP"
+            "ยืนยันและส่งรหัส OTP"
           )}
         </Button>
-
-        <Button
-          type="button"
-          onClick={openTelegramBot}
-          variant="outline"
-          className="w-full flex items-center justify-center gap-2"
-        >
-          <MessageCircle className="w-4 h-4" />
-          <span>เปิด @userinfobot</span>
-        </Button>
-
-        <Button
-          type="button"
-          onClick={onBack}
-          variant="ghost"
-          className="w-full flex items-center justify-center gap-2"
-          disabled={loading}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>กลับ</span>
-        </Button>
       </form>
+
+      {/* ส่วนคำแนะนำ - ย่อให้กะทัดรัด */}
+      <details className="bg-blue-50 border border-blue-200 rounded-lg">
+        <summary className="p-3 cursor-pointer flex items-center gap-2 text-sm font-medium text-blue-900">
+          <HelpCircle className="w-4 h-4 text-blue-600" />
+          วิธีหา Chat ID (กดเพื่อดู)
+        </summary>
+        <div className="px-3 pb-3 text-sm text-blue-700">
+          <ol className="space-y-1 ml-4 list-decimal">
+            <li>เปิด Telegram ค้นหา <code className="bg-blue-100 px-1 rounded">@userinfobot</code></li>
+            <li>กดปุ่ม Start</li>
+            <li>คัดลอก Chat ID มาใส่ในช่องด้านบน</li>
+          </ol>
+        </div>
+      </details>
+
+      <Button
+        type="button"
+        onClick={openTelegramBot}
+        variant="outline"
+        className="w-full flex items-center justify-center gap-2 text-blue-600 border-blue-300"
+      >
+        <MessageCircle className="w-4 h-4" />
+        <span>เปิด @userinfobot</span>
+      </Button>
+
+      <Button
+        type="button"
+        onClick={onBack}
+        variant="ghost"
+        className="w-full flex items-center justify-center gap-2 text-gray-500"
+        disabled={loading}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>กลับ</span>
+      </Button>
     </div>
   );
 };

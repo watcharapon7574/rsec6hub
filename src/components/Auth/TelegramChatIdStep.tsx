@@ -77,7 +77,8 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
         {/* ปุ่มยืนยันหลัก - เด่นชัด */}
         <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-base shadow-lg"
+          className="w-full font-semibold py-3 text-base shadow-lg"
+          style={{ background: '#2563eb', color: 'white' }}
           disabled={loading}
           size="lg"
         >

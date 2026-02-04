@@ -260,43 +260,22 @@ const CreateMemoPage = () => {
     }> = [];
 
     try {
-      // ใช้ Google Gemini Flash 1.5 API (Free tier: 1,500 requests/day)
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-      if (!apiKey) {
-        throw new Error('API key not configured. Please check .env.local file.');
-      }
+      // ใช้ Vertex AI Gemini ผ่าน Edge Function
+      const EDGE_FUNCTION_URL = 'https://ikfioqvjrhquiyeylmsv.supabase.co/functions/v1/grammar-check';
 
       for (const { field, label } of fieldsToCorrect) {
         const content = formData[field as keyof MemoFormData]?.toString().trim();
         if (!content) continue;
 
-        // Call Gemini API (using gemini-2.5-flash - stable June 2025 release with Thai support)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, {
+        // Call Edge Function
+        const response = await fetch(EDGE_FUNCTION_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
           },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `ตรวจสอบข้อความภาษาไทยต่อไปนี้และหาคำที่เขียนผิด หรือไวยากรณ์ที่ผิด:
-
-"${content}"
-
-กรุณาตอบในรูปแบบ JSON เท่านั้น ดังนี้:
-[
-  {
-    "originalWord": "คำที่ผิด",
-    "correctedWord": "คำที่ถูกต้อง",
-    "wordIndex": ตำแหน่งของคำ (เริ่มจาก 0)
-  }
-]
-
-หากไม่พบข้อผิดพลาด ให้ตอบ []`
-              }]
-            }]
+            text: content,
+            field_label: label
           })
         });
 
@@ -305,28 +284,23 @@ const CreateMemoPage = () => {
         }
 
         const data = await response.json();
-        const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
 
-        // Parse JSON response
-        const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
-        const wordCorrections = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+        if (!data.success) {
+          throw new Error(data.error || 'Grammar check failed');
+        }
 
-        if (wordCorrections.length > 0) {
-          console.log('✅ Gemini found corrections for', label, ':', wordCorrections);
-          wordCorrections.forEach((correction: any) => {
-            if (correction.originalWord && correction.correctedWord && correction.originalWord !== correction.correctedWord) {
-              const words = content.split(/\s+/);
-              const contextStart = Math.max(0, correction.wordIndex - 3);
-              const contextEnd = Math.min(words.length, correction.wordIndex + 4);
-              const contextWords = words.slice(contextStart, contextEnd);
-
+        // Process changes from Edge Function response
+        if (data.changes && data.changes.length > 0) {
+          console.log('✅ Grammar corrections found for', label, ':', data.changes);
+          data.changes.forEach((correction: any, index: number) => {
+            if (correction.original && correction.corrected && correction.original !== correction.corrected) {
               allSuggestions.push({
                 field,
                 fieldLabel: label,
-                originalWord: correction.originalWord.trim(),
-                correctedWord: correction.correctedWord.trim(),
-                context: contextWords.join(' '),
-                wordIndex: correction.wordIndex,
+                originalWord: correction.original.trim(),
+                correctedWord: correction.corrected.trim(),
+                context: correction.reason || '',
+                wordIndex: index,
                 applied: false
               });
             }

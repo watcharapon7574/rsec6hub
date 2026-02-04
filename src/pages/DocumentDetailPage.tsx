@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
 
@@ -35,11 +35,14 @@ interface DocumentDetail {
   }>;
 }
 
+const ITEMS_PER_PAGE = 5;
+
 const DocumentDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Get document info from navigation state or URL params
   const documentId = location.state?.documentId || new URLSearchParams(location.search).get('id');
@@ -253,71 +256,109 @@ const DocumentDetailPage: React.FC = () => {
           </Card>
 
           {/* Task Assignments Card */}
-          {document.task_assignments && document.task_assignments.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  งานที่มอบหมาย ({document.task_assignments.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {document.task_assignments.map((task) => {
-                  const reportFileUrl = extractReportFileUrl(task.completion_note);
-                  const reportText = getReportText(task.completion_note);
+          {document.task_assignments && document.task_assignments.length > 0 && (() => {
+            const totalItems = document.task_assignments.length;
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const currentTasks = document.task_assignments.slice(startIndex, endIndex);
 
-                  return (
-                    <div key={task.id} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {task.status === 'completed' ? (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <Clock className="h-5 w-5 text-blue-500" />
-                          )}
-                          <span className="font-medium">{task.assigned_to_name}</span>
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    งานที่มอบหมาย ({totalItems})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {currentTasks.map((task) => {
+                    const reportFileUrl = extractReportFileUrl(task.completion_note);
+                    const reportText = getReportText(task.completion_note);
+
+                    return (
+                      <div key={task.id} className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {task.status === 'completed' ? (
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            ) : (
+                              <Clock className="h-5 w-5 text-blue-500" />
+                            )}
+                            <span className="font-medium">{task.assigned_to_name}</span>
+                          </div>
+                          {getStatusBadge(task.status)}
                         </div>
-                        {getStatusBadge(task.status)}
-                      </div>
 
-                      <div className="text-sm text-gray-600">
-                        <p>มอบหมายโดย: {task.assigned_by_name}</p>
-                        <p>วันที่มอบหมาย: {new Date(task.assigned_at).toLocaleDateString('th-TH')}</p>
-                        {task.completed_at && (
-                          <p>วันที่เสร็จ: {new Date(task.completed_at).toLocaleDateString('th-TH')}</p>
+                        <div className="text-sm text-gray-600">
+                          <p>มอบหมายโดย: {task.assigned_by_name}</p>
+                          <p>วันที่มอบหมาย: {new Date(task.assigned_at).toLocaleDateString('th-TH')}</p>
+                          {task.completed_at && (
+                            <p>วันที่เสร็จ: {new Date(task.completed_at).toLocaleDateString('th-TH')}</p>
+                          )}
+                        </div>
+
+                        {task.note && (
+                          <div className="mt-2">
+                            <label className="text-sm font-medium text-gray-500">หมายเหตุ:</label>
+                            <p className="text-sm bg-gray-50 p-2 rounded">{task.note}</p>
+                          </div>
+                        )}
+
+                        {task.status === 'completed' && reportText && (
+                          <div className="mt-2">
+                            <label className="text-sm font-medium text-gray-500">รายงานผล:</label>
+                            <p className="text-sm bg-green-50 p-2 rounded whitespace-pre-wrap">{reportText}</p>
+
+                            {reportFileUrl && (
+                              <Button
+                                size="sm"
+                                className="mt-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all"
+                                onClick={() => window.open(reportFileUrl, '_blank')}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                ดูไฟล์รายงาน PDF
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </div>
+                    );
+                  })}
 
-                      {task.note && (
-                        <div className="mt-2">
-                          <label className="text-sm font-medium text-gray-500">หมายเหตุ:</label>
-                          <p className="text-sm bg-gray-50 p-2 rounded">{task.note}</p>
-                        </div>
-                      )}
-
-                      {task.status === 'completed' && reportText && (
-                        <div className="mt-2">
-                          <label className="text-sm font-medium text-gray-500">รายงานผล:</label>
-                          <p className="text-sm bg-green-50 p-2 rounded whitespace-pre-wrap">{reportText}</p>
-
-                          {reportFileUrl && (
-                            <Button
-                              size="sm"
-                              className="mt-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all"
-                              onClick={() => window.open(reportFileUrl, '_blank')}
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              ดูไฟล์รายงาน PDF
-                            </Button>
-                          )}
-                        </div>
-                      )}
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <span className="text-sm text-gray-500">
+                        แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จาก {totalItems} รายการ
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm font-medium px-2">
+                          {currentPage} / {totalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={currentPage === totalPages}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
         </div>
 
         {/* Right Column - PDF Viewer */}

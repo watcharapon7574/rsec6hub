@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, FileInput, ClipboardList } from 'lucide-react';
+import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, FileInput, ClipboardList, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import ClerkDocumentActions from './ClerkDocumentActions';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -64,6 +66,16 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
 
   // State สำหรับ realtime updates
   const [localDocReceive, setLocalDocReceive] = useState(docReceiveList);
+
+  // State สำหรับ modal ดูรายชื่อผู้รับมอบหมาย
+  const [showAssigneesModal, setShowAssigneesModal] = useState(false);
+  const [selectedDocForAssignees, setSelectedDocForAssignees] = useState<any>(null);
+  const [assigneesList, setAssigneesList] = useState<any[]>([]);
+  const [assigneesPage, setAssigneesPage] = useState(1);
+  const [isLoadingAssignees, setIsLoadingAssignees] = useState(false);
+  const assigneesPerPage = 5;
+
+  const { toast } = useToast();
 
   // อัพเดท localDocReceive เมื่อ docReceiveList เปลี่ยน
   useEffect(() => {
@@ -161,6 +173,78 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
     const clerkProfile = profiles.find(p => p.user_id === clerkId);
     if (!clerkProfile) return '-';
     return `${clerkProfile.first_name} ${clerkProfile.last_name}`;
+  };
+
+  // ฟังก์ชันสำหรับดูรายชื่อผู้รับมอบหมาย
+  const handleViewAssignees = async (doc: any) => {
+    setSelectedDocForAssignees(doc);
+    setAssigneesPage(1);
+    setIsLoadingAssignees(true);
+    setShowAssigneesModal(true);
+
+    try {
+      // Step 1: Fetch task assignments
+      const { data: assignments, error: assignmentError } = await supabase
+        .from('task_assignments')
+        .select(`
+          id,
+          assigned_to,
+          note,
+          status,
+          completion_note,
+          assigned_at,
+          completed_at
+        `)
+        .eq('doc_receive_id', doc.id)
+        .eq('document_type', 'doc_receive')
+        .is('deleted_at', null)
+        .order('assigned_at', { ascending: false });
+
+      if (assignmentError) {
+        console.error('Error fetching assignees:', assignmentError);
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่สามารถดึงรายชื่อผู้รับมอบหมายได้",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!assignments || assignments.length === 0) {
+        setAssigneesList([]);
+        return;
+      }
+
+      // Step 2: Get unique user IDs and fetch their profiles
+      const userIds = [...new Set(assignments.map(a => a.assigned_to))];
+      const { data: profilesData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds);
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+      }
+
+      // Create a map of user_id to full_name (combined first_name + last_name)
+      const profileMap = new Map();
+      (profilesData || []).forEach((p: any) => {
+        const fullName = [p.first_name, p.last_name].filter(Boolean).join(' ');
+        profileMap.set(p.user_id, fullName || 'ไม่ทราบชื่อ');
+      });
+
+      // Transform data to include assignee_name from profiles
+      const transformedData = assignments.map((item: any) => ({
+        ...item,
+        assignee_name: profileMap.get(item.assigned_to) || 'ไม่ทราบชื่อ'
+      }));
+
+      setAssigneesList(transformedData);
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setIsLoadingAssignees(false);
+    }
   };
 
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
@@ -817,17 +901,25 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               <ClipboardList className="h-4 w-4" />
                               <span className="text-xs font-medium">มอบหมายงาน</span>
                             </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled
-                              className="h-7 px-2 flex items-center gap-1 bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed"
-                            >
-                              <ClipboardList className="h-4 w-4" />
-                              <span className="text-xs font-medium">มอบหมายแล้ว</span>
-                            </Button>
-                          )}
+                          ) : memo.has_active_tasks ? (
+                            <div className="relative">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewAssignees(memo)}
+                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                              >
+                                <ClipboardList className="h-4 w-4" />
+                                <span className="text-xs font-medium">ดูรายชื่อ</span>
+                              </Button>
+                              {/* Show "ทราบแล้ว" badge when task is in progress */}
+                              {memo.has_in_progress_task && (
+                                <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10">
+                                  ทราบแล้ว
+                                </span>
+                              )}
+                            </div>
+                          ) : null}
                         </>
                       )}
                     </>
@@ -973,6 +1065,111 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           </div>
         )}
       </CardContent>
+
+      {/* Modal ดูรายชื่อผู้รับมอบหมาย */}
+      <Dialog open={showAssigneesModal} onOpenChange={setShowAssigneesModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <ClipboardList className="h-4 w-4 text-blue-600" />
+              รายชื่อผู้ได้รับมอบหมาย
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-2">
+            {isLoadingAssignees ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+              </div>
+            ) : assigneesList.length === 0 ? (
+              <div className="text-center py-4 text-gray-500 text-sm">
+                ไม่พบรายชื่อผู้รับมอบหมาย
+              </div>
+            ) : (
+              <div>
+                {/* Table */}
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="py-2 px-2 text-left font-medium text-gray-600 w-12">#</th>
+                      <th className="py-2 px-2 text-left font-medium text-gray-600">ชื่อ</th>
+                      <th className="py-2 px-2 text-center font-medium text-gray-600 w-24">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assigneesList
+                      .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
+                      .map((assignee, index) => (
+                        <tr key={assignee.id} className="border-b hover:bg-gray-50">
+                          <td className="py-2 px-2 text-gray-500">
+                            {(assigneesPage - 1) * assigneesPerPage + index + 1}
+                          </td>
+                          <td className="py-2 px-2 text-gray-900">{assignee.assignee_name}</td>
+                          <td className="py-2 px-2 text-center">
+                            <Badge
+                              className={`text-[10px] px-1.5 py-0.5 ${
+                                assignee.status === 'completed'
+                                  ? 'bg-green-100 text-green-700 border-green-300'
+                                  : assignee.status === 'in_progress'
+                                  ? 'bg-blue-100 text-blue-700 border-blue-300'
+                                  : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                              }`}
+                            >
+                              {assignee.status === 'completed'
+                                ? 'เสร็จสิ้น'
+                                : assignee.status === 'in_progress'
+                                ? 'ทราบแล้ว'
+                                : 'รอดำเนินการ'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+
+                {/* Pagination */}
+                {assigneesList.length > assigneesPerPage && (
+                  <div className="flex items-center justify-between pt-3 mt-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAssigneesPage((p) => Math.max(1, p - 1))}
+                      disabled={assigneesPage === 1}
+                      className="h-7 text-xs"
+                    >
+                      <ChevronLeft className="h-3 w-3 mr-1" />
+                      ก่อนหน้า
+                    </Button>
+                    <span className="text-xs text-gray-500">
+                      {assigneesPage} / {Math.ceil(assigneesList.length / assigneesPerPage)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setAssigneesPage((p) =>
+                          Math.min(Math.ceil(assigneesList.length / assigneesPerPage), p + 1)
+                        )
+                      }
+                      disabled={assigneesPage >= Math.ceil(assigneesList.length / assigneesPerPage)}
+                      className="h-7 text-xs"
+                    >
+                      ถัดไป
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowAssigneesModal(false)}>
+              ปิด
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

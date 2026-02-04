@@ -293,17 +293,18 @@ const DocumentList: React.FC<DocumentListProps> = ({
       const userIds = [...new Set(assignments.map(a => a.assigned_to))];
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id, full_name')
+        .select('user_id, first_name, last_name')
         .in('user_id', userIds);
 
       if (profileError) {
         console.error('Error fetching profiles:', profileError);
       }
 
-      // Create a map of user_id to full_name
+      // Create a map of user_id to full_name (combined first_name + last_name)
       const profileMap = new Map();
       (profiles || []).forEach((p: any) => {
-        profileMap.set(p.user_id, p.full_name);
+        const fullName = [p.first_name, p.last_name].filter(Boolean).join(' ');
+        profileMap.set(p.user_id, fullName || 'ไม่ทราบชื่อ');
       });
 
       // Transform data to include assignee_name from profiles

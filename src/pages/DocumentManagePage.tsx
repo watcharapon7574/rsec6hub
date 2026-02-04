@@ -63,6 +63,18 @@ const DocumentManagePage: React.FC = () => {
   // Get memo data
   const memo = memoId ? getMemoById(memoId) : null;
 
+  // Debug log for memo
+  React.useEffect(() => {
+    console.log('📄 DocumentManagePage memo:', {
+      memoId,
+      hasMemo: !!memo,
+      id: memo?.id,
+      subject: memo?.subject,
+      pdf_draft_path: memo?.pdf_draft_path,
+      hasPdf: !!memo?.pdf_draft_path
+    });
+  }, [memoId, memo]);
+
   // Get latest document number and generate suggestion
   const getLatestDocNumber = React.useCallback(async () => {
     try {
@@ -1097,6 +1109,30 @@ const DocumentManagePage: React.FC = () => {
             <CardContent className="text-center py-8">
               <p className="text-gray-500">ไม่พบเอกสารที่ต้องการจัดการ</p>
               <Button onClick={() => navigate('/documents')} className="mt-4">
+                กลับไปรายการเอกสาร
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // ตรวจสอบว่ามี PDF หรือไม่ (กรณี memo ถูกตีกลับและยังไม่ได้ส่งใหม่)
+  if (!memo.pdf_draft_path) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardContent className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">ไม่พบไฟล์ PDF</h2>
+              <p className="text-gray-500 mb-4">
+                เอกสารนี้ยังไม่มีไฟล์ PDF สำหรับจัดการ<br />
+                {memo.status === 'draft' && 'กรุณาแก้ไขและกด "ส่ง" เอกสารใหม่อีกครั้ง'}
+                {memo.status === 'rejected' && 'เอกสารถูกตีกลับ กรุณาแก้ไขและส่งใหม่'}
+              </p>
+              <Button onClick={() => navigate('/documents')} className="mt-2">
                 กลับไปรายการเอกสาร
               </Button>
             </CardContent>

@@ -79,6 +79,12 @@ const PDFReceiveManagePage: React.FC = () => {
         .single();
 
       if (error) throw error;
+      console.log('📄 Doc receive data loaded:', {
+        id: data?.id,
+        subject: data?.subject,
+        pdf_draft_path: data?.pdf_draft_path,
+        status: data?.status
+      });
       setDocReceive(data);
     } catch (error) {
       console.error('Error fetching doc_receive:', error);

@@ -57,6 +57,14 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
   isRejecting,
   isStepComplete
 }) => {
+  // Debug log
+  console.log('📋 Step1DocReceive memo:', {
+    id: memo?.id,
+    subject: memo?.subject,
+    pdf_draft_path: memo?.pdf_draft_path,
+    hasPdf: !!memo?.pdf_draft_path
+  });
+
   // Get attached files for accordion
   const getAttachedFiles = () => {
     let attachedFiles = [];

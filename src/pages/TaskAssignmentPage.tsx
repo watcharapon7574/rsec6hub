@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { taskAssignmentService, DocumentType } from '@/services/taskAssignmentService';
 import { supabase } from '@/integrations/supabase/client';
+import { extractPdfUrl } from '@/utils/fileUpload';
 import StepIndicator from '@/components/TaskAssignment/StepIndicator';
 import Step1DocumentPreview from '@/components/TaskAssignment/Step1DocumentPreview';
 import Step2SelectUsers from '@/components/TaskAssignment/Step2SelectUsers';
@@ -74,9 +75,11 @@ const TaskAssignmentPage = () => {
         }
 
         // สำหรับ memos ใช้ pdf_draft_path, สำหรับ doc_receive ใช้ pdf_url
-        const pdfUrl = documentType === 'memo'
-          ? data.pdf_draft_path
+        // ใช้ extractPdfUrl เพื่อ parse URL ที่อาจเป็น JSON object
+        const rawPdfUrl = documentType === 'memo'
+          ? data.pdf_draft_path || data.pdf_final_path
           : data.pdf_url;
+        const pdfUrl = extractPdfUrl(rawPdfUrl);
 
         console.log('📄 Document loaded:', { documentType, pdfUrl, data });
 

@@ -30,20 +30,20 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const supabaseClient = createClient(
+    // Extract JWT token from Authorization header
+    const token = authHeader.replace("Bearer ", "");
+
+    // Use service role to validate the token
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Get user from token
     const {
       data: { user },
       error: userError,
-    } = await supabaseClient.auth.getUser();
+    } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
       console.error("Auth error:", userError?.message || "No user");
@@ -58,12 +58,7 @@ Deno.serve(async (req: Request) => {
 
     console.log("✅ User authenticated:", user.email);
 
-    // Get Railway API token from database using service role
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
+    // Get Railway API token from database (reusing supabaseAdmin created above)
     const { data: settingsData, error: settingsError } = await supabaseAdmin
       .from("app_settings")
       .select("value")

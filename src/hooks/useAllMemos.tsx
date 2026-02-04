@@ -268,12 +268,21 @@ export const useAllMemos = () => {
   const updateMemoApproval = async (memoId: string, action: 'approve' | 'reject', comment?: string) => {
     try {
       setLoading(true);
-      
-      // Get current memo to understand the approval flow
-      const memo = getMemoById(memoId);
-      if (!memo) {
+
+      // Fetch fresh memo data from database (not from cached state)
+      // This ensures we have the latest attached_files for deletion
+      const { data: freshMemo, error: fetchError } = await supabase
+        .from('memos')
+        .select('*')
+        .eq('id', memoId)
+        .single();
+
+      if (fetchError || !freshMemo) {
+        console.error('Error fetching memo for approval:', fetchError);
         throw new Error('ไม่พบเอกสาร');
       }
+
+      const memo = freshMemo as any;
 
       let newStatus = memo.status;
       let newSignerOrder = memo.current_signer_order || 1;
@@ -330,9 +339,12 @@ export const useAllMemos = () => {
         console.log('🗑️ Deleting PDF and attachments due to rejection');
 
         // ลบ PDF draft
+        console.log('📄 memo.pdf_draft_path:', memo.pdf_draft_path);
         if (memo.pdf_draft_path) {
           try {
             const pdfPath = memo.pdf_draft_path.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
+            console.log('📄 PDF path to delete:', pdfPath);
+
             const { error: deletePdfError } = await supabase.storage
               .from('documents')
               .remove([pdfPath]);
@@ -345,26 +357,39 @@ export const useAllMemos = () => {
           } catch (err) {
             console.error('❌ Error processing PDF deletion:', err);
           }
+        } else {
+          console.log('📄 No pdf_draft_path found in memo');
         }
 
-        // ลบเอกสารแนบทั้งหมด (attached_files เป็น JSON string)
+        // ลบเอกสารแนบทั้งหมด (attached_files เป็น JSON string จาก database)
+        console.log('📎 memo.attached_files:', {
+          value: memo.attached_files,
+          type: typeof memo.attached_files,
+          isArray: Array.isArray(memo.attached_files)
+        });
+
         if (memo.attached_files) {
           try {
             let attachedFilesArr: string[] = [];
             if (typeof memo.attached_files === 'string') {
               try {
                 attachedFilesArr = JSON.parse(memo.attached_files);
+                console.log('📎 Parsed attached_files from JSON string:', attachedFilesArr);
               } catch {
                 attachedFilesArr = memo.attached_files ? [memo.attached_files] : [];
+                console.log('📎 Failed to parse, using as single string:', attachedFilesArr);
               }
             } else if (Array.isArray(memo.attached_files)) {
               attachedFilesArr = memo.attached_files;
+              console.log('📎 attached_files is already an array:', attachedFilesArr);
             }
 
             if (attachedFilesArr.length > 0) {
               const attachmentPaths = attachedFilesArr
                 .map((url: string) => url?.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, ''))
                 .filter(Boolean);
+
+              console.log('📎 Attachment paths to delete:', attachmentPaths);
 
               if (attachmentPaths.length > 0) {
                 const { error: deleteAttachmentsError } = await supabase.storage
@@ -374,13 +399,17 @@ export const useAllMemos = () => {
                 if (deleteAttachmentsError) {
                   console.error('❌ Error deleting attachments:', deleteAttachmentsError);
                 } else {
-                  console.log(`✅ Deleted ${attachmentPaths.length} attachment(s)`);
+                  console.log(`✅ Deleted ${attachmentPaths.length} attachment(s):`, attachmentPaths);
                 }
               }
+            } else {
+              console.log('📎 No attachments to delete (empty array)');
             }
           } catch (err) {
             console.error('❌ Error processing attachments deletion:', err);
           }
+        } else {
+          console.log('📎 No attached_files found in memo');
         }
 
         // ล้างค่า pdf_draft_path และ attached_files ใน database

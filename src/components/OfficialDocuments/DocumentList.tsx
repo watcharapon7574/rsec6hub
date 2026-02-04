@@ -1241,99 +1241,83 @@ const DocumentList: React.FC<DocumentListProps> = ({
 
       {/* Modal ดูรายชื่อผู้รับมอบหมาย */}
       <Dialog open={showAssigneesModal} onOpenChange={setShowAssigneesModal}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-blue-600" />
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <ClipboardList className="h-4 w-4 text-blue-600" />
               รายชื่อผู้ได้รับมอบหมาย
             </DialogTitle>
-            {selectedMemoForAssignees && (
-              <DialogDescription className="text-gray-600">
-                เอกสาร: <span className="font-semibold">{selectedMemoForAssignees.subject}</span>
-              </DialogDescription>
-            )}
           </DialogHeader>
 
-          <div className="py-4">
+          <div className="py-2">
             {isLoadingAssignees ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-500">กำลังโหลดข้อมูล...</p>
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
               </div>
             ) : assigneesList.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <User className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">ไม่พบรายชื่อผู้รับมอบหมาย</p>
+              <div className="text-center py-4 text-gray-500 text-sm">
+                ไม่พบรายชื่อผู้รับมอบหมาย
               </div>
             ) : (
-              <div className="space-y-3">
-                {assigneesList
-                  .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
-                  .map((assignee) => (
-                    <div
-                      key={assignee.id}
-                      className="p-3 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-500" />
-                          <span className="font-medium text-gray-900">{assignee.assignee_name}</span>
-                        </div>
-                        <Badge
-                          className={`text-xs ${
-                            assignee.status === 'completed'
-                              ? 'bg-green-100 text-green-700 border-green-300'
-                              : assignee.status === 'in_progress'
-                              ? 'bg-blue-100 text-blue-700 border-blue-300'
-                              : 'bg-yellow-100 text-yellow-700 border-yellow-300'
-                          }`}
-                        >
-                          {assignee.status === 'completed'
-                            ? 'เสร็จสิ้น'
-                            : assignee.status === 'in_progress'
-                            ? 'ทราบแล้ว'
-                            : 'รอดำเนินการ'}
-                        </Badge>
-                      </div>
-                      {assignee.note && (
-                        <p className="text-sm text-gray-600 mt-2 pl-6">
-                          <span className="text-blue-600">📝</span> {assignee.note}
-                        </p>
-                      )}
-                      {assignee.completion_note && (
-                        <p className="text-sm text-green-700 mt-1 pl-6 bg-green-50 p-2 rounded">
-                          <span className="font-medium">รายงานผล:</span> {assignee.completion_note}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400 mt-2 pl-6">
-                        มอบหมายเมื่อ: {new Date(assignee.assigned_at).toLocaleDateString('th-TH', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  ))}
+              <div>
+                {/* Table */}
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="py-2 px-2 text-left font-medium text-gray-600 w-12">#</th>
+                      <th className="py-2 px-2 text-left font-medium text-gray-600">ชื่อ</th>
+                      <th className="py-2 px-2 text-center font-medium text-gray-600 w-24">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assigneesList
+                      .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
+                      .map((assignee, index) => (
+                        <tr key={assignee.id} className="border-b hover:bg-gray-50">
+                          <td className="py-2 px-2 text-gray-500">
+                            {(assigneesPage - 1) * assigneesPerPage + index + 1}
+                          </td>
+                          <td className="py-2 px-2 text-gray-900">{assignee.assignee_name}</td>
+                          <td className="py-2 px-2 text-center">
+                            <Badge
+                              className={`text-[10px] px-1.5 py-0.5 ${
+                                assignee.status === 'completed'
+                                  ? 'bg-green-100 text-green-700 border-green-300'
+                                  : assignee.status === 'in_progress'
+                                  ? 'bg-blue-100 text-blue-700 border-blue-300'
+                                  : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                              }`}
+                            >
+                              {assignee.status === 'completed'
+                                ? 'เสร็จสิ้น'
+                                : assignee.status === 'in_progress'
+                                ? 'ทราบแล้ว'
+                                : 'รอดำเนินการ'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
 
                 {/* Pagination */}
                 {assigneesList.length > assigneesPerPage && (
-                  <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="flex items-center justify-between pt-3 mt-2 border-t">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => setAssigneesPage((p) => Math.max(1, p - 1))}
                       disabled={assigneesPage === 1}
+                      className="h-7 text-xs"
                     >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      <ChevronLeft className="h-3 w-3 mr-1" />
                       ก่อนหน้า
                     </Button>
-                    <span className="text-sm text-gray-500">
-                      หน้า {assigneesPage} / {Math.ceil(assigneesList.length / assigneesPerPage)}
+                    <span className="text-xs text-gray-500">
+                      {assigneesPage} / {Math.ceil(assigneesList.length / assigneesPerPage)}
                     </span>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() =>
                         setAssigneesPage((p) =>
@@ -1341,9 +1325,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         )
                       }
                       disabled={assigneesPage >= Math.ceil(assigneesList.length / assigneesPerPage)}
+                      className="h-7 text-xs"
                     >
                       ถัดไป
-                      <ChevronRight className="h-4 w-4 ml-1" />
+                      <ChevronRight className="h-3 w-3 ml-1" />
                     </Button>
                   </div>
                 )}
@@ -1352,7 +1337,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAssigneesModal(false)}>
+            <Button variant="outline" size="sm" onClick={() => setShowAssigneesModal(false)}>
               ปิด
             </Button>
           </DialogFooter>

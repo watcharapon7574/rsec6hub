@@ -241,36 +241,51 @@ const AssignedDocumentsList = () => {
 
                 {/* ส่วนขวา: ปุ่มทั้งหมดติดกัน */}
                 <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleViewDocument(task)}
-                    className="h-7 w-7 p-0"
-                    title="ดูเอกสาร"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-
-                  {task.status === 'pending' && (
+                  {/* กรณีเสร็จสิ้นแล้ว: แสดงแค่ปุ่ม ดูรายงาน */}
+                  {task.status === 'completed' ? (
                     <Button
                       size="sm"
-                      onClick={() => handleUpdateStatus(task.assignment_id, 'in_progress')}
-                      className="h-7 text-xs px-2.5 bg-blue-600 hover:bg-blue-700"
+                      variant="outline"
+                      onClick={() => handleViewDocument(task)}
+                      className="h-7 text-xs px-2.5 border-green-300 text-green-700 hover:bg-green-50"
                     >
-                      <PlayCircle className="h-3.5 w-3.5 mr-1" />
-                      ทราบ
+                      <Eye className="h-3.5 w-3.5 mr-1" />
+                      ดูรายงาน
                     </Button>
-                  )}
+                  ) : (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewDocument(task)}
+                        className="h-7 w-7 p-0"
+                        title="ดูเอกสาร"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
 
-                  {task.status === 'in_progress' && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleCompleteClick(task.assignment_id)}
-                      className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                      รายงาน
-                    </Button>
+                      {task.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleUpdateStatus(task.assignment_id, 'in_progress')}
+                          className="h-7 text-xs px-2.5 bg-blue-600 hover:bg-blue-700"
+                        >
+                          <PlayCircle className="h-3.5 w-3.5 mr-1" />
+                          ทราบ
+                        </Button>
+                      )}
+
+                      {task.status === 'in_progress' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleCompleteClick(task.assignment_id)}
+                          className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                          รายงาน
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

@@ -89,7 +89,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* เลือกฝ่าย */}
+            {/* เลือกฝ่าย - แสดงเฉพาะชื่อฝ่าย ไม่แสดงชื่อคน */}
             <div>
               <Label className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
@@ -109,6 +109,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                       value={dept.value}
                       className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer"
                     >
+                      {/* แสดงแค่ชื่อฝ่าย ไม่แสดงชื่อคน */}
                       <span className="font-medium">{dept.label}</span>
                     </SelectItem>
                   ))}
@@ -116,7 +117,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
               </Select>
               {selectedDepartment && selectedDepartment !== 'skip' && (
                 <p className="text-sm text-blue-600 mt-1">
-                  ฝ่ายที่เลือก: {selectedDepartment}
+                  ฝ่ายที่รับผิดชอบ: {selectedDepartment}
                 </p>
               )}
             </div>
@@ -156,8 +157,8 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
           {/* คำอธิบาย */}
           <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
             <p className="font-medium mb-1">หมายเหตุ:</p>
-            <p>• เลือกฝ่ายที่รับผิดชอบเอกสารนี้ (หัวหน้าฝ่ายจะถูกเลือกอัตโนมัติ)</p>
-            <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามฝ่ายหรือรองผู้อำนวยการได้</p>
+            <p>• เลือกฝ่ายที่รับผิดชอบเอกสารนี้ (เพื่อคัดกรองประเภทหนังสือรับ)</p>
+            <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามรองผู้อำนวยการได้</p>
             <p>• ผู้เขียนและผู้อำนวยการจะอยู่เสมอ</p>
           </div>
 

@@ -29,7 +29,6 @@ const PDFDocumentManagePage: React.FC = () => {
 
   // State
   const [documentNumber, setDocumentNumber] = useState('');
-  const [selectedAssistant, setSelectedAssistant] = useState<string>('');
   const [selectedDeputy, setSelectedDeputy] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [signaturePositions, setSignaturePositions] = useState<any[]>([]);
@@ -111,20 +110,9 @@ const PDFDocumentManagePage: React.FC = () => {
       });
   }, [assistantDirectors]);
 
-  // Handle department change - auto-select the matching assistant director
+  // Handle department change - เก็บฝ่ายที่เลือกเพื่อคัดกรองประเภทหนังสือรับ (ไม่เพิ่มในผู้ลงนาม)
   const handleDepartmentChange = (departmentValue: string) => {
     setSelectedDepartment(departmentValue);
-
-    if (departmentValue === 'skip' || !departmentValue) {
-      setSelectedAssistant('skip');
-      return;
-    }
-
-    // หา assistant director ที่ตรงกับฝ่ายที่เลือก
-    const matchingDept = departmentOptions.find(d => d.value === departmentValue);
-    if (matchingDept) {
-      setSelectedAssistant(matchingDept.userId);
-    }
   };
 
   // Find author profile - try both created_by and user_id fields
@@ -141,7 +129,7 @@ const PDFDocumentManagePage: React.FC = () => {
     authorProfileName: authorProfile ? `${authorProfile.first_name} ${authorProfile.last_name}` : 'NOT FOUND'
   });
 
-  // Build signers list
+  // Build signers list - สำหรับหนังสือรับ ไม่มีหัวหน้าฝ่ายในบทบาทการลงนาม
   const signers = React.useMemo(() => {
     const list = [];
     let currentOrder = 1;
@@ -162,26 +150,7 @@ const PDFDocumentManagePage: React.FC = () => {
       });
     }
 
-    // 2. ผู้ช่วยผู้อำนวยการที่เลือก (ถ้ามี)
-    if (selectedAssistant && selectedAssistant !== 'skip') {
-      const assistant = assistantDirectors.find(p => p.user_id === selectedAssistant);
-      if (assistant) {
-        const fullName = `${assistant.prefix || ''}${assistant.first_name} ${assistant.last_name}`.trim();
-        list.push({
-          order: currentOrder++,
-          user_id: assistant.user_id,
-          name: fullName,
-          position: assistant.current_position || assistant.position,
-          role: 'assistant_director',
-          academic_rank: assistant.academic_rank,
-          org_structure_role: assistant.org_structure_role,
-          prefix: assistant.prefix,
-          signature_url: assistant.signature_url
-        });
-      }
-    }
-
-    // 3. รองผู้อำนวยการที่เลือก (ถ้ามี)
+    // 2. รองผู้อำนวยการที่เลือก (ถ้ามี)
     if (selectedDeputy && selectedDeputy !== 'skip') {
       const deputy = deputyDirectors.find(p => p.user_id === selectedDeputy);
       if (deputy) {
@@ -200,7 +169,7 @@ const PDFDocumentManagePage: React.FC = () => {
       }
     }
 
-    // 4. ผู้อำนวยการ (เสมอ) - user_id: 28ef1822-628a-4dfd-b7ea-2defa97d755b
+    // 3. ผู้อำนวยการ (เสมอ) - user_id: 28ef1822-628a-4dfd-b7ea-2defa97d755b
     const director = directors.find(d => d.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') || directors[0];
     if (director) {
       const fullName = `${director.prefix || ''}${director.first_name} ${director.last_name}`.trim();
@@ -218,7 +187,7 @@ const PDFDocumentManagePage: React.FC = () => {
     }
 
     return list;
-  }, [authorProfile, selectedAssistant, selectedDeputy, assistantDirectors, deputyDirectors, directors]);
+  }, [authorProfile, selectedDeputy, deputyDirectors, directors]);
 
   const isStepComplete = (step: number) => {
     switch (step) {

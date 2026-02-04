@@ -259,6 +259,9 @@ class RailwayService {
       throw new Error(`Railway API Error: ${JSON.stringify(data.error)}`);
     }
 
+    // Set manual override for 2 hours to prevent scheduler from interfering
+    await this.setManualOverride(serviceId, 2);
+
     return { success: true, message: 'Service started' };
   }
 
@@ -286,6 +289,9 @@ class RailwayService {
     if (data?.error) {
       throw new Error(`Railway API Error: ${JSON.stringify(data.error)}`);
     }
+
+    // Set manual override for 2 hours to prevent scheduler from interfering
+    await this.setManualOverride(serviceId, 2);
 
     return { success: true, message: 'Service stopped' };
   }
@@ -335,6 +341,36 @@ class RailwayService {
 
   async toggleSchedule(id: string, enabled: boolean): Promise<void> {
     await this.updateSchedule(id, { enabled });
+  }
+
+  // Set manual override for a service to prevent scheduler from interfering
+  async setManualOverride(serviceId: string, hours: number = 2): Promise<void> {
+    const overrideUntil = new Date();
+    overrideUntil.setHours(overrideUntil.getHours() + hours);
+
+    const { error } = await supabase
+      .from('railway_schedules')
+      .update({ manual_override_until: overrideUntil.toISOString() })
+      .eq('service_id', serviceId);
+
+    if (error) {
+      console.warn('Failed to set manual override:', error);
+      // Don't throw - this is not critical
+    } else {
+      console.log(`✅ Manual override set until ${overrideUntil.toISOString()} for service ${serviceId}`);
+    }
+  }
+
+  // Clear manual override for a service
+  async clearManualOverride(serviceId: string): Promise<void> {
+    const { error } = await supabase
+      .from('railway_schedules')
+      .update({ manual_override_until: null })
+      .eq('service_id', serviceId);
+
+    if (error) {
+      console.warn('Failed to clear manual override:', error);
+    }
   }
 }
 

@@ -11,6 +11,7 @@ interface Schedule {
   stop_time: string;
   days_of_week: number[];
   enabled: boolean;
+  manual_override_until: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -37,12 +38,31 @@ Deno.serve(async (req) => {
 
     const railwayToken = settingsData.value;
 
-    // Get current time and day
+    // Get current time and day in Thailand timezone (UTC+7)
     const now = new Date();
-    const currentDay = now.getDay(); // 0-6 (0 = Sunday)
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const thaiFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Bangkok',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const thaiDayFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Bangkok',
+      weekday: 'short'
+    });
 
-    console.log(`Running scheduler at ${currentTime} on day ${currentDay}`);
+    // Parse Thai time
+    const thaiTimeParts = thaiFormatter.formatToParts(now);
+    const thaiHour = thaiTimeParts.find(p => p.type === 'hour')?.value ?? '00';
+    const thaiMinute = thaiTimeParts.find(p => p.type === 'minute')?.value ?? '00';
+    const currentTime = `${thaiHour}:${thaiMinute}`;
+
+    // Get day of week in Thai timezone
+    const thaiDayStr = thaiDayFormatter.format(now);
+    const dayMap: Record<string, number> = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+    const currentDay = dayMap[thaiDayStr] ?? now.getDay();
+
+    console.log(`Running scheduler at ${currentTime} (Thai time) on day ${currentDay}`);
 
     // Get all enabled schedules
     const { data: schedules, error: schedulesError } = await supabaseClient
@@ -69,6 +89,22 @@ Deno.serve(async (req) => {
       if (!schedule.days_of_week.includes(currentDay)) {
         console.log(`Schedule ${schedule.id} not scheduled for day ${currentDay}`);
         continue;
+      }
+
+      // Check for manual override - skip if user is manually controlling the service
+      if (schedule.manual_override_until) {
+        const overrideUntil = new Date(schedule.manual_override_until);
+        if (now < overrideUntil) {
+          console.log(`⏸️ Schedule ${schedule.service_name} is under manual override until ${overrideUntil.toISOString()}`);
+          continue;
+        } else {
+          // Override expired, clear it
+          await supabaseClient
+            .from("railway_schedules")
+            .update({ manual_override_until: null })
+            .eq("id", schedule.id);
+          console.log(`✅ Manual override expired for ${schedule.service_name}`);
+        }
       }
 
       // Check if it's time to start or stop
@@ -281,6 +317,7 @@ Deno.serve(async (req) => {
         message: "Scheduler executed",
         time: currentTime,
         day: currentDay,
+        timezone: "Asia/Bangkok",
         results,
       }),
       {

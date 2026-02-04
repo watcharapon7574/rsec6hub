@@ -347,22 +347,35 @@ export const useAllMemos = () => {
           }
         }
 
-        // ลบเอกสารแนบทั้งหมด
-        if (memo.attachments && Array.isArray(memo.attachments) && memo.attachments.length > 0) {
+        // ลบเอกสารแนบทั้งหมด (attached_files เป็น JSON string)
+        if (memo.attached_files) {
           try {
-            const attachmentPaths = memo.attachments.map((att: any) =>
-              att.file_path?.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '')
-            ).filter(Boolean);
+            let attachedFilesArr: string[] = [];
+            if (typeof memo.attached_files === 'string') {
+              try {
+                attachedFilesArr = JSON.parse(memo.attached_files);
+              } catch {
+                attachedFilesArr = memo.attached_files ? [memo.attached_files] : [];
+              }
+            } else if (Array.isArray(memo.attached_files)) {
+              attachedFilesArr = memo.attached_files;
+            }
 
-            if (attachmentPaths.length > 0) {
-              const { error: deleteAttachmentsError } = await supabase.storage
-                .from('documents')
-                .remove(attachmentPaths);
+            if (attachedFilesArr.length > 0) {
+              const attachmentPaths = attachedFilesArr
+                .map((url: string) => url?.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, ''))
+                .filter(Boolean);
 
-              if (deleteAttachmentsError) {
-                console.error('❌ Error deleting attachments:', deleteAttachmentsError);
-              } else {
-                console.log(`✅ Deleted ${attachmentPaths.length} attachment(s)`);
+              if (attachmentPaths.length > 0) {
+                const { error: deleteAttachmentsError } = await supabase.storage
+                  .from('documents')
+                  .remove(attachmentPaths);
+
+                if (deleteAttachmentsError) {
+                  console.error('❌ Error deleting attachments:', deleteAttachmentsError);
+                } else {
+                  console.log(`✅ Deleted ${attachmentPaths.length} attachment(s)`);
+                }
               }
             }
           } catch (err) {
@@ -370,9 +383,9 @@ export const useAllMemos = () => {
           }
         }
 
-        // ล้างค่า pdf_draft_path และ attachments ใน database
+        // ล้างค่า pdf_draft_path และ attached_files ใน database
         updateData.pdf_draft_path = null;
-        updateData.attachments = [];
+        updateData.attached_files = null;
       }
 
       // Update signature positions with approval info

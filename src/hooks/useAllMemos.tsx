@@ -153,10 +153,10 @@ export const useAllMemos = () => {
 
       // If there's a rejection reason, store it in form_data and rejected_name_comment
       if (rejectionReason && status === 'rejected' && profile) {
-        // Get current memo to preserve existing form_data and get current revision_count
+        // Get current memo to preserve existing form_data and get files for deletion
         const { data: currentMemo } = await supabase
           .from('memos')
-          .select('form_data, revision_count')
+          .select('form_data, revision_count, pdf_draft_path, attached_files')
           .eq('id', memoId)
           .single();
 
@@ -171,6 +171,78 @@ export const useAllMemos = () => {
           // Increment revision_count
           const currentRevisionCount = currentMemo.revision_count || 0;
           updates.revision_count = currentRevisionCount + 1;
+
+          // ลบ PDF และเอกสารแนบทันทีเมื่อถูกตีกลับ (เหมือน updateMemoApproval)
+          console.log('🗑️ [updateMemoStatus] Deleting PDF and attachments due to rejection');
+
+          // ลบ PDF draft
+          console.log('📄 [updateMemoStatus] pdf_draft_path:', currentMemo.pdf_draft_path);
+          if (currentMemo.pdf_draft_path) {
+            try {
+              const pdfPath = currentMemo.pdf_draft_path.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
+              console.log('📄 [updateMemoStatus] PDF path to delete:', pdfPath);
+
+              const { error: deletePdfError } = await supabase.storage
+                .from('documents')
+                .remove([pdfPath]);
+
+              if (deletePdfError) {
+                console.error('❌ [updateMemoStatus] Error deleting PDF:', deletePdfError);
+              } else {
+                console.log('✅ [updateMemoStatus] Deleted PDF:', pdfPath);
+              }
+            } catch (err) {
+              console.error('❌ [updateMemoStatus] Error processing PDF deletion:', err);
+            }
+          }
+
+          // ลบเอกสารแนบทั้งหมด
+          console.log('📎 [updateMemoStatus] attached_files:', {
+            value: currentMemo.attached_files,
+            type: typeof currentMemo.attached_files
+          });
+
+          if (currentMemo.attached_files) {
+            try {
+              let attachedFilesArr: string[] = [];
+              if (typeof currentMemo.attached_files === 'string') {
+                try {
+                  attachedFilesArr = JSON.parse(currentMemo.attached_files);
+                  console.log('📎 [updateMemoStatus] Parsed attached_files:', attachedFilesArr);
+                } catch {
+                  attachedFilesArr = currentMemo.attached_files ? [currentMemo.attached_files] : [];
+                }
+              } else if (Array.isArray(currentMemo.attached_files)) {
+                attachedFilesArr = currentMemo.attached_files;
+              }
+
+              if (attachedFilesArr.length > 0) {
+                const attachmentPaths = attachedFilesArr
+                  .map((url: string) => url?.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, ''))
+                  .filter(Boolean);
+
+                console.log('📎 [updateMemoStatus] Attachment paths to delete:', attachmentPaths);
+
+                if (attachmentPaths.length > 0) {
+                  const { error: deleteAttachmentsError } = await supabase.storage
+                    .from('documents')
+                    .remove(attachmentPaths);
+
+                  if (deleteAttachmentsError) {
+                    console.error('❌ [updateMemoStatus] Error deleting attachments:', deleteAttachmentsError);
+                  } else {
+                    console.log(`✅ [updateMemoStatus] Deleted ${attachmentPaths.length} attachment(s)`);
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('❌ [updateMemoStatus] Error processing attachments deletion:', err);
+            }
+          }
+
+          // ล้างค่า pdf_draft_path และ attached_files ใน database
+          updates.pdf_draft_path = null;
+          updates.attached_files = null;
         }
 
         // Add rejected_name_comment JSONB data
@@ -192,7 +264,7 @@ export const useAllMemos = () => {
 
       // Refresh memos
       await fetchMemos();
-      
+
       toast({
         title: "อัปเดตสำเร็จ",
         description: "สถานะเอกสารได้ถูกอัปเดตแล้ว",

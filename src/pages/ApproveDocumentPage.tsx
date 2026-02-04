@@ -395,13 +395,15 @@ const ApproveDocumentPage: React.FC = () => {
               { type: "comment", value: `- ${comment || "เห็นชอบ"}` },
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
-              { type: "org_structure_role", value: `ตำแหน่ง ${profile.org_structure_role || ""}` },
+              { type: "position_rank", value: `ตำแหน่ง ${profile.job_position || ""} วิทยฐานะ ${profile.academic_rank || ""}` },
+              { type: "org_structure_role", value: profile.org_structure_role || "" },
               { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
             ];
             linesWithoutComment = [
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
-              { type: "org_structure_role", value: `ตำแหน่ง ${profile.org_structure_role || ""}` },
+              { type: "position_rank", value: `ตำแหน่ง ${profile.job_position || ""} วิทยฐานะ ${profile.academic_rank || ""}` },
+              { type: "org_structure_role", value: profile.org_structure_role || "" },
               { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
             ];
           } else if (profile.position === 'director') {

@@ -367,11 +367,15 @@ const PDFDocumentManagePage: React.FC = () => {
           const authorSigner = signers.find(s => s.role === 'author');
           const authorNameWithPrefix = authorSigner?.name || `${authorProfile.first_name} ${authorProfile.last_name}`;
 
-          const lines = [
+          const lines: { type: string; file_key?: string; value?: string }[] = [
             { type: "image", file_key: "sig1" },
             { type: "name", value: authorNameWithPrefix },
-            { type: "academic_rank", value: `ตำแหน่ง ${authorProfile.academic_rank || authorProfile.job_position || authorProfile.position || ''}` }
+            { type: "academic_rank", value: `ตำแหน่ง ${authorProfile.job_position || authorProfile.academic_rank || authorProfile.position || ''}` }
           ];
+          // เพิ่ม org_structure_role สำหรับหัวหน้าฝ่าย/หัวหน้างาน
+          if (authorProfile.org_structure_role) {
+            lines.push({ type: "role", value: authorProfile.org_structure_role });
+          }
 
           console.log('📥 Fetching PDF from:', extractedPdfUrl);
           const pdfRes = await fetch(extractedPdfUrl);

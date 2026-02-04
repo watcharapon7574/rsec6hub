@@ -28,6 +28,7 @@ const PDFReceiveManagePage: React.FC = () => {
   const [selectedDeputy, setSelectedDeputy] = useState<string>('');
   const [signaturePositions, setSignaturePositions] = useState<any[]>([]);
   const [comment, setComment] = useState('');
+  const [documentSummary, setDocumentSummary] = useState(''); // สำหรับสรุปเนื้อหาเอกสาร (doc_receive ไม่ต้องใช้แต่ต้อง pass เพื่อให้ component ทำงาน)
   const [selectedSignerIndex, setSelectedSignerIndex] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState(1); // Start at step 1 (which is actually step 2 - select signers)
   const [showLoadingModal, setShowLoadingModal] = useState(false);
@@ -537,9 +538,11 @@ const PDFReceiveManagePage: React.FC = () => {
               signers={signers}
               signaturePositions={signaturePositions}
               comment={comment}
+              documentSummary={documentSummary}
               selectedSignerIndex={selectedSignerIndex}
               memo={docReceive}
               onCommentChange={setComment}
+              onDocumentSummaryChange={setDocumentSummary}
               onSelectedSignerIndexChange={setSelectedSignerIndex}
               onPositionClick={handlePositionClick}
               onPositionRemove={handlePositionRemove}

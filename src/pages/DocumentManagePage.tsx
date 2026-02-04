@@ -38,7 +38,8 @@ const DocumentManagePage: React.FC = () => {
   const [selectedAssistant, setSelectedAssistant] = useState<string>('');
   const [selectedDeputy, setSelectedDeputy] = useState<string>('');
   const [signaturePositions, setSignaturePositions] = useState<any[]>([]);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState(''); // สำหรับ comment ต่อตำแหน่งลายเซ็น
+  const [documentSummary, setDocumentSummary] = useState(''); // สำหรับสรุปเนื้อหาเอกสาร (แยกออกจาก comment)
   const [selectedSignerIndex, setSelectedSignerIndex] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState(1);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -765,20 +766,20 @@ const DocumentManagePage: React.FC = () => {
         prefix: signers.find(s => s.user_id === p.signer.user_id)?.prefix
       })));
 
-      // 1.5. บันทึกสรุปเนื้อหาเอกสาร
+      // 1.5. บันทึกสรุปเนื้อหาเอกสาร (ใช้ documentSummary แทน comment เพราะ comment จะถูก clear เมื่อวางตำแหน่ง)
       console.log('🔍 Attempting to save document summary:', {
-        hasComment: !!comment.trim(),
-        commentLength: comment.trim().length,
-        comment: comment.trim(),
+        hasDocumentSummary: !!documentSummary.trim(),
+        documentSummaryLength: documentSummary.trim().length,
+        documentSummary: documentSummary.trim(),
         memoId
       });
 
-      if (comment.trim()) {
+      if (documentSummary.trim()) {
         try {
           const { error: updateError } = await supabase
             .from('memos')
             .update({
-              document_summary: comment.trim(),
+              document_summary: documentSummary.trim(),
               updated_at: new Date().toISOString()
             })
             .eq('id', memoId);
@@ -793,7 +794,7 @@ const DocumentManagePage: React.FC = () => {
             });
             return;
           } else {
-            console.log('✅ Document summary updated successfully:', comment.trim());
+            console.log('✅ Document summary updated successfully:', documentSummary.trim());
           }
         } catch (err) {
           console.error('❌ Failed to update document summary:', err);
@@ -1231,9 +1232,11 @@ const DocumentManagePage: React.FC = () => {
               signers={signers}
               signaturePositions={signaturePositions}
               comment={comment}
+              documentSummary={documentSummary}
               selectedSignerIndex={selectedSignerIndex}
               memo={memo}
               onCommentChange={setComment}
+              onDocumentSummaryChange={setDocumentSummary}
               onSelectedSignerIndexChange={setSelectedSignerIndex}
               onPositionClick={handlePositionClick}
               onPositionRemove={handlePositionRemove}

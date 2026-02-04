@@ -13,9 +13,11 @@ interface Step3Props {
   signers: any[];
   signaturePositions: any[];
   comment: string;
+  documentSummary: string; // สรุปเนื้อหาเอกสาร (แยกจาก comment ต่อตำแหน่ง)
   selectedSignerIndex: number;
   memo: any;
   onCommentChange: (value: string) => void;
+  onDocumentSummaryChange: (value: string) => void; // สำหรับอัปเดตสรุปเนื้อหา
   onSelectedSignerIndexChange: (index: number) => void;
   onPositionClick: (x: number, y: number, page: number) => void;
   onPositionRemove: (index: number) => void;
@@ -28,9 +30,11 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
   signers,
   signaturePositions,
   comment,
+  documentSummary,
   selectedSignerIndex,
   memo,
   onCommentChange,
+  onDocumentSummaryChange,
   onSelectedSignerIndexChange,
   onPositionClick,
   onPositionRemove,
@@ -126,8 +130,8 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
           <Label>ความหมายโดยสรุปของเอกสารฉบับนี้</Label>
           <Textarea
             placeholder="โปรดอธิบายโดยสรุปว่าเอกสารฉบับนี้มีเนื้อหาเกี่ยวกับอะไร เพื่อให้ผู้ลงนามเข้าใจเบื้องต้น"
-            value={comment}
-            onChange={(e) => onCommentChange(e.target.value)}
+            value={documentSummary}
+            onChange={(e) => onDocumentSummaryChange(e.target.value)}
             rows={3}
           />
           <p className="text-xs text-gray-500 mt-1">

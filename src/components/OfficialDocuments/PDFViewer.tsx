@@ -389,9 +389,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   }, [positionsHash]);
 
-  // Removed auto-refresh interval - only refresh on actual changes (page, zoom, positions)
-  // This prevents unnecessary re-renders that make X button hard to click
+  // Auto-refresh interval for smooth pin positioning during scroll/zoom
+  // Use longer interval (300ms) to allow X button clicks
+  useEffect(() => {
+    if (signaturePositions.length > 0) {
+      const intervalId = setInterval(() => {
+        setRefreshKey(prev => prev + 1);
+      }, 300); // 300ms refresh rate - enough for smooth updates but allows X clicks
 
+      return () => clearInterval(intervalId);
+    }
+  }, [signaturePositions.length]);
 
   // Force refresh when page changes
   useEffect(() => {
@@ -789,12 +797,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       overflow: 'visible' // เพิ่มเพื่อให้ปุ่ม X แสดงออกนอกขอบ
                     }}
                   >
-                    {/* ปุ่ม X ลบตำแหน่ง - วางนอก div เนื้อหา */}
+                    {/* ปุ่ม X ลบตำแหน่ง - ใช้ onPointerDown เพื่อจับคลิกทันทีก่อน re-render */}
                     {onPositionRemove && (
                       <button
-                        onClick={(e) => {
+                        onPointerDown={(e) => {
                           e.stopPropagation();
-                          onPositionRemove(signaturePositions.indexOf(pos));
+                          e.preventDefault();
+                          const idx = signaturePositions.indexOf(pos);
+                          if (idx !== -1) {
+                            onPositionRemove(idx);
+                          }
                         }}
                         className="absolute w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center font-bold shadow-lg transition-all duration-200 hover:scale-110"
                         style={{
@@ -804,7 +816,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                           boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
                           zIndex: 10001,
                           fontSize: '16px',
-                          transform: 'translate(50%, -50%)'
+                          transform: 'translate(50%, -50%)',
+                          cursor: 'pointer',
+                          touchAction: 'manipulation' // ป้องกัน delay บน touch devices
                         }}
                         title="ลบตำแหน่งลายเซ็น"
                       >

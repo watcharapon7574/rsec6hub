@@ -6,6 +6,42 @@ import { requestQueue, railwayPDFQueue } from '@/utils/requestQueue';
 import { formatThaiDateFull } from '@/utils/dateUtils';
 
 export class MemoService {
+  // Line-wrap text using Edge Function (Vertex AI)
+  static async wrapTextWithLineWrap(text: string): Promise<string> {
+    if (!text || text.trim().length === 0) return text;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('line-wrap', {
+        body: { text }
+      });
+
+      if (error) {
+        console.warn('Line-wrap Edge Function error, using original:', error);
+        return text; // Fallback
+      }
+
+      return data?.wrapped || text;
+    } catch (err) {
+      console.warn('Line-wrap failed, using original:', err);
+      return text; // Fallback
+    }
+  }
+
+  // Preprocess memo text fields (introduction, fact, proposal) with line-wrapping
+  static async preprocessMemoText(formData: any): Promise<any> {
+    const fieldsToWrap = ['introduction', 'fact', 'proposal'];
+    const processed = { ...formData };
+
+    for (const field of fieldsToWrap) {
+      if (processed[field] && processed[field].trim()) {
+        console.log(`📝 Wrapping field: ${field}`);
+        processed[field] = await this.wrapTextWithLineWrap(processed[field]);
+      }
+    }
+
+    return processed;
+  }
+
   // Helper function to upload files to storage
   static async uploadAttachedFiles(files: File[], userId: string): Promise<string[]> {
     const uploadedUrls: string[] = [];
@@ -133,6 +169,9 @@ export class MemoService {
               date: formData.date ? formatThaiDateFull(formData.date) : formData.date
             };
 
+            // Line-wrap Thai text fields (introduction, fact, proposal) at 80 chars
+            const processedFormData = await MemoService.preprocessMemoText(formDataWithThaiDate);
+
             const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
               method: 'POST',
               headers: {
@@ -141,7 +180,7 @@ export class MemoService {
               },
               mode: 'cors',
               credentials: 'omit',
-              body: JSON.stringify(formDataWithThaiDate),
+              body: JSON.stringify(processedFormData),
             });
 
             if (!response.ok) {

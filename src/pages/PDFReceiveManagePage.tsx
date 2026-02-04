@@ -12,7 +12,7 @@ import { extractPdfUrl } from '@/utils/fileUpload';
 import { railwayPDFQueue } from '@/utils/requestQueue';
 
 // Import step components for doc_receive (3 steps)
-import Step1DocReceive, { DepartmentOption, trimDepartmentPrefix } from '@/components/DocumentManage/Step1DocReceive';
+import Step1DocReceive, { DepartmentOption } from '@/components/DocumentManage/Step1DocReceive';
 import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
 import Step4Review from '@/components/DocumentManage/Step4Review';
 
@@ -39,6 +39,34 @@ const PDFReceiveManagePage: React.FC = () => {
   // Doc receive data
   const [docReceive, setDocReceive] = useState<any>(null);
 
+  // Departments from database
+  const [departmentOptions, setDepartmentOptions] = useState<DepartmentOption[]>([]);
+
+  // Fetch departments from database
+  const fetchDepartments = React.useCallback(async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('departments')
+        .select('id, name, sort_order')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+
+      // Convert to DepartmentOption format
+      const options: DepartmentOption[] = (data || []).map((dept: any) => ({
+        value: dept.name,
+        label: dept.name,
+        fullName: dept.name,
+        userId: dept.id // Use department id as userId for key purposes
+      }));
+
+      setDepartmentOptions(options);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  }, []);
+
   // Fetch doc_receive data
   const fetchDocReceive = React.useCallback(async () => {
     if (!memoId) return;
@@ -63,32 +91,17 @@ const PDFReceiveManagePage: React.FC = () => {
   }, [memoId, toast]);
 
   useEffect(() => {
+    fetchDepartments();
     fetchDocReceive();
-  }, [fetchDocReceive]);
+  }, [fetchDepartments, fetchDocReceive]);
 
   // Get profiles by position
-  const assistantDirectors = profiles.filter(p => p.position === 'assistant_director');
   const deputyDirectors = profiles.filter(p => p.position === 'deputy_director');
   // ผอ. ต้องเป็น user_id นี้เท่านั้น
   const directors = profiles.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
 
   // Get clerk profile (current user)
   const clerkProfile = profile;
-
-  // สร้าง departmentOptions จาก assistantDirectors - แสดงเฉพาะชื่อฝ่าย ไม่แสดงชื่อคน
-  const departmentOptions: DepartmentOption[] = React.useMemo(() => {
-    return assistantDirectors
-      .filter(p => p.org_structure_role) // เฉพาะคนที่มี org_structure_role
-      .map(p => {
-        const trimmedName = trimDepartmentPrefix(p.org_structure_role);
-        return {
-          value: trimmedName, // ชื่อตัดแล้ว เช่น "ฝ่ายบริหารงานบุคคล"
-          label: trimmedName, // แสดงเหมือน value
-          fullName: p.org_structure_role, // ชื่อเต็ม เช่น "หัวหน้าฝ่ายบริหารงานบุคคล"
-          userId: p.user_id
-        };
-      });
-  }, [assistantDirectors]);
 
   // Handle department change - เก็บฝ่ายที่เลือกเพื่อคัดกรองประเภทหนังสือรับ (ไม่เพิ่มในผู้ลงนาม)
   const handleDepartmentChange = (departmentValue: string) => {

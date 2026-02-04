@@ -85,7 +85,7 @@ export class MemoService {
     return uploadedUrls;
   }
 
-  static async createMemoDraft(formData: MemoFormData & { memo_id?: string; attachedFileObjects?: File[] }, userId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  static async createMemoDraft(formData: MemoFormData & { memo_id?: string; attachedFileObjects?: File[] }, userId: string, preGeneratedPdfBlob?: Blob): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Handle file uploads for attached files
       let attachedFileUrls: string[] = [];
@@ -159,46 +159,55 @@ export class MemoService {
       if (shouldGenerateNewPdf) {
         console.log('📄 Generating new PDF...');
 
-        // Call Railway PDF API with queue + retry logic (max 3 retries with exponential backoff)
-        // This ensures high success rate even under load (Railway can only handle 2 concurrent)
-        const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
-          async () => {
-            // Format date to Thai before sending to API
-            const formDataWithThaiDate = {
-              ...formData,
-              date: formData.date ? formatThaiDateFull(formData.date) : formData.date
-            };
+        let pdfBlob: Blob;
 
-            // Line-wrap Thai text fields (introduction, fact, proposal) at 80 chars
-            const processedFormData = await MemoService.preprocessMemoText(formDataWithThaiDate);
+        // Use pre-generated blob if available (from preview), otherwise call API
+        if (preGeneratedPdfBlob) {
+          console.log('📄 Using pre-generated PDF from preview');
+          pdfBlob = preGeneratedPdfBlob;
+        } else {
+          console.log('📄 Calling Railway API to generate PDF...');
+          // Call Railway PDF API with queue + retry logic (max 3 retries with exponential backoff)
+          // This ensures high success rate even under load (Railway can only handle 2 concurrent)
+          pdfBlob = await railwayPDFQueue.enqueueWithRetry(
+            async () => {
+              // Format date to Thai before sending to API
+              const formDataWithThaiDate = {
+                ...formData,
+                date: formData.date ? formatThaiDateFull(formData.date) : formData.date
+              };
 
-            const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/pdf',
-              },
-              mode: 'cors',
-              credentials: 'omit',
-              body: JSON.stringify(processedFormData),
-            });
+              // Line-wrap disabled - users will manually add line breaks
+              // const processedFormData = await MemoService.preprocessMemoText(formDataWithThaiDate);
 
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`API Error: ${response.status} - ${errorText}`);
-            }
+              const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/pdf',
+                },
+                mode: 'cors',
+                credentials: 'omit',
+                body: JSON.stringify(formDataWithThaiDate),
+              });
 
-            const blob = await response.blob();
-            if (blob.size === 0) {
-              throw new Error('Received empty PDF response');
-            }
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API Error: ${response.status} - ${errorText}`);
+              }
 
-            return blob;
-          },
-          'PDF Generation',
-          3, // max retries
-          1000 // initial delay (1s, 2s, 4s)
-        );
+              const blob = await response.blob();
+              if (blob.size === 0) {
+                throw new Error('Received empty PDF response');
+              }
+
+              return blob;
+            },
+            'PDF Generation',
+            3, // max retries
+            1000 // initial delay (1s, 2s, 4s)
+          );
+        }
         
         // Upload PDF to Supabase Storage (use queue + retry)
         const fileName = `memo_${Date.now()}_${formData.doc_number.replace(/[^\w]/g, '_')}.pdf`;

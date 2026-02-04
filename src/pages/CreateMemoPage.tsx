@@ -9,12 +9,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useMemoErrorHandler } from '@/hooks/useMemoErrorHandler';
 import { MemoFormData } from '@/types/memo';
-import { FileText, ArrowLeft, AlertCircle, Sparkles } from 'lucide-react';
+import { FileText, ArrowLeft, AlertCircle, Sparkles, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAllMemos } from '@/hooks/useAllMemos';
 import { useToast } from '@/hooks/use-toast';
+import { formatThaiDateFull } from '@/utils/dateUtils';
 
 const CreateMemoPage = () => {
   const navigate = useNavigate();
@@ -48,6 +49,12 @@ const CreateMemoPage = () => {
   // Rate limiting: 10 requests per minute per user
   const [grammarRequestCount, setGrammarRequestCount] = useState(0);
   const [grammarRequestResetTime, setGrammarRequestResetTime] = useState(Date.now() + 60000);
+
+  // Preview PDF state
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewFormDataHash, setPreviewFormDataHash] = useState<string>('');
 
   const [formData, setFormData] = useState<MemoFormData>({
     doc_number: '', // ธุรการจะเป็นคนใส่
@@ -148,21 +155,28 @@ const CreateMemoPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Use the doc_number as is, without auto-generation
     const submissionData = {
       ...formData,
       doc_number: formData.doc_number.trim() || '' // Leave empty if not provided
     };
-    
+
+    // Use pre-generated PDF if preview is still valid (form data hasn't changed)
+    const validPreviewBlob = isPreviewValid() ? previewBlob : undefined;
+    if (validPreviewBlob) {
+      console.log('📄 Using pre-generated PDF from preview (skipping API call)');
+    }
+
     if (isEditMode && originalMemo) {
       // For edit mode - call API /pdf to generate new PDF and delete old files
       const result = await createMemoDraft({
         ...submissionData,
         memo_id: originalMemo.id, // Send memo_id for update mode
-        attachedFileObjects: selectedFiles
+        attachedFileObjects: selectedFiles,
+        preGeneratedPdfBlob: validPreviewBlob
       } as any);
-      
+
       if (result.success) {
         // Check if only attached files were changed
         const contentFields = ['doc_number', 'subject', 'date', 'attachment_title', 'introduction', 'author_name', 'author_position', 'fact', 'proposal'];
@@ -189,7 +203,8 @@ const CreateMemoPage = () => {
       // Normal create mode
       const result = await createMemoDraft({
         ...submissionData,
-        attachedFileObjects: selectedFiles
+        attachedFileObjects: selectedFiles,
+        preGeneratedPdfBlob: validPreviewBlob
       } as any);
       if (result.success) {
         navigate('/documents');
@@ -391,6 +406,89 @@ const CreateMemoPage = () => {
     setGrammarSuggestions([]);
     setCurrentSuggestionIndex(0);
   };
+
+  // Create hash of form data to detect changes
+  const getFormDataHash = () => {
+    const { doc_number, date, subject, attachment_title, introduction, fact, proposal } = formData;
+    return JSON.stringify({ doc_number, date, subject, attachment_title, introduction, fact, proposal });
+  };
+
+  // Generate PDF preview
+  const generatePreview = async () => {
+    if (previewLoading) return;
+
+    // Clear previous preview (prevent memory leak and file clutter)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    setPreviewBlob(null);
+    setPreviewFormDataHash('');
+
+    setPreviewLoading(true);
+
+    try {
+      // Format data for API
+      const previewData = {
+        ...formData,
+        date: formData.date ? formatThaiDateFull(formData.date) : formData.date
+      };
+
+      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/pdf',
+        },
+        mode: 'cors',
+        credentials: 'omit',
+        body: JSON.stringify(previewData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      if (blob.size === 0) {
+        throw new Error('Received empty PDF');
+      }
+
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+      setPreviewBlob(blob);
+      setPreviewFormDataHash(getFormDataHash());
+
+      toast({
+        title: "สร้างตัวอย่างสำเร็จ",
+        description: "คุณสามารถดูตัวอย่าง PDF ได้ด้านล่าง",
+      });
+
+    } catch (error) {
+      console.error('Preview generation error:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถสร้างตัวอย่าง PDF ได้",
+        variant: "destructive",
+      });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  // Check if preview is still valid (form data hasn't changed)
+  const isPreviewValid = () => {
+    return previewBlob && previewFormDataHash === getFormDataHash();
+  };
+
+  // Cleanup preview URL on unmount
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -841,11 +939,11 @@ const CreateMemoPage = () => {
                   >
                     {loading ? (isEditMode ? 'กำลังอัปเดต...' : 'กำลังสร้าง...') : (isEditMode ? 'อัปเดตบันทึก' : 'ส่งบันทึก')}
                   </Button>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     variant="outline"
                     onClick={correctGrammar}
-                    disabled={loading || loadingMemo || grammarLoading}
+                    disabled={loading || loadingMemo || grammarLoading || previewLoading}
                     className="border-green-300 text-green-700 hover:bg-green-50 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {grammarLoading ? (
@@ -863,6 +961,28 @@ const CreateMemoPage = () => {
                       </>
                     )}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={generatePreview}
+                    disabled={loading || loadingMemo || grammarLoading || previewLoading}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {previewLoading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                        </svg>
+                        กำลังสร้าง...
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        ดูตัวอย่าง
+                      </>
+                    )}
+                  </Button>
                   <div className="flex-1"></div>
                   <Button 
                     type="button" 
@@ -877,6 +997,48 @@ const CreateMemoPage = () => {
               </CardContent>
             </Card>
           </form>
+
+          {/* PDF Preview Section */}
+          {previewUrl && (
+            <Card className="mt-8 shadow-lg border-0 bg-white">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 rounded-t-lg">
+                <CardTitle className="text-xl text-gray-800 font-semibold flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Eye className="w-4 h-4 text-blue-600" />
+                    </div>
+                    ตัวอย่าง PDF
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (previewUrl) {
+                        URL.revokeObjectURL(previewUrl);
+                        setPreviewUrl(null);
+                      }
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ปิดตัวอย่าง
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                  <iframe
+                    src={previewUrl}
+                    className="w-full h-[800px] border-0"
+                    title="PDF Preview"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-3 text-center">
+                  💡 ตรวจสอบการตัดบรรทัดและแก้ไขในฟอร์มด้านบน แล้วกด "ดูตัวอย่าง" อีกครั้งเพื่อดูผลลัพธ์
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
       <div className="h-10" />

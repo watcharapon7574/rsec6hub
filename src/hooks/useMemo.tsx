@@ -11,7 +11,7 @@ export const useMemo = (memoId?: string) => {
   const [loading, setLoading] = useState(false);
   const [userMemos, setUserMemos] = useState<Memo[]>([]);
 
-  const createMemoDraft = async (formData: MemoFormData) => {
+  const createMemoDraft = async (formData: MemoFormData & { preGeneratedPdfBlob?: Blob }) => {
     if (!profile?.user_id) return { success: false, error: 'ไม่พบข้อมูลผู้ใช้' };
 
     setLoading(true);
@@ -23,7 +23,7 @@ export const useMemo = (memoId?: string) => {
         author_position: profile.current_position || profile.job_position || profile.position || 'ไม่ระบุตำแหน่ง'
       };
 
-      const result = await MemoService.createMemoDraft(enrichedFormData, profile.user_id);
+      const result = await MemoService.createMemoDraft(enrichedFormData, profile.user_id, formData.preGeneratedPdfBlob);
       
       if (result.success) {
         toast({

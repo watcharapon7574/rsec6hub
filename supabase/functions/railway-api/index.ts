@@ -17,48 +17,15 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Verify authentication
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.error("Missing authorization header");
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Extract JWT token from Authorization header
-    const token = authHeader.replace("Bearer ", "");
-
-    // Use service role to validate the token
+    // Use service role to access database (no user auth required for this internal API)
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get user from token
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseAdmin.auth.getUser(token);
+    console.log("✅ Using service role for Railway API access");
 
-    if (userError || !user) {
-      console.error("Auth error:", userError?.message || "No user");
-      return new Response(
-        JSON.stringify({ error: "Unauthorized", details: userError?.message }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    console.log("✅ User authenticated:", user.email);
-
-    // Get Railway API token from database (reusing supabaseAdmin created above)
+    // Get Railway API token from database
     const { data: settingsData, error: settingsError } = await supabaseAdmin
       .from("app_settings")
       .select("value")

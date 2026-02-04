@@ -63,13 +63,13 @@ export class MemoService {
       // Check if this is an update (edit mode) and determine if we need to regenerate PDF
       if (formData.memo_id) {
         // Get existing memo to check what changed (use queue)
-        const { data: existingMemo, error: fetchError } = await requestQueue.enqueue(() =>
-          supabase
+        const { data: existingMemo, error: fetchError } = await requestQueue.enqueue(async () =>
+          await supabase
             .from('memos')
             .select('*')
-            .eq('id', formData.memo_id)
+            .eq('id', formData.memo_id as string)
             .single()
-        );
+        ) as any;
 
         if (fetchError) {
           console.warn('Could not fetch existing memo for comparison:', fetchError);
@@ -188,38 +188,31 @@ export class MemoService {
           .getPublicUrl(filePath);
         
         publicUrl = newPublicUrl;
+      }
 
-        // Delete old PDF file if this is an update
-        if (formData.memo_id) {
-          const { data: existingMemo } = await supabase
+      // Check if this is an update (edit mode)
+      if (formData.memo_id) {
+        // เก็บ path เก่าไว้ก่อน เพื่อลบหลังจาก database update สำเร็จ
+        let oldPdfPathToDelete: string | null = null;
+        
+        if (shouldGenerateNewPdf) {
+          const { data: existingMemoForDelete } = await supabase
             .from('memos')
             .select('pdf_draft_path')
             .eq('id', formData.memo_id)
             .single();
 
-          if (existingMemo?.pdf_draft_path) {
-            try {
-              const extractedPdfUrl = extractPdfUrl(existingMemo.pdf_draft_path);
-              if (extractedPdfUrl) {
-                const oldPdfPath = extractedPdfUrl.split('/documents/')[1];
-                if (oldPdfPath) {
-                  await supabase.storage
-                    .from('documents')
-                    .remove([oldPdfPath]);
-                }
-              }
-            } catch (error) {
-              console.warn('Could not delete old PDF file:', error);
+          if (existingMemoForDelete?.pdf_draft_path) {
+            const extractedOldUrl = extractPdfUrl(existingMemoForDelete.pdf_draft_path);
+            if (extractedOldUrl) {
+              oldPdfPathToDelete = extractedOldUrl.split('/documents/')[1] || null;
             }
           }
         }
-      }
-
-      // Check if this is an update (edit mode)
-      if (formData.memo_id) {
+        
         // Update existing memo and reset current_signer_order to 1 (use queue)
-        const { data, error } = await requestQueue.enqueue(() =>
-          supabase
+        const { data, error } = await requestQueue.enqueue(async () =>
+          await supabase
             .from('memos')
             .update({
               doc_number: formData.doc_number,
@@ -238,17 +231,32 @@ export class MemoService {
               current_signer_order: 1, // Reset to 1 after edit
               updated_at: new Date().toISOString()
             })
-            .eq('id', formData.memo_id)
+            .eq('id', formData.memo_id as string)
             .select()
             .single()
-        );
+        ) as any;
 
         if (error) throw error;
+        
+        // ลบไฟล์ PDF เก่าหลังจาก database update สำเร็จแล้วเท่านั้น
+        if (oldPdfPathToDelete) {
+          try {
+            console.log('🗑️ Deleting old PDF file:', oldPdfPathToDelete);
+            await supabase.storage
+              .from('documents')
+              .remove([oldPdfPathToDelete]);
+            console.log('✅ Old PDF file deleted successfully');
+          } catch (deleteError) {
+            console.warn('⚠️ Could not delete old PDF file:', deleteError);
+            // ไม่ throw error เพราะ database update สำเร็จแล้ว
+          }
+        }
+        
         return { success: true, data };
       } else {
         // Create new memo (use queue)
-        const { data, error } = await requestQueue.enqueue(() =>
-          supabase
+        const { data, error } = await requestQueue.enqueue(async () =>
+          await supabase
             .from('memos')
             .insert({
               doc_number: formData.doc_number,
@@ -269,7 +277,7 @@ export class MemoService {
             })
             .select()
             .single()
-        );
+        ) as any;
 
         if (error) throw error;
         return { success: true, data };
@@ -564,7 +572,7 @@ export class MemoService {
         .from('memos')
         .update({
           doc_del: deletionMetadata
-        })
+        } as any)
         .eq('id', memoId);
 
       if (error) throw error;
@@ -591,7 +599,7 @@ export class MemoService {
         deleted_by_name: userName
       };
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('doc_receive')
         .update({
           doc_del: deletionMetadata

@@ -429,11 +429,48 @@ const ApproveDocumentPage: React.FC = () => {
           }
           // --- เตรียม FormData และเรียก API ลายเซ็น ---
           // ดาวน์โหลด PDF
+          console.log('📥 Fetching PDF from:', extractedPdfUrl);
           const pdfRes = await fetch(extractedPdfUrl);
+          if (!pdfRes.ok) {
+            console.error('❌ Failed to fetch PDF:', pdfRes.status, pdfRes.statusText);
+            setShowLoadingModal(false);
+            toast({
+              title: 'ไม่พบไฟล์ PDF',
+              description: `ไม่สามารถดาวน์โหลดไฟล์ PDF ได้ (${pdfRes.status}) กรุณารีเฟรชหน้าและลองใหม่`,
+              variant: 'destructive'
+            });
+            return;
+          }
           const pdfBlob = await pdfRes.blob();
+          console.log('✅ PDF fetched successfully, size:', pdfBlob.size, 'bytes');
+          
+          // ตรวจสอบว่า blob เป็น PDF จริง
+          if (pdfBlob.type !== 'application/pdf' && !pdfBlob.type.includes('pdf')) {
+            console.error('❌ Invalid PDF blob type:', pdfBlob.type);
+            setShowLoadingModal(false);
+            toast({
+              title: 'ไฟล์ไม่ถูกต้อง',
+              description: 'ไฟล์ที่ได้รับไม่ใช่ PDF กรุณารีเฟรชหน้าและลองใหม่',
+              variant: 'destructive'
+            });
+            return;
+          }
+          
           // ดาวน์โหลดลายเซ็น
+          console.log('📥 Fetching signature from:', profile.signature_url);
           const sigRes = await fetch(profile.signature_url);
+          if (!sigRes.ok) {
+            console.error('❌ Failed to fetch signature:', sigRes.status, sigRes.statusText);
+            setShowLoadingModal(false);
+            toast({
+              title: 'ไม่พบไฟล์ลายเซ็น',
+              description: `ไม่สามารถดาวน์โหลดลายเซ็นได้ (${sigRes.status}) กรุณาตรวจสอบลายเซ็นในโปรไฟล์`,
+              variant: 'destructive'
+            });
+            return;
+          }
           const sigBlob = await sigRes.blob();
+          console.log('✅ Signature fetched successfully, size:', sigBlob.size, 'bytes');
           const formData = new FormData();
           formData.append('pdf', pdfBlob, 'document.pdf');
           formData.append('sig1', sigBlob, 'signature.png');
@@ -574,13 +611,33 @@ const ApproveDocumentPage: React.FC = () => {
             newStatus = nextSignerOrder > maxOrder ? 'completed' : 'pending_sign';
           }
           
-          await updateDocumentStatus(memoId, newStatus, undefined, undefined, nextSignerOrder, newPublicUrl);
-          // --- ลบไฟล์เก่า ---
+          const updateResult = await updateDocumentStatus(memoId, newStatus, undefined, undefined, nextSignerOrder, newPublicUrl);
+          
+          // ตรวจสอบว่า database update สำเร็จก่อนลบไฟล์เก่า
+          if (!updateResult.success) {
+            console.error('❌ Failed to update document status:', (updateResult as any).error);
+            // ลบไฟล์ใหม่ที่อัปโหลดไปแล้วเพื่อ rollback
+            await supabase.storage.from('documents').remove([newFilePath]);
+            setShowLoadingModal(false);
+            toast({ 
+              title: 'เกิดข้อผิดพลาด', 
+              description: 'ไม่สามารถอัปเดตสถานะเอกสารได้ กรุณาลองใหม่',
+              variant: 'destructive'
+            });
+            return;
+          }
+          
+          console.log('✅ Document status updated successfully, new PDF path:', newPublicUrl);
+          
+          // --- ลบไฟล์เก่า (หลังจาก database update สำเร็จแล้ว) ---
           const { error: removeError } = await supabase.storage
             .from('documents')
             .remove([oldFilePath]);
           if (removeError) {
-            // ไม่ต้อง return, แค่ log
+            console.warn('⚠️ Failed to remove old PDF file:', removeError.message);
+            // ไม่ต้อง return, แค่ log เพราะไฟล์ใหม่ถูกอัปโหลดและ database อัปเดตแล้ว
+          } else {
+            console.log('🗑️ Old PDF file removed successfully');
           }
           setShowLoadingModal(false);
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });

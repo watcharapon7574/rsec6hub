@@ -255,20 +255,21 @@ const DocumentList: React.FC<DocumentListProps> = ({
 
     try {
       const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+      const idColumn = documentType === 'doc_receive' ? 'doc_receive_id' : 'memo_id';
 
       const { data, error } = await supabase
         .from('task_assignments')
         .select(`
           id,
-          assignee_id,
-          assignee_name,
+          assigned_to,
           note,
           status,
           completion_note,
           assigned_at,
-          completed_at
+          completed_at,
+          profiles:assigned_to(full_name)
         `)
-        .eq('memo_id', memo.id)
+        .eq(idColumn, memo.id)
         .eq('document_type', documentType)
         .is('deleted_at', null)
         .order('assigned_at', { ascending: false });
@@ -283,7 +284,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
         return;
       }
 
-      setAssigneesList(data || []);
+      // Transform data to include assignee_name from profiles
+      const transformedData = (data || []).map((item: any) => ({
+        ...item,
+        assignee_name: item.profiles?.full_name || 'ไม่ทราบชื่อ'
+      }));
+
+      setAssigneesList(transformedData);
     } catch (err) {
       console.error('Error:', err);
     } finally {

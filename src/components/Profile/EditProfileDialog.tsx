@@ -102,6 +102,11 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   };
 
   const validateForm = async (): Promise<boolean> => {
+    // ถ้าเลือก "ว่าง" ไม่ต้อง validate fields อื่น
+    if (formData.position === 'vacant') {
+      return true;
+    }
+
     // Required fields
     if (!formData.prefix.trim()) {
       setError('กรุณากรอกคำนำหน้าชื่อ');
@@ -156,13 +161,32 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
         return;
       }
 
+      // ถ้าเลือก "ว่าง" ให้ล้างข้อมูลทั้งหมดตอนบันทึก
+      const dataToSave = formData.position === 'vacant'
+        ? {
+            position: 'vacant',
+            prefix: '',
+            first_name: '',
+            last_name: '',
+            phone: '',
+            job_position: '',
+            academic_rank: '',
+            org_structure_role: '',
+            telegram_chat_id: '',
+          }
+        : formData;
+
       // Update profile
-      await updateProfile(profile.id, formData);
+      await updateProfile(profile.id, dataToSave);
 
       // Success
+      const successMsg = formData.position === 'vacant'
+        ? `ล้างข้อมูล profile ${profile.employee_id} เรียบร้อยแล้ว (พร้อมใส่คนใหม่)`
+        : `อัพเดทข้อมูล ${formData.prefix} ${formData.first_name} ${formData.last_name} เรียบร้อยแล้ว`;
+
       toast({
         title: 'สำเร็จ',
-        description: `อัพเดทข้อมูล ${formData.prefix} ${formData.first_name} ${formData.last_name} เรียบร้อยแล้ว`,
+        description: successMsg,
       });
 
       onSuccess();
@@ -261,6 +285,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                 <SelectValue placeholder="เลือกตำแหน่ง" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="vacant" className="text-orange-600 font-medium">🔸 ว่าง (ล้างข้อมูลทั้งหมด)</SelectItem>
                 <SelectItem value="director">ผู้อำนวยการ</SelectItem>
                 <SelectItem value="deputy_director">รองผู้อำนวยการ</SelectItem>
                 <SelectItem value="assistant_director">หัวหน้าฝ่าย (ระบุใน "บทบาทในโครงสร้าง")</SelectItem>
@@ -271,6 +296,11 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                 <SelectItem value="disability_aide">พี่เลี้ยงเด็กพิการ</SelectItem>
               </SelectContent>
             </Select>
+            {formData.position === 'vacant' && (
+              <p className="text-xs text-orange-600 font-medium">
+                ⚠️ เมื่อกดบันทึก จะล้างข้อมูลทั้งหมดของ profile นี้ เพื่อรอใส่คนใหม่
+              </p>
+            )}
           </div>
 
           {/* Row 4: Job Position */}

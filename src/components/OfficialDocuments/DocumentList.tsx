@@ -257,7 +257,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
       const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
       const idColumn = documentType === 'doc_receive' ? 'doc_receive_id' : 'memo_id';
 
-      const { data, error } = await supabase
+      // Step 1: Fetch task assignments
+      const { data: assignments, error: assignmentError } = await supabase
         .from('task_assignments')
         .select(`
           id,
@@ -266,16 +267,15 @@ const DocumentList: React.FC<DocumentListProps> = ({
           status,
           completion_note,
           assigned_at,
-          completed_at,
-          profiles:assigned_to(full_name)
+          completed_at
         `)
         .eq(idColumn, memo.id)
         .eq('document_type', documentType)
         .is('deleted_at', null)
         .order('assigned_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching assignees:', error);
+      if (assignmentError) {
+        console.error('Error fetching assignees:', assignmentError);
         toast({
           title: "เกิดข้อผิดพลาด",
           description: "ไม่สามารถดึงรายชื่อผู้รับมอบหมายได้",
@@ -284,10 +284,32 @@ const DocumentList: React.FC<DocumentListProps> = ({
         return;
       }
 
+      if (!assignments || assignments.length === 0) {
+        setAssigneesList([]);
+        return;
+      }
+
+      // Step 2: Get unique user IDs and fetch their profiles
+      const userIds = [...new Set(assignments.map(a => a.assigned_to))];
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', userIds);
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+      }
+
+      // Create a map of user_id to full_name
+      const profileMap = new Map();
+      (profiles || []).forEach((p: any) => {
+        profileMap.set(p.user_id, p.full_name);
+      });
+
       // Transform data to include assignee_name from profiles
-      const transformedData = (data || []).map((item: any) => ({
+      const transformedData = assignments.map((item: any) => ({
         ...item,
-        assignee_name: item.profiles?.full_name || 'ไม่ทราบชื่อ'
+        assignee_name: profileMap.get(item.assigned_to) || 'ไม่ทราบชื่อ'
       }));
 
       setAssigneesList(transformedData);

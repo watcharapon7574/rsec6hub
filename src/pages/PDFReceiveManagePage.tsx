@@ -258,7 +258,7 @@ const PDFReceiveManagePage: React.FC = () => {
       const stampedInfo = docReceive.form_data?.stamped_info || {};
       const summaryPayload = {
         summary: docReceive.subject || "",
-        group_name: "",  // ไม่มีข้อมูลกลุ่มงานสำหรับหนังสือรับ
+        group_name: selectedDepartment && selectedDepartment !== 'skip' ? selectedDepartment : "",
         receiver_name: stampedInfo.receiver || docReceive.author_name || "",
         date: stampedInfo.date || new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }),
         // Add position parameters from clerk stamp position

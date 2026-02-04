@@ -428,11 +428,15 @@ const CreateMemoPage = () => {
     setPreviewLoading(true);
 
     try {
-      // Format data for API
+      // Format data for API (include author info like useMemo does)
       const previewData = {
         ...formData,
-        date: formData.date ? formatThaiDateFull(formData.date) : formData.date
+        date: formData.date ? formatThaiDateFull(formData.date) : formData.date,
+        author_name: formData.author_name || (profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : '') || 'ไม่ระบุชื่อ',
+        author_position: formData.author_position || profile?.current_position || profile?.job_position || profile?.position || 'ไม่ระบุตำแหน่ง'
       };
+
+      console.log('📄 Preview data:', previewData);
 
       const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
         method: 'POST',

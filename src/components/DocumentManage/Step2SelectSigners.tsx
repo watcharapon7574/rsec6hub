@@ -119,10 +119,20 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                 <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
                 <div className="flex-1">
                   <p className="font-medium">{signer.name}</p>
+                  {/* ตำแหน่งหลัก - แตกต่างตามบทบาท (ตรงกับที่แสดงใน PDF) */}
                   <p className="text-sm text-gray-500">
-                    ตำแหน่ง {signer.academic_rank && `${signer.academic_rank} `}
-                    {signer.org_structure_role || signer.position}
+                    {signer.role === 'author' && `ตำแหน่ง ${signer.academic_rank || signer.job_position || signer.position || ''}`}
+                    {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.org_structure_role || signer.position || ''}`}
+                    {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.org_structure_role || signer.position || ''}`}
+                    {signer.role === 'director' && 'ผู้อำนวยการศูนย์การศึกษาพิเศษ'}
                   </p>
+                  {/* บรรทัดเพิ่มเติม - แตกต่างตามบทบาท */}
+                  {(signer.role === 'assistant_director' || signer.role === 'director') && (
+                    <p className="text-xs text-gray-400">
+                      {signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${signer.org_structure_role || 'หัวหน้าฝ่าย'}`}
+                      {signer.role === 'director' && 'เขตการศึกษา ๖ จังหวัดลพบุรี'}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

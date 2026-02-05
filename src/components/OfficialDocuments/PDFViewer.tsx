@@ -433,14 +433,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     }
   };
 
-  // Download PDF
+  // Open PDF in new tab
   const downloadPDF = () => {
-    const link = document.createElement('a');
-    link.href = fileUrl;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.open(fileUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Filter positions and blocks for current page - fix the wrong page numbering

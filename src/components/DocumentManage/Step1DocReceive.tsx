@@ -146,13 +146,14 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                       key={`deputy-${profile.id}`}
                       value={profile.user_id || profile.id}
                       className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer"
+                      textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
                     >
                       <div className="flex flex-col">
-                        <span className="font-medium">
+                        <span className="font-semibold">
                           {profile.prefix || ''}{profile.first_name} {profile.last_name}
                         </span>
                         <span className="text-sm text-gray-500">
-                          ตำแหน่ง {profile.academic_rank || ''} {profile.org_structure_role || profile.current_position || ''}
+                          {profile.org_structure_role || ''}
                         </span>
                       </div>
                     </SelectItem>
@@ -178,11 +179,20 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
                   <div className="flex-1">
-                    <p className="font-medium">{signer.name}</p>
-                    <p className="text-sm text-gray-500">
-                      ตำแหน่ง {signer.academic_rank && `${signer.academic_rank} `}
-                      {signer.org_structure_role || signer.job_position || signer.position}
+                    <p className="font-semibold">{signer.name}</p>
+                    {/* job_position (เล็กสุด) */}
+                    <p className="text-xs text-gray-400">
+                      {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                      {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                      {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
+                      {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
                     </p>
+                    {/* org_structure_role (เด่นรอง) */}
+                    {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
+                      <p className="text-sm text-gray-600">
+                        {signer.org_structure_role}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}

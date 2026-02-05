@@ -958,33 +958,50 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       })()}
                       {(profile?.position === 'clerk_teacher' || isPDFUploadMemo(memo)) && (
                         <div className="relative">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className={`h-7 px-2 flex items-center gap-1 ${
-                              memo.current_signer_order > 1 
-                                ? 'border-gray-200 text-gray-400 cursor-not-allowed' 
-                                : 'border-green-200 text-green-600'
-                            }`}
-                            onClick={() => {
-                              if (memo.current_signer_order <= 1) {
-                                const manageRoute = getDocumentManageRoute(memo, memo.id);
-                                console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
-                                navigate(manageRoute);
-                              }
-                            }}
-                            disabled={memo.status === 'rejected' || memo.current_signer_order > 1}
-                            title={memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : 'จัดการเอกสาร'}
-                          >
-                            <FileText className="h-4 w-4" />
-                            <span className="text-xs font-medium">
-                              {memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : 'จัดการเอกสาร'}
-                            </span>
-                          </Button>
+                          {memo.status === 'rejected' ? (
+                            /* ปุ่มแก้ไขสำหรับเอกสารที่ถูกตีกลับ */
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 flex items-center gap-1 border-red-200 text-red-600 hover:bg-red-50"
+                              onClick={() => navigate(`/pdf-signature?edit=${memo.id}`)}
+                              title="แก้ไขเอกสารที่ถูกตีกลับ"
+                            >
+                              <FileText className="h-4 w-4" />
+                              <span className="text-xs font-medium">แก้ไข</span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`h-7 px-2 flex items-center gap-1 ${
+                                memo.current_signer_order > 1
+                                  ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                                  : 'border-green-200 text-green-600'
+                              }`}
+                              onClick={() => {
+                                if (memo.current_signer_order <= 1) {
+                                  const manageRoute = getDocumentManageRoute(memo, memo.id);
+                                  console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
+                                  navigate(manageRoute);
+                                }
+                              }}
+                              disabled={memo.current_signer_order > 1}
+                              title={memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : 'จัดการเอกสาร'}
+                            >
+                              <FileText className="h-4 w-4" />
+                              <span className="text-xs font-medium">
+                                {memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : 'จัดการเอกสาร'}
+                              </span>
+                            </Button>
+                          )}
                           {memo.status === 'draft' && memo.current_signer_order <= 1 && (
                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
                           )}
-                          {memo.current_signer_order > 1 && memo.current_signer_order < 5 && (
+                          {memo.status === 'rejected' && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ตีกลับ</span>
+                          )}
+                          {memo.current_signer_order > 1 && memo.current_signer_order < 5 && memo.status !== 'rejected' && (
                             <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">เสนอแล้ว</span>
                           )}
                         </div>

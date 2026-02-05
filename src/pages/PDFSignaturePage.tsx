@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { FileText, ArrowLeft, Upload, AlertCircle } from 'lucide-react';
+import { FileText, ArrowLeft, Upload, AlertCircle, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -21,9 +22,15 @@ interface PDFFormData {
 
 const PDFSignaturePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editDocId = searchParams.get('edit');
   const { profile, getPermissions } = useEmployeeAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [loadingDoc, setLoadingDoc] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(!!editDocId);
+  const [originalDoc, setOriginalDoc] = useState<any>(null);
+  const [rejectionComment, setRejectionComment] = useState<any>(null);
   const [formData, setFormData] = useState<PDFFormData>({
     date: new Date().toISOString().split('T')[0],
     subject: '',
@@ -75,6 +82,61 @@ const PDFSignaturePage = () => {
 
     fetchSuggestedDocNumber();
   }, []);
+
+  // Load doc_receive data for edit mode
+  useEffect(() => {
+    const loadDocForEdit = async () => {
+      if (editDocId && !originalDoc) {
+        setLoadingDoc(true);
+        try {
+          const { data: doc, error } = await (supabase as any)
+            .from('doc_receive')
+            .select('*')
+            .eq('id', editDocId)
+            .single();
+
+          if (error) throw error;
+
+          if (doc) {
+            setOriginalDoc(doc);
+            setIsEditMode(true);
+
+            // Pre-fill form data
+            setFormData({
+              date: doc.date || new Date().toISOString().split('T')[0],
+              subject: doc.subject || '',
+              docNumber: doc.doc_number ? doc.doc_number.split('/')[1] || '' : '',
+              pdfFile: null
+            });
+
+            // Load rejection comment if exists
+            if (doc.rejected_name_comment) {
+              try {
+                let rejectedData = doc.rejected_name_comment;
+                if (typeof rejectedData === 'string') {
+                  rejectedData = JSON.parse(rejectedData);
+                }
+                setRejectionComment(rejectedData);
+              } catch (e) {
+                console.error('Error parsing rejected_name_comment:', e);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading doc_receive for edit:', error);
+          toast({
+            title: "เกิดข้อผิดพลาด",
+            description: "ไม่สามารถโหลดข้อมูลเอกสารได้",
+            variant: "destructive",
+          });
+          navigate('/documents');
+        }
+        setLoadingDoc(false);
+      }
+    };
+
+    loadDocForEdit();
+  }, [editDocId, originalDoc, navigate, toast]);
 
   // Redirect ถ้าไม่ใช่ธุรการ
   useEffect(() => {
@@ -160,10 +222,11 @@ const PDFSignaturePage = () => {
       return;
     }
 
+    // ในโหมดแก้ไข ต้องอัปโหลดไฟล์ใหม่
     if (!formData.pdfFile) {
       toast({
         title: "กรุณาเลือกไฟล์",
-        description: "กรุณาเลือกไฟล์ PDF ที่ต้องการอัพโหลด",
+        description: isEditMode ? "กรุณาเลือกไฟล์ PDF ใหม่เพื่อแก้ไข" : "กรุณาเลือกไฟล์ PDF ที่ต้องการอัพโหลด",
         variant: "destructive",
       });
       return;
@@ -300,52 +363,106 @@ const PDFSignaturePage = () => {
       const stampedPdfUrl = `${finalPublicUrl}?t=${timestamp}`;
       console.log('✅ Final stamped PDF URL:', stampedPdfUrl);
 
-      // Step 5: Create doc_receive record in database
-      console.log('💾 Creating doc_receive record...');
-      const { data: docReceiveData, error: docReceiveError } = await (supabase as any)
-        .from('doc_receive')
-        .insert({
-          doc_number: documentNumber,
-          subject: formData.subject,
-          date: formData.date,
-          author_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'ไม่ระบุชื่อ',
-          author_position: profile.current_position || profile.job_position || profile.position || 'ไม่ระบุตำแหน่ง',
-          user_id: profile.user_id,
-          created_by: profile.user_id, // Add created_by for consistency
-          pdf_draft_path: stampedPdfUrl,
-          status: 'draft',
-          current_signer_order: 1,
-          signature_positions: [], // Initialize empty array
-          signer_list_progress: [], // Initialize empty array
-          form_data: {
-            type: 'pdf_upload',
-            original_filename: formData.pdfFile.name,
-            subject_text: formData.subject,
-            upload_date: new Date().toISOString(),
-            stamped_info: {
-              register_no: documentNumber,
-              date: thaiDate,
-              time: thaiTime,
-              receiver: payload.receiver
+      // Step 5: Create or Update doc_receive record in database
+      if (isEditMode && originalDoc) {
+        // UPDATE mode - แก้ไขเอกสารที่ถูกตีกลับ
+        console.log('💾 Updating doc_receive record...');
+
+        // Delete old PDF file if exists
+        if (originalDoc.pdf_draft_path) {
+          try {
+            const oldPath = originalDoc.pdf_draft_path.split('/documents/')[1]?.split('?')[0];
+            if (oldPath) {
+              await supabase.storage.from('documents').remove([oldPath]);
+              console.log('🗑️ Deleted old PDF:', oldPath);
             }
+          } catch (e) {
+            console.warn('Could not delete old PDF:', e);
           }
-        })
-        .select()
-        .single();
+        }
 
-      if (docReceiveError) {
-        // Clean up uploaded file if doc_receive creation fails
-        await supabase.storage
-          .from('documents')
-          .remove([filePath]);
-        throw new Error(`Failed to create document: ${docReceiveError.message}`);
+        const { error: updateError2 } = await (supabase as any)
+          .from('doc_receive')
+          .update({
+            doc_number: documentNumber,
+            subject: formData.subject,
+            date: formData.date,
+            pdf_draft_path: stampedPdfUrl,
+            status: 'draft', // Reset to draft
+            current_signer_order: 1, // Reset signer order
+            rejected_name_comment: null, // Clear rejection
+            signature_positions: [], // Reset signatures
+            signer_list_progress: [], // Reset progress
+            updated_at: new Date().toISOString(),
+            form_data: {
+              type: 'pdf_upload',
+              original_filename: formData.pdfFile.name,
+              subject_text: formData.subject,
+              upload_date: new Date().toISOString(),
+              stamped_info: {
+                register_no: documentNumber,
+                date: thaiDate,
+                time: thaiTime,
+                receiver: payload.receiver
+              }
+            }
+          })
+          .eq('id', originalDoc.id);
+
+        if (updateError2) {
+          throw new Error(`Failed to update document: ${updateError2.message}`);
+        }
+        console.log('✅ doc_receive updated');
+
+        toast({
+          title: "แก้ไขสำเร็จ",
+          description: `แก้ไขเอกสารหมายเลข ${documentNumber} เรียบร้อยแล้ว`,
+        });
+      } else {
+        // INSERT mode - สร้างเอกสารใหม่
+        console.log('💾 Creating doc_receive record...');
+        const { data: docReceiveData, error: docReceiveError } = await (supabase as any)
+          .from('doc_receive')
+          .insert({
+            doc_number: documentNumber,
+            subject: formData.subject,
+            date: formData.date,
+            author_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'ไม่ระบุชื่อ',
+            author_position: profile.current_position || profile.job_position || profile.position || 'ไม่ระบุตำแหน่ง',
+            user_id: profile.user_id,
+            created_by: profile.user_id,
+            pdf_draft_path: stampedPdfUrl,
+            status: 'draft',
+            current_signer_order: 1,
+            signature_positions: [],
+            signer_list_progress: [],
+            form_data: {
+              type: 'pdf_upload',
+              original_filename: formData.pdfFile.name,
+              subject_text: formData.subject,
+              upload_date: new Date().toISOString(),
+              stamped_info: {
+                register_no: documentNumber,
+                date: thaiDate,
+                time: thaiTime,
+                receiver: payload.receiver
+              }
+            }
+          })
+          .select()
+          .single();
+
+        if (docReceiveError) {
+          await supabase.storage.from('documents').remove([filePath]);
+          throw new Error(`Failed to create document: ${docReceiveError.message}`);
+        }
+        console.log('✅ doc_receive created with ID:', docReceiveData.id);
+
+        toast({
+          title: "อัพโหลดสำเร็จ",
+          description: `ลงทะเบียนเอกสารหมายเลข ${documentNumber} เรียบร้อยแล้ว`,
+        });
       }
-      console.log('✅ doc_receive created with ID:', docReceiveData.id);
-
-      toast({
-        title: "อัพโหลดสำเร็จ",
-        description: `ลงทะเบียนเอกสารหมายเลข ${documentNumber} เรียบร้อยแล้ว`,
-      });
 
       // Step 6: Redirect to /documents
       navigate('/documents');
@@ -415,13 +532,26 @@ const PDFSignaturePage = () => {
                 
                 {/* Title */}
                 <h1 className="text-3xl font-bold mb-3 tracking-tight">
-                  หนังสือรับ
+                  {isEditMode ? 'แก้ไขหนังสือรับ' : 'หนังสือรับ'}
                 </h1>
-                
+
                 {/* Subtitle */}
                 <p className="text-green-100 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-                  อัพโหลดไฟล์ PDF ที่มีอยู่แล้วเพื่อนำเข้าสู่ระบบจัดการเอกสาร
+                  {isEditMode
+                    ? 'แก้ไขและอัพโหลดไฟล์ PDF ใหม่ตามข้อเสนอแนะที่ได้รับ'
+                    : 'อัพโหลดไฟล์ PDF ที่มีอยู่แล้วเพื่อนำเข้าสู่ระบบจัดการเอกสาร'
+                  }
                 </p>
+
+                {/* Status Badge for Edit Mode */}
+                {isEditMode && (
+                  <div className="mt-4">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-500/20 text-yellow-100 border border-yellow-500/30">
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      โหมดแก้ไข
+                    </span>
+                  </div>
+                )}
               </div>
               
               {/* Bottom Wave */}
@@ -433,6 +563,48 @@ const PDFSignaturePage = () => {
             </CardHeader>
           </Card>
 
+          {/* Rejection Comment Alert */}
+          {rejectionComment && (
+            <Card className="mb-6 border-red-200 bg-red-50">
+              <CardHeader className="bg-red-100 border-b border-red-200">
+                <CardTitle className="text-red-800 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  ข้อความตีกลับจากผู้อนุมัติ
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <Alert className="border-red-200 bg-white">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    <div className="space-y-2">
+                      <p className="font-medium">{rejectionComment.comment || 'ไม่ระบุเหตุผล'}</p>
+                      <div className="text-sm text-red-600">
+                        โดย: {rejectionComment.name || 'ไม่ระบุ'}
+                        {rejectionComment.position && ` (${rejectionComment.position})`}
+                        {rejectionComment.rejected_at && ` • ${new Date(rejectionComment.rejected_at).toLocaleDateString('th-TH', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}`}
+                      </div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
+
+          {loadingDoc ? (
+            <Card className="shadow-lg border-0 bg-white p-8 text-center">
+              <svg className="animate-spin h-8 w-8 text-green-600 mx-auto mb-4" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+              <p className="text-lg font-medium text-gray-600">กำลังโหลดข้อมูลเอกสาร...</p>
+            </Card>
+          ) : (
           <form onSubmit={handleSubmit}>
             <Card className="shadow-lg border-0 bg-white">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-100 rounded-t-lg">
@@ -600,15 +772,18 @@ const PDFSignaturePage = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-4 pt-6 border-t border-gray-200">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={loading || !formData.pdfFile || !formData.subject.trim()}
                     className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'กำลังอัพโหลด...' : 'อัพโหลดเอกสาร'}
+                    {loading
+                      ? (isEditMode ? 'กำลังแก้ไข...' : 'กำลังอัพโหลด...')
+                      : (isEditMode ? 'บันทึกการแก้ไข' : 'อัพโหลดเอกสาร')
+                    }
                   </Button>
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     variant="outline"
                     onClick={() => navigate('/documents')}
                     className="border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-2 rounded-lg transition-all duration-200"
@@ -620,6 +795,7 @@ const PDFSignaturePage = () => {
               </CardContent>
             </Card>
           </form>
+          )}
         </div>
       </div>
       <div className="h-10" />

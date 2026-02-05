@@ -541,26 +541,23 @@ export const useAllMemos = () => {
   useEffect(() => {
     fetchMemos();
 
-    // Smart Realtime - อัพเดทแค่ memo ที่เปลี่ยน
+    // Realtime subscription for memos table
     const memosSubscription = supabase
-      .channel('smart_memos_updates')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'memos' 
-        }, 
+      .channel('realtime_memos')
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'memos'
+        },
         (payload) => {
-          console.log('🎯 Smart memos update:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
-          const memoId = (payload.new as any)?.id || (payload.old as any)?.id;
-          if (memoId) {
-            // Removed realtime update - manual refresh only
-            console.log('Memo update detected, use manual refresh to see changes');
-          }
+          console.log('🎯 Realtime memos update:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
+          // Refetch all memos when any change is detected
+          fetchMemos();
         }
       )
       .subscribe((status) => {
-        console.log('📡 Smart memos status:', status);
+        console.log('📡 Memos realtime status:', status);
       });
 
     // Listen for smart updates

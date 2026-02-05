@@ -353,6 +353,33 @@ const OfficialDocumentsPage = () => {
     }
   }, [profile?.user_id, isAuthenticated]); // เอา loadAllData ออกเพื่อป้องกัน infinite loop
 
+  // Realtime subscription for doc_receive table
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const docReceiveSubscription = supabase
+      .channel('realtime_doc_receive')
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'doc_receive'
+        },
+        (payload) => {
+          console.log('🎯 Realtime doc_receive update:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
+          // Refetch doc_receive when any change is detected
+          fetchDocReceive();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Doc_receive realtime status:', status);
+      });
+
+    return () => {
+      docReceiveSubscription.unsubscribe();
+    };
+  }, [isAuthenticated, fetchDocReceive]);
+
   // Show loading state
   if (loading || isLoadingData) {
     return (

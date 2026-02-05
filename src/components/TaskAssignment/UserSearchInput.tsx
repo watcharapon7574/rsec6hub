@@ -55,12 +55,12 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
         return;
       }
 
-      // Filter out already selected users and excluded users
+      // Filter out already selected users, excluded users, and users without user_id
       const selectedUserIds = selectedUsers.map(u => u.user_id);
       const allExcludedIds = [...selectedUserIds, ...excludeUserIds];
 
       const filtered = (data || []).filter(
-        user => !allExcludedIds.includes(user.user_id)
+        user => user.user_id && !allExcludedIds.includes(user.user_id)
       );
 
       setSuggestions(filtered);

@@ -152,7 +152,20 @@ const TaskAssignmentPage = () => {
     setLoading(true);
 
     try {
-      const userIds = selectedUsers.map(u => u.user_id);
+      // Filter out users without valid user_id
+      const userIds = selectedUsers
+        .map(u => u.user_id)
+        .filter(id => id != null && id !== '');
+
+      if (userIds.length === 0) {
+        toast({
+          title: 'เกิดข้อผิดพลาด',
+          description: 'ไม่พบข้อมูลผู้ใช้ที่ถูกต้อง กรุณาเลือกผู้รับมอบหมายใหม่',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
 
       await taskAssignmentService.createMultipleTaskAssignments(
         documentId,

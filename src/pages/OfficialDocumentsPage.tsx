@@ -283,9 +283,10 @@ const OfficialDocumentsPage = () => {
   ], [officialDocuments, memos, docReceiveList, pdfFiles]);
 
   // รวม memos ปกติ + doc_receive สำหรับ PendingDocumentCard
+  // ใช้ allMemos จาก useAllMemos แทน memos จาก useOfficialDocuments เพื่อให้ refresh ทำงานถูกต้อง
   const allMemosWithDocReceive = ReactUseMemo(() => {
     // กรองเอกสารที่ถูก soft delete ออก
-    const filteredMemos = memos.filter(memo => !memo.doc_del);
+    const filteredMemos = allMemos.filter(memo => !memo.doc_del);
     const filteredDocReceive = docReceiveList.filter(doc => !doc.doc_del);
 
     // Mark doc_receive items with a flag so routing knows which table to use
@@ -296,7 +297,7 @@ const OfficialDocumentsPage = () => {
     const combined = [...filteredMemos, ...markedDocReceive];
 
     console.log('🔗 Combined memos + doc_receive:', {
-      memosCount: memos.length,
+      memosCount: allMemos.length,
       filteredMemosCount: filteredMemos.length,
       docReceiveCount: docReceiveList.length,
       filteredDocReceiveCount: filteredDocReceive.length,
@@ -311,7 +312,7 @@ const OfficialDocumentsPage = () => {
     });
 
     return combined;
-  }, [memos, docReceiveList]);
+  }, [allMemos, docReceiveList]);
 
   // Mark doc_receive items for DocReceiveList component (fix routing bug)
   const markedDocReceiveList = ReactUseMemo(() => {

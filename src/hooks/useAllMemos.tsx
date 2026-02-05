@@ -342,6 +342,14 @@ export const useAllMemos = () => {
     try {
       setLoading(true);
 
+      // Debug: Log profile status
+      console.log('🔍 [updateMemoApproval] Profile check:', {
+        hasProfile: !!profile,
+        profileName: profile ? `${profile.first_name} ${profile.last_name}` : 'NO PROFILE',
+        action,
+        comment
+      });
+
       // Fetch fresh memo data from database (not from cached state)
       // This ensures we have the latest attached_files for deletion
       const { data: freshMemo, error: fetchError } = await supabase
@@ -395,14 +403,46 @@ export const useAllMemos = () => {
       };
 
       // If rejecting, add rejected_name_comment and increment revision_count
-      if (action === 'reject' && profile) {
-        const rejectedNameComment = {
-          name: `${profile.first_name} ${profile.last_name}`,
-          comment: comment || '',
-          rejected_at: new Date().toISOString(),
-          position: profile.current_position || profile.job_position || profile.position || ''
-        };
-        updateData.rejected_name_comment = rejectedNameComment;
+      if (action === 'reject') {
+        let rejectorProfile = profile;
+
+        // If profile not available from context, try to fetch from supabase session
+        if (!rejectorProfile) {
+          console.log('⚠️ [updateMemoApproval] Profile not in context, fetching from supabase...');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user?.id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .single();
+
+            if (profileData) {
+              rejectorProfile = profileData as any;
+              console.log('✅ [updateMemoApproval] Fetched profile:', `${rejectorProfile?.first_name} ${rejectorProfile?.last_name}`);
+            }
+          }
+        }
+
+        if (rejectorProfile) {
+          const rejectedNameComment = {
+            name: `${rejectorProfile.first_name} ${rejectorProfile.last_name}`,
+            comment: comment || '',
+            rejected_at: new Date().toISOString(),
+            position: rejectorProfile.current_position || rejectorProfile.job_position || rejectorProfile.position || ''
+          };
+          updateData.rejected_name_comment = rejectedNameComment;
+          console.log('✅ [updateMemoApproval] Set rejected_name_comment:', rejectedNameComment);
+        } else {
+          console.error('❌ [updateMemoApproval] Could not get profile for rejection');
+          // Still set basic rejection info even without profile
+          updateData.rejected_name_comment = {
+            name: 'ไม่ทราบชื่อ',
+            comment: comment || '',
+            rejected_at: new Date().toISOString(),
+            position: ''
+          };
+        }
 
         // Increment revision_count
         const currentRevisionCount = memo.revision_count || 0;

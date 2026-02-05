@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
@@ -37,7 +37,8 @@ export const useAllMemos = () => {
   const { toast } = useToast();
   const { profile } = useEmployeeAuth();
 
-  const fetchMemos = async () => {
+  // ใช้ useCallback เพื่อให้ fetchMemos stable และไม่เป็น stale closure
+  const fetchMemos = useCallback(async () => {
     try {
       setLoading(true);
       // แสดงเอกสารย้อนหลัง 30 วัน เพื่อไม่ให้พลาดเอกสารข้ามเดือน
@@ -137,7 +138,7 @@ export const useAllMemos = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   const getMemoById = (id: string): MemoRecord | null => {
     return memos.find(memo => memo.id === id) || null;
@@ -596,7 +597,7 @@ export const useAllMemos = () => {
       window.removeEventListener('memo-updated', handleMemoUpdated as EventListener);
       window.removeEventListener('memo-deleted', handleMemoDeleted as EventListener);
     };
-  }, []);
+  }, [fetchMemos]);
 
   return {
     memos,

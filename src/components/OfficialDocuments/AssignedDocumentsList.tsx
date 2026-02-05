@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, FileText, ClipboardList } from 'lucide-react';
+import { Eye, Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, FileText, ClipboardList, RotateCcw } from 'lucide-react';
 import { useAssignedTasks } from '@/hooks/useAssignedTasks';
 import { TaskStatus, TaskAssignmentWithDetails } from '@/services/taskAssignmentService';
 import { extractPdfUrl } from '@/utils/fileUpload';
@@ -20,7 +20,19 @@ import { Label } from '@/components/ui/label';
 
 const AssignedDocumentsList = () => {
   const navigate = useNavigate();
-  const { tasks, loading, updateTaskStatus } = useAssignedTasks();
+  const { tasks, loading, updateTaskStatus, fetchTasks } = useAssignedTasks();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await fetchTasks();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [completionNote, setCompletionNote] = useState('');
@@ -186,6 +198,23 @@ const AssignedDocumentsList = () => {
 
   return (
     <div className="space-y-2">
+      {/* Header with refresh button */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="bg-green-100 text-green-700 font-semibold px-2 py-1 rounded-full">
+            {tasks.length > 0 ? `${tasks.length} รายการ` : 'ไม่มีงาน'}
+          </Badge>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing || loading}
+          className="p-1 h-8 w-8 text-green-600 hover:bg-green-50 disabled:opacity-50"
+        >
+          <RotateCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
       {tasks.map((task) => {
         const statusConfig = getStatusConfig(task.status);
         const StatusIcon = statusConfig.icon;

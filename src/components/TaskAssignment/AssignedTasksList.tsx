@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, User, Calendar, CheckCircle, Clock, XCircle, PlayCircle, Eye, Search, ChevronLeft, ChevronRight, Upload, X } from 'lucide-react';
+import { FileText, User, Calendar, CheckCircle, Clock, XCircle, PlayCircle, Eye, Search, ChevronLeft, ChevronRight, Upload, X, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,9 +21,21 @@ import { supabase } from '@/integrations/supabase/client';
 
 const AssignedTasksList = () => {
   const navigate = useNavigate();
-  const { tasks, loading, updateTaskStatus, pendingCount } = useAssignedTasks();
+  const { tasks, loading, updateTaskStatus, pendingCount, fetchTasks } = useAssignedTasks();
 
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await fetchTasks();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState<TaskStatus>('in_progress');
   const [completionNote, setCompletionNote] = useState('');
@@ -336,6 +348,18 @@ const AssignedTasksList = () => {
                 <span className="text-lg">×</span>
               </Button>
             )}
+
+            {/* ปุ่มรีเฟรช */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+              className="h-9 w-9 p-0"
+              title="รีเฟรชข้อมูล"
+            >
+              <RotateCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
 
           {/* แสดงจำนวนผลลัพธ์ */}

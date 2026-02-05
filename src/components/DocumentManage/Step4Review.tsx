@@ -56,10 +56,24 @@ const Step4Review: React.FC<Step4Props> = ({
             <h3 className="font-medium mb-3">ผู้ลงนาม</h3>
             <div className="space-y-2">
               {signers.map((signer, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm">
-                  <Badge variant="outline">{signer.order}</Badge>
-                  <span>{signer.name}</span>
-                  <span className="text-gray-500">({signer.academic_rank || signer.org_structure_role || signer.job_position || signer.position})</span>
+                <div key={index} className="flex items-start gap-2 text-sm">
+                  <Badge variant="outline" className="mt-0.5">{signer.order}</Badge>
+                  <div className="flex-1">
+                    <p className="font-semibold">{signer.name}</p>
+                    {/* job_position (เล็กสุด) */}
+                    <p className="text-xs text-gray-400">
+                      {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                      {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                      {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
+                      {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
+                    </p>
+                    {/* org_structure_role (เด่นรอง) */}
+                    {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
+                      <p className="text-sm text-gray-600">
+                        {signer.org_structure_role}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

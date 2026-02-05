@@ -94,15 +94,21 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{signer.name}</p>
-                      <p className="text-sm text-gray-600">{signer.academic_rank || signer.org_structure_role || signer.job_position || signer.position}</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="font-semibold text-gray-900">{signer.name}</p>
+                      {/* job_position (เล็กสุด) */}
+                      <p className="text-xs text-gray-400">
+                        {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                        {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                        {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
+                        {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
                         {signer.role === 'clerk' && 'ตำแหน่งตราประทับธุรการ'}
-                        {signer.role === 'author' && 'ผู้เขียน'}
-                        {signer.role === 'assistant_director' && 'หัวหน้าฝ่าย'}
-                        {signer.role === 'deputy_director' && 'รองผู้อำนวยการ'}
-                        {signer.role === 'director' && 'ผู้อำนวยการ'}
                       </p>
+                      {/* org_structure_role (เด่นรอง) */}
+                      {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
+                        <p className="text-sm text-gray-600">
+                          {signer.org_structure_role}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       {positionsCount > 0 && (
@@ -127,12 +133,13 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
         </div>
 
         <div className="mb-4">
-          <Label>ความหมายโดยสรุปของเอกสารฉบับนี้</Label>
+          <Label className="text-base font-medium">ความหมายโดยสรุปของเอกสารฉบับนี้</Label>
           <Textarea
             placeholder="โปรดอธิบายโดยสรุปว่าเอกสารฉบับนี้มีเนื้อหาเกี่ยวกับอะไร เพื่อให้ผู้ลงนามเข้าใจเบื้องต้น"
             value={documentSummary}
             onChange={(e) => onDocumentSummaryChange(e.target.value)}
             rows={3}
+            className="mt-2 border-blue-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
           />
           <p className="text-xs text-gray-500 mt-1">
             ข้อมูลนี้จะแสดงให้ผู้ลงนามอ่านเพื่อทำความเข้าใจเนื้อหาเอกสารก่อนลงนาม

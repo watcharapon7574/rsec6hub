@@ -142,7 +142,7 @@ const SignatureBlockManager: React.FC<SignatureBlockManagerProps> = ({
                     
                     <div className="space-y-1">
                       <p className="font-medium text-gray-900">{block.signer.name}</p>
-                      <p className="text-sm text-gray-600">{block.signer.position}</p>
+                      <p className="text-sm text-gray-600">{block.signer.job_position || block.signer.position}</p>
                       {block.signer.comment && (
                         <p className="text-sm text-blue-600 italic">"{block.signer.comment}"</p>
                       )}

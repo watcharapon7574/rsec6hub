@@ -466,7 +466,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                         case 'director':
                                           return 'ผู้อำนวยการ';
                                         default:
-                                          return signer.position || '-';
+                                          return signer.job_position || signer.position || '-';
                                       }
                                     })()}
                                   </span>

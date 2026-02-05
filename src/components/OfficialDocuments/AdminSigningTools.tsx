@@ -169,7 +169,7 @@ const AdminSigningTools: React.FC = () => {
                 </div>
                 <div>
                   <div className="font-medium">{approver.name}</div>
-                  <div className="text-sm text-gray-500">{approver.position}</div>
+                  <div className="text-sm text-gray-500">{approver.job_position || approver.position}</div>
                 </div>
               </div>
             ))}

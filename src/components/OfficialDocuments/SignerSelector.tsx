@@ -169,7 +169,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
                       </Badge>
                       <span className="font-medium">{signer.name}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{signer.position}</p>
+                    <p className="text-sm text-muted-foreground">{signer.job_position || signer.position}</p>
                   </div>
                   {signer.signatureUrl && (
                     <div className="text-xs text-green-600">✓ มีลายเซ็น</div>

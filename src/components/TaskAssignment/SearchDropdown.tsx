@@ -6,6 +6,7 @@ interface Profile {
   first_name: string;
   last_name: string;
   position: string;
+  job_position?: string;
 }
 
 interface SearchDropdownProps {
@@ -51,7 +52,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
                 {user.first_name} {user.last_name}
               </div>
               <div className="text-xs text-pink-600">
-                {getPositionText(user.position)}
+                {user.job_position || getPositionText(user.position)}
               </div>
             </div>
           </button>

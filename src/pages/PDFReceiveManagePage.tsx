@@ -129,6 +129,7 @@ const PDFReceiveManagePage: React.FC = () => {
         user_id: clerkProfile.user_id,
         name: fullName,
         position: clerkProfile.current_position || clerkProfile.position,
+        job_position: clerkProfile.job_position || clerkProfile.current_position || clerkProfile.position,
         role: 'clerk',
         academic_rank: clerkProfile.academic_rank,
         org_structure_role: clerkProfile.org_structure_role,
@@ -147,6 +148,7 @@ const PDFReceiveManagePage: React.FC = () => {
           user_id: deputy.user_id,
           name: fullName,
           position: deputy.current_position || deputy.position,
+          job_position: deputy.job_position || deputy.current_position || deputy.position,
           role: 'deputy_director',
           academic_rank: deputy.academic_rank,
           org_structure_role: deputy.org_structure_role,
@@ -172,9 +174,10 @@ const PDFReceiveManagePage: React.FC = () => {
         user_id: director.user_id,
         name: fullName,
         position: director.current_position || director.position,
+        job_position: director.job_position || director.current_position || director.position,
         role: 'director',
         academic_rank: director.academic_rank,
-        org_structure_role: 'ผู้อำนวยการ', // บังคับให้เป็น ผู้อำนวยการ เสมอ
+        org_structure_role: director.org_structure_role,
         prefix: director.prefix,
         signature_url: director.signature_url
       });
@@ -330,6 +333,7 @@ const PDFReceiveManagePage: React.FC = () => {
         first_name: signer.name.split(' ').shift() || signer.name, // Extract first name (first word)
         last_name: signer.name.split(' ').pop() || '', // Extract last name (last word)
         position: signer.position,
+        job_position: signer.job_position,
         role: signer.role,
         order: signer.order,
         org_structure_role: signer.org_structure_role || ''

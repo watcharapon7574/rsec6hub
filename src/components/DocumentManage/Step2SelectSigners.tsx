@@ -61,10 +61,10 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <span className="font-medium">
                         {profile.prefix || ''}{profile.first_name} {profile.last_name}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs text-gray-400">
                         ตำแหน่ง {profile.job_position || profile.current_position || ''}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-sm font-medium text-gray-600">
                         {profile.org_structure_role || ''}
                       </span>
                     </div>
@@ -94,10 +94,10 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <span className="font-medium">
                         {profile.prefix || ''}{profile.first_name} {profile.last_name}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-xs text-gray-400">
                         ตำแหน่ง {profile.job_position || profile.current_position || ''}{profile.academic_rank ? ` วิทยฐานะ ${profile.academic_rank}` : ''}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-sm font-medium text-gray-600">
                         {profile.org_structure_role || ''}
                       </span>
                     </div>
@@ -125,16 +125,16 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                 <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
                 <div className="flex-1">
                   <p className="font-medium">{signer.name}</p>
-                  {/* ตำแหน่งหลัก - แตกต่างตามบทบาท */}
-                  <p className="text-sm text-gray-500">
+                  {/* บรรทัดที่ 1 - job_position (เล็กกว่า) */}
+                  <p className="text-xs text-gray-400">
                     {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                     {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                     {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
-                    {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
+                    {signer.role === 'director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                   </p>
-                  {/* บรรทัดเพิ่มเติม - org_structure_role */}
+                  {/* บรรทัดที่ 2 - org_structure_role (ใหญ่เด่นกว่า) */}
                   {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-sm font-medium text-gray-600">
                       {signer.org_structure_role}
                     </p>
                   )}

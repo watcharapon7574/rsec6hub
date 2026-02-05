@@ -267,7 +267,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
                       >
                         <div>
                           <p className="font-medium">{profile.first_name} {profile.last_name}</p>
-                          <p className="text-sm text-gray-500">{profile.current_position || profile.position}</p>
+                          <p className="text-sm text-gray-500">{profile.job_position || profile.current_position || profile.position}</p>
                         </div>
                         <Button 
                           size="sm" 
@@ -334,7 +334,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
                           return (
                             <div key={signer.user_id} className="p-3 border rounded-lg">
                               <p className="font-medium">{signer.first_name} {signer.last_name}</p>
-                              <p className="text-sm text-gray-500">{signer.current_position || signer.position}</p>
+                              <p className="text-sm text-gray-500">{signer.job_position || signer.current_position || signer.position}</p>
                               {position ? (
                                 <p className="text-xs text-green-600">✓ กำหนดตำแหน่งแล้ว</p>
                               ) : (

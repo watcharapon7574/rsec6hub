@@ -866,7 +866,7 @@ const ApproveDocumentPage: React.FC = () => {
               <CardContent>
                 <div className="text-sm">
                   <p><span className="font-medium">ชื่อ:</span> {profile.first_name} {profile.last_name}</p>
-                  <p><span className="font-medium">ตำแหน่ง:</span> {profile.current_position || profile.position}</p>
+                  <p><span className="font-medium">ตำแหน่ง:</span> {profile.job_position || profile.current_position || profile.position}</p>
                   <p><span className="font-medium">ลำดับการลงนาม:</span> {currentUserSigner?.order || currentUserSignature?.signer?.order}</p>
                 </div>
               </CardContent>

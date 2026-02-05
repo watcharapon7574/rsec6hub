@@ -838,7 +838,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                       case 'director':
                                         return 'ผู้อำนวยการ';
                                       default:
-                                        return signer.position || '-';
+                                        return signer.job_position || signer.position || '-';
                                     }
                                   })()}
                                 </span>
@@ -881,7 +881,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   }`}>{
                                     // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
                                     (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
-                                    (pos.signer.org_structure_role || pos.signer.position || '-')
+                                    (pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || '-')
                                   }</span>
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 

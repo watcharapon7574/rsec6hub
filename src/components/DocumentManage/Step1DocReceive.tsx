@@ -181,7 +181,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                     <p className="font-medium">{signer.name}</p>
                     <p className="text-sm text-gray-500">
                       ตำแหน่ง {signer.academic_rank && `${signer.academic_rank} `}
-                      {signer.org_structure_role || signer.position}
+                      {signer.org_structure_role || signer.job_position || signer.position}
                     </p>
                   </div>
                 </div>

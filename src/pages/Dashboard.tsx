@@ -73,7 +73,7 @@ const Dashboard = () => {
                 ยินดีต้อนรับ, {displayName}
               </h1>
               <p className="text-gray-600 text-lg">
-                {profile?.employee_id} • {profile?.current_position || getPositionText(profile?.position || '')} • {profile?.workplace || 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6'}
+                {profile?.employee_id} • {profile?.job_position || profile?.current_position || getPositionText(profile?.position || '')} • {profile?.workplace || 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6'}
               </p>
             </div>
           </div>

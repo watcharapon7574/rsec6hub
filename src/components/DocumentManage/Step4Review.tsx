@@ -59,7 +59,7 @@ const Step4Review: React.FC<Step4Props> = ({
                 <div key={index} className="flex items-center gap-2 text-sm">
                   <Badge variant="outline">{signer.order}</Badge>
                   <span>{signer.name}</span>
-                  <span className="text-gray-500">({signer.academic_rank || signer.org_structure_role || signer.position})</span>
+                  <span className="text-gray-500">({signer.academic_rank || signer.org_structure_role || signer.job_position || signer.position})</span>
                 </div>
               ))}
             </div>

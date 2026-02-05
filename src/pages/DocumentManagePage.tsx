@@ -353,7 +353,7 @@ const DocumentManagePage: React.FC = () => {
         job_position: director.job_position || director.current_position || director.position,
         role: 'director',
         academic_rank: director.academic_rank,
-        org_structure_role: 'ผู้อำนวยการ', // บังคับให้เป็น ผู้อำนวยการ เสมอ
+        org_structure_role: director.org_structure_role,
         prefix: director.prefix,
         signature_url: director.signature_url
       });

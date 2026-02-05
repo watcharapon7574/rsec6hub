@@ -907,9 +907,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             style={{ fontSize: '12px' }} // Fixed font size for position
                           >
                             {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.job_position || pos.signer.position || ''}`}
-                            {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
-                            {pos.signer.role === 'deputy_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.position || ''}`}
-                            {pos.signer.role === 'director' && `ผู้อำนวยการศูนย์การศึกษาพิเศษ`}
+                            {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
+                            {pos.signer.role === 'deputy_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
+                            {pos.signer.role === 'director' && `${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
                           </div>
 
                           {/* บรรทัดเพิ่มเติม - แตกต่างตามบทบาท */}

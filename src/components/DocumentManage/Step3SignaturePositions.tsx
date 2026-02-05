@@ -95,7 +95,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="font-medium text-gray-900">{signer.name}</p>
-                      <p className="text-sm text-gray-600">{signer.academic_rank || signer.org_structure_role || signer.position}</p>
+                      <p className="text-sm text-gray-600">{signer.academic_rank || signer.org_structure_role || signer.job_position || signer.position}</p>
                       <p className="text-xs text-gray-500 mt-1">
                         {signer.role === 'clerk' && 'ตำแหน่งตราประทับธุรการ'}
                         {signer.role === 'author' && 'ผู้เขียน'}

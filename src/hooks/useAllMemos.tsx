@@ -253,7 +253,7 @@ export const useAllMemos = () => {
           rejected_at: new Date().toISOString(),
           position: profile.current_position || profile.job_position || profile.position || ''
         };
-        updates.rejected_name_comment = JSON.stringify(rejectedNameComment);
+        updates.rejected_name_comment = rejectedNameComment;
       }
 
       const { error } = await supabase
@@ -402,7 +402,7 @@ export const useAllMemos = () => {
           rejected_at: new Date().toISOString(),
           position: profile.current_position || profile.job_position || profile.position || ''
         };
-        updateData.rejected_name_comment = JSON.stringify(rejectedNameComment);
+        updateData.rejected_name_comment = rejectedNameComment;
 
         // Increment revision_count
         const currentRevisionCount = memo.revision_count || 0;

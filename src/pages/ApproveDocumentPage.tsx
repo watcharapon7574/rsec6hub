@@ -113,7 +113,7 @@ const ApproveDocumentPage: React.FC = () => {
             rejected_at: new Date().toISOString(),
             position: profile.current_position || profile.job_position || profile.position || ''
           };
-          updates.rejected_name_comment = JSON.stringify(rejectedNameComment);
+          updates.rejected_name_comment = rejectedNameComment;
         }
 
         const { error } = await (supabase as any)
@@ -150,7 +150,7 @@ const ApproveDocumentPage: React.FC = () => {
               rejected_at: new Date().toISOString(),
               position: profile.current_position || profile.job_position || profile.position || ''
             };
-            updates.rejected_name_comment = JSON.stringify(rejectedNameComment);
+            updates.rejected_name_comment = rejectedNameComment;
           }
         }
 

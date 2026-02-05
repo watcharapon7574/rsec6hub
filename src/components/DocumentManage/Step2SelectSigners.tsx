@@ -62,11 +62,8 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <span className="font-semibold">
                         {profile.prefix || ''}{profile.first_name} {profile.last_name}
                       </span>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-500">
                         {profile.org_structure_role || ''}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        ตำแหน่ง {profile.job_position || profile.current_position || ''}
                       </span>
                     </div>
                   </SelectItem>
@@ -96,11 +93,8 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <span className="font-semibold">
                         {profile.prefix || ''}{profile.first_name} {profile.last_name}
                       </span>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-500">
                         {profile.org_structure_role || ''}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        ตำแหน่ง {profile.job_position || profile.current_position || ''}{profile.academic_rank ? ` วิทยฐานะ ${profile.academic_rank}` : ''}
                       </span>
                     </div>
                   </SelectItem>
@@ -127,12 +121,6 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                 <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
                 <div className="flex-1">
                   <p className="font-semibold">{signer.name}</p>
-                  {/* บรรทัดที่ 2 - org_structure_role (เด่นรอง) */}
-                  {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                    <p className="text-sm text-gray-600">
-                      {signer.org_structure_role}
-                    </p>
-                  )}
                   {/* บรรทัดที่ 1 - job_position (เล็กสุด) */}
                   <p className="text-xs text-gray-400">
                     {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
@@ -140,6 +128,12 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                     {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
                     {signer.role === 'director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                   </p>
+                  {/* บรรทัดที่ 2 - org_structure_role (เด่นรอง) */}
+                  {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
+                    <p className="text-sm text-gray-600">
+                      {signer.org_structure_role}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

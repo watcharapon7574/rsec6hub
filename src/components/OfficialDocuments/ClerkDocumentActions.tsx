@@ -132,17 +132,22 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
   // ถ้าเอกสารเกษียนแล้วและยังไม่ได้มอบหมาย ให้แสดงปุ่ม "มอบหมายงาน"
   if (canAssignTask) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          navigate(`/task-assignment?documentId=${documentId}&documentType=${documentType}`);
-        }}
-        className="bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
-      >
-        <ClipboardList className="h-4 w-4 mr-1" />
-        มอบหมายงาน
-      </Button>
+      <div className="relative">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            navigate(`/task-assignment?documentId=${documentId}&documentType=${documentType}`);
+          }}
+          className="bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
+        >
+          <ClipboardList className="h-4 w-4 mr-1" />
+          มอบหมายงาน
+        </Button>
+        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10">
+          ใหม่
+        </span>
+      </div>
     );
   }
 

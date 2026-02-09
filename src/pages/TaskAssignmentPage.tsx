@@ -4,12 +4,13 @@ import { ArrowLeft, Users, Send, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { taskAssignmentService, DocumentType } from '@/services/taskAssignmentService';
+import { SelectionInfo } from '@/components/TaskAssignment/Step2SelectUsers';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import StepIndicator from '@/components/TaskAssignment/StepIndicator';
 import Step1DocumentPreview from '@/components/TaskAssignment/Step1DocumentPreview';
 import Step2SelectUsers from '@/components/TaskAssignment/Step2SelectUsers';
-import Step3AddNote from '@/components/TaskAssignment/Step3AddNote';
+import Step3TaskDetails from '@/components/TaskAssignment/Step3TaskDetails';
 import Step4Review from '@/components/TaskAssignment/Step4Review';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
@@ -45,7 +46,16 @@ const TaskAssignmentPage = () => {
   const [directorComment, setDirectorComment] = useState<string>('');
   const [currentStep, setCurrentStep] = useState(1);
 
-  const stepLabels = ['ดูเอกสาร', 'เลือกผู้รับ', 'เพิ่มหมายเหตุ', 'ตรวจสอบ'];
+  // New states for Step3 task details
+  const [taskDescription, setTaskDescription] = useState('');
+  const [eventDate, setEventDate] = useState<Date | null>(new Date()); // Default to today
+  const [eventTime, setEventTime] = useState('');
+  const [location, setLocation] = useState('');
+
+  // Selection info for team management
+  const [selectionInfo, setSelectionInfo] = useState<SelectionInfo>({ source: null });
+
+  const stepLabels = ['ดูเอกสาร', 'เลือกผู้รับ', 'รายละเอียดงาน', 'ตรวจสอบ'];
 
   // โหลดข้อมูลเอกสาร
   useEffect(() => {
@@ -171,7 +181,14 @@ const TaskAssignmentPage = () => {
         documentId,
         documentType,
         userIds,
-        note || undefined
+        {
+          note: note || undefined,
+          taskDescription: taskDescription || undefined,
+          eventDate: eventDate,
+          eventTime: eventTime || undefined,
+          location: location || undefined,
+          selectionInfo: selectionInfo
+        }
       );
 
       toast({
@@ -260,11 +277,22 @@ const TaskAssignmentPage = () => {
             <Step2SelectUsers
               selectedUsers={selectedUsers}
               onUsersChange={setSelectedUsers}
+              selectionInfo={selectionInfo}
+              onSelectionInfoChange={setSelectionInfo}
             />
           )}
 
           {currentStep === 3 && (
-            <Step3AddNote
+            <Step3TaskDetails
+              selectedUsers={selectedUsers}
+              taskDescription={taskDescription}
+              onTaskDescriptionChange={setTaskDescription}
+              eventDate={eventDate}
+              onEventDateChange={setEventDate}
+              eventTime={eventTime}
+              onEventTimeChange={setEventTime}
+              location={location}
+              onLocationChange={setLocation}
               note={note}
               onNoteChange={setNote}
             />
@@ -276,6 +304,10 @@ const TaskAssignmentPage = () => {
               docNumber={document.doc_number}
               selectedUsers={selectedUsers}
               note={note}
+              taskDescription={taskDescription}
+              eventDate={eventDate}
+              eventTime={eventTime}
+              location={location}
             />
           )}
         </div>

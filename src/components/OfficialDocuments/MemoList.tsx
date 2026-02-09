@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit } from 'lucide-react';
+import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useSmartRealtime } from '@/hooks/useSmartRealtime';
@@ -29,17 +29,22 @@ interface MemoDocument {
 interface MemoListProps {
   memoList: any[];
   onRefresh?: () => void;
+  defaultCollapsed?: boolean;
 }
 
 const MemoList: React.FC<MemoListProps> = ({
   memoList = [],
-  onRefresh
+  onRefresh,
+  defaultCollapsed = false
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
   const permissions = getPermissions();
   const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
+
+  // State สำหรับ collapsible
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,7 +66,8 @@ const MemoList: React.FC<MemoListProps> = ({
 
   // Setup realtime listeners
   useEffect(() => {
-    if (!["clerk_teacher"].includes(permissions.position)) {
+    // Admin หรือ Clerk สามารถ subscribe ได้
+    if (!permissions.isAdmin && !permissions.isClerk) {
       return;
     }
 
@@ -126,10 +132,10 @@ const MemoList: React.FC<MemoListProps> = ({
     }
   };
 
-  // กรองเอกสารสำหรับแสดง - ธุรการเห็นทุกเอกสาร
+  // กรองเอกสารสำหรับแสดง - Admin และธุรการเห็นทุกเอกสาร
   const shouldShowMemo = (memo: any) => {
-    // ธุรการเห็นทุกเอกสาร (รวมทั้งของตัวเองด้วย)
-    return permissions.position === "clerk_teacher";
+    // Admin หรือธุรการเห็นทุกเอกสาร (รวมทั้งของตัวเองด้วย)
+    return permissions.isAdmin || permissions.isClerk;
   };
 
   // ฟังก์ชันกรองและจัดเรียงข้อมูล
@@ -211,14 +217,17 @@ const MemoList: React.FC<MemoListProps> = ({
     setCurrentPage(1);
   }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
-  // แสดงเฉพาะธุรการเท่านั้น
-  if (permissions.position !== "clerk_teacher") {
+  // แสดงเฉพาะ Admin หรือธุรการเท่านั้น
+  if (!permissions.isAdmin && !permissions.isClerk) {
     return null;
   }
 
   return (
     <Card className="bg-amber-50 border-amber-200 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-amber-400 to-amber-600 text-white rounded-t-lg py-3 px-4">
+      <CardHeader
+        className={`bg-gradient-to-r from-amber-400 to-amber-600 text-white py-3 px-4 cursor-pointer hover:from-amber-500 hover:to-amber-700 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
         <CardTitle className="flex items-center gap-2 text-lg">
           <FileText className="h-5 w-5" />
           รายการบันทึกข้อความ
@@ -228,18 +237,28 @@ const MemoList: React.FC<MemoListProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onRefresh}
+            onClick={(e) => { e.stopPropagation(); onRefresh?.(); }}
             disabled={!onRefresh}
             className="ml-2 p-1 h-8 w-8 text-white hover:bg-amber-700/50 disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
+          {/* Toggle button - prominent style */}
+          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+            {isCollapsed ? (
+              <ChevronDown className="h-5 w-5 text-white" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-white" />
+            )}
+          </div>
         </CardTitle>
         <div className="text-sm text-amber-100 font-normal mt-1">
-          จัดการบันทึกข้อความ ตรวจสอบความถูกต้อง และจัดเส้นทางการอนุมัติ
+          {isCollapsed ? 'คลิกเพื่อแสดงรายการ' : 'จัดการบันทึกข้อความ ตรวจสอบความถูกต้อง และจัดเส้นทางการอนุมัติ'}
         </div>
       </CardHeader>
 
+      {!isCollapsed && (
+      <>
       {/* ส่วนค้นหาและกรอง */}
       <div className="bg-white border-b border-amber-100 px-3 py-2">
         <div className="flex gap-2 items-center">
@@ -555,7 +574,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       )}
 
                       {/* จัดการเอกสาร button - only for clerk_teacher and not yet proposed */}
-                      {profile?.position === 'clerk_teacher' && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                         <div className="relative">
                           <Button
                             variant="outline"
@@ -633,6 +652,8 @@ const MemoList: React.FC<MemoListProps> = ({
           </div>
         )}
       </CardContent>
+      </>
+      )}
     </Card>
   );
 };

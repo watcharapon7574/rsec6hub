@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight, MapPin, ClipboardList } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
 
@@ -25,6 +25,7 @@ interface DocumentDetail {
   // Task assignments
   task_assignments?: Array<{
     id: string;
+    assigned_to: string;
     assigned_to_name: string;
     assigned_by_name: string;
     assigned_at: string;
@@ -32,6 +33,11 @@ interface DocumentDetail {
     status: string;
     note: string | null;
     completion_note: string | null;
+    // New task detail fields
+    task_description: string | null;
+    event_date: string | null;
+    event_time: string | null;
+    location: string | null;
   }>;
 }
 
@@ -47,6 +53,10 @@ const DocumentDetailPage: React.FC = () => {
   // Get document info from navigation state or URL params
   const documentId = location.state?.documentId || new URLSearchParams(location.search).get('id');
   const documentType = location.state?.documentType || new URLSearchParams(location.search).get('type');
+
+  // Role-based visibility: team leaders see all, others see only their own assignment
+  const isTeamLeader = location.state?.isTeamLeader;
+  const currentUserId = location.state?.currentUserId;
 
   useEffect(() => {
     if (documentId && documentType) {
@@ -79,7 +89,11 @@ const DocumentDetailPage: React.FC = () => {
           note,
           completion_note,
           assigned_by,
-          assigned_to
+          assigned_to,
+          task_description,
+          event_date,
+          event_time,
+          location
         `)
         .eq(documentType === 'memo' ? 'memo_id' : 'doc_receive_id', documentId)
         .is('deleted_at', null)
@@ -114,6 +128,7 @@ const DocumentDetailPage: React.FC = () => {
 
         return {
           id: task.id,
+          assigned_to: task.assigned_to,
           assigned_to_name: assignedToProfile
             ? `${assignedToProfile.first_name} ${assignedToProfile.last_name}`
             : 'Unknown',
@@ -124,15 +139,24 @@ const DocumentDetailPage: React.FC = () => {
           completed_at: task.completed_at,
           status: task.status,
           note: task.note,
-          completion_note: task.completion_note
+          completion_note: task.completion_note,
+          task_description: task.task_description,
+          event_date: task.event_date,
+          event_time: task.event_time,
+          location: task.location
         };
       });
+
+      // Role-based filtering: team leaders and admin see all, others see only their own
+      const filteredTasks = (isTeamLeader === false && currentUserId)
+        ? transformedTasks?.filter((task: any) => task.assigned_to === currentUserId)
+        : transformedTasks;
 
       setDocument({
         ...docData,
         id: docData.id,
         document_type: documentType as 'memo' | 'doc_receive',
-        task_assignments: transformedTasks || []
+        task_assignments: filteredTasks || []
       });
     } catch (error) {
       console.error('Error fetching document detail:', error);
@@ -297,6 +321,43 @@ const DocumentDetailPage: React.FC = () => {
                             <p>วันที่เสร็จ: {new Date(task.completed_at).toLocaleDateString('th-TH')}</p>
                           )}
                         </div>
+
+                        {/* Task Details: Description, Date/Time, Location */}
+                        {(task.task_description || task.event_date || task.event_time || task.location) && (
+                          <div className="mt-3 space-y-2 bg-pink-50 border border-pink-200 rounded-lg p-3">
+                            {task.task_description && (
+                              <div className="flex items-start gap-2">
+                                <ClipboardList className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <label className="text-xs font-medium text-pink-700">รายละเอียดงาน</label>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.task_description}</p>
+                                </div>
+                              </div>
+                            )}
+                            {(task.event_date || task.event_time) && (
+                              <div className="flex items-start gap-2">
+                                <Calendar className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <label className="text-xs font-medium text-pink-700">วันที่/เวลา</label>
+                                  <p className="text-sm text-gray-700">
+                                    {task.event_date && new Date(task.event_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                    {task.event_date && task.event_time && ' '}
+                                    {task.event_time && `เวลา ${task.event_time} น.`}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            {task.location && (
+                              <div className="flex items-start gap-2">
+                                <MapPin className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <label className="text-xs font-medium text-pink-700">สถานที่</label>
+                                  <p className="text-sm text-gray-700">{task.location}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {task.note && (
                           <div className="mt-2">

@@ -419,12 +419,17 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // สำหรับ ผู้ช่วยผอ, รองผอ: ไม่แสดงเอกสารส่วนตัวใน DocumentList
   // เพราะจะแสดงใน PersonalDocumentList แยกต่างหาก
   const shouldShowMemo = (memo: any) => {
-    // สำหรับ clerk_teacher: แสดงเอกสารทุกฉบับ (รวมทั้งเอกสารของตัวเอง)
-    // เพราะ DocumentList คือตารางจัดการเอกสารทั้งหมดของสถานศึกษา
-    if (permissions.position === "clerk_teacher") {
+    // Admin เห็นเอกสารทุกฉบับ
+    if (permissions.isAdmin) {
       return true;
     }
-    
+
+    // สำหรับ clerk_teacher: แสดงเอกสารทุกฉบับ (รวมทั้งเอกสารของตัวเอง)
+    // เพราะ DocumentList คือตารางจัดการเอกสารทั้งหมดของสถานศึกษา
+    if (permissions.isClerk) {
+      return true;
+    }
+
     // สำหรับผู้ช่วยผอและรองผอ: แสดงเฉพาะเอกสารที่มีชื่อตัวเองใน signer_list_progress
     // หรือถ้าเป็น PDF Upload ให้แสดงทุกคน
     if (["assistant_director", "deputy_director"].includes(permissions.position)) {
@@ -432,17 +437,17 @@ const DocumentList: React.FC<DocumentListProps> = ({
       if (isPDFUploadMemo(memo)) {
         return true;
       }
-      
+
       // ตรวจสอบว่ามีชื่อตัวเองใน signer_list_progress หรือไม่
       if (memo.signer_list_progress && Array.isArray(memo.signer_list_progress)) {
-        const hasUserInSignerList = memo.signer_list_progress.some((signer: any) => 
+        const hasUserInSignerList = memo.signer_list_progress.some((signer: any) =>
           signer.user_id === profile?.user_id
         );
         return hasUserInSignerList;
       }
       // ถ้าไม่มี signer_list_progress ให้ fallback ไปดู signature_positions
       if (memo.signature_positions && Array.isArray(memo.signature_positions)) {
-        const hasUserInSignatures = memo.signature_positions.some((pos: any) => 
+        const hasUserInSignatures = memo.signature_positions.some((pos: any) =>
           pos.signer?.user_id === profile?.user_id
         );
         return hasUserInSignatures;
@@ -450,7 +455,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
       // ถ้าไม่พบใน signer list ก็ไม่แสดง
       return false;
     }
-    
+
     // ผอ เห็นเอกสารทุกชนิด (เหมือนเดิม)
     if (permissions.position === "director") {
       return true;
@@ -927,7 +932,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
+                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600 ${memo.is_assigned ? '' : ''}`}
                         onClick={() => {
                           const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                           navigate('/document-detail', {
@@ -939,23 +944,29 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         }}
                       >
                         <Eye className="h-4 w-4" />
+                        {memo.is_assigned && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
                       {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ */}
-                      {profile?.position === 'clerk_teacher' && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                         <>
                           {!memo.is_assigned ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
-                                navigate(`/task-assignment?documentId=${memo.id}&documentType=${documentType}`);
-                              }}
-                              className="h-7 px-2 flex items-center gap-1 bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
-                            >
-                              <ClipboardList className="h-4 w-4" />
-                              <span className="text-xs font-medium">มอบหมายงาน</span>
-                            </Button>
+                            <div className="relative">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+                                  navigate(`/task-assignment?documentId=${memo.id}&documentType=${documentType}`);
+                                }}
+                                className="h-7 px-2 flex items-center gap-1 bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
+                              >
+                                <ClipboardList className="h-4 w-4" />
+                                <span className="text-xs font-medium">มอบหมายงาน</span>
+                              </Button>
+                              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10">
+                                ใหม่
+                              </span>
+                            </div>
                           ) : memo.has_active_tasks ? (
                             <div className="relative">
                               <Button
@@ -1016,10 +1027,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       )}
                       {/* Debug: Check user position */}
                       {(() => {
-                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', profile?.position === 'clerk_teacher');
+                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher'));
                         return null;
                       })()}
-                      {profile?.position === 'clerk_teacher' && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                         <div className="relative">
                           <Button 
                             variant="outline" 
@@ -1058,7 +1069,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   )}
                   {/* Delete button - แสดงเฉพาะธุรการเท่านั้น */}
                   {(() => {
-                    const shouldShow = profile?.position === 'clerk_teacher';
+                    const shouldShow = (profile?.is_admin || profile?.position === 'clerk_teacher');
                     console.log('🗑️ DocumentList Delete Button Check:', {
                       position: profile?.position,
                       isClerkTeacher: shouldShow,
@@ -1067,7 +1078,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     });
                     return null;
                   })()}
-                  {profile?.position === 'clerk_teacher' && (
+                  {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                     <Button
                       variant="outline"
                       size="sm"

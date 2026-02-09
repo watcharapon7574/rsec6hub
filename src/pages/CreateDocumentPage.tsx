@@ -18,8 +18,8 @@ const CreateDocumentPage = () => {
       color: 'bg-blue-500 hover:bg-blue-600',
       path: '/create-memo'
     },
-    // แสดงหนังสือรับเฉพาะธุรการเท่านั้น
-    ...(permissions.position === 'clerk_teacher' ? [{
+    // แสดงหนังสือรับเฉพาะ Admin หรือธุรการเท่านั้น
+    ...((permissions.isAdmin || permissions.isClerk) ? [{
       id: 'pdf-sign',
       title: 'หนังสือรับ',
       description: 'หนังสือรับมาเป็น PDF เพื่อเกษียนหนังสือภายในสถานศึกษา',

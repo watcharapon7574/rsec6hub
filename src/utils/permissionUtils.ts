@@ -22,11 +22,26 @@ export const getPermissions = (profile: Profile | null): UserPermissions => {
     displayName: ''
   };
 
+  const userIsAdmin = isAdmin(profile);
+
+  // Admin gets ALL permissions for testing convenience
+  if (userIsAdmin) {
+    return {
+      isAdmin: true,
+      isManagement: true,
+      isTeacher: true,
+      isEmployee: true,
+      isClerk: true,
+      position: profile.position,
+      displayName: getPositionDisplayName(profile.position)
+    };
+  }
+
   return {
-    isAdmin: isAdmin(profile),
+    isAdmin: false,
     isManagement: isExecutive(profile.position),
     isTeacher: isTeacher(profile.position),
-    isEmployee: ['government_employee'].includes(profile.position), // Fix: use valid position
+    isEmployee: ['government_employee'].includes(profile.position),
     isClerk: isClerk(profile.position),
     position: profile.position,
     displayName: getPositionDisplayName(profile.position)

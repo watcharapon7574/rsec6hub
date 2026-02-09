@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, FileInput, ClipboardList, User } from 'lucide-react';
+import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, FileInput, ClipboardList, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import ClerkDocumentActions from './ClerkDocumentActions';
@@ -38,6 +38,7 @@ interface DocReceiveListProps {
   onAssignNumber?: (documentId: string, number: string) => void;
   onSetSigners?: (documentId: string, signers: any[]) => void;
   onRefresh?: () => void;
+  defaultCollapsed?: boolean;
 }
 
 const DocReceiveList: React.FC<DocReceiveListProps> = ({
@@ -46,13 +47,17 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   onReject,
   onAssignNumber,
   onSetSigners,
-  onRefresh
+  onRefresh,
+  defaultCollapsed = false
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
   const permissions = getPermissions();
   const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
+
+  // State สำหรับ collapsible
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
@@ -344,9 +349,14 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   // สำหรับ clerk_teacher, ผู้ช่วยผอ, รองผอ ไม่แสดงเอกสารส่วนตัวใน DocumentList
   // เพราะจะแสดงใน PersonalDocumentList แยกต่างหาก
   const shouldShowMemo = (memo: any) => {
+    // Admin เห็นเอกสารทั้งหมด
+    if (permissions.isAdmin) {
+      return true;
+    }
+
     // สำหรับ clerk_teacher: ไม่แสดงเอกสารส่วนตัวใน DocumentList (เหมือนเดิม)
     // ยกเว้น PDF Upload ที่ให้ธุรการทุกคนจัดการได้
-    if (permissions.position === "clerk_teacher") {
+    if (permissions.isClerk) {
       // แสดงเฉพาะเอกสารของคนอื่น (ไม่ใช่เอกสารของตนเอง)
       // หรือถ้าเป็น PDF Upload ให้แสดงทุกคนรวมทั้งของตัวเอง
       return memo.user_id !== profile?.user_id || isPDFUploadMemo(memo);
@@ -489,7 +499,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
 
   return (
     <Card className="bg-green-50 border-green-200 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-green-400 to-green-600 text-white rounded-t-lg py-3 px-4">
+      <CardHeader
+        className={`bg-gradient-to-r from-green-400 to-green-600 text-white py-3 px-4 cursor-pointer hover:from-green-500 hover:to-green-700 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
         <CardTitle className="flex items-center gap-2 text-lg">
           <FileText className="h-5 w-5" />
           รายการหนังสือรับ
@@ -499,18 +512,29 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onRefresh}
+            onClick={(e) => { e.stopPropagation(); onRefresh?.(); }}
             disabled={!onRefresh}
             className="ml-2 p-1 h-8 w-8 text-white hover:bg-green-700/50 disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
+          {/* Toggle button - prominent style */}
+          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+            {isCollapsed ? (
+              <ChevronDown className="h-5 w-5 text-white" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-white" />
+            )}
+          </div>
         </CardTitle>
         <div className="text-sm text-green-100 font-normal mt-1">
-          จัดการหนังสือรับ ตรวจสอบความถูกต้อง กำหนดเลขที่ และจัดเส้นทางการอนุมัติ
+          {isCollapsed ? 'คลิกเพื่อแสดงรายการ' : 'จัดการหนังสือรับ ตรวจสอบความถูกต้อง กำหนดเลขที่ และจัดเส้นทางการอนุมัติ'}
         </div>
       </CardHeader>
 
+      {/* Content - ซ่อนเมื่อ collapsed */}
+      {!isCollapsed && (
+      <>
       {/* ส่วนค้นหาและกรอง - แถวเดียวแนวนอน */}
       <div className="bg-white border-b border-green-100 px-3 py-2">
         <div className="flex gap-2 items-center">
@@ -872,7 +896,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -885,22 +909,28 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         }}
                       >
                         <Eye className="h-4 w-4" />
+                        {memo.is_assigned && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
                       {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ */}
-                      {profile?.position === 'clerk_teacher' && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                         <>
                           {!memo.is_assigned ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                navigate(`/task-assignment?documentId=${memo.id}&documentType=doc_receive`);
-                              }}
-                              className="h-7 px-2 flex items-center gap-1 bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
-                            >
-                              <ClipboardList className="h-4 w-4" />
-                              <span className="text-xs font-medium">มอบหมายงาน</span>
-                            </Button>
+                            <div className="relative">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  navigate(`/task-assignment?documentId=${memo.id}&documentType=doc_receive`);
+                                }}
+                                className="h-7 px-2 flex items-center gap-1 bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
+                              >
+                                <ClipboardList className="h-4 w-4" />
+                                <span className="text-xs font-medium">มอบหมายงาน</span>
+                              </Button>
+                              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10">
+                                ใหม่
+                              </span>
+                            </div>
                           ) : memo.has_active_tasks ? (
                             <div className="relative">
                               <Button
@@ -941,7 +971,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <Eye className="h-4 w-4" />
                       </Button>
                       {/* Edit button - Edit metadata (date, subject, doc_number) before managing document */}
-                      {profile?.position === 'clerk_teacher' && memo.current_signer_order === 1 && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && memo.current_signer_order === 1 && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -953,10 +983,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       )}
                       {/* Debug: Check user position */}
                       {(() => {
-                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', profile?.position === 'clerk_teacher');
+                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher'));
                         return null;
                       })()}
-                      {(profile?.position === 'clerk_teacher' || isPDFUploadMemo(memo)) && (
+                      {((profile?.is_admin || profile?.position === 'clerk_teacher') || isPDFUploadMemo(memo)) && (
                         <div className="relative">
                           {memo.status === 'rejected' ? (
                             /* ปุ่มแก้ไขสำหรับเอกสารที่ถูกตีกลับ */
@@ -1082,6 +1112,8 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           </div>
         )}
       </CardContent>
+      </>
+      )}
 
       {/* Modal ดูรายชื่อผู้รับมอบหมาย */}
       <Dialog open={showAssigneesModal} onOpenChange={setShowAssigneesModal}>

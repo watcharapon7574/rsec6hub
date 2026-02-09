@@ -9,7 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useMemoErrorHandler } from '@/hooks/useMemoErrorHandler';
 import { MemoFormData } from '@/types/memo';
-import { FileText, ArrowLeft, AlertCircle, Sparkles, Eye } from 'lucide-react';
+import { FileText, ArrowLeft, AlertCircle, Sparkles, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -45,6 +45,7 @@ const CreateMemoPage = () => {
     applied?: boolean
   }>>([]);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
+  const [showSpecialCharHelp, setShowSpecialCharHelp] = useState(false);
 
   // Rate limiting: 10 requests per minute per user
   const [grammarRequestCount, setGrammarRequestCount] = useState(0);
@@ -923,9 +924,6 @@ const CreateMemoPage = () => {
                       <Label htmlFor="proposal" className="text-sm font-medium text-gray-700">
                         ข้อเสนอและพิจารณา
                       </Label>
-                      <div className="text-xs text-blue-700 bg-blue-50 rounded-md p-2 border border-blue-200">
-                        <span className="font-semibold">เครื่องหมายพิเศษ:</span> <code className="bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">!</code> ขึ้นบรรทัดใหม่ย่อหน้า (จะมี "- " นำหน้า)
-                      </div>
                       <Textarea
                         id="proposal"
                         value={formData.proposal}
@@ -934,6 +932,34 @@ const CreateMemoPage = () => {
                         placeholder="ระบุข้อเสนอแนะหรือแนวทางดำเนินการ"
                         className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
                       />
+                    </div>
+
+                    {/* Special Character Help (Collapsible) */}
+                    <div className="text-sm text-blue-700 bg-blue-50 rounded-md p-3 border border-blue-200">
+                      <div
+                        className="flex items-center justify-between cursor-pointer"
+                        onClick={() => setShowSpecialCharHelp(!showSpecialCharHelp)}
+                      >
+                        <span>
+                          <span className="font-semibold">💡 เครื่องหมายพิเศษ:</span>{' '}
+                          พิมพ์ <code className="bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่ย่อหน้า
+                        </span>
+                        {showSpecialCharHelp ? (
+                          <ChevronUp className="h-5 w-5 flex-shrink-0 ml-2" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 flex-shrink-0 ml-2" />
+                        )}
+                      </div>
+                      {showSpecialCharHelp && (
+                        <div className="mt-3 pt-3 border-t border-blue-200 space-y-1.5">
+                          <p className="text-blue-600 font-medium">ตัวอย่าง ถ้า ! มากกว่า 1:</p>
+                          <div className="pl-3 space-y-1">
+                            <p><code className="bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 2 ครั้ง</p>
+                            <p><code className="bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 3 ครั้ง</p>
+                            <p><code className="bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded font-bold">!!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 4 ครั้ง</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

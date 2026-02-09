@@ -56,7 +56,8 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
   };
 
   // กรองเอกสารที่ต้องการการอนุมัติจากผู้ใช้ปัจจุบัน (ไม่รวมเอกสารที่เสร็จสิ้นแล้ว)
-  const isExecutive = ['assistant_director', 'deputy_director', 'director'].includes(profile?.position || '');
+  const isAdmin = profile?.is_admin === true;
+  const isExecutive = isAdmin || ['assistant_director', 'deputy_director', 'director'].includes(profile?.position || '');
   const initialFilteredMemos = pendingMemos.filter(memo => {
     // กรองเอกสารที่ถูก soft delete ออก
     if (memo.doc_del) {
@@ -538,10 +539,11 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                     // Logic ใหม่ใช้ signer_list_progress แทน signature_positions
                     const signerList = Array.isArray(memo.signer_list_progress) ? memo.signer_list_progress : [];
                     const userSigner = signerList.find((signer: any) => signer.user_id === profile?.user_id);
-                    const canSign = !!userSigner && userSigner.order === memo.current_signer_order;
-                    const canView = !!userSigner;
+                    // Admin สามารถลงนามแทนได้ทุกเอกสารที่รอลงนาม
+                    const canSign = isAdmin || (!!userSigner && userSigner.order === memo.current_signer_order);
+                    const canView = isAdmin || !!userSigner;
                     const showViewOnly = !canSign;
-                    if (!userSigner) {
+                    if (!userSigner && !isAdmin) {
                       return (
                         <Button
                           variant="outline"

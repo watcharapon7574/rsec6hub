@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,16 +14,21 @@ import { extractPdfUrl } from '@/utils/fileUpload';
 interface PersonalDocumentListProps {
   realMemos?: any[];
   onRefresh?: () => void;
+  defaultCollapsed?: boolean;
 }
 
-const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({ 
+const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   realMemos = [],
-  onRefresh
+  onRefresh,
+  defaultCollapsed = false
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
   const permissions = getPermissions();
   const navigate = useNavigate();
+
+  // State สำหรับ collapsible
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
@@ -224,7 +229,10 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 
   return (
     <Card className="bg-blue-50 border-blue-200 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-t-lg py-3 px-4">
+      <CardHeader
+        className={`bg-gradient-to-r from-blue-400 to-blue-600 text-white py-3 px-4 cursor-pointer hover:from-blue-500 hover:to-blue-700 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
         <CardTitle className="flex items-center gap-2 text-lg">
           <User className="h-5 w-5" />
           เอกสารส่วนตัวของฉัน
@@ -234,15 +242,28 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onRefresh}
+            onClick={(e) => { e.stopPropagation(); onRefresh?.(); }}
             disabled={!onRefresh}
             className="ml-2 p-1 h-8 w-8 text-white hover:bg-blue-700/50 disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
+          {/* Toggle button - prominent style */}
+          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+            {isCollapsed ? (
+              <ChevronDown className="h-5 w-5 text-white" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-white" />
+            )}
+          </div>
         </CardTitle>
+        <div className="text-sm text-blue-100 font-normal mt-1">
+          {isCollapsed ? 'คลิกเพื่อแสดงรายการ' : 'เอกสารที่คุณสร้างในระบบ'}
+        </div>
       </CardHeader>
 
+      {!isCollapsed && (
+      <>
       {/* ส่วนค้นหาและกรอง - แถวเดียวแนวนอน */}
       <div className="bg-white border-b border-blue-100 px-3 py-2">
         <div className="flex gap-2 items-center">
@@ -684,6 +705,8 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
           </div>
         )}
       </CardContent>
+      </>
+      )}
     </Card>
   );
 };

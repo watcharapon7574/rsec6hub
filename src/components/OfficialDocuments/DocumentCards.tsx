@@ -130,30 +130,20 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
         </Button>
       </div>
 
-      {/* Pending Document Card - เฉพาะผู้ช่วยผอ รองผอ ผอ เท่านั้น */}
+      {/* Pending Document Card - เฉพาะผู้ช่วยผอ รองผอ ผอ เท่านั้น (ไม่ซ่อน - สำคัญ) */}
       {canAccessApproval && pendingSignMemos.length > 0 && (
         <PendingDocumentCard pendingMemos={pendingSignMemos} onRefresh={onRefresh} />
       )}
 
-      {/* สำหรับธุรการ: สลับลำดับ - งานที่ได้รับมอบหมายก่อน แล้วเอกสารภายในสถานศึกษา แล้วหนังสือรับ แล้วรายการบันทึกข้อความ แล้วเอกสารส่วนตัว */}
-      {permissions.position === "clerk_teacher" ? (
+      {/* สำหรับ Admin หรือธุรการ: สลับลำดับ - งานที่ได้รับมอบหมายก่อน แล้วเอกสารภายในสถานศึกษา แล้วหนังสือรับ แล้วรายการบันทึกข้อความ แล้วเอกสารส่วนตัว */}
+      {(permissions.isAdmin || permissions.isClerk) ? (
         <>
-          {/* Assigned Documents List สำหรับธุรการเท่านั้น - งานที่ได้รับมอบหมาย */}
-          {permissions.position === "clerk_teacher" && (
-            <Card className="bg-white border border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <ClipboardList className="h-5 w-5 text-green-600" />
-                  <span>งานที่ได้รับมอบหมาย</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AssignedDocumentsList />
-              </CardContent>
-            </Card>
+          {/* Assigned Documents List สำหรับ Admin/ธุรการ - งานที่ได้รับมอบหมาย */}
+          {(permissions.isAdmin || permissions.isClerk) && (
+            <AssignedDocumentsList />
           )}
 
-          {/* Document List สำหรับธุรการ - เอกสารภายในสถานศึกษา */}
+          {/* Document List สำหรับธุรการ - เอกสารภายในสถานศึกษา (เปิดค่าเริ่มต้น) */}
           <DocumentList
             documents={documents}
             realMemos={realMemos}
@@ -164,8 +154,8 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
             onRefresh={onRefresh}
           />
 
-          {/* Doc Receive List สำหรับธุรการเท่านั้น - รายการหนังสือรับ (PDF อัปโหลด) */}
-          {permissions.position === "clerk_teacher" && (
+          {/* Doc Receive List สำหรับ Admin/ธุรการ - รายการหนังสือรับ (ปิดค่าเริ่มต้น) */}
+          {(permissions.isAdmin || permissions.isClerk) && (
             <DocReceiveList
               documents={docReceiveList.map(docReceive => ({
                 id: parseInt(docReceive.id.slice(-6), 16),
@@ -184,41 +174,33 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
               onAssignNumber={onAssignNumber}
               onSetSigners={onSetSigners}
               onRefresh={onRefresh}
+              defaultCollapsed={true}
             />
           )}
 
-          {/* Memo List สำหรับธุรการเท่านั้น - รายการบันทึกข้อความ (ไม่รวม doc_receive) */}
-          {permissions.position === "clerk_teacher" && (
+          {/* Memo List สำหรับ Admin/ธุรการ - รายการบันทึกข้อความ (ปิดค่าเริ่มต้น) */}
+          {(permissions.isAdmin || permissions.isClerk) && (
             <MemoList
               memoList={realMemos.filter(memo => !memo.__source_table || memo.__source_table !== 'doc_receive')}
               onRefresh={onRefresh}
+              defaultCollapsed={true}
             />
           )}
 
-          {/* Personal Document List สำหรับธุรการ */}
-          <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} />
+          {/* Personal Document List สำหรับธุรการ (ปิดค่าเริ่มต้น) */}
+          <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} defaultCollapsed={true} />
         </>
       ) : (
         <>
           {/* Assigned Documents List สำหรับบุคลากรทุกคน - งานที่ได้รับมอบหมาย */}
-          <Card className="bg-white border border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <ClipboardList className="h-5 w-5 text-green-600" />
-                <span>งานที่ได้รับมอบหมาย</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AssignedDocumentsList />
-            </CardContent>
-          </Card>
+          <AssignedDocumentsList />
 
-          {/* สำหรับผู้ช่วยผอ, รองผอ: เอกสารส่วนตัวก่อน */}
+          {/* สำหรับผู้ช่วยผอ, รองผอ: เอกสารส่วนตัวก่อน (ปิดค่าเริ่มต้น) */}
           {["assistant_director", "deputy_director"].includes(permissions.position) && (
-            <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} />
+            <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} defaultCollapsed={true} />
           )}
 
-          {/* Document List สำหรับบทบาทอื่น */}
+          {/* Document List สำหรับบทบาทอื่น (เปิดค่าเริ่มต้น) */}
           <DocumentList
             documents={documents}
             realMemos={realMemos}

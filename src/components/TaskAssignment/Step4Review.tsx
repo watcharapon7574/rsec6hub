@@ -1,7 +1,9 @@
 import React from 'react';
-import { CheckCircle, FileText, Users, MessageSquare } from 'lucide-react';
+import { CheckCircle, FileText, Users, MessageSquare, ClipboardList, Calendar, Clock, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { th } from 'date-fns/locale';
 
 interface Profile {
   user_id: string;
@@ -15,14 +17,33 @@ interface Step4ReviewProps {
   docNumber: string | null;
   selectedUsers: Profile[];
   note: string;
+  taskDescription?: string;
+  eventDate?: Date | null;
+  eventTime?: string;
+  location?: string;
 }
 
 const Step4Review: React.FC<Step4ReviewProps> = ({
   subject,
   docNumber,
   selectedUsers,
-  note
+  note,
+  taskDescription,
+  eventDate,
+  eventTime,
+  location
 }) => {
+  // Format date for display
+  const formatDisplayDate = (date: Date | null | undefined) => {
+    if (!date) return null;
+    return format(date, 'd MMMM yyyy', { locale: th });
+  };
+
+  // Format time for display
+  const formatDisplayTime = (time: string | undefined) => {
+    if (!time) return null;
+    return time + ' น.';
+  };
   return (
     <div className="space-y-6">
       <Card className="bg-white border-2 border-pink-200 shadow-lg">
@@ -76,20 +97,75 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
             </div>
           </div>
 
-          {/* Note */}
-          <div>
-            <div className="flex items-center mb-3">
-              <MessageSquare className="h-4 w-4 mr-2 text-pink-600" />
-              <h3 className="font-semibold text-pink-900">หมายเหตุ</h3>
+          {/* Task Description */}
+          {taskDescription && (
+            <div>
+              <div className="flex items-center mb-3">
+                <ClipboardList className="h-4 w-4 mr-2 text-pink-600" />
+                <h3 className="font-semibold text-pink-900">รายละเอียดงาน</h3>
+              </div>
+              <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                <p className="text-sm text-gray-900 whitespace-pre-wrap">{taskDescription}</p>
+              </div>
             </div>
-            <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
-              {note ? (
-                <p className="text-sm text-gray-900 whitespace-pre-wrap">{note}</p>
-              ) : (
-                <p className="text-sm text-gray-500 italic">ไม่มีหมายเหตุ</p>
+          )}
+
+          {/* Date/Time and Location Row */}
+          {(eventDate || eventTime || location) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Event Date/Time */}
+              {(eventDate || eventTime) && (
+                <div>
+                  <div className="flex items-center mb-3">
+                    <Calendar className="h-4 w-4 mr-2 text-pink-600" />
+                    <h3 className="font-semibold text-pink-900">วันที่/เวลา</h3>
+                  </div>
+                  <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                    <div className="flex flex-col gap-1">
+                      {eventDate && (
+                        <div className="flex items-center gap-2 text-sm text-gray-900">
+                          <Calendar className="h-3.5 w-3.5 text-pink-500" />
+                          {formatDisplayDate(eventDate)}
+                        </div>
+                      )}
+                      {eventTime && (
+                        <div className="flex items-center gap-2 text-sm text-gray-900">
+                          <Clock className="h-3.5 w-3.5 text-pink-500" />
+                          {formatDisplayTime(eventTime)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Location */}
+              {location && (
+                <div>
+                  <div className="flex items-center mb-3">
+                    <MapPin className="h-4 w-4 mr-2 text-pink-600" />
+                    <h3 className="font-semibold text-pink-900">สถานที่</h3>
+                  </div>
+                  <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-900">{location}</p>
+                  </div>
+                </div>
               )}
             </div>
-          </div>
+          )}
+
+          {/* Note */}
+          {note && (
+            <div>
+              <div className="flex items-center mb-3">
+                <MessageSquare className="h-4 w-4 mr-2 text-pink-600" />
+                <h3 className="font-semibold text-pink-900">หมายเหตุเพิ่มเติม</h3>
+              </div>
+              <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                <p className="text-sm text-gray-900 whitespace-pre-wrap">{note}</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

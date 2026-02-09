@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, FileText, ClipboardList, RotateCcw } from 'lucide-react';
+import { Eye, Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, FileText, ClipboardList, RotateCcw, ChevronDown, ChevronUp, MapPin, Users, Settings2 } from 'lucide-react';
 import { useAssignedTasks } from '@/hooks/useAssignedTasks';
-import { TaskStatus, TaskAssignmentWithDetails } from '@/services/taskAssignmentService';
+import { TaskStatus, TaskAssignmentWithDetails, taskAssignmentService, TeamMember, AssignmentSource } from '@/services/taskAssignmentService';
 import { extractPdfUrl } from '@/utils/fileUpload';
+import { supabase } from '@/integrations/supabase/client';
+import TeamManagementModal from '@/components/TaskAssignment/TeamManagementModal';
+import TeamMemberIcon from '@/components/TaskAssignment/TeamMemberIcon';
+import { toast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -18,10 +22,24 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
-const AssignedDocumentsList = () => {
+interface Assignee {
+  id: string;
+  assigned_to_name: string;
+  status: string;
+  assigned_at: string;
+  is_team_leader: boolean;
+  is_reporter: boolean;
+}
+
+interface AssignedDocumentsListProps {
+  defaultCollapsed?: boolean;
+}
+
+const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCollapsed = true }) => {
   const navigate = useNavigate();
   const { tasks, loading, updateTaskStatus, fetchTasks } = useAssignedTasks();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   // Handle manual refresh
   const handleRefresh = async () => {
@@ -35,9 +53,81 @@ const AssignedDocumentsList = () => {
   };
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskIsReporter, setSelectedTaskIsReporter] = useState(false);
   const [completionNote, setCompletionNote] = useState('');
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // State for assignees dialog
+  const [assigneesDialogOpen, setAssigneesDialogOpen] = useState(false);
+  const [assigneesList, setAssigneesList] = useState<Assignee[]>([]);
+  const [selectedDocumentSubject, setSelectedDocumentSubject] = useState('');
+  const [loadingAssignees, setLoadingAssignees] = useState(false);
+
+  // State for team management modal
+  const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [teamModalTask, setTeamModalTask] = useState<TaskAssignmentWithDetails | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
+
+  // Fetch all assignees for a document
+  const fetchAssignees = async (documentId: string, documentType: string, subject: string) => {
+    setLoadingAssignees(true);
+    setSelectedDocumentSubject(subject);
+    setAssigneesDialogOpen(true);
+
+    try {
+      const column = documentType === 'memo' ? 'memo_id' : 'doc_receive_id';
+      const { data: assignments, error } = await supabase
+        .from('task_assignments')
+        .select('id, assigned_to, status, assigned_at, is_team_leader, is_reporter')
+        .eq(column, documentId)
+        .is('deleted_at', null)
+        .order('is_team_leader', { ascending: false }) // หัวหน้าทีมขึ้นก่อน
+        .order('is_reporter', { ascending: false }) // ผู้รายงานถัดมา
+        .order('assigned_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Get unique user IDs
+      const userIds = [...new Set(assignments?.map(a => a.assigned_to) || [])];
+
+      // Fetch profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, `${p.first_name} ${p.last_name}`]) || []);
+
+      const assignees: Assignee[] = (assignments || []).map(a => ({
+        id: a.id,
+        assigned_to_name: profileMap.get(a.assigned_to) || 'Unknown',
+        status: a.status,
+        assigned_at: a.assigned_at,
+        is_team_leader: a.is_team_leader || false,
+        is_reporter: a.is_reporter || false
+      }));
+
+      setAssigneesList(assignees);
+    } catch (error) {
+      console.error('Error fetching assignees:', error);
+      setAssigneesList([]);
+    } finally {
+      setLoadingAssignees(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -45,6 +135,15 @@ const AssignedDocumentsList = () => {
     const month = date.getMonth() + 1;
     const year = date.getFullYear() + 543; // Convert to Buddhist year
     return `${day}/${month}/${year}`;
+  };
+
+  // Format event date (YYYY-MM-DD format from DB)
+  const formatEventDate = (dateString: string | null) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    return `${day}/${month}`;
   };
 
   const getFirstName = (fullName: string) => {
@@ -83,11 +182,13 @@ const AssignedDocumentsList = () => {
   };
 
   const handleViewDocument = (task: TaskAssignmentWithDetails) => {
-    navigate('/pdf-just-preview', {
+    navigate('/document-detail', {
       state: {
-        fileUrl: task.document_pdf_url,
-        fileName: 'เอกสาร',
-        memoId: task.document_type === 'memo' ? task.document_id : undefined,
+        documentId: task.document_id,
+        documentType: task.document_type,
+        // Role info for visibility control
+        isTeamLeader: task.is_team_leader,
+        currentUserId: task.assigned_to,
       },
     });
   };
@@ -100,9 +201,114 @@ const AssignedDocumentsList = () => {
     }
   };
 
-  const handleCompleteClick = (assignmentId: string) => {
+  // Handle "ทราบ" button
+  // For team leaders: open modal to select reporters
+  // For non-leaders: just update status to in_progress
+  const handleAcknowledge = async (task: TaskAssignmentWithDetails) => {
+    // If this is a team leader, open the team management modal
+    // to let them select reporters before acknowledging
+    if (task.is_team_leader) {
+      await handleManageTeam(task);
+      return;
+    }
+
+    // For non-leaders, just update status
+    try {
+      await updateTaskStatus(task.assignment_id, 'in_progress');
+
+      toast({
+        title: 'รับทราบงานสำเร็จ',
+        description: 'งานถูกเปลี่ยนสถานะเป็น "กำลังดำเนินการ"',
+      });
+
+      await fetchTasks();
+    } catch (error: any) {
+      console.error('Error acknowledging task:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: error.message || 'ไม่สามารถรับทราบงานได้',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Handle team management modal confirmation
+  const handleTeamConfirm = async (
+    reporterIds: string[],
+    newTeamMembers?: { userId: string; isReporter: boolean }[]
+  ) => {
+    if (!teamModalTask) return;
+
+    try {
+      // Check if this is first acknowledgement (pending) or update (in_progress)
+      if (teamModalTask.status === 'pending') {
+        // First time: acknowledge and set reporters
+        await taskAssignmentService.acknowledgeTask(teamModalTask.assignment_id, {
+          reporterIds,
+          teamMembers: newTeamMembers
+        });
+
+        toast({
+          title: 'รับทราบงานสำเร็จ',
+          description: 'งานถูกเปลี่ยนสถานะเป็น "กำลังดำเนินการ"',
+        });
+      } else {
+        // Already in progress: just update reporters and add new members
+        await taskAssignmentService.updateTeamAndReporters(teamModalTask.assignment_id, {
+          reporterIds,
+          newTeamMembers
+        });
+
+        toast({
+          title: 'อัปเดตทีมสำเร็จ',
+          description: 'แก้ไขข้อมูลผู้รายงานเรียบร้อยแล้ว',
+        });
+      }
+
+      // Refresh tasks
+      await fetchTasks();
+    } catch (error: any) {
+      console.error('Error handling team confirmation:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: error.message || 'ไม่สามารถดำเนินการได้',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  // Handle "จัดการทีม" button - opens team management modal
+  const handleManageTeam = async (task: TaskAssignmentWithDetails) => {
+    // Fetch team members for this assignment
+    try {
+      const members = await taskAssignmentService.getTeamMembers(task.assignment_id);
+      setTeamMembers(members);
+      setTeamModalTask(task);
+      setTeamModalOpen(true);
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+      // Fallback: if we can't get team members, use default with current user
+      setTeamMembers([{
+        assignment_id: task.assignment_id,
+        user_id: task.assigned_to_id,
+        first_name: task.assigned_to_name.split(' ')[0] || '',
+        last_name: task.assigned_to_name.split(' ').slice(1).join(' ') || '',
+        position: '',
+        is_team_leader: true,
+        is_reporter: false,
+        status: task.status
+      }]);
+      setTeamModalTask(task);
+      setTeamModalOpen(true);
+    }
+  };
+
+  const handleCompleteClick = (assignmentId: string, isReporter: boolean) => {
     setSelectedTaskId(assignmentId);
+    setSelectedTaskIsReporter(isReporter);
     setCompletionNote('');
+    setReportFile(null);
     setCompletionDialogOpen(true);
   };
 
@@ -120,6 +326,11 @@ const AssignedDocumentsList = () => {
     if (!selectedTaskId) return;
     if (!completionNote.trim()) {
       alert('กรุณากรอกรายงานผลการปฏิบัติงาน');
+      return;
+    }
+    // If reporter, file is required
+    if (selectedTaskIsReporter && !reportFile) {
+      alert('ผู้รายงานต้องแนบไฟล์เอกสาร');
       return;
     }
 
@@ -176,45 +387,56 @@ const AssignedDocumentsList = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <div className="text-muted-foreground">กำลังโหลดรายการงาน...</div>
-      </div>
-    );
-  }
-
-  if (tasks.length === 0) {
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div className="text-center text-gray-500">
-          <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-40" />
-          <p className="text-sm font-medium">ไม่มีงานที่ได้รับมอบหมาย</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-2">
-      {/* Header with refresh button */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-green-100 text-green-700 font-semibold px-2 py-1 rounded-full">
+    <Card className="bg-teal-50 border-teal-200 shadow-lg">
+      <CardHeader
+        className={`bg-gradient-to-r from-teal-500 to-cyan-600 text-white py-3 px-4 cursor-pointer hover:from-teal-600 hover:to-cyan-700 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ClipboardList className="h-5 w-5" />
+          งานที่ได้รับมอบหมาย
+          <Badge variant="secondary" className="ml-auto bg-white text-teal-600 font-semibold px-2 py-1 rounded-full">
             {tasks.length > 0 ? `${tasks.length} รายการ` : 'ไม่มีงาน'}
           </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); handleRefresh(); }}
+            disabled={isRefreshing || loading}
+            className="ml-2 p-1 h-8 w-8 text-white hover:bg-teal-700/50 disabled:opacity-50"
+          >
+            <RotateCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          {/* Toggle button - prominent style */}
+          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+            {isCollapsed ? (
+              <ChevronDown className="h-5 w-5 text-white" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-white" />
+            )}
+          </div>
+        </CardTitle>
+        <div className="text-sm text-teal-100 font-normal mt-1">
+          {isCollapsed ? 'คลิกเพื่อแสดงรายการ' : 'รายการงานที่ได้รับมอบหมายจากเอกสารราชการ'}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing || loading}
-          className="p-1 h-8 w-8 text-green-600 hover:bg-green-50 disabled:opacity-50"
-        >
-          <RotateCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </Button>
-      </div>
+      </CardHeader>
+
+      {!isCollapsed && (
+      <>
+      <CardContent className="p-3">
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-3"></div>
+            <div className="text-muted-foreground text-sm">กำลังโหลดรายการงาน...</div>
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="text-center py-6 text-teal-300">
+            <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-60" />
+            <p className="text-sm font-medium">ไม่มีงานที่ได้รับมอบหมาย</p>
+          </div>
+        ) : (
+        <div className="space-y-2">
       {tasks.map((task) => {
         const statusConfig = getStatusConfig(task.status);
         const StatusIcon = statusConfig.icon;
@@ -244,25 +466,45 @@ const AssignedDocumentsList = () => {
                     {getFirstName(task.assigned_by_name)}
                   </span>
 
-                  {/* วันที่ */}
+                  {/* วันที่มอบหมาย */}
                   <span className="text-xs text-gray-500 whitespace-nowrap">
                     {formatDate(task.assigned_at)}
                   </span>
 
-                  {/* ความคิดเห็น */}
-                  {(task.note || task.completion_note) && (
-                    <div className={`
-                      ${task.completion_note
-                        ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300 shadow-sm'
-                        : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-sm'
-                      }
-                      border rounded-md px-2.5 py-1 flex items-center gap-1.5
-                    `}>
-                      <span className={`text-[10px] font-medium ${task.completion_note ? 'text-green-700' : 'text-blue-700'}`}>
-                        {task.completion_note ? '✓' : '💬'}
+                  {/* เวลา/สถานที่ของงาน */}
+                  {(task.event_time || task.location) && (
+                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-pink-600 bg-pink-50 border border-pink-200 rounded-md px-2 py-0.5">
+                      {task.event_time && (
+                        <span className="flex items-center gap-0.5">
+                          <Clock className="h-3 w-3" />
+                          {task.event_time}
+                        </span>
+                      )}
+                      {task.location && (
+                        <span className="flex items-center gap-0.5">
+                          <MapPin className="h-3 w-3" />
+                          {truncateText(task.location, 10)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* รายละเอียดงาน (task_description) - แสดง 40 ตัวอักษร */}
+                  {task.task_description && (
+                    <div className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-md px-2.5 py-1">
+                      <ClipboardList className="h-3 w-3 text-purple-600 flex-shrink-0" />
+                      <span className="text-xs text-purple-700 truncate max-w-[150px] font-medium">
+                        {truncateText(task.task_description, 40)}
                       </span>
-                      <span className={`text-xs ${task.completion_note ? 'text-green-800' : 'text-blue-800'} truncate block max-w-[120px] font-medium`}>
-                        {task.note ? truncateText(task.note, 35) : truncateText(task.completion_note!, 35)}
+                    </div>
+                  )}
+
+                  {/* รายงานผล (completion_note) */}
+                  {task.completion_note && (
+                    <div className="hidden lg:flex items-center gap-1.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-md px-2.5 py-1">
+                      <span className="text-[10px] font-medium text-green-700">✓</span>
+                      <span className="text-xs text-green-800 truncate max-w-[100px] font-medium">
+                        {truncateText(task.completion_note, 25)}
                       </span>
                     </div>
                   )}
@@ -281,11 +523,22 @@ const AssignedDocumentsList = () => {
                     <Eye className="h-4 w-4" />
                   </Button>
 
+                  {/* ปุ่มดูรายชื่อผู้รับมอบหมาย */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fetchAssignees(task.document_id, task.document_type, task.document_subject)}
+                    className="h-7 w-7 p-0"
+                    title="ดูรายชื่อ"
+                  >
+                    <Users className="h-4 w-4" />
+                  </Button>
+
                   {/* ปุ่มตามสถานะ */}
                   {task.status === 'pending' && (
                     <Button
                       size="sm"
-                      onClick={() => handleUpdateStatus(task.assignment_id, 'in_progress')}
+                      onClick={() => handleAcknowledge(task)}
                       className="h-7 text-xs px-2.5 bg-blue-600 hover:bg-blue-700"
                     >
                       <PlayCircle className="h-3.5 w-3.5 mr-1" />
@@ -294,14 +547,28 @@ const AssignedDocumentsList = () => {
                   )}
 
                   {task.status === 'in_progress' && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleCompleteClick(task.assignment_id)}
-                      className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                      รายงาน
-                    </Button>
+                    <>
+                      {/* ปุ่มจัดการทีม - เฉพาะ is_team_leader และ assignment_source = 'position' */}
+                      {task.is_team_leader && task.assignment_source === 'position' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleManageTeam(task)}
+                          className="h-7 text-xs px-2.5 border-orange-300 text-orange-600 hover:bg-orange-50"
+                        >
+                          <Settings2 className="h-3.5 w-3.5 mr-1" />
+                          จัดการทีม
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={() => handleCompleteClick(task.assignment_id, task.is_reporter || false)}
+                        className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                        รายงาน
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -309,6 +576,11 @@ const AssignedDocumentsList = () => {
           </Card>
         );
       })}
+        </div>
+        )}
+      </CardContent>
+      </>
+      )}
 
       {/* Completion Note Dialog */}
       <Dialog open={completionDialogOpen} onOpenChange={setCompletionDialogOpen}>
@@ -338,38 +610,44 @@ const AssignedDocumentsList = () => {
               </p>
             </div>
 
-            <div className="space-y-2 border-t pt-4">
-              <Label htmlFor="report-file" className="text-sm font-medium flex items-center gap-2">
-                📎 แนบไฟล์เอกสาร (ถ้ามี)
-              </Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
-                <input
-                  id="report-file"
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleFileChange}
-                  className="block w-full text-sm text-gray-600
-                    file:mr-4 file:py-2.5 file:px-4
-                    file:rounded-lg file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-600 file:text-white
-                    hover:file:bg-blue-700
-                    file:cursor-pointer
-                    cursor-pointer"
-                />
-                {reportFile && (
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-700 flex items-center gap-2 font-medium">
-                      <CheckCircle className="h-4 w-4" />
-                      ไฟล์ที่เลือก: {reportFile.name}
-                    </p>
-                    <p className="text-xs text-green-600 mt-1">
-                      ขนาด: {(reportFile.size / 1024).toFixed(2)} KB
-                    </p>
-                  </div>
-                )}
+            {/* แสดงส่วนแนบไฟล์เฉพาะผู้รายงาน */}
+            {selectedTaskIsReporter && (
+              <div className="space-y-2 border-t pt-4">
+                <Label htmlFor="report-file" className="text-sm font-medium flex items-center gap-2">
+                  📎 แนบไฟล์เอกสาร <span className="text-red-500">*</span>
+                </Label>
+                <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                  💡 คุณเป็นผู้รายงาน ต้องแนบไฟล์รายงาน
+                </p>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
+                  <input
+                    id="report-file"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-600
+                      file:mr-4 file:py-2.5 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-600 file:text-white
+                      hover:file:bg-blue-700
+                      file:cursor-pointer
+                      cursor-pointer"
+                  />
+                  {reportFile && (
+                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-700 flex items-center gap-2 font-medium">
+                        <CheckCircle className="h-4 w-4" />
+                        ไฟล์ที่เลือก: {reportFile.name}
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">
+                        ขนาด: {(reportFile.size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -407,7 +685,102 @@ const AssignedDocumentsList = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Assignees Dialog */}
+      <Dialog open={assigneesDialogOpen} onOpenChange={setAssigneesDialogOpen}>
+        <DialogContent className="sm:max-w-md w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-teal-600 flex-shrink-0" />
+              <span>รายชื่อผู้รับมอบหมาย</span>
+            </DialogTitle>
+            <DialogDescription className="line-clamp-2 text-sm">
+              {selectedDocumentSubject}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 flex-1 overflow-y-auto min-h-0">
+            {loadingAssignees ? (
+              <div className="flex items-center justify-center py-8">
+                <svg className="animate-spin h-8 w-8 text-teal-500" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+              </div>
+            ) : assigneesList.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">ไม่พบข้อมูลผู้รับมอบหมาย</p>
+            ) : (
+              <div className="space-y-2">
+                {assigneesList.map((assignee) => (
+                  <div
+                    key={assignee.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border gap-2"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {/* Role Icon */}
+                      <TeamMemberIcon
+                        isLeader={assignee.is_team_leader}
+                        isReporter={assignee.is_reporter}
+                        size="sm"
+                      />
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium text-gray-800 text-sm truncate">{assignee.assigned_to_name}</span>
+                        {/* Role badges */}
+                        <div className="flex gap-1">
+                          {assignee.is_team_leader && (
+                            <span className="text-[10px] text-amber-600 font-medium">หัวหน้า</span>
+                          )}
+                          {assignee.is_reporter && (
+                            <span className="text-[10px] text-pink-600 font-medium">
+                              {assignee.is_team_leader && '• '}ผู้รายงาน
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={`flex-shrink-0 text-xs ${
+                        assignee.status === 'completed'
+                          ? 'bg-green-100 text-green-700'
+                          : assignee.status === 'in_progress'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {assignee.status === 'completed' ? 'เสร็จ' : assignee.status === 'in_progress' ? 'กำลังทำ' : 'รอ'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <Button variant="outline" onClick={() => setAssigneesDialogOpen(false)} className="w-full sm:w-auto">
+              ปิด
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Management Modal */}
+      {teamModalTask && (
+        <TeamManagementModal
+          open={teamModalOpen}
+          onClose={() => {
+            setTeamModalOpen(false);
+            setTeamModalTask(null);
+          }}
+          assignmentId={teamModalTask.assignment_id}
+          assignmentSource={(teamModalTask.assignment_source || 'name') as AssignmentSource}
+          positionName={teamModalTask.position_name || undefined}
+          currentUserId={currentUserId}
+          existingTeam={teamMembers}
+          onConfirm={handleTeamConfirm}
+        />
+      )}
+    </Card>
   );
 };
 

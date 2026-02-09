@@ -171,8 +171,9 @@ const ApproveDocumentPage: React.FC = () => {
     }
   };
 
-  // Check if user can comment (assistant_director, deputy_director, and director)
-  const canComment = profile?.position === 'assistant_director' ||
+  // Check if user can comment (assistant_director, deputy_director, director, or admin)
+  const canComment = profile?.is_admin === true ||
+                     profile?.position === 'assistant_director' ||
                      profile?.position === 'deputy_director' ||
                      profile?.position === 'director';
 
@@ -216,17 +217,26 @@ const ApproveDocumentPage: React.FC = () => {
   );
 
   // ใช้ข้อมูลจาก signer_list_progress หากมี ไม่งั้นใช้ signature_positions
-  const userCanSign = currentUserSigner || currentUserSignature;
+  // Admin (is_admin = true) สามารถเข้าถึงและดูเอกสารได้ทุกเอกสาร
+  const isAdminUser = profile?.is_admin === true;
+  const userCanSign = currentUserSigner || currentUserSignature || isAdminUser;
 
   useEffect(() => {
     if (!memo || !profile || hasShownPermissionToast) return;
 
     // Check if this user should be able to approve this document
     // สำหรับผู้บริหาร ให้เข้าถึงได้ถ้ามีลายเซ็นใน signature_positions หรือ signer_list_progress
-    const isManagementRole = ['assistant_director', 'deputy_director', 'director'].includes(profile.position || '');
-    const hasSignatureInDocument = userCanSign && memo.status === 'pending_sign';
-    
-    if (!userCanSign) {
+    // Admin (is_admin = true) สามารถเข้าถึงได้ทุกเอกสาร
+    const isManagementRole = isAdminUser || ['assistant_director', 'deputy_director', 'director'].includes(profile.position || '');
+    const hasSignatureInDocument = (currentUserSigner || currentUserSignature) && memo.status === 'pending_sign';
+
+    // Admin bypass - allow access without showing permission error
+    if (isAdminUser) {
+      console.log('🔓 Admin user - bypassing permission checks');
+      return;
+    }
+
+    if (!currentUserSigner && !currentUserSignature) {
       setHasShownPermissionToast(true);
       toast({
         title: "ไม่สามารถเข้าถึงได้",
@@ -330,9 +340,13 @@ const ApproveDocumentPage: React.FC = () => {
     setAction(approvalAction);
 
     try {
-      if (approvalAction === 'approve' && memo.pdf_draft_path && profile.signature_url) {
-        // ตรวจสอบว่ามีลายเซ็นหรือไม่
-        if (!profile.signature_url) {
+      // Admin สามารถลงนามแทนได้โดยใช้ลายเซ็นของผู้ลงนามจริง
+      const isAdminSigningOnBehalf = isAdminUser && !currentUserSigner && !currentUserSignature;
+      const hasSignatureAccess = profile.signature_url || isAdminSigningOnBehalf;
+
+      if (approvalAction === 'approve' && memo.pdf_draft_path && hasSignatureAccess) {
+        // ตรวจสอบว่ามีลายเซ็นหรือไม่ (ข้ามสำหรับ admin ที่ลงนามแทน)
+        if (!profile.signature_url && !isAdminSigningOnBehalf) {
           toast({
             title: "ไม่มีลายเซ็น",
             description: "กรุณาอัปโหลดลายเซ็นในโปรไฟล์ของคุณก่อน",
@@ -356,69 +370,121 @@ const ApproveDocumentPage: React.FC = () => {
         setShowLoadingModal(true);
         let signSuccess = false;
         let signedPdfBlob: Blob | null = null;
+
+        // ถ้าเป็น admin ลงนามแทน ให้เพิ่ม "admin" นำหน้า comment
+        const isAdminSigning = isAdminUser && !currentUserSigner && !currentUserSignature;
+        const commentPrefix = isAdminSigning ? '[admin] ' : '';
+
+        // หาผู้ลงนามปัจจุบันสำหรับ admin ที่ลงนามแทน
+        let signingPosition = profile.position;
+        let currentSignerInfo: any = null;
+        if (isAdminSigning) {
+          // หาผู้ลงนามที่มี order ตรงกับ current_signer_order
+          currentSignerInfo = signerListProgress.find((s: any) => s.order === memo.current_signer_order) ||
+                             signaturePositions.find((p: any) => p.signer?.order === memo.current_signer_order)?.signer;
+          if (currentSignerInfo) {
+            signingPosition = currentSignerInfo.role || currentSignerInfo.position || profile.position;
+            console.log('🔓 Admin signing on behalf of:', currentSignerInfo);
+          }
+        }
+
         try {
           // --- เตรียม lines ตาม role สำหรับตำแหน่งแรก (มี comment) และตำแหน่งถัดไป (ไม่มี comment) ---
           let linesWithComment: any[] = [];
           let linesWithoutComment: any[] = [];
-          
-          // สร้างชื่อเต็มพร้อม prefix
-          const fullName = `${profile.prefix || ''}${profile.first_name} ${profile.last_name}`.trim();
-          
-          if (profile.position === 'assistant_director') {
+
+          // ถ้าเป็น admin ลงนามแทน ให้ใช้ข้อมูลของผู้ลงนามจริง ไม่ใช่ข้อมูล admin
+          let signerProfile: any = profile; // default ใช้ profile ของผู้ใช้ปัจจุบัน
+
+          if (isAdminSigning && currentSignerInfo?.user_id) {
+            // ดึงข้อมูล profile ของผู้ลงนามจริงจาก database
+            const { data: actualSignerProfile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', currentSignerInfo.user_id)
+              .single();
+
+            if (actualSignerProfile) {
+              signerProfile = actualSignerProfile as any;
+              console.log('🔓 Admin using actual signer profile:', actualSignerProfile);
+            }
+          }
+
+          // สร้างชื่อเต็มพร้อม prefix ของผู้ลงนามจริง
+          const fullName = `${signerProfile.prefix || ''}${signerProfile.first_name} ${signerProfile.last_name}`.trim();
+
+          if (signingPosition === 'assistant_director') {
             // ถ้ามี comment ให้แสดง comment ในตำแหน่งแรก
             if (comment && comment.trim()) {
               linesWithComment = [
-                { type: "comment", value: `- ${comment.trim()}` },
+                { type: "comment", value: `- ${commentPrefix}${comment.trim()}` },
                 { type: "image", file_key: "sig1" },
                 { type: "name", value: fullName },
-                { type: "academic_rank", value: `ตำแหน่ง ${profile.academic_rank || ""}` },
-                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${profile.org_structure_role || ""}` }
+                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
+                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
               ];
               linesWithoutComment = [
                 { type: "image", file_key: "sig1" },
                 { type: "name", value: fullName },
-                { type: "academic_rank", value: `ตำแหน่ง ${profile.academic_rank || ""}` },
-                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${profile.org_structure_role || ""}` }
+                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
+                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
               ];
             } else {
-              // ถ้าไม่มี comment ก็ไม่ต้องแสดง
-              linesWithComment = [
+              // ถ้าไม่มี comment แต่เป็น admin ให้แสดง [admin] เท่านั้น
+              if (isAdminSigning) {
+                linesWithComment = [
+                  { type: "comment", value: `- ${commentPrefix.trim()}` },
+                  { type: "image", file_key: "sig1" },
+                  { type: "name", value: fullName },
+                  { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
+                  { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
+                ];
+              } else {
+                linesWithComment = [
+                  { type: "image", file_key: "sig1" },
+                  { type: "name", value: fullName },
+                  { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
+                  { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
+                ];
+              }
+              linesWithoutComment = [
                 { type: "image", file_key: "sig1" },
                 { type: "name", value: fullName },
-                { type: "academic_rank", value: `ตำแหน่ง ${profile.academic_rank || ""}` },
-                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${profile.org_structure_role || ""}` }
+                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
+                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
               ];
-              linesWithoutComment = [...linesWithComment];
             }
-          } else if (profile.position === 'deputy_director') {
+          } else if (signingPosition === 'deputy_director') {
+            const commentValue = comment ? `${commentPrefix}${comment}` : (isAdminSigning ? `${commentPrefix.trim()}` : "เห็นชอบ");
             linesWithComment = [
-              { type: "comment", value: `- ${comment || "เห็นชอบ"}` },
+              { type: "comment", value: `- ${commentValue}` },
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
-              { type: "position_rank", value: `ตำแหน่ง ${profile.job_position || ""} วิทยฐานะ ${profile.academic_rank || ""}` },
-              { type: "org_structure_role", value: profile.org_structure_role || "" },
+              { type: "position_rank", value: `ตำแหน่ง ${signerProfile.job_position || ""} วิทยฐานะ ${signerProfile.academic_rank || ""}` },
+              { type: "org_structure_role", value: signerProfile.org_structure_role || "" },
               { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
             ];
             linesWithoutComment = [
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
-              { type: "position_rank", value: `ตำแหน่ง ${profile.job_position || ""} วิทยฐานะ ${profile.academic_rank || ""}` },
-              { type: "org_structure_role", value: profile.org_structure_role || "" },
+              { type: "position_rank", value: `ตำแหน่ง ${signerProfile.job_position || ""} วิทยฐานะ ${signerProfile.academic_rank || ""}` },
+              { type: "org_structure_role", value: signerProfile.org_structure_role || "" },
               { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
             ];
-          } else if (profile.position === 'director') {
+          } else if (signingPosition === 'director') {
+            const commentValue = comment ? `${commentPrefix}${comment}` : (isAdminSigning ? `${commentPrefix.trim()}` : "เห็นชอบ");
             linesWithComment = [
-              { type: "comment", value: `- ${comment || "เห็นชอบ"}` },
+              { type: "comment", value: `- ${commentValue}` },
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
-              { type: "job_position", value: profile.job_position || profile.position || "" },
-              { type: "org_structure_role", value: profile.org_structure_role || "" }
+              { type: "job_position", value: signerProfile.job_position || signerProfile.position || "" },
+              { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
             ];
             linesWithoutComment = [
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
-              { type: "job_position", value: profile.job_position || profile.position || "" },
-              { type: "org_structure_role", value: profile.org_structure_role || "" }
+              { type: "job_position", value: signerProfile.job_position || signerProfile.position || "" },
+              { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
             ];
           } else {
             // clerk/author - ใช้ข้อมูลจาก memo ที่อาจมี prefix แล้ว
@@ -458,9 +524,22 @@ const ApproveDocumentPage: React.FC = () => {
             return;
           }
           
-          // ดาวน์โหลดลายเซ็น
-          console.log('📥 Fetching signature from:', profile.signature_url);
-          const sigRes = await fetch(profile.signature_url);
+          // ดาวน์โหลดลายเซ็น - ใช้ลายเซ็นของผู้ลงนามจริง (signerProfile) ไม่ใช่ของ admin
+          const signatureUrl = signerProfile.signature_url;
+          if (!signatureUrl) {
+            console.error('❌ No signature URL for signer:', signerProfile);
+            setShowLoadingModal(false);
+            toast({
+              title: 'ไม่พบลายเซ็น',
+              description: isAdminSigning
+                ? 'ผู้ลงนามที่ต้องการลงนามแทนยังไม่มีลายเซ็นในระบบ'
+                : 'กรุณาอัปโหลดลายเซ็นในโปรไฟล์ของคุณก่อน',
+              variant: 'destructive'
+            });
+            return;
+          }
+          console.log('📥 Fetching signature from:', signatureUrl, isAdminSigning ? '(actual signer)' : '(current user)');
+          const sigRes = await fetch(signatureUrl);
           if (!sigRes.ok) {
             console.error('❌ Failed to fetch signature:', sigRes.status, sigRes.statusText);
             setShowLoadingModal(false);
@@ -477,26 +556,32 @@ const ApproveDocumentPage: React.FC = () => {
           formData.append('pdf', pdfBlob, 'document.pdf');
           formData.append('sig1', sigBlob, 'signature.png');
           // ใช้ตำแหน่งของผู้ลงนาม - ใช้ข้อมูลจาก signer_list_progress หากมี
-          const signerOrder = currentUserSigner?.order || currentUserSignature?.signer?.order;
-          
+          // ถ้าเป็น admin ลงนามแทน ให้ใช้ current_signer_order
+          const signerOrder = isAdminSigning
+            ? memo.current_signer_order
+            : (currentUserSigner?.order || currentUserSignature?.signer?.order);
+
+          console.log('🔍 Signing with order:', signerOrder, 'isAdminSigning:', isAdminSigning);
+
           // ค้นหาตำแหน่งลายเซ็นทั้งหมดที่ตรงกับ order ของผู้ใช้ (เหมือน DocumentManagePage)
           let userSignaturePositions = signaturePositions.filter(pos => pos.signer?.order === signerOrder);
           
-          // หากไม่เจอจาก order ให้ลองค้นหาจาก user_id
-          if (userSignaturePositions.length === 0 && profile?.user_id) {
+          // หากไม่เจอจาก order ให้ลองค้นหาจาก user_id (ข้ามถ้าเป็น admin ลงนามแทน)
+          if (userSignaturePositions.length === 0 && profile?.user_id && !isAdminSigning) {
             userSignaturePositions = signaturePositions.filter(pos => pos.signer?.user_id === profile.user_id);
           }
-          
-          // หากไม่เจอจาก user_id ให้ลองค้นหาจาก position
-          if (userSignaturePositions.length === 0 && profile?.position) {
-            userSignaturePositions = signaturePositions.filter(pos => 
-              pos.signer?.position === profile.position ||
-              pos.signer?.position === profile.current_position
+
+          // หากไม่เจอจาก user_id ให้ลองค้นหาจาก position (ใช้ signingPosition สำหรับ admin)
+          if (userSignaturePositions.length === 0) {
+            const positionToMatch = isAdminSigning ? signingPosition : profile?.position;
+            userSignaturePositions = signaturePositions.filter(pos =>
+              pos.signer?.position === positionToMatch ||
+              pos.signer?.role === positionToMatch
             );
           }
-          
+
           // หากยังไม่เจอและเป็น director ให้สร้างตำแหน่ง default
-          if (userSignaturePositions.length === 0 && profile.position === 'director') {
+          if (userSignaturePositions.length === 0 && signingPosition === 'director') {
             console.log('🔧 Creating default signature position for director');
             userSignaturePositions = [{
               signer: {
@@ -602,11 +687,11 @@ const ApproveDocumentPage: React.FC = () => {
           let nextSignerOrder: number;
           let newStatus: string;
           
-          // ถ้าเป็นผอ. (director) ให้ set current_signer_order = 5 เพื่อบ่งบอกว่าเสร็จสิ้น
-          if (profile.position === 'director') {
+          // ถ้าเป็นผอ. (director) หรือ admin ลงนามแทน director ให้ set current_signer_order = 5
+          if (signingPosition === 'director') {
             nextSignerOrder = 5;
             newStatus = 'completed';
-            console.log('🎯 Director approved: Setting current_signer_order = 5 (completed)');
+            console.log('🎯 Director approved: Setting current_signer_order = 5 (completed)', { isAdminSigning });
           } else {
             // สำหรับตำแหน่งอื่นๆ ใช้ logic เดิม
             nextSignerOrder = currentOrder < maxOrder ? currentOrder + 1 : currentOrder;

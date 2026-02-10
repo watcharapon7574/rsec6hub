@@ -25,7 +25,7 @@ export const LoadingQueue: React.FC<LoadingQueueProps> = ({ className }) => {
       className={cn(
         'fixed bottom-4 right-4 z-50',
         'bg-card shadow-lg rounded-lg',
-        'border border-border dark:border-gray-700',
+        'border border-border',
         'px-4 py-3',
         'flex items-center gap-3',
         'animate-in slide-in-from-bottom-4',
@@ -34,7 +34,7 @@ export const LoadingQueue: React.FC<LoadingQueueProps> = ({ className }) => {
     >
       <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
       <div className="flex flex-col">
-        <span className="text-sm font-medium text-foreground dark:text-gray-100">
+        <span className="text-sm font-medium text-foreground">
           กำลังประมวลผล...
         </span>
         <span className="text-xs text-muted-foreground dark:text-muted-foreground">

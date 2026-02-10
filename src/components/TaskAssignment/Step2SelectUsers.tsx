@@ -246,8 +246,12 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
         <UserSearchInput
           selectedUsers={selectedUsers}
           onUsersChange={(users) => {
+            // Reset selectionInfo when all users are removed (via X button)
+            if (onSelectionInfoChange && users.length === 0 && selectedUsers.length > 0) {
+              onSelectionInfoChange({ source: null });
+            }
             // Track source as 'name' when adding via search
-            if (onSelectionInfoChange && !selectionInfo?.source && users.length > selectedUsers.length) {
+            else if (onSelectionInfoChange && !selectionInfo?.source && users.length > selectedUsers.length) {
               onSelectionInfoChange({ source: 'name' });
             }
             onUsersChange(users);

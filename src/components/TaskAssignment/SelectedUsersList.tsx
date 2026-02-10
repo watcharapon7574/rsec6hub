@@ -1,5 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -13,11 +13,13 @@ interface Profile {
 interface SelectedUsersListProps {
   selectedUsers: Profile[];
   onRemoveUser: (userId: string) => void;
+  onClearAll?: () => void;
 }
 
 const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
   selectedUsers,
-  onRemoveUser
+  onRemoveUser,
+  onClearAll
 }) => {
   if (selectedUsers.length === 0) {
     return null;
@@ -25,8 +27,21 @@ const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="text-sm font-medium text-pink-900">
-        ผู้ที่ได้รับมอบหมาย ({selectedUsers.length} คน)
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium text-pink-900">
+          ผู้ที่ได้รับมอบหมาย ({selectedUsers.length} คน)
+        </div>
+        {onClearAll && selectedUsers.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearAll}
+            className="h-7 px-3 text-xs border-red-300 text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-400"
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            ล้างทั้งหมด
+          </Button>
+        )}
       </div>
       <div className="flex flex-wrap gap-2">
         {selectedUsers.map((user) => (

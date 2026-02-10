@@ -256,6 +256,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
           onGroupSelect={isPositionMode ? undefined : handleSearchGroupSelect}
           onPositionSelect={(isPositionMode || isNameOrGroupMode) ? undefined : handleSearchPositionSelect}
           hidePositions={isNameOrGroupMode}
+          onClearAll={handleClear}
         />
 
         {/* Position mode warning */}

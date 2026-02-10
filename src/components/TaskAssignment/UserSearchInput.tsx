@@ -27,6 +27,8 @@ interface UserSearchInputProps {
   onPositionSelect?: (position: UserGroup) => void;
   /** Hide positions from search results (when in name/group mode) */
   hidePositions?: boolean;
+  /** Callback to clear all selected users */
+  onClearAll?: () => void;
 }
 
 const UserSearchInput: React.FC<UserSearchInputProps> = ({
@@ -37,7 +39,8 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
   enableCombinedSearch = false,
   onGroupSelect,
   onPositionSelect,
-  hidePositions = false
+  hidePositions = false,
+  onClearAll
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
@@ -229,6 +232,7 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
       <SelectedUsersList
         selectedUsers={selectedUsers}
         onRemoveUser={handleRemoveUser}
+        onClearAll={onClearAll}
       />
 
       {/* Helper text */}

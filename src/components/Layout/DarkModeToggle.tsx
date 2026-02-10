@@ -4,6 +4,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 const STORAGE_KEY = 'rsec6hub-fab-pos';
 const BTN_SIZE = 36;
+const EDGE_MARGIN = 6;
 const DRAG_THRESHOLD = 6;
 
 function clamp(val: number, min: number, max: number) {
@@ -22,6 +23,15 @@ function savePosition(x: number, y: number) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ x, y }));
 }
 
+function snapToEdge(x: number, y: number): { x: number; y: number } {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const centerX = x + BTN_SIZE / 2;
+  const snapX = centerX < vw / 2 ? EDGE_MARGIN : vw - BTN_SIZE - EDGE_MARGIN;
+  const snapY = clamp(y, EDGE_MARGIN, vh - BTN_SIZE - EDGE_MARGIN);
+  return { x: snapX, y: snapY };
+}
+
 const DarkModeToggle: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -30,12 +40,13 @@ const DarkModeToggle: React.FC = () => {
   const startBtn = useRef({ x: 0, y: 0 });
   const moved = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isSnapping, setIsSnapping] = useState(false);
 
   const [pos, setPos] = useState<{ x: number; y: number }>(() => {
     const saved = loadPosition();
-    if (saved) return saved;
+    if (saved) return snapToEdge(saved.x, saved.y);
     return {
-      x: (typeof window !== 'undefined' ? window.innerWidth : 400) - BTN_SIZE - 12,
+      x: (typeof window !== 'undefined' ? window.innerWidth : 400) - BTN_SIZE - EDGE_MARGIN,
       y: (typeof window !== 'undefined' ? window.innerHeight : 800) - 80 - BTN_SIZE,
     };
   });
@@ -47,6 +58,7 @@ const DarkModeToggle: React.FC = () => {
     if (!moved.current && Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
     moved.current = true;
     setIsDragging(true);
+    setIsSnapping(false);
     const newX = clamp(startBtn.current.x + dx, 0, window.innerWidth - BTN_SIZE);
     const newY = clamp(startBtn.current.y + dy, 0, window.innerHeight - BTN_SIZE);
     setPos({ x: newX, y: newY });
@@ -57,9 +69,11 @@ const DarkModeToggle: React.FC = () => {
     dragging.current = false;
     setIsDragging(false);
     if (moved.current) {
+      setIsSnapping(true);
       setPos(prev => {
-        savePosition(prev.x, prev.y);
-        return prev;
+        const snapped = snapToEdge(prev.x, prev.y);
+        savePosition(snapped.x, snapped.y);
+        return snapped;
       });
     } else {
       toggleTheme();
@@ -69,6 +83,7 @@ const DarkModeToggle: React.FC = () => {
   const handleStart = useCallback((clientX: number, clientY: number) => {
     dragging.current = true;
     moved.current = false;
+    setIsSnapping(false);
     startPos.current = { x: clientX, y: clientY };
     startBtn.current = { ...pos };
   }, [pos]);
@@ -95,13 +110,30 @@ const DarkModeToggle: React.FC = () => {
     };
   }, [handleMove, handleEnd]);
 
+  useEffect(() => {
+    const onResize = () => {
+      setPos(prev => {
+        const snapped = snapToEdge(prev.x, prev.y);
+        savePosition(snapped.x, snapped.y);
+        return snapped;
+      });
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   return (
     <button
       ref={btnRef}
       onMouseDown={(e) => { e.preventDefault(); handleStart(e.clientX, e.clientY); }}
       onTouchStart={(e) => { const t = e.touches[0]; handleStart(t.clientX, t.clientY); }}
+      onTransitionEnd={() => setIsSnapping(false)}
       aria-label="สลับโหมดมืด/สว่าง"
-      style={{ left: pos.x, top: pos.y }}
+      style={{
+        left: pos.x,
+        top: pos.y,
+        transition: isSnapping ? 'left 0.35s cubic-bezier(.4,.9,.3,1), top 0.35s cubic-bezier(.4,.9,.3,1), transform 0.2s, opacity 0.2s' : 'transform 0.2s, opacity 0.2s',
+      }}
       className={`
         fixed z-50
         w-9 h-9 rounded-full
@@ -112,7 +144,6 @@ const DarkModeToggle: React.FC = () => {
         text-foreground
         select-none touch-none
         ${isDragging ? 'scale-110 opacity-80 cursor-grabbing' : 'cursor-grab hover:scale-110 active:scale-95'}
-        transition-shadow duration-200
       `}
     >
       {isDark ? (

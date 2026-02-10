@@ -148,7 +148,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                     "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium",
                     currentStep >= step
                       ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-500"
+                      : "bg-gray-200 text-muted-foreground"
                   )}
                 >
                   {step}
@@ -157,7 +157,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
             </div>
 
             {/* Step Labels */}
-            <div className="flex justify-between text-xs text-gray-500 mb-8 -mt-2">
+            <div className="flex justify-between text-xs text-muted-foreground mb-8 -mt-2">
               <span>เนื้อหา</span>
               <span>ผู้ลงนาม</span>
               <span>ตำแหน่งลายเซ็น</span>
@@ -167,7 +167,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
             {/* Step Content */}
             {currentStep === 1 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   เนื้อหาบันทึกข้อความ
                 </h3>
@@ -256,7 +256,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
 
             {currentStep === 2 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Users className="h-5 w-5" />
                   เลือกผู้ลงนาม
                 </h3>
@@ -306,7 +306,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                   <Label>ลำดับที่ 3: ผอ. (บังคับ) *</Label>
                   <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-blue-800 font-medium">{availableSigners.director[0].name}</p>
-                    <p className="text-sm text-blue-600">ผู้อำนวยการ ({availableSigners.director[0].employee_id})</p>
+                    <p className="text-sm text-muted-foreground">ผู้อำนวยการ ({availableSigners.director[0].employee_id})</p>
                   </div>
                 </div>
               </div>
@@ -314,7 +314,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
 
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-800">กำหนดตำแหน่งลายเซ็น</h3>
+                <h3 className="text-lg font-semibold text-foreground">กำหนดตำแหน่งลายเซ็น</h3>
                 <SignaturePositionSelector
                   signers={[
                     ...(formData.signers.assistant ? [{ user_id: 'assistant', first_name: formData.signers.assistant.split(' ')[0], last_name: formData.signers.assistant.split(' ')[1] || '' }] : []),
@@ -338,7 +338,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
 
             {currentStep === 4 && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Eye className="h-5 w-5" />
                   ตรวจสอบข้อมูลก่อนส่ง
                 </h3>
@@ -346,12 +346,12 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <div>
                     <p className="font-medium text-blue-900">เรื่อง:</p>
-                    <p className="text-blue-700">{formData.subject}</p>
+                    <p className="text-foreground">{formData.subject}</p>
                   </div>
                   
                   <div>
                     <p className="font-medium text-blue-900">ผู้ลงนาม:</p>
-                    <ul className="text-blue-700">
+                    <ul className="text-foreground">
                       {formData.signers.assistant && <li>• ผู้ช่วย ผอ.: {formData.signers.assistant}</li>}
                       {formData.signers.deputy && <li>• รอง ผอ.: {formData.signers.deputy}</li>}
                       <li>• ผอ.: {formData.signers.director}</li>
@@ -360,7 +360,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                   
                   <div>
                     <p className="font-medium text-blue-900">ตำแหน่งลายเซ็น:</p>
-                    <p className="text-blue-700">{formData.signaturePositions.length} ตำแหน่ง</p>
+                    <p className="text-foreground">{formData.signaturePositions.length} ตำแหน่ง</p>
                   </div>
                 </div>
               </div>
@@ -372,7 +372,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 variant="outline"
                 onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
                 disabled={currentStep === 1}
-                className="border-gray-300 hover:border-gray-400"
+                className="border-gray-300 hover:border-gray-400 text-muted-foreground"
               >
                 ย้อนกลับ
               </Button>

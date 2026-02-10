@@ -70,7 +70,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             variant="outline"
             size="sm"
             onClick={onCreateGroup}
-            className="h-7 px-2 text-xs border-purple-200 dark:border-purple-800 text-purple-600 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950"
+            className="h-7 px-2 text-xs border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950"
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
             สร้างใหม่
@@ -89,12 +89,12 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
           <Users className="h-4 w-4 text-purple-500" />
           <span>กลุ่ม/หน้าที่</span>
           {groupsOnly.length > 0 && (
-            <Badge variant="secondary" className="bg-purple-100 text-purple-600 text-xs">
+            <Badge variant="secondary" className="bg-purple-100 text-purple-600 dark:text-purple-400 text-xs">
               {groupsOnly.length}
             </Badge>
           )}
           {positionsOnly.length > 0 && (
-            <Badge variant="secondary" className="bg-orange-100 text-orange-600 text-xs">
+            <Badge variant="secondary" className="bg-orange-100 text-orange-600 dark:text-orange-400 text-xs">
               {positionsOnly.length}
             </Badge>
           )}
@@ -129,7 +129,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               variant="outline"
               size="sm"
               onClick={onCreateGroup}
-              className="h-7 px-2 text-xs border-purple-200 dark:border-purple-800 text-purple-600 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950"
+              className="h-7 px-2 text-xs border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
               สร้างใหม่
@@ -156,7 +156,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             : isPosition ? 'text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:text-orange-100' : 'text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:text-purple-100';
           const badgeBg = isDisabled
             ? 'bg-muted text-muted-foreground'
-            : isPosition ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600';
+            : isPosition ? 'bg-orange-100 text-orange-600 dark:text-orange-400' : 'bg-purple-100 text-purple-600 dark:text-purple-400';
           const Icon = isPosition ? Briefcase : Users;
 
           return (
@@ -187,7 +187,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => onDeleteGroup(group.id)}
-                  className="h-6 w-6 p-0 ml-1 hover:bg-red-100 dark:hover:bg-red-900 text-red-400 hover:text-red-600 rounded-full"
+                  className="h-6 w-6 p-0 ml-1 hover:bg-red-100 dark:hover:bg-red-900 text-red-400 hover:text-red-600 dark:text-red-400 rounded-full"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

@@ -88,9 +88,9 @@ const Dashboard = () => {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-orange-100">
-                  <Calendar className="h-5 w-5 text-orange-600" />
+                  <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
-                <span className="text-2xl font-bold text-orange-600">12</span>
+                <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">12</span>
               </div>
               <h3 className="font-semibold text-foreground text-sm">คำขอลา</h3>
               <p className="text-xs text-muted-foreground">เดือนนี้</p>
@@ -101,9 +101,9 @@ const Dashboard = () => {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-blue-100">
-                  <FileText className="h-5 w-5 text-blue-600" />
+                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span className="text-2xl font-bold text-blue-600">8</span>
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">8</span>
               </div>
               <h3 className="font-semibold text-foreground text-sm">เอกสาร</h3>
               <p className="text-xs text-muted-foreground">รอ 3 ฉบับ</p>
@@ -191,21 +191,21 @@ const Dashboard = () => {
               <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-100 dark:border-amber-900">
                   <p className="text-sm font-medium text-amber-800 dark:text-amber-200">รอการอนุมัติคำขอลา</p>
-                  <p className="text-xs text-amber-600 mb-2">มี 2 คำขอรอการพิจารณา</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">มี 2 คำขอรอการพิจารณา</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/leave-requests')}>
                     ดูรายละเอียด
                   </Button>
                 </div>
                 <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900">
                   <p className="text-sm font-medium text-blue-800 dark:text-blue-200">เอกสารใหม่</p>
-                  <p className="text-xs text-blue-600 mb-2">ได้รับหนังสือราชการ 1 ฉบับ</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">ได้รับหนังสือราชการ 1 ฉบับ</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/documents')}>
                     เปิดดู
                   </Button>
                 </div>
                 <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900">
                   <p className="text-sm font-medium text-green-800 dark:text-green-200">รายงานสำเร็จ</p>
-                  <p className="text-xs text-green-600 mb-2">ส่งรายงานครบถ้วนแล้ว</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 mb-2">ส่งรายงานครบถ้วนแล้ว</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/daily-reports')}>
                     ตรวจสอบ
                   </Button>

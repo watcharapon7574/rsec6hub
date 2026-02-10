@@ -205,7 +205,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
           <TabsContent value="reject" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-red-600">ตีกลับเอกสาร</CardTitle>
+                <CardTitle className="text-red-600 dark:text-red-400">ตีกลับเอกสาร</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -233,7 +233,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
           <TabsContent value="number" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-blue-600">ลงเลขหนังสือราชการ</CardTitle>
+                <CardTitle className="text-blue-600 dark:text-blue-400">ลงเลขหนังสือราชการ</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -260,7 +260,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-green-600">เลือกผู้ลงนาม</CardTitle>
+                  <CardTitle className="text-green-600 dark:text-green-400">เลือกผู้ลงนาม</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -288,7 +288,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-purple-600">ผู้ลงนามที่เลือก</CardTitle>
+                  <CardTitle className="text-purple-600 dark:text-purple-400">ผู้ลงนามที่เลือก</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -341,7 +341,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
                               <p className="font-medium">{signer.first_name} {signer.last_name}</p>
                               <p className="text-sm text-muted-foreground">{signer.job_position || signer.current_position || signer.position}</p>
                               {position ? (
-                                <p className="text-xs text-green-600">✓ กำหนดตำแหน่งแล้ว</p>
+                                <p className="text-xs text-green-600 dark:text-green-400">✓ กำหนดตำแหน่งแล้ว</p>
                               ) : (
                                 <p className="text-xs text-muted-foreground">! ยังไม่ได้กำหนดตำแหน่ง</p>
                               )}

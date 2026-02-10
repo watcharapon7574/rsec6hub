@@ -224,9 +224,9 @@ const LeaveRequestsPage = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 rounded-lg bg-amber-100">
-                    <Clock className="h-4 w-4 text-amber-600" />
+                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   </div>
-                  <span className="text-2xl font-bold text-amber-600">
+                  <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                     {leaveRequests.filter(req => req.status === 'pending').length}
                   </span>
                 </div>
@@ -237,9 +237,9 @@ const LeaveRequestsPage = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 rounded-lg bg-green-100">
-                    <CalendarDays className="h-4 w-4 text-green-600" />
+                    <CalendarDays className="h-4 w-4 text-green-600 dark:text-green-400" />
                   </div>
-                  <span className="text-2xl font-bold text-green-600">
+                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {leaveRequests.filter(req => req.status === 'approved').length}
                   </span>
                 </div>
@@ -250,9 +250,9 @@ const LeaveRequestsPage = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 rounded-lg bg-red-100">
-                    <FileText className="h-4 w-4 text-red-600" />
+                    <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
                   </div>
-                  <span className="text-2xl font-bold text-red-600">
+                  <span className="text-2xl font-bold text-red-600 dark:text-red-400">
                     {leaveRequests.filter(req => req.status === 'rejected').length}
                   </span>
                 </div>
@@ -263,9 +263,9 @@ const LeaveRequestsPage = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 rounded-lg bg-orange-100">
-                    <CalendarDays className="h-4 w-4 text-orange-600" />
+                    <CalendarDays className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   </div>
-                  <span className="text-2xl font-bold text-orange-600">{leaveRequests.length}</span>
+                  <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">{leaveRequests.length}</span>
                 </div>
                 <h3 className="font-semibold text-foreground text-sm">รวมทั้งหมด</h3>
               </CardContent>

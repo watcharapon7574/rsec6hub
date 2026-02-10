@@ -59,7 +59,7 @@ const OTPStep: React.FC<OTPStepProps> = ({
       {/* Error message */}
       {error && (
         <div className="text-center">
-          <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-2">
+          <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-2">
             {error}
           </p>
         </div>
@@ -79,7 +79,7 @@ const OTPStep: React.FC<OTPStepProps> = ({
         <Button
           onClick={handleResendOTP}
           variant="ghost"
-          className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-300"
+          className="w-full text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-300"
           disabled={loading}
         >
           ส่งรหัส OTP ใหม่

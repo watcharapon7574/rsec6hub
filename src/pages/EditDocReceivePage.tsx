@@ -212,7 +212,7 @@ const EditDocReceivePage = () => {
               <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-blue-600" />
+                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   ข้อมูลเอกสาร
                 </CardTitle>
@@ -265,7 +265,7 @@ const EditDocReceivePage = () => {
                         placeholder="ระบุเรื่องของเอกสาร"
                         className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
                       />
-                      <p className="text-xs text-green-600">
+                      <p className="text-xs text-green-600 dark:text-green-400">
                         ✓ สามารถแก้ไขเรื่องของเอกสารได้
                       </p>
                     </div>

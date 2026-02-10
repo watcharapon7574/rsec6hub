@@ -214,7 +214,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
     <Card className="bg-card border-2 border-pink-200 dark:border-pink-800 shadow-lg hover:shadow-xl transition-shadow overflow-visible">
       <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200 dark:border-pink-800">
         <CardTitle className="flex items-center text-lg text-pink-900 dark:text-pink-100">
-          <Users className="h-5 w-5 mr-2 text-pink-600" />
+          <Users className="h-5 w-5 mr-2 text-pink-600 dark:text-pink-400" />
           เลือกผู้รับมอบหมาย
         </CardTitle>
       </CardHeader>
@@ -267,7 +267,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
               <span className="font-medium">โหมดหน้าที่:</span>
               {selectionInfo?.positionName}
             </div>
-            <p className="text-xs mt-1 text-orange-600">
+            <p className="text-xs mt-1 text-orange-600 dark:text-orange-400">
               เพิ่มสมาชิกทีมได้เฉพาะรายคน (ค้นหาชื่อ) • ไม่สามารถเพิ่มกลุ่มหรือหน้าที่อื่นได้
             </p>
           </div>
@@ -283,7 +283,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
               </span>
               {selectionInfo?.groupName || `${selectedUsers.length} คน`}
             </div>
-            <p className="text-xs mt-1 text-blue-600">
+            <p className="text-xs mt-1 text-blue-600 dark:text-blue-400">
               สามารถเพิ่มได้เฉพาะรายคนหรือกลุ่ม • ไม่สามารถเพิ่มหน้าที่ได้
             </p>
           </div>

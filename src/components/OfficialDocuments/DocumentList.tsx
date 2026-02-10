@@ -326,9 +326,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'draft': return 'text-blue-600'; // ฟ้า
+      case 'draft': return 'text-blue-600 dark:text-blue-400'; // ฟ้า
       case 'pending_sign': return 'text-orange-500'; // ส้ม
-      case 'approved': return 'text-green-600'; // เขียว
+      case 'approved': return 'text-green-600 dark:text-green-400'; // เขียว
       case 'rejected': return 'text-red-500'; // แดง
       default: return 'text-muted-foreground';
     }
@@ -350,11 +350,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // ฟังก์ชันสำหรับสีสถานะตาม current_signer_order
   const getStatusColorBySignerOrder = (signerOrder: number): string => {
     switch (signerOrder) {
-      case 1: return 'text-blue-600'; // ฉบับร่าง - น้ำเงิน
+      case 1: return 'text-blue-600 dark:text-blue-400'; // ฉบับร่าง - น้ำเงิน
       case 2:
       case 3:
       case 4: return 'text-orange-500'; // รอลงนาม - ส้ม
-      case 5: return 'text-green-600'; // เสร็จสิ้น - เขียว
+      case 5: return 'text-green-600 dark:text-green-400'; // เสร็จสิ้น - เขียว
       case 0: return 'text-red-500'; // ตีกลับ - แดง
       default: return 'text-muted-foreground';
     }
@@ -706,7 +706,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-purple-400 hover:text-purple-600"
+            className="h-8 w-8 p-0 border-border hover:border-purple-400 hover:text-purple-600 dark:text-purple-400"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -723,7 +723,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 setTypeFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -775,7 +775,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     
                     return attachedFileCount > 0 && (
                       <div className="flex items-center gap-1">
-                        <Paperclip className="h-3 w-3 text-purple-600" />
+                        <Paperclip className="h-3 w-3 text-purple-600 dark:text-purple-400" />
                       </div>
                     );
                   })()}
@@ -812,7 +812,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                       <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 font-medium">
+                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -989,7 +989,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 ${memo.is_assigned ? '' : ''}`}
+                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 ${memo.is_assigned ? '' : ''}`}
                         onClick={() => {
                           const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                           navigate('/document-detail', {
@@ -1049,7 +1049,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                         onClick={() => {
                           const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                           navigate('/document-detail', {
@@ -1065,7 +1065,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       {/* Edit button - only show for memo author and not yet proposed (current_signer_order <= 1) */}
                       {profile?.user_id === memo.user_id && memo.current_signer_order <= 1 && (
                         <div className="relative">
-                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-purple-200 dark:border-purple-800 text-purple-600"
+                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400"
                             onClick={() => {
                               // Navigate to edit page based on document type
                               const editRoute = getDocumentEditRoute(memo, memo.id);
@@ -1095,7 +1095,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             className={`h-7 px-2 flex items-center gap-1 ${
                               memo.current_signer_order > 1 
                                 ? 'border-border text-muted-foreground cursor-not-allowed' 
-                                : 'border-purple-200 dark:border-purple-800 text-purple-600'
+                                : 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400'
                             }`}
                             onClick={() => {
                               if (memo.current_signer_order <= 1) {
@@ -1139,7 +1139,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
+                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
                       onClick={() => {
                         console.log('🗑️ Delete button clicked for memo:', memo.id);
                         handleDeleteClick(memo);
@@ -1166,7 +1166,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       setSearchTerm('');
                       setStatusFilter('all');
                     }}
-                    className="text-purple-400 hover:text-purple-600 mt-1 text-xs h-6"
+                    className="text-purple-400 hover:text-purple-600 dark:text-purple-400 mt-1 text-xs h-6"
                   >
                     ล้างตัวกรอง
                   </Button>
@@ -1228,7 +1228,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600 flex items-center gap-2">
+            <DialogTitle className="text-red-600 dark:text-red-400 flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
               ยืนยันการลบเอกสาร
             </DialogTitle>
@@ -1313,7 +1313,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="h-4 w-4 text-blue-600" />
+              <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               รายชื่อผู้ได้รับมอบหมาย
             </DialogTitle>
           </DialogHeader>

@@ -34,7 +34,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <h1 className="text-3xl font-bold text-foreground flex items-center">
-          <User className="h-8 w-8 mr-3 text-blue-600" />
+          <User className="h-8 w-8 mr-3 text-blue-600 dark:text-blue-400" />
           โปรไฟล์พนักงาน
         </h1>
         {isProfileIncomplete && (
@@ -61,7 +61,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           onClick={onExportPDF}
           variant="outline"
           size="sm"
-          className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950"
+          className="text-green-600 dark:text-green-400 border-green-600 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950"
         >
           <Download className="h-4 w-4 mr-2" />
           ส่งออก PDF

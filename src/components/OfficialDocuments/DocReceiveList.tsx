@@ -256,9 +256,9 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'draft': return 'text-blue-600'; // ฟ้า
+      case 'draft': return 'text-blue-600 dark:text-blue-400'; // ฟ้า
       case 'pending_sign': return 'text-orange-500'; // ส้ม
-      case 'approved': return 'text-green-600'; // เขียว
+      case 'approved': return 'text-green-600 dark:text-green-400'; // เขียว
       case 'rejected': return 'text-red-500'; // แดง
       default: return 'text-muted-foreground';
     }
@@ -280,11 +280,11 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   // ฟังก์ชันสำหรับสีสถานะตาม current_signer_order
   const getStatusColorBySignerOrder = (signerOrder: number): string => {
     switch (signerOrder) {
-      case 1: return 'text-blue-600'; // ฉบับร่าง - น้ำเงิน
+      case 1: return 'text-blue-600 dark:text-blue-400'; // ฉบับร่าง - น้ำเงิน
       case 2:
       case 3:
       case 4: return 'text-orange-500'; // รอลงนาม - ส้ม
-      case 5: return 'text-green-600'; // เสร็จสิ้น - เขียว
+      case 5: return 'text-green-600 dark:text-green-400'; // เสร็จสิ้น - เขียว
       case 0: return 'text-red-500'; // ตีกลับ - แดง
       default: return 'text-muted-foreground';
     }
@@ -614,7 +614,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-green-400 hover:text-green-600"
+            className="h-8 w-8 p-0 border-border hover:border-green-400 hover:text-green-600 dark:text-green-400"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -630,7 +630,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 setStatusFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -678,7 +678,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                     
                     return attachedFileCount > 0 && (
                       <div className="flex items-center gap-1">
-                        <Paperclip className="h-3 w-3 text-green-600" />
+                        <Paperclip className="h-3 w-3 text-green-600 dark:text-green-400" />
                       </div>
                     );
                   })()}
@@ -715,7 +715,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                       <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 font-medium">
+                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -926,7 +926,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -986,7 +986,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -1005,7 +1005,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
+                          className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
                           onClick={() => navigate(`/edit-doc-receive/${memo.id}`)}
                         >
                           <Edit className="h-4 w-4" />
@@ -1023,7 +1023,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 px-2 flex items-center gap-1 border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
+                              className="h-7 px-2 flex items-center gap-1 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
                               onClick={() => navigate(`/pdf-signature?edit=${memo.id}`)}
                               title="แก้ไขเอกสารที่ถูกตีกลับ"
                             >
@@ -1037,7 +1037,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               className={`h-7 px-2 flex items-center gap-1 ${
                                 memo.current_signer_order > 1
                                   ? 'border-border text-muted-foreground cursor-not-allowed'
-                                  : 'border-green-200 dark:border-green-800 text-green-600'
+                                  : 'border-green-200 dark:border-green-800 text-green-600 dark:text-green-400'
                               }`}
                               onClick={() => {
                                 if (memo.current_signer_order <= 1) {
@@ -1085,7 +1085,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       setSearchTerm('');
                       setStatusFilter('all');
                     }}
-                    className="text-green-400 hover:text-green-600 mt-1 text-xs h-6"
+                    className="text-green-400 hover:text-green-600 dark:text-green-400 mt-1 text-xs h-6"
                   >
                     ล้างตัวกรอง
                   </Button>
@@ -1150,7 +1150,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="h-4 w-4 text-blue-600" />
+              <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               รายชื่อผู้ได้รับมอบหมาย
             </DialogTitle>
           </DialogHeader>

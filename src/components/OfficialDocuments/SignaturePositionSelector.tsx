@@ -217,7 +217,7 @@ const SignaturePositionSelector: React.FC<SignaturePositionSelectorProps> = ({
                     {index + 1}. {signer.first_name} {signer.last_name}
                   </span>
                   {position ? (
-                    <span className="text-green-600 ml-2">✓ วางแล้ว</span>
+                    <span className="text-green-600 dark:text-green-400 ml-2">✓ วางแล้ว</span>
                   ) : (
                     <span className="text-muted-foreground ml-2">รอวางตำแหน่ง</span>
                   )}

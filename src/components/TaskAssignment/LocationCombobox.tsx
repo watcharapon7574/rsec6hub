@@ -165,7 +165,7 @@ const LocationCombobox: React.FC<LocationComboboxProps> = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600"
+                          className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600 dark:text-red-400"
                           onClick={(e) => handleDelete(e, location.id)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -182,7 +182,7 @@ const LocationCombobox: React.FC<LocationComboboxProps> = ({
                     <CommandGroup>
                       <CommandItem
                         onSelect={handleAddNew}
-                        className="text-pink-600"
+                        className="text-pink-600 dark:text-pink-400"
                       >
                         <Plus className="mr-2 h-4 w-4" />
                         <span>เพิ่ม "{inputValue}" เป็นสถานที่ใหม่</span>

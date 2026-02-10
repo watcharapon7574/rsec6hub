@@ -105,7 +105,7 @@ const QueueRealtimePage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-green-600">{completedCount}</span>
+              <span className="text-3xl font-bold text-green-600 dark:text-green-400">{completedCount}</span>
               <span className="text-sm text-muted-foreground">total</span>
             </div>
           </CardContent>
@@ -119,7 +119,7 @@ const QueueRealtimePage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-red-600">{failedCount}</span>
+              <span className="text-3xl font-bold text-red-600 dark:text-red-400">{failedCount}</span>
               <span className="text-sm text-muted-foreground">errors</span>
             </div>
           </CardContent>
@@ -228,7 +228,7 @@ const QueueRealtimePage: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Available Slots:</span>
-            <span className="font-medium text-green-600">{8 - activeCount}</span>
+            <span className="font-medium text-green-600 dark:text-green-400">{8 - activeCount}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Queue Length:</span>

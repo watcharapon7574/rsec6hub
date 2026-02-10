@@ -408,7 +408,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                   <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="space-y-2">
                       <p className="font-medium text-blue-800 dark:text-blue-200">{approvers.assistant.selectedName}</p>
-                      <p className="text-sm text-blue-600">{approvers.assistant.selectedPosition}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">{approvers.assistant.selectedPosition}</p>
                       <div className="grid grid-cols-1 gap-2 mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
                         <div className="flex justify-between">
                           <span className="text-xs text-blue-500 font-medium">ตำแหน่งสายงาน:</span>
@@ -464,7 +464,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                 {approvers.deputy.selectedName && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
                     <p className="font-medium text-blue-800 dark:text-blue-200">{approvers.deputy.selectedName}</p>
-                    <p className="text-sm text-blue-600">{approvers.deputy.selectedPosition}</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">{approvers.deputy.selectedPosition}</p>
                   </div>
                 )}
               </div>
@@ -478,7 +478,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
             </Label>
             <div className="p-3 bg-card rounded-lg border border-red-200 dark:border-red-800">
               <p className="font-medium text-red-800 dark:text-red-200">{approvers.director.selectedName}</p>
-              <p className="text-sm text-red-600">{approvers.director.selectedPosition}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{approvers.director.selectedPosition}</p>
             </div>
           </div>
         </div>

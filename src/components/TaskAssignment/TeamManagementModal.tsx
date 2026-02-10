@@ -248,7 +248,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-pink-900 dark:text-pink-100">
-            <Users className="h-5 w-5 text-pink-600" />
+            <Users className="h-5 w-5 text-pink-600 dark:text-pink-400" />
             {isPositionBased ? 'จัดการทีม' : 'กำหนดผู้รายงานไฟล์'}
           </DialogTitle>
           <div className="text-sm text-muted-foreground">
@@ -415,7 +415,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
               <AlertCircle className="h-4 w-4 text-pink-500 mt-0.5" />
               <div className="text-sm text-pink-800 dark:text-pink-200">
                 <p className="font-medium">ผู้รายงานไฟล์ต้องแนบไฟล์เมื่อรายงานผล</p>
-                <p className="text-xs mt-1 text-pink-600">
+                <p className="text-xs mt-1 text-pink-600 dark:text-pink-400">
                   สมาชิกที่ไม่ใช่ผู้รายงานจะรายงานแค่ข้อความ (ไม่บังคับเลือก)
                 </p>
                 <p className="text-xs mt-1 text-muted-foreground">

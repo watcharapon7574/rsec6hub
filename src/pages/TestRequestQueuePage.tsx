@@ -317,11 +317,11 @@ const TestRequestQueuePage: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">{queueLength}</div>
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{queueLength}</div>
               <div className="text-sm text-muted-foreground">รอคิว</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{activeCount}</div>
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">{activeCount}</div>
               <div className="text-sm text-muted-foreground">กำลังทำ</div>
             </div>
             <div className="text-center">
@@ -409,7 +409,7 @@ const TestRequestQueuePage: React.FC = () => {
             <div className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2">
               📄 Railway PDF Generation Tests
             </div>
-            <div className="text-xs text-orange-600 mb-3">
+            <div className="text-xs text-orange-600 dark:text-orange-400 mb-3">
               ทดสอบการสร้าง PDF จริงผ่าน Railway API (ใช้เวลานานกว่า)
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -459,7 +459,7 @@ const TestRequestQueuePage: React.FC = () => {
             <div className="text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">
               ⚡ Supabase Edge Function Tests
             </div>
-            <div className="text-xs text-purple-600 mb-3">
+            <div className="text-xs text-purple-600 dark:text-purple-400 mb-3">
               ทดสอบ Edge Functions (OTP, Notifications, Login)
             </div>
 
@@ -638,8 +638,8 @@ const TestRequestQueuePage: React.FC = () => {
 
           {isRunning && (
             <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-              <span className="text-blue-600 font-medium">กำลังทดสอบ...</span>
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
+              <span className="text-blue-600 dark:text-blue-400 font-medium">กำลังทดสอบ...</span>
             </div>
           )}
         </CardContent>
@@ -651,9 +651,9 @@ const TestRequestQueuePage: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {results.successRate === 100 ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
               ) : (
-                <XCircle className="h-5 w-5 text-yellow-600" />
+                <XCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               )}
               ผลการทดสอบ
             </CardTitle>
@@ -666,13 +666,13 @@ const TestRequestQueuePage: React.FC = () => {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground mb-1">สำเร็จ</div>
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {results.successful}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground mb-1">ล้มเหลว</div>
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {results.failed}
                 </div>
               </div>

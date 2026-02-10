@@ -203,7 +203,7 @@ const ClerkSigningTools: React.FC = () => {
             <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">ลายเซ็นดิจิทัล</p>
             <div className="flex items-center gap-3">
               <div className="w-24 h-12 bg-card border-2 border-dashed border-blue-300 dark:border-blue-700 rounded flex items-center justify-center">
-                <span className="text-xs text-blue-600">ลายเซ็น</span>
+                <span className="text-xs text-blue-600 dark:text-blue-400">ลายเซ็น</span>
               </div>
               <Button size="sm" variant="outline">
                 อัพโหลดลายเซ็น PNG
@@ -215,19 +215,19 @@ const ClerkSigningTools: React.FC = () => {
         {/* Statistics */}
         <div className="grid grid-cols-3 gap-4 pt-4 border-t">
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
               {pendingDocuments.filter(d => d.status === 'pending_approval').length}
             </div>
             <div className="text-sm text-muted-foreground">รอการอนุมัติ</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {pendingDocuments.filter(d => d.status === 'approved').length}
             </div>
             <div className="text-sm text-muted-foreground">รอลงนาม</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {pendingDocuments.filter(d => d.status === 'signed').length}
             </div>
             <div className="text-sm text-muted-foreground">เสร็จสิ้น</div>

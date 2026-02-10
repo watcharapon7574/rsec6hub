@@ -343,7 +343,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-blue-400 hover:text-blue-600"
+            className="h-8 w-8 p-0 border-border hover:border-blue-400 hover:text-blue-600 dark:text-blue-400"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -359,7 +359,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                 setStatusFilter('all');
                 setTypeFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -447,7 +447,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                       <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 font-medium">
+                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -615,7 +615,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                 <div className="flex gap-1 ml-auto">
                   {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
+                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                       onClick={() => {
                         const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                         navigate('/pdf-just-preview', {
@@ -632,7 +632,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -649,7 +649,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 
                       {/* Edit button - แสดงเสมอเนื่องจากเป็นเอกสารของตนเอง */}
                       <div className="relative">
-                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
+                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                           onClick={() => {
                             // Navigate to edit memo page with memo id
                             navigate(`/create-memo?edit=${memo.id}`);
@@ -681,7 +681,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                       setSearchTerm('');
                       setStatusFilter('all');
                     }}
-                    className="text-blue-400 hover:text-blue-600 mt-1 text-xs h-6"
+                    className="text-blue-400 hover:text-blue-600 dark:text-blue-400 mt-1 text-xs h-6"
                   >
                     ล้างตัวกรอง
                   </Button>
@@ -693,7 +693,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                     variant="link" 
                     size="sm" 
                     onClick={() => navigate('/create-memo')}
-                    className="text-blue-400 hover:text-blue-600 mt-1 text-xs h-6"
+                    className="text-blue-400 hover:text-blue-600 dark:text-blue-400 mt-1 text-xs h-6"
                   >
                     สร้างเอกสารแรก
                   </Button>

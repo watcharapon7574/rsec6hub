@@ -488,7 +488,7 @@ const PDFSignaturePage = () => {
             กรุณาอย่าปิดหน้านี้จนกว่ากระบวนการจะเสร็จสมบูรณ์
           </DialogDescription>
           <div className="flex flex-col items-center gap-4 mt-4">
-            <svg className="animate-spin h-8 w-8 text-blue-600" viewBox="0 0 24 24">
+            <svg className="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
@@ -574,11 +574,11 @@ const PDFSignaturePage = () => {
               </CardHeader>
               <CardContent className="p-4">
                 <Alert className="border-red-200 dark:border-red-800 bg-card">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                   <AlertDescription className="text-red-800 dark:text-red-200">
                     <div className="space-y-2">
                       <p className="font-medium">{rejectionComment.comment || 'ไม่ระบุเหตุผล'}</p>
-                      <div className="text-sm text-red-600">
+                      <div className="text-sm text-red-600 dark:text-red-400">
                         โดย: {rejectionComment.name || 'ไม่ระบุ'}
                         {rejectionComment.position && ` (${rejectionComment.position})`}
                         {rejectionComment.rejected_at && ` • ${new Date(rejectionComment.rejected_at).toLocaleDateString('th-TH', {
@@ -598,7 +598,7 @@ const PDFSignaturePage = () => {
 
           {loadingDoc ? (
             <Card className="shadow-lg border-0 bg-card p-8 text-center">
-              <svg className="animate-spin h-8 w-8 text-green-600 mx-auto mb-4" viewBox="0 0 24 24">
+              <svg className="animate-spin h-8 w-8 text-green-600 dark:text-green-400 mx-auto mb-4" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
               </svg>
@@ -610,7 +610,7 @@ const PDFSignaturePage = () => {
               <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-green-600" />
+                    <FileText className="w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>
                   ข้อมูลเอกสาร PDF
                 </CardTitle>
@@ -648,12 +648,12 @@ const PDFSignaturePage = () => {
                       {formData.pdfFile && (
                         <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
                           <div className="flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-green-600" />
+                            <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
                             <span className="text-sm font-medium text-green-800 dark:text-green-200">
                               ไฟล์ที่เลือก: {formData.pdfFile.name}
                             </span>
                           </div>
-                          <p className="text-xs text-green-600 mt-1">
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                             ขนาด: {(formData.pdfFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
@@ -698,12 +698,12 @@ const PDFSignaturePage = () => {
                         />
                       </div>
                       {suggestedDocNumber && !formData.docNumber && (
-                        <p className="text-xs text-green-600 font-medium">
+                        <p className="text-xs text-green-600 dark:text-green-400 font-medium">
                           ✓ ใช้เลขรับที่แนะนำ: {getSuggestedNumber()} (หรือพิมพ์เลขใหม่เพื่อแก้ไข)
                         </p>
                       )}
                       {formData.docNumber && (
-                        <p className="text-xs text-blue-600 font-medium">
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                           ✓ ใช้เลขรับ: {formData.docNumber}
                         </p>
                       )}
@@ -758,7 +758,7 @@ const PDFSignaturePage = () => {
                 {/* Notice Section */}
                 <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                     <div>
                       <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">ข้อมูลสำคัญ</h4>
                       <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">

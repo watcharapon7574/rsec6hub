@@ -47,7 +47,7 @@ export const RejectionCard: React.FC<RejectionCardProps> = ({ onReject, isLoadin
       <CardContent className="space-y-4">
         {!showReasonInput ? (
           <div className="text-center">
-            <p className="text-sm text-red-600 mb-4">
+            <p className="text-sm text-red-600 dark:text-red-400 mb-4">
               หากพบปัญหาหรือข้อผิดพลาดในเอกสาร สามารถตีกลับเพื่อให้ผู้เขียนแก้ไขได้
             </p>
             <Button 

@@ -669,7 +669,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {/* เวลา/สถานที่ของงาน */}
                   {(task.event_time || task.location) && (
-                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-pink-600 bg-pink-50 dark:bg-pink-950 border border-pink-200 dark:border-pink-800 rounded-md px-2 py-0.5">
+                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950 border border-pink-200 dark:border-pink-800 rounded-md px-2 py-0.5">
                       {task.event_time && (
                         <span className="flex items-center gap-0.5">
                           <Clock className="h-3 w-3" />
@@ -688,7 +688,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                   {/* รายละเอียดงาน (task_description) - แสดง 40 ตัวอักษร */}
                   {task.task_description && (
                     <div className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 dark:border-purple-800 rounded-md px-2.5 py-1">
-                      <ClipboardList className="h-3 w-3 text-purple-600 flex-shrink-0" />
+                      <ClipboardList className="h-3 w-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
                       <span className="text-xs text-purple-700 dark:text-purple-300 truncate max-w-[150px] font-medium">
                         {truncateText(task.task_description, 40)}
                       </span>
@@ -750,7 +750,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                           size="sm"
                           variant="outline"
                           onClick={() => handleManageTeam(task)}
-                          className="h-7 text-xs px-2.5 border-orange-300 dark:border-orange-700 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950 dark:bg-orange-950"
+                          className="h-7 text-xs px-2.5 border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950 dark:bg-orange-950"
                         >
                           <Settings2 className="h-3.5 w-3.5 mr-1" />
                           จัดการทีม
@@ -844,7 +844,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                 <Label htmlFor="report-file" className="text-sm font-medium flex items-center gap-2">
                   📎 แนบไฟล์เอกสาร <span className="text-red-500">*</span>
                 </Label>
-                <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 p-2 rounded">
+                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 p-2 rounded">
                   💡 คุณเป็นผู้รายงาน ต้องแนบไฟล์รายงาน
                 </p>
                 <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-blue-400 transition-colors">
@@ -868,7 +868,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                         <CheckCircle className="h-4 w-4" />
                         ไฟล์ที่เลือก: {reportFile.name}
                       </p>
-                      <p className="text-xs text-green-600 mt-1">
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                         ขนาด: {(reportFile.size / 1024).toFixed(2)} KB
                       </p>
                     </div>
@@ -956,10 +956,10 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                         {/* Role badges */}
                         <div className="flex gap-1">
                           {assignee.is_team_leader && (
-                            <span className="text-[10px] text-amber-600 font-medium">หัวหน้า</span>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">หัวหน้า</span>
                           )}
                           {assignee.is_reporter && (
-                            <span className="text-[10px] text-pink-600 font-medium">
+                            <span className="text-[10px] text-pink-600 dark:text-pink-400 font-medium">
                               {assignee.is_team_leader && '• '}ผู้รายงาน
                             </span>
                           )}

@@ -350,7 +350,7 @@ const RailwayManagementPage = () => {
           <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
               <CardTitle className="flex items-center text-xl gap-2">
-                <Train className="h-6 w-6 text-blue-600" />
+                <Train className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 เลือก Railway Project
               </CardTitle>
               <CardDescription className="text-base">
@@ -417,11 +417,11 @@ const RailwayManagementPage = () => {
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-2xl font-bold mb-2 flex items-center gap-2">
                             {isDeploying ? (
-                              <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                              <Loader2 className="h-6 w-6 text-blue-600 dark:text-blue-400 animate-spin" />
                             ) : isRunning ? (
-                              <CircleCheckBig className="h-6 w-6 text-green-600" />
+                              <CircleCheckBig className="h-6 w-6 text-green-600 dark:text-green-400" />
                             ) : isStopped ? (
-                              <CircleX className="h-6 w-6 text-red-600" />
+                              <CircleX className="h-6 w-6 text-red-600 dark:text-red-400" />
                             ) : (
                               <Circle className="h-6 w-6 text-muted-foreground" />
                             )}
@@ -492,7 +492,7 @@ const RailwayManagementPage = () => {
                       {isDeploying && progressMessage && (
                         <div className="mb-4 p-4 bg-blue-100 border-2 border-blue-400 rounded-lg animate-pulse">
                           <div className="flex items-center gap-3">
-                            <Loader2 className="h-5 w-5 text-blue-600 animate-spin flex-shrink-0" />
+                            <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
                             <p className="text-base font-semibold text-blue-900 dark:text-blue-100">{progressMessage}</p>
                           </div>
                         </div>

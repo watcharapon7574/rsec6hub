@@ -263,7 +263,7 @@ const AssignedTasksList = () => {
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <Clock className="h-5 w-5 text-orange-600" />
+                <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 <div>
                   <div className="font-medium text-foreground">
                     มีงานรอดำเนินการ {pendingCount} รายการ
@@ -420,7 +420,7 @@ const AssignedTasksList = () => {
                     </div>
 
                     {task.completed_at && (
-                      <div className="flex items-center text-green-600">
+                      <div className="flex items-center text-green-600 dark:text-green-400">
                         <CheckCircle className="h-4 w-4 mr-2" />
                         <span>เสร็จสิ้นเมื่อ: {formatDate(task.completed_at)}</span>
                       </div>
@@ -567,11 +567,11 @@ const AssignedTasksList = () => {
                 </label>
                 {reportFile ? (
                   <div className="flex items-center gap-2 p-3 border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 rounded-lg">
-                    <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <FileText className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                     <span className="text-sm text-green-700 dark:text-green-300 flex-1 truncate">
                       {reportFile.name}
                     </span>
-                    <span className="text-xs text-green-600">
+                    <span className="text-xs text-green-600 dark:text-green-400">
                       {(reportFile.size / 1024).toFixed(1)} KB
                     </span>
                     <Button
@@ -580,7 +580,7 @@ const AssignedTasksList = () => {
                       onClick={handleRemoveFile}
                       className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900"
                     >
-                      <X className="h-4 w-4 text-red-600" />
+                      <X className="h-4 w-4 text-red-600 dark:text-red-400" />
                     </Button>
                   </div>
                 ) : (

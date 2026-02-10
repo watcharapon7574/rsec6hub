@@ -285,7 +285,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                 <SelectValue placeholder="เลือกตำแหน่ง" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="vacant" className="text-orange-600 font-medium">🔸 ว่าง (ล้างข้อมูลทั้งหมด)</SelectItem>
+                <SelectItem value="vacant" className="text-orange-600 dark:text-orange-400 font-medium">🔸 ว่าง (ล้างข้อมูลทั้งหมด)</SelectItem>
                 <SelectItem value="director">ผู้อำนวยการ</SelectItem>
                 <SelectItem value="deputy_director">รองผู้อำนวยการ</SelectItem>
                 <SelectItem value="assistant_director">หัวหน้าฝ่าย (ระบุใน "บทบาทในโครงสร้าง")</SelectItem>
@@ -297,7 +297,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
               </SelectContent>
             </Select>
             {formData.position === 'vacant' && (
-              <p className="text-xs text-orange-600 font-medium">
+              <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
                 ⚠️ เมื่อกดบันทึก จะล้างข้อมูลทั้งหมดของ profile นี้ เพื่อรอใส่คนใหม่
               </p>
             )}
@@ -341,7 +341,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             <div className="space-y-2">
               <Label htmlFor="telegram_chat_id" className="flex items-center gap-2">
                 Telegram Chat ID
-                <span className="text-xs text-blue-600 font-normal">(แก้ไขได้เฉพาะคนที่มี Chat ID)</span>
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-normal">(แก้ไขได้เฉพาะคนที่มี Chat ID)</span>
               </Label>
               <Input
                 id="telegram_chat_id"
@@ -357,7 +357,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
           )}
 
           <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
               <strong>หมายเหตุ:</strong> รหัสบุคลากร (employee_id) ไม่สามารถแก้ไขได้ • ฟิลด์ที่มี * จำเป็นต้องกรอก
             </AlertDescription>

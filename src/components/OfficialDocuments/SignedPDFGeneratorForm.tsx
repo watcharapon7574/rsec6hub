@@ -186,7 +186,7 @@ const SignedPDFGeneratorForm: React.FC = () => {
                     เลือกไฟล์ลายเซ็น
                   </Button>
                   {signatureFile && (
-                    <p className="mt-2 text-sm text-green-600">
+                    <p className="mt-2 text-sm text-green-600 dark:text-green-400">
                       ไฟล์: {signatureFile.name}
                     </p>
                   )}

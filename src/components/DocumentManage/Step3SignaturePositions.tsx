@@ -117,7 +117,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                         </Badge>
                       )}
                       {isSelected && (
-                        <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950">
+                        <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950">
                           เลือกอยู่
                         </Badge>
                       )}
@@ -151,7 +151,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
           <p>1. เลือกผู้ลงนามจากรายการข้างต้น</p>
           <p>2. กรอกสรุปเนื้อหาเอกสาร (เพื่อให้ผู้ลงนามเข้าใจ)</p>
           <p>3. คลิกบน PDF เพื่อวางตำแหน่งลายเซ็น</p>
-          <p>4. <span className="font-medium text-blue-600">สามารถวางได้หลายตำแหน่งต่อคน</span> - เลือกคนเดียวกันแล้ววางใหม่ได้</p>
+          <p>4. <span className="font-medium text-blue-600 dark:text-blue-400">สามารถวางได้หลายตำแหน่งต่อคน</span> - เลือกคนเดียวกันแล้ววางใหม่ได้</p>
           <p>5. คลิกปุ่ม X บนการ์ดเพื่อลบตำแหน่งที่วางผิด</p>
           <p>6. ผู้ลงนามที่เลือก: <strong>{signers[selectedSignerIndex]?.name || 'ไม่มี'}</strong></p>
         </div>

@@ -5,7 +5,7 @@ const AuthInfoPanel: React.FC = () => {
   return (
     <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
       <div className="flex items-start space-x-3">
-        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+        <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
         <div className="space-y-1">
           <p className="text-sm font-medium text-blue-900 dark:text-blue-100">ข้อมูลสำหรับการเข้าสู่ระบบ</p>
           <p className="text-xs text-blue-700 dark:text-blue-300">

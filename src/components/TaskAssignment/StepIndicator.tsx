@@ -41,7 +41,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                 <div
                   className={`
                     mt-2 text-xs font-medium whitespace-nowrap
-                    ${isCurrent ? 'text-pink-600' : 'text-muted-foreground'}
+                    ${isCurrent ? 'text-pink-600 dark:text-pink-400' : 'text-muted-foreground'}
                   `}
                 >
                   {stepLabels[index]}

@@ -334,7 +334,7 @@ const MemoList: React.FC<MemoListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-amber-400 hover:text-amber-600"
+            className="h-8 w-8 p-0 border-border hover:border-amber-400 hover:text-amber-600 dark:text-amber-400"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -349,7 +349,7 @@ const MemoList: React.FC<MemoListProps> = ({
                 setStatusFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
+              className="h-8 w-8 p-0 text-foreground hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -412,7 +412,7 @@ const MemoList: React.FC<MemoListProps> = ({
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                       <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 font-medium">
+                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -553,7 +553,7 @@ const MemoList: React.FC<MemoListProps> = ({
                 <div className="flex gap-1 ml-auto">
                   {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
+                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                       onClick={() => {
                         const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
                         navigate('/pdf-just-preview', {
@@ -570,7 +570,7 @@ const MemoList: React.FC<MemoListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
                           navigate('/pdf-just-preview', {
@@ -588,7 +588,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       {/* Edit button - only show for memo author and not yet proposed (current_signer_order <= 1) */}
                       {profile?.user_id === memo.user_id && memo.current_signer_order <= 1 && (
                         <div className="relative">
-                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600"
+                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400"
                             onClick={() => {
                               const editRoute = getDocumentEditRoute(memo, memo.id);
                               navigate(editRoute);
@@ -612,7 +612,7 @@ const MemoList: React.FC<MemoListProps> = ({
                             className={`h-7 px-2 flex items-center gap-1 ${
                               memo.current_signer_order > 1
                                 ? 'border-border text-muted-foreground cursor-not-allowed'
-                                : 'border-amber-200 dark:border-amber-800 text-amber-600'
+                                : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400'
                             }`}
                             onClick={() => {
                               if (memo.current_signer_order <= 1) {

@@ -824,19 +824,19 @@ const ApproveDocumentPage: React.FC = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium text-gray-600">เลขที่หนังสือ:</span>
+                    <span className="font-medium text-muted-foreground">เลขที่หนังสือ:</span>
                     <p className="font-semibold">{memo.doc_number}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">วันที่:</span>
+                    <span className="font-medium text-muted-foreground">วันที่:</span>
                     <p>{new Date(memo.date || memo.created_at).toLocaleDateString('th-TH')}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">ผู้เขียน:</span>
+                    <span className="font-medium text-muted-foreground">ผู้เขียน:</span>
                     <p>{memo.author_name}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-600">ตำแหน่ง:</span>
+                    <span className="font-medium text-muted-foreground">ตำแหน่ง:</span>
                     <p>{memo.author_position}</p>
                   </div>
                 </div>
@@ -844,14 +844,14 @@ const ApproveDocumentPage: React.FC = () => {
                 <Separator />
                 
                 <div>
-                  <span className="font-medium text-gray-600">เรื่อง:</span>
+                  <span className="font-medium text-muted-foreground">เรื่อง:</span>
                   <p className="mt-1">{memo.subject}</p>
                 </div>
 
                 {/* Document Summary Section - แสดงเสมอเพื่อ debug */}
                 <Separator />
                 <div>
-                  <span className="font-medium text-gray-600">ความหมายโดยสรุปของเอกสารฉบับนี้:</span>
+                  <span className="font-medium text-muted-foreground">ความหมายโดยสรุปของเอกสารฉบับนี้:</span>
                   {(() => {
                     // สำหรับ doc_receive: ใช้ subject เป็นข้อมูลสรุป
                     // สำหรับ memos: ใช้ document_summary
@@ -859,11 +859,11 @@ const ApproveDocumentPage: React.FC = () => {
 
                     return summaryText ? (
                       <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm text-gray-800 leading-relaxed">{summaryText}</p>
+                        <p className="text-sm text-foreground leading-relaxed">{summaryText}</p>
                       </div>
                     ) : (
                       <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-500 italic">
+                        <p className="text-sm text-muted-foreground italic">
                           {isDocReceive
                             ? 'ยังไม่มีข้อมูลเรื่อง'
                             : 'ยังไม่มีข้อมูลสรุปจากธุรการ'}
@@ -871,7 +871,7 @@ const ApproveDocumentPage: React.FC = () => {
                       </div>
                     );
                   })()}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {isDocReceive
                       ? 'เรื่องของหนังสือรับจากภายนอก'
                       : 'ข้อมูลสรุปจากธุรการเพื่อช่วยให้เข้าใจเนื้อหาเอกสาร'}
@@ -899,7 +899,7 @@ const ApproveDocumentPage: React.FC = () => {
                     />
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     ไม่มีไฟล์ PDF สำหรับแสดง
                   </div>
                 )}

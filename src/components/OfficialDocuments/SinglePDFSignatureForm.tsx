@@ -246,7 +246,7 @@ const SinglePDFSignatureForm: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Card className="glass-card">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />

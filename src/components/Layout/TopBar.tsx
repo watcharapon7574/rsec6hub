@@ -105,7 +105,7 @@ const TopBar = () => {
                   style={{ textDecoration: "none" }}
                 >
                   {/* Profile Info + เงาสีๆ */}
-                  <div className="flex items-center glass rounded-xl px-4 py-2 min-w-0 shadow-primary shadow-glass border border-primary/10 transition group-hover:bg-primary/20">
+                  <div className="flex items-center rounded-lg px-3 py-2 min-w-0 bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm transition group-hover:bg-accent">
                     <Avatar className="h-8 w-8 lg:h-10 lg:w-10 flex-shrink-0">
                       <AvatarImage src={profile.profile_picture_url || undefined} />
                       <AvatarFallback className="bg-gradient-primary text-white text-xs lg:text-sm font-semibold shadow-primary">

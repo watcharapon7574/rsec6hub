@@ -10,7 +10,8 @@ import StatisticsCards from '@/components/OfficialDocuments/StatisticsCards';
 import DocumentCards from '@/components/OfficialDocuments/DocumentCards';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { RefreshCw, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 
@@ -383,10 +384,10 @@ const OfficialDocumentsPage = () => {
   // Show loading state
   if (loading || isLoadingData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     );
@@ -395,36 +396,39 @@ const OfficialDocumentsPage = () => {
   // Show authentication required state
   if (!isAuthenticated || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">กรุณาเข้าสู่ระบบเพื่อดูเอกสาร</p>
-          <button 
+          <p className="text-muted-foreground mb-4">กรุณาเข้าสู่ระบบเพื่อดูเอกสาร</p>
+          <Button 
             onClick={() => navigate('/auth')}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
             เข้าสู่ระบบ
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Page Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex justify-between items-start">
-            <div className="border-l-4 border-blue-500 pl-4 flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">เอกสารราชการ</h1>
-              <p className="text-gray-600">จัดการเอกสารราชการและติดตามสถานะการดำเนินงาน</p>
-              {profile && (
-                <div className="mt-2 text-sm text-blue-600">
-                  ผู้ใช้: {profile.first_name} {profile.last_name} | ตำแหน่ง: {permissions.displayName}
-                  {permissions.isAdmin && " (ผู้ดูแลระบบ)"}
-                </div>
-              )}
-            </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  เอกสารราชการ
+                </h1>
+                <p className="text-sm text-muted-foreground">จัดการเอกสารราชการและติดตามสถานะการดำเนินงาน</p>
+                {profile && (
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {profile.first_name} {profile.last_name} • {permissions.displayName}
+                    {permissions.isAdmin && " • ผู้ดูแลระบบ"}
+                  </div>
+                )}
+              </div>
             <div className="ml-4">
               <Button
                 onClick={handleManualRefresh}
@@ -437,8 +441,9 @@ const OfficialDocumentsPage = () => {
                 {isRefreshing ? 'กำลังรีเฟรช...' : 'รีเฟรช'}
               </Button>
             </div>
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Statistics Cards */}
         <StatisticsCards
@@ -462,7 +467,6 @@ const OfficialDocumentsPage = () => {
           onRefresh={handleDocumentRefresh}
         />
       </div>
-      <div className="h-10" />
     </div>
   );
 };

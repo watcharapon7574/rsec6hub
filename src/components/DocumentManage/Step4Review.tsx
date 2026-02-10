@@ -38,15 +38,15 @@ const Step4Review: React.FC<Step4Props> = ({
             <h3 className="font-medium mb-3">ข้อมูลเอกสาร</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">เรื่อง:</span>
+                <span className="text-muted-foreground">เรื่อง:</span>
                 <span className="font-medium">{memo.subject}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">เลขหนังสือ:</span>
+                <span className="text-muted-foreground">เลขหนังสือ:</span>
                 <span className="font-medium">{documentNumber}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">ผู้เขียน:</span>
+                <span className="text-muted-foreground">ผู้เขียน:</span>
                 <span className="font-medium">{memo.author_name}</span>
               </div>
             </div>
@@ -61,7 +61,7 @@ const Step4Review: React.FC<Step4Props> = ({
                   <div className="flex-1">
                     <p className="font-semibold">{signer.name}</p>
                     {/* job_position (เล็กสุด) */}
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                       {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                       {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
@@ -69,7 +69,7 @@ const Step4Review: React.FC<Step4Props> = ({
                     </p>
                     {/* org_structure_role (เด่นรอง) */}
                     {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {signer.org_structure_role}
                       </p>
                     )}
@@ -89,11 +89,11 @@ const Step4Review: React.FC<Step4Props> = ({
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <p className="font-medium">{pos.signer.name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     หน้า {pos.page} ตำแหน่ง ({Math.round(pos.x)}, {Math.round(pos.y)})
                   </p>
                   {pos.comment && (
-                    <p className="text-sm text-blue-600">ความเห็น: {pos.comment}</p>
+                    <p className="text-sm text-foreground">ความเห็น: {pos.comment}</p>
                   )}
                 </div>
                 <Button

@@ -99,7 +99,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
   const timeOptions = useMemo(() => getReorderedTimeOptions(), []);
 
   return (
-    <Card className="bg-white border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
+    <Card className="bg-card border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
       <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
         <CardTitle className="flex items-center text-lg text-pink-900">
           <ClipboardList className="h-5 w-5 mr-2 text-pink-600" />
@@ -169,7 +169,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-white" align="start">
+              <PopoverContent className="w-auto p-0 bg-card" align="start">
                 <CalendarComponent
                   mode="single"
                   selected={eventDate || undefined}
@@ -194,7 +194,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0 bg-white" align="start">
+              <PopoverContent className="w-[200px] p-0 bg-card" align="start">
                 <div className="max-h-[250px] overflow-y-auto">
                   {timeOptions.map((option) => (
                     <button

@@ -15,7 +15,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, message = 'กำ�
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Modal Content */}
-      <div className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-sm mx-4 animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-card rounded-2xl shadow-2xl p-8 max-w-sm mx-4 animate-in fade-in zoom-in duration-200">
         <div className="flex flex-col items-center space-y-4">
           {/* Spinner */}
           <div className="relative">

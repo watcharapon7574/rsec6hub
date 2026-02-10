@@ -21,7 +21,7 @@ const Step1DocumentPreview: React.FC<Step1DocumentPreviewProps> = ({
   return (
     <div className="space-y-6">
       {/* PDF Preview */}
-      <Card className="bg-white border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
+      <Card className="bg-card border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
         <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
           <CardTitle className="text-lg text-pink-900">ตัวอย่างเอกสาร</CardTitle>
         </CardHeader>
@@ -48,7 +48,7 @@ const Step1DocumentPreview: React.FC<Step1DocumentPreviewProps> = ({
       </Card>
 
       {/* Document Info */}
-      <Card className="bg-white border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
+      <Card className="bg-card border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
         <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
           <CardTitle className="flex items-center text-lg text-pink-900">
             <FileText className="h-5 w-5 mr-2 text-pink-600" />

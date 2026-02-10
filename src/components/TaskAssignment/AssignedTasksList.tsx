@@ -243,7 +243,7 @@ const AssignedTasksList = () => {
 
   if (tasks.length === 0) {
     return (
-      <Card className="bg-white border border-border/50">
+      <Card className="bg-card border border-border">
         <CardContent className="py-12">
           <div className="text-center text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -279,7 +279,7 @@ const AssignedTasksList = () => {
       )}
 
       {/* Filters and Search */}
-      <Card className="bg-white border border-border/50">
+      <Card className="bg-card border border-border">
         <CardContent className="p-4">
           <div className="flex gap-2 items-center">
             {/* ช่องค้นหา */}
@@ -380,7 +380,7 @@ const AssignedTasksList = () => {
           return (
             <Card
               key={task.assignment_id}
-              className="bg-white border border-border/50 hover:shadow-md transition-shadow"
+              className="bg-card border border-border hover:shadow-md transition-shadow"
             >
               <CardContent className="p-6">
                 <div className="space-y-4">
@@ -485,7 +485,7 @@ const AssignedTasksList = () => {
           );
         })
       ) : (
-        <Card className="bg-white border border-border/50">
+        <Card className="bg-card border border-border">
           <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -498,7 +498,7 @@ const AssignedTasksList = () => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <Card className="bg-white border border-border/50">
+        <Card className="bg-card border border-border">
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">

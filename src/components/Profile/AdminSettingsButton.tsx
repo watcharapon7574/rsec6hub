@@ -111,7 +111,7 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-80 bg-white shadow-lg border border-gray-200"
+        className="w-80 bg-card shadow-lg border border-border"
       >
         <DropdownMenuLabel className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 py-3">
           <Settings className="h-4 w-4 text-blue-600" />
@@ -130,7 +130,7 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
               <DropdownMenuItem
                 key={itemIndex}
                 onClick={() => handleItemClick(item)}
-                className="cursor-pointer flex flex-col items-start py-3 px-3 hover:bg-blue-50 focus:bg-blue-50 bg-white"
+                className="cursor-pointer flex flex-col items-start py-3 px-3 hover:bg-blue-50 focus:bg-blue-50 bg-card"
               >
                 <div className="flex items-center gap-2 w-full">
                   <item.icon className="h-4 w-4 text-blue-600" />

@@ -47,7 +47,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
               <SelectTrigger>
                 <SelectValue placeholder="เลือกหัวหน้าฝ่าย หรือไม่ระบุ" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-blue-200 z-50 shadow-lg">
+              <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
                 <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
                   <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
                 </SelectItem>
@@ -78,7 +78,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
               <SelectTrigger>
                 <SelectValue placeholder="เลือกรองผู้อำนวยการ หรือไม่ระบุ" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-blue-200 z-50 shadow-lg">
+              <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
                 <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
                   <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
                 </SelectItem>

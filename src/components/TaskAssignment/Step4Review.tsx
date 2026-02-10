@@ -46,7 +46,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
   };
   return (
     <div className="space-y-6">
-      <Card className="bg-white border-2 border-pink-200 shadow-lg">
+      <Card className="bg-card border-2 border-pink-200 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
           <CardTitle className="flex items-center text-lg text-pink-900">
             <CheckCircle className="h-5 w-5 mr-2 text-pink-600" />

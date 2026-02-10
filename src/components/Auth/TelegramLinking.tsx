@@ -34,7 +34,7 @@ const TelegramLinking: React.FC<TelegramLinkingProps> = ({ phone, onLinked, onBa
   };
 
   return (
-    <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
+    <Card className="border-0 shadow-xl bg-card backdrop-blur-sm">
       <div className="flex justify-center pt-6 pb-4">
         <img
           src="/fastdoc.png"

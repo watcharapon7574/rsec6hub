@@ -23,7 +23,7 @@ const PhoneStep: React.FC<PhoneStepProps> = ({
           <input
             type="tel"
             required
-            className="pl-11 h-12 w-full bg-white border-2 border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-gray-500 placeholder:font-medium text-gray-900 rounded-md transition-all duration-200 hover:border-blue-300"
+            className="pl-11 h-12 w-full bg-card border-2 border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-muted-foreground placeholder:font-medium text-foreground rounded-md transition-all duration-200 hover:border-blue-300"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
             placeholder="เบอร์โทรศัพท์"

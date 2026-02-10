@@ -126,7 +126,7 @@ const LocationCombobox: React.FC<LocationComboboxProps> = ({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0 bg-white" align="start">
+      <PopoverContent className="w-[300px] p-0 bg-card" align="start">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="ค้นหาหรือพิมพ์สถานที่ใหม่..."

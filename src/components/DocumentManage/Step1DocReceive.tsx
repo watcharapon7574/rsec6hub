@@ -107,7 +107,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="เลือกฝ่าย หรือไม่ระบุ" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-blue-200 z-50 shadow-lg">
+                <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
                   <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
                     <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
@@ -137,7 +137,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="เลือกรองผู้อำนวยการ หรือไม่ระบุ" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-blue-200 z-50 shadow-lg">
+                <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
                   <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
                     <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>

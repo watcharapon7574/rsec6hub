@@ -281,7 +281,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
                 {/* Search results dropdown */}
                 {searchResults.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-50 w-full mt-1 bg-card border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {searchResults.map(user => (
                       <button
                         key={user.user_id}
@@ -301,7 +301,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                 )}
 
                 {searching && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg p-4 text-center text-sm text-gray-500">
+                  <div className="absolute z-50 w-full mt-1 bg-card border rounded-lg shadow-lg p-4 text-center text-sm text-muted-foreground">
                     กำลังค้นหา...
                   </div>
                 )}

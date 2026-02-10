@@ -162,7 +162,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
           return (
             <div
               key={group.id}
-              className={`flex items-center gap-1 bg-white border ${borderColor} rounded-lg px-3 py-1.5 shadow-sm ${isDisabled ? 'opacity-50' : 'hover:shadow-md'} transition-shadow`}
+              className={`flex items-center gap-1 bg-card border ${borderColor} rounded-lg px-3 py-1.5 shadow-sm ${isDisabled ? 'opacity-50' : 'hover:shadow-md'} transition-shadow`}
               title={isPosition
                 ? `${group.name} • ผู้รับผิดชอบ: ${group.members[0]?.first_name || ''} ${group.members[0]?.last_name || ''}`
                 : `${group.name} (${group.members.length} คน)`}

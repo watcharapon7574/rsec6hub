@@ -138,18 +138,18 @@ const PDFSignaturePage = () => {
     loadDocForEdit();
   }, [editDocId, originalDoc, navigate, toast]);
 
-  // Redirect ถ้าไม่ใช่ธุรการ
+  // Redirect ถ้าไม่ใช่ธุรการหรือ admin
   useEffect(() => {
-    if (profile && permissions.position !== 'clerk_teacher') {
+    if (profile && !permissions.isAdmin && permissions.position !== 'clerk_teacher') {
       toast({
         title: "ไม่มีสิทธิ์เข้าถึง",
-        description: "เฉพาะธุรการเท่านั้นที่สามารถใช้ระบบหนังสือรับได้",
+        description: "เฉพาะธุรการหรือผู้ดูแลระบบเท่านั้นที่สามารถใช้ระบบหนังสือรับได้",
         variant: "destructive",
       });
       navigate('/documents');
       return;
     }
-  }, [profile, permissions.position, navigate, toast]);
+  }, [profile, permissions.isAdmin, permissions.position, navigate, toast]);
 
   // แสดง loading ขณะตรวจสอบสิทธิ์
   if (!profile || permissions.position !== 'clerk_teacher') {

@@ -139,8 +139,8 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                 ? 'เช่น หัวหน้างานโสตทัศนูปกรณ์, หัวหน้าฝ่ายธุรการ...'
                 : 'เช่น ครูประจำชั้น ป.1, ฝ่ายวิชาการ...'}
               className={groupType === 'position'
-                ? 'border-orange-200 focus:border-orange-500'
-                : 'border-purple-200 focus:border-purple-500'}
+                ? 'border-orange-200 dark:border-orange-800 focus:border-orange-500'
+                : 'border-purple-200 dark:border-purple-800 focus:border-purple-500'}
             />
           </div>
 
@@ -175,8 +175,8 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           {selectedMembers.length > 0 && (
             <div className={`rounded-lg p-3 border ${
               groupType === 'position'
-                ? 'bg-orange-50 dark:bg-orange-950 border-orange-200'
-                : 'bg-purple-50 dark:bg-purple-950 border-purple-200'
+                ? 'bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800'
+                : 'bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800'
             }`}>
               <div className={`text-sm ${
                 groupType === 'position' ? 'text-orange-800 dark:text-orange-200' : 'text-purple-800 dark:text-purple-200'

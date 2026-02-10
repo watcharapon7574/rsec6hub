@@ -115,7 +115,7 @@ const LocationCombobox: React.FC<LocationComboboxProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between text-left font-normal border-pink-200 hover:border-pink-300"
+          className="w-full justify-between text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300"
         >
           <div className="flex items-center gap-2 truncate">
             <MapPin className="h-4 w-4 text-pink-500 flex-shrink-0" />

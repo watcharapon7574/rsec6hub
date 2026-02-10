@@ -99,8 +99,8 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
   const timeOptions = useMemo(() => getReorderedTimeOptions(), []);
 
   return (
-    <Card className="bg-card border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
-      <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
+    <Card className="bg-card border-2 border-pink-200 dark:border-pink-800 shadow-lg hover:shadow-xl transition-shadow">
+      <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200 dark:border-pink-800">
         <CardTitle className="flex items-center text-lg text-pink-900 dark:text-pink-100">
           <ClipboardList className="h-5 w-5 mr-2 text-pink-600" />
           รายละเอียดการมอบหมายงาน
@@ -145,7 +145,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
             value={taskDescription}
             onChange={(e) => onTaskDescriptionChange(e.target.value)}
             rows={4}
-            className="resize-none border-pink-200 focus:border-pink-500 focus:ring-pink-500"
+            className="resize-none border-pink-200 dark:border-pink-800 focus:border-pink-500 focus:ring-pink-500"
           />
         </div>
 
@@ -161,7 +161,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 hover:border-pink-300"
+                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300"
                 >
                   <Calendar className="mr-2 h-4 w-4 text-pink-500" />
                   {eventDate ? formatDisplayDate(eventDate) : (
@@ -184,7 +184,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 hover:border-pink-300"
+                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300"
                 >
                   <Clock className="mr-2 h-4 w-4 text-pink-500" />
                   {eventTime ? (
@@ -246,7 +246,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
             value={note}
             onChange={(e) => onNoteChange(e.target.value)}
             rows={2}
-            className="resize-none border-pink-200 focus:border-pink-500 focus:ring-pink-500"
+            className="resize-none border-pink-200 dark:border-pink-800 focus:border-pink-500 focus:ring-pink-500"
           />
         </div>
 

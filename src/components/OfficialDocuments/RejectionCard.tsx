@@ -37,7 +37,7 @@ export const RejectionCard: React.FC<RejectionCardProps> = ({ onReject, isLoadin
   };
 
   return (
-    <Card className="border-red-200 bg-red-50 dark:bg-red-950">
+    <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-red-700">
           <AlertTriangle className="h-5 w-5" />

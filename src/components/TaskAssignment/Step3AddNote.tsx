@@ -13,8 +13,8 @@ const Step3AddNote: React.FC<Step3AddNoteProps> = ({
   onNoteChange
 }) => {
   return (
-    <Card className="bg-card border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
-      <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
+    <Card className="bg-card border-2 border-pink-200 dark:border-pink-800 shadow-lg hover:shadow-xl transition-shadow">
+      <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200 dark:border-pink-800">
         <CardTitle className="flex items-center text-lg text-pink-900 dark:text-pink-100">
           <MessageSquare className="h-5 w-5 mr-2 text-pink-600" />
           หมายเหตุเพิ่มเติม
@@ -26,7 +26,7 @@ const Step3AddNote: React.FC<Step3AddNoteProps> = ({
           value={note}
           onChange={(e) => onNoteChange(e.target.value)}
           rows={6}
-          className="resize-none border-pink-200 focus:border-pink-500 focus:ring-pink-500"
+          className="resize-none border-pink-200 dark:border-pink-800 focus:border-pink-500 focus:ring-pink-500"
         />
         <p className="text-xs text-muted-foreground mt-2">
           💡 ข้อความนี้จะถูกส่งไปยังผู้รับมอบหมายทุกคน

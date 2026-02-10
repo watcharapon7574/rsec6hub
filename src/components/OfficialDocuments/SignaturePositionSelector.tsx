@@ -210,7 +210,7 @@ const SignaturePositionSelector: React.FC<SignaturePositionSelectorProps> = ({
                 <div 
                   key={signer.user_id}
                   className={`p-2 border rounded text-xs ${
-                    position ? 'bg-green-50 dark:bg-green-950 border-green-200' : 'bg-muted border-border'
+                    position ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : 'bg-muted border-border'
                   }`}
                 >
                   <span className="font-medium">

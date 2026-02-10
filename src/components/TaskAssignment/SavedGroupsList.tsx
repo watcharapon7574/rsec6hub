@@ -70,7 +70,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             variant="outline"
             size="sm"
             onClick={onCreateGroup}
-            className="h-7 px-2 text-xs border-purple-200 text-purple-600 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:bg-purple-950"
+            className="h-7 px-2 text-xs border-purple-200 dark:border-purple-800 text-purple-600 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:bg-purple-950"
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
             สร้างใหม่
@@ -117,7 +117,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setIsDeleteMode(true)}
-              className="h-7 w-7 p-0 border-red-200 text-red-500 hover:text-red-700 hover:bg-red-50 dark:bg-red-950"
+              className="h-7 w-7 p-0 border-red-200 dark:border-red-800 text-red-500 hover:text-red-700 hover:bg-red-50 dark:bg-red-950"
               title="ลบกลุ่ม/หน้าที่"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -129,7 +129,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               variant="outline"
               size="sm"
               onClick={onCreateGroup}
-              className="h-7 px-2 text-xs border-purple-200 text-purple-600 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:bg-purple-950"
+              className="h-7 px-2 text-xs border-purple-200 dark:border-purple-800 text-purple-600 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:bg-purple-950"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
               สร้างใหม่
@@ -150,7 +150,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
 
           const borderColor = isDisabled
             ? 'border-border'
-            : isPosition ? 'border-orange-200' : 'border-purple-200';
+            : isPosition ? 'border-orange-200 dark:border-orange-800' : 'border-purple-200 dark:border-purple-800';
           const textColor = isDisabled
             ? 'text-muted-foreground cursor-not-allowed'
             : isPosition ? 'text-orange-700 hover:text-orange-900 dark:text-orange-100' : 'text-purple-700 hover:text-purple-900 dark:text-purple-100';

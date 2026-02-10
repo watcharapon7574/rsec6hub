@@ -926,7 +926,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -986,7 +986,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -1005,7 +1005,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 px-2 flex items-center border-amber-200 text-amber-600 hover:bg-amber-50 dark:bg-amber-950"
+                          className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 hover:bg-amber-50 dark:bg-amber-950"
                           onClick={() => navigate(`/edit-doc-receive/${memo.id}`)}
                         >
                           <Edit className="h-4 w-4" />
@@ -1023,7 +1023,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 px-2 flex items-center gap-1 border-red-200 text-red-600 hover:bg-red-50 dark:bg-red-950"
+                              className="h-7 px-2 flex items-center gap-1 border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:bg-red-950"
                               onClick={() => navigate(`/pdf-signature?edit=${memo.id}`)}
                               title="แก้ไขเอกสารที่ถูกตีกลับ"
                             >
@@ -1037,7 +1037,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               className={`h-7 px-2 flex items-center gap-1 ${
                                 memo.current_signer_order > 1
                                   ? 'border-border text-muted-foreground cursor-not-allowed'
-                                  : 'border-green-200 text-green-600'
+                                  : 'border-green-200 dark:border-green-800 text-green-600'
                               }`}
                               onClick={() => {
                                 if (memo.current_signer_order <= 1) {
@@ -1120,7 +1120,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-green-200"
+                className="h-7 w-7 p-0 border-green-200 dark:border-green-800"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
               >
@@ -1132,7 +1132,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-green-200"
+                className="h-7 w-7 p-0 border-green-200 dark:border-green-800"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
               >

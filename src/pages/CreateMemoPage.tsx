@@ -552,8 +552,8 @@ const CreateMemoPage = () => {
 
           {/* Rejection Comments Card */}
           {rejectionComments.length > 0 && (
-            <Card className="mb-6 border-red-200 bg-red-50 dark:bg-red-950">
-              <CardHeader className="bg-red-100 border-b border-red-200">
+            <Card className="mb-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
+              <CardHeader className="bg-red-100 border-b border-red-200 dark:border-red-800">
                 <CardTitle className="text-red-800 dark:text-red-200 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
                   ข้อความตีกลับจากผู้อนุมัติ
@@ -561,7 +561,7 @@ const CreateMemoPage = () => {
               </CardHeader>
               <CardContent className="p-4">
                 {rejectionComments.map((comment, index) => (
-                  <Alert key={index} className="border-red-200 bg-card">
+                  <Alert key={index} className="border-red-200 dark:border-red-800 bg-card">
                     <AlertCircle className="h-4 w-4 text-red-600" />
                     <AlertDescription className="text-red-800 dark:text-red-200">
                       <div className="space-y-2">
@@ -599,8 +599,8 @@ const CreateMemoPage = () => {
                 <div className="space-y-4">
                   <div className={`p-4 rounded-lg border ${
                     grammarSuggestions[currentSuggestionIndex].applied 
-                      ? 'bg-green-50 dark:bg-green-950 border-green-200' 
-                      : 'bg-blue-50 dark:bg-blue-950 border-blue-200'
+                      ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' 
+                      : 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800'
                   }`}>
                     <div className="flex items-center justify-between mb-2">
                       <h4 className={`font-medium ${
@@ -622,7 +622,7 @@ const CreateMemoPage = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg border border-red-200">
+                    <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg border border-red-200 dark:border-red-800">
                       <h5 className="font-medium text-red-700 mb-2">คำเดิม</h5>
                       <p className={`font-mono bg-red-100 p-2 rounded ${
                         grammarSuggestions[currentSuggestionIndex].applied 
@@ -632,7 +632,7 @@ const CreateMemoPage = () => {
                         "{grammarSuggestions[currentSuggestionIndex].originalWord}"
                       </p>
                     </div>
-                    <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200">
+                    <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
                       <h5 className="font-medium text-green-700 mb-2">
                         {grammarSuggestions[currentSuggestionIndex].applied ? 'คำที่ใช้แล้ว' : 'คำที่แนะนำ'}
                       </h5>
@@ -935,7 +935,7 @@ const CreateMemoPage = () => {
                     </div>
 
                     {/* Special Character Help (Collapsible) */}
-                    <div className="text-sm text-blue-700 bg-blue-50 dark:bg-blue-950 rounded-md p-3 border border-blue-200">
+                    <div className="text-sm text-blue-700 bg-blue-50 dark:bg-blue-950 rounded-md p-3 border border-blue-200 dark:border-blue-800">
                       <div
                         className="flex items-center justify-between cursor-pointer"
                         onClick={() => setShowSpecialCharHelp(!showSpecialCharHelp)}
@@ -951,7 +951,7 @@ const CreateMemoPage = () => {
                         )}
                       </div>
                       {showSpecialCharHelp && (
-                        <div className="mt-3 pt-3 border-t border-blue-200 space-y-1.5">
+                        <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800 space-y-1.5">
                           <p className="text-blue-600 font-medium">ตัวอย่าง ถ้า ! มากกว่า 1:</p>
                           <div className="pl-3 space-y-1">
                             <p><code className="bg-blue-200 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 2 ครั้ง</p>

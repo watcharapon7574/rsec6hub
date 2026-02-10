@@ -35,14 +35,14 @@ const ApprovalProcess: React.FC = () => {
       case 'blue':
         return {
           bg: 'bg-blue-50 dark:bg-blue-950',
-          border: 'border-blue-200',
+          border: 'border-blue-200 dark:border-blue-800',
           circle: 'bg-blue-500',
           hover: 'hover:bg-blue-100'
         };
       case 'green':
         return {
           bg: 'bg-green-50 dark:bg-green-950',
-          border: 'border-green-200',
+          border: 'border-green-200 dark:border-green-800',
           circle: 'bg-green-500',
           hover: 'hover:bg-green-100'
         };
@@ -56,7 +56,7 @@ const ApprovalProcess: React.FC = () => {
       case 'purple':
         return {
           bg: 'bg-purple-50 dark:bg-purple-950',
-          border: 'border-purple-200',
+          border: 'border-purple-200 dark:border-purple-800',
           circle: 'bg-purple-500',
           hover: 'hover:bg-purple-100'
         };
@@ -95,7 +95,7 @@ const ApprovalProcess: React.FC = () => {
             })}
           </div>
           <div className="mt-6">
-            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <p className="text-sm text-foreground">
                 <span className="font-medium text-blue-800 dark:text-blue-200">หมายเหตุ:</span> หลังจากผ่านการอนุมัติแล้ว เอกสารจะได้รับเลขที่อ้างอิงอัตโนมัติ
               </p>

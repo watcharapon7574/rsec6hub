@@ -615,7 +615,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                 <div className="flex gap-1 ml-auto">
                   {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
+                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
                       onClick={() => {
                         const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                         navigate('/pdf-just-preview', {
@@ -632,7 +632,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -649,7 +649,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 
                       {/* Edit button - แสดงเสมอเนื่องจากเป็นเอกสารของตนเอง */}
                       <div className="relative">
-                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
+                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
                           onClick={() => {
                             // Navigate to edit memo page with memo id
                             navigate(`/create-memo?edit=${memo.id}`);
@@ -713,7 +713,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-blue-200"
+                className="h-7 w-7 p-0 border-blue-200 dark:border-blue-800"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
               >
@@ -725,7 +725,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-blue-200"
+                className="h-7 w-7 p-0 border-blue-200 dark:border-blue-800"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
               >

@@ -69,17 +69,17 @@ const AssignedTasksList = () => {
     const configs = {
       pending: {
         label: 'รอดำเนินการ',
-        color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        color: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:border-yellow-800',
         icon: Clock,
       },
       in_progress: {
         label: 'กำลังดำเนินการ',
-        color: 'bg-blue-100 text-blue-700 border-blue-200',
+        color: 'bg-blue-100 text-blue-700 border-blue-200 dark:border-blue-800',
         icon: PlayCircle,
       },
       completed: {
         label: 'เสร็จสิ้น',
-        color: 'bg-green-100 text-green-700 border-green-200',
+        color: 'bg-green-100 text-green-700 border-green-200 dark:border-green-800',
         icon: CheckCircle,
       },
       cancelled: {
@@ -259,7 +259,7 @@ const AssignedTasksList = () => {
     <div className="space-y-4">
       {/* Summary */}
       {pendingCount > 0 && (
-        <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
+        <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200 dark:border-orange-800">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -427,7 +427,7 @@ const AssignedTasksList = () => {
                     )}
 
                     {task.note && (
-                      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-3">
+                      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                         <div className="text-xs text-muted-foreground mb-1">
                           💬 หมายเหตุจากผู้มอบหมาย
                         </div>
@@ -436,7 +436,7 @@ const AssignedTasksList = () => {
                     )}
 
                     {task.completion_note && (
-                      <div className="bg-green-50 dark:bg-green-950 border border-green-200 rounded-lg p-3">
+                      <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
                         <div className="text-xs text-muted-foreground mb-1">
                           ✅ หมายเหตุการดำเนินการ
                         </div>
@@ -566,7 +566,7 @@ const AssignedTasksList = () => {
                   แนบไฟล์รายงาน (ถ้ามี)
                 </label>
                 {reportFile ? (
-                  <div className="flex items-center gap-2 p-3 border-2 border-green-200 bg-green-50 dark:bg-green-950 rounded-lg">
+                  <div className="flex items-center gap-2 p-3 border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 rounded-lg">
                     <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
                     <span className="text-sm text-green-700 flex-1 truncate">
                       {reportFile.name}

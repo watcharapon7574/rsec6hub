@@ -111,7 +111,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                     value={formData.doc_number}
                     onChange={(e) => handleInputChange('doc_number', e.target.value)}
                     placeholder="เลขที่เอกสาร"
-                    className="border-blue-200 focus:border-blue-500"
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                   />
                 </div>
 
@@ -122,7 +122,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal border-blue-200",
+                          "w-full justify-start text-left font-normal border-blue-200 dark:border-blue-800",
                           !formData.date && "text-muted-foreground"
                         )}
                       >
@@ -149,7 +149,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                   value={formData.subject}
                   onChange={(e) => handleInputChange('subject', e.target.value)}
                   placeholder="หัวข้อเรื่อง"
-                  className="border-blue-200 focus:border-blue-500"
+                  className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                 />
               </div>
 
@@ -161,7 +161,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                     value={formData.attachment1_title}
                     onChange={(e) => handleInputChange('attachment1_title', e.target.value)}
                     placeholder="ชื่อเอกสารแนบ"
-                    className="border-blue-200 focus:border-blue-500"
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                   />
                 </div>
 
@@ -173,7 +173,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                     value={formData.attachment1_count}
                     onChange={(e) => handleInputChange('attachment1_count', parseInt(e.target.value) || 0)}
                     placeholder="จำนวน"
-                    className="border-blue-200 focus:border-blue-500"
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -191,7 +191,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                   onChange={(e) => handleInputChange('introduction', e.target.value)}
                   placeholder="ระบุต้นเรื่อง..."
                   rows={3}
-                  className="border-blue-200 focus:border-blue-500"
+                  className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                 />
               </div>
 
@@ -203,7 +203,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                   onChange={(e) => handleInputChange('fact', e.target.value)}
                   placeholder="ระบุข้อเท็จจริง..."
                   rows={4}
-                  className="border-blue-200 focus:border-blue-500"
+                  className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                 />
               </div>
 
@@ -215,7 +215,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                   onChange={(e) => handleInputChange('proposal', e.target.value)}
                   placeholder="ระบุข้อเสนอและข้อพิจารณา..."
                   rows={3}
-                  className="border-blue-200 focus:border-blue-500"
+                  className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -227,14 +227,14 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>ชื่อผู้เขียน</Label>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                     <p className="text-muted-foreground font-medium">{formData.author_name}</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>ตำแหน่งผู้เขียน</Label>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                     <p className="text-muted-foreground font-medium">{formData.author_position}</p>
                   </div>
                 </div>
@@ -247,7 +247,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                   value={formData.subjeck1}
                   onChange={(e) => handleInputChange('subjeck1', e.target.value)}
                   placeholder="ระบุหัวข้อกลุ่ม/ฝ่าย"
-                  className="border-blue-200 focus:border-blue-500"
+                  className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -264,7 +264,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                   onChange={(e) => handleInputChange('signer2_comment', e.target.value)}
                   placeholder="ความเห็นของรองผู้อำนวยการ..."
                   rows={2}
-                  className="border-blue-200 focus:border-blue-500"
+                  className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                 />
               </div>
 
@@ -276,7 +276,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                   onChange={(e) => handleInputChange('director_comment', e.target.value)}
                   placeholder="ความเห็นของผู้อำนวยการ..."
                   rows={2}
-                  className="border-blue-200 focus:border-blue-500"
+                  className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
                 />
               </div>
             </div>

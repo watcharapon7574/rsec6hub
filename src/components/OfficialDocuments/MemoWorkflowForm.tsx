@@ -282,7 +282,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                 value={formData.doc_number}
                 onChange={(e) => handleInputChange('doc_number', e.target.value)}
                 placeholder="เลขที่เอกสาร"
-                className="border-blue-200 focus:border-blue-500"
+                className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
               />
             </div>
 
@@ -293,7 +293,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal border-blue-200",
+                      "w-full justify-start text-left font-normal border-blue-200 dark:border-blue-800",
                       !formData.date && "text-muted-foreground"
                     )}
                   >
@@ -320,7 +320,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
               value={formData.subject}
               onChange={(e) => handleInputChange('subject', e.target.value)}
               placeholder="หัวข้อเรื่อง"
-              className="border-blue-200 focus:border-blue-500"
+              className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
             />
           </div>
         </div>
@@ -337,7 +337,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
               onChange={(e) => handleInputChange('introduction', e.target.value)}
               placeholder="ระบุต้นเรื่อง..."
               rows={3}
-              className="border-blue-200 focus:border-blue-500"
+              className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
             />
           </div>
 
@@ -349,7 +349,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
               onChange={(e) => handleInputChange('facts', e.target.value)}
               placeholder="ระบุข้อเท็จจริง..."
               rows={4}
-              className="border-blue-200 focus:border-blue-500"
+              className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
             />
           </div>
 
@@ -361,7 +361,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
               onChange={(e) => handleInputChange('recommendation', e.target.value)}
               placeholder="ระบุข้อเสนอและข้อพิจารณา..."
               rows={3}
-              className="border-blue-200 focus:border-blue-500"
+              className="border-blue-200 dark:border-blue-800 focus:border-blue-500"
             />
           </div>
         </div>
@@ -393,10 +393,10 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                     handleApproverSelect('assistant', selectedSigner);
                   }
                 }}>
-                  <SelectTrigger className="border-blue-200 focus:border-blue-500">
+                  <SelectTrigger className="border-blue-200 dark:border-blue-800 focus:border-blue-500">
                     <SelectValue placeholder="เลือกผู้ช่วยผู้อำนวยการ" />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border border-blue-200">
+                  <SelectContent className="bg-card border border-blue-200 dark:border-blue-800">
                     {availableSigners.assistant.map((signer) => (
                       <SelectItem key={signer.id} value={signer.id}>
                         {signer.name}
@@ -405,11 +405,11 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                   </SelectContent>
                 </Select>
                 {approvers.assistant.selectedName && (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="space-y-2">
                       <p className="font-medium text-blue-800 dark:text-blue-200">{approvers.assistant.selectedName}</p>
                       <p className="text-sm text-blue-600">{approvers.assistant.selectedPosition}</p>
-                      <div className="grid grid-cols-1 gap-2 mt-2 pt-2 border-t border-blue-200">
+                      <div className="grid grid-cols-1 gap-2 mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
                         <div className="flex justify-between">
                           <span className="text-xs text-blue-500 font-medium">ตำแหน่งสายงาน:</span>
                           <span className="text-xs text-blue-700">{approvers.assistant.selectedJobPosition}</span>
@@ -450,10 +450,10 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                     handleApproverSelect('deputy', selectedSigner);
                   }
                 }}>
-                  <SelectTrigger className="border-blue-200 focus:border-blue-500">
+                  <SelectTrigger className="border-blue-200 dark:border-blue-800 focus:border-blue-500">
                     <SelectValue placeholder="เลือกรองผู้อำนวยการ" />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border border-blue-200">
+                  <SelectContent className="bg-card border border-blue-200 dark:border-blue-800">
                     {availableSigners.deputy.map((signer) => (
                       <SelectItem key={signer.id} value={signer.id}>
                         {signer.name}
@@ -472,11 +472,11 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
           </div>
 
           {/* ผู้อำนวยการ */}
-          <div className="space-y-2 p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-950">
+          <div className="space-y-2 p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-950">
             <Label className="font-medium text-red-800 dark:text-red-200">
               ผู้อำนวยการ (ลำดับสุดท้าย - บังคับ) *
             </Label>
-            <div className="p-3 bg-card rounded-lg border border-red-200">
+            <div className="p-3 bg-card rounded-lg border border-red-200 dark:border-red-800">
               <p className="font-medium text-red-800 dark:text-red-200">{approvers.director.selectedName}</p>
               <p className="text-sm text-red-600">{approvers.director.selectedPosition}</p>
             </div>

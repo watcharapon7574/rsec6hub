@@ -107,7 +107,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="เลือกฝ่าย หรือไม่ระบุ" />
                 </SelectTrigger>
-                <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
+                <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
                   <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
                     <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
@@ -137,7 +137,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="เลือกรองผู้อำนวยการ หรือไม่ระบุ" />
                 </SelectTrigger>
-                <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
+                <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
                   <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
                     <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
@@ -164,7 +164,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
           </div>
 
           {/* คำอธิบาย */}
-          <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200">
+          <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
             <p className="font-medium mb-1">หมายเหตุ:</p>
             <p>• เลือกฝ่ายที่รับผิดชอบเอกสารนี้ (เพื่อคัดกรองประเภทหนังสือรับ)</p>
             <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามรองผู้อำนวยการได้</p>

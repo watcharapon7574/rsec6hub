@@ -284,7 +284,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
             {getProfilesByRole('director').map((profile) => (
               <div
                 key={profile.id}
-                className="flex items-center gap-3 p-3 border border-red-200 bg-red-50 dark:bg-red-950 rounded-lg"
+                className="flex items-center gap-3 p-3 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 rounded-lg"
               >
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={profile.profile_picture_url} />

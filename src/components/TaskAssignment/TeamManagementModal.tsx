@@ -410,7 +410,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
           </div>
 
           {/* Reporter info */}
-          <div className="bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-lg p-3">
+          <div className="bg-pink-50 dark:bg-pink-950 border border-pink-200 dark:border-pink-800 rounded-lg p-3">
             <div className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-pink-500 mt-0.5" />
               <div className="text-sm text-pink-800 dark:text-pink-200">
@@ -427,7 +427,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 dark:bg-red-950 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700">
               {error}
             </div>
           )}

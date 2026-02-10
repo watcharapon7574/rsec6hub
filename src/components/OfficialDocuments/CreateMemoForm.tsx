@@ -181,7 +181,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                     onChange={(e) => handleInputChange('subject', e.target.value)}
                     placeholder="ระบุหัวข้อเรื่อง"
                     required
-                    className="border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
 
@@ -193,7 +193,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal border-blue-200 hover:border-blue-500",
+                          "w-full justify-start text-left font-normal border-blue-200 dark:border-blue-800 hover:border-blue-500",
                           !formData.date && "text-muted-foreground"
                         )}
                       >
@@ -201,7 +201,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                         {formData.date ? format(formData.date, "dd/MM/yyyy") : "เลือกวันที่"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-card border border-blue-200" align="start">
+                    <PopoverContent className="w-auto p-0 bg-card border border-blue-200 dark:border-blue-800" align="start">
                       <Calendar
                         mode="single"
                         selected={formData.date || undefined}
@@ -222,7 +222,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                     onChange={(e) => handleInputChange('introduction', e.target.value)}
                     placeholder="ระบุต้นเรื่อง..."
                     rows={3}
-                    className="border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
 
@@ -235,7 +235,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                     onChange={(e) => handleInputChange('facts', e.target.value)}
                     placeholder="ระบุข้อเท็จจริง..."
                     rows={4}
-                    className="border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
 
@@ -248,7 +248,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                     onChange={(e) => handleInputChange('recommendation', e.target.value)}
                     placeholder="ระบุข้อเสนอและข้อพิจารณา..."
                     rows={3}
-                    className="border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -265,10 +265,10 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 <div className="space-y-3">
                   <Label>ลำดับที่ 1: ผู้ช่วย ผอ. (ไม่บังคับ)</Label>
                   <Select onValueChange={(value) => handleSignerChange('assistant', value)}>
-                    <SelectTrigger className="border-blue-200 focus:border-blue-500">
+                    <SelectTrigger className="border-blue-200 dark:border-blue-800 focus:border-blue-500">
                       <SelectValue placeholder="เลือกผู้ช่วย ผอ." />
                     </SelectTrigger>
-                    <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
+                    <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
                       <SelectItem key="none-assistant" value="" className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                         ไม่เลือก
                       </SelectItem>
@@ -285,10 +285,10 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 <div className="space-y-3">
                   <Label>ลำดับที่ 2: รอง ผอ. (ไม่บังคับ)</Label>
                   <Select onValueChange={(value) => handleSignerChange('deputy', value)}>
-                    <SelectTrigger className="border-blue-200 focus:border-blue-500">
+                    <SelectTrigger className="border-blue-200 dark:border-blue-800 focus:border-blue-500">
                       <SelectValue placeholder="เลือกรอง ผอ." />
                     </SelectTrigger>
-                    <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
+                    <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
                       <SelectItem key="none-deputy" value="" className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                         ไม่เลือก
                       </SelectItem>
@@ -304,7 +304,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 {/* Director */}
                 <div className="space-y-3">
                   <Label>ลำดับที่ 3: ผอ. (บังคับ) *</Label>
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                     <p className="text-blue-800 dark:text-blue-200 font-medium">{availableSigners.director[0].name}</p>
                     <p className="text-sm text-muted-foreground">ผู้อำนวยการ ({availableSigners.director[0].employee_id})</p>
                   </div>
@@ -343,7 +343,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                   ตรวจสอบข้อมูลก่อนส่ง
                 </h3>
                 
-                <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div>
                     <p className="font-medium text-blue-900 dark:text-blue-100">เรื่อง:</p>
                     <p className="text-foreground">{formData.subject}</p>

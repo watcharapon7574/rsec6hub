@@ -328,7 +328,7 @@ const MemoApprovalPage = () => {
             )}
 
             {isWaitingForPrevious && (
-              <Card className="shadow-lg border-yellow-200">
+              <Card className="shadow-lg border-yellow-200 dark:border-yellow-800">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <Clock className="h-5 w-5 text-yellow-600" />
@@ -342,7 +342,7 @@ const MemoApprovalPage = () => {
             )}
 
             {workflow.status === 'completed' && (
-              <Card className="shadow-lg border-green-200">
+              <Card className="shadow-lg border-green-200 dark:border-green-800">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <CheckCircle className="h-5 w-5 text-green-600" />
@@ -359,7 +359,7 @@ const MemoApprovalPage = () => {
             )}
 
             {workflow.status === 'rejected' && (
-              <Card className="shadow-lg border-red-200">
+              <Card className="shadow-lg border-red-200 dark:border-red-800">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <XCircle className="h-5 w-5 text-red-600" />

@@ -669,7 +669,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {/* เวลา/สถานที่ของงาน */}
                   {(task.event_time || task.location) && (
-                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-pink-600 bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-md px-2 py-0.5">
+                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-pink-600 bg-pink-50 dark:bg-pink-950 border border-pink-200 dark:border-pink-800 rounded-md px-2 py-0.5">
                       {task.event_time && (
                         <span className="flex items-center gap-0.5">
                           <Clock className="h-3 w-3" />
@@ -687,7 +687,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {/* รายละเอียดงาน (task_description) - แสดง 40 ตัวอักษร */}
                   {task.task_description && (
-                    <div className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-md px-2.5 py-1">
+                    <div className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 dark:border-purple-800 rounded-md px-2.5 py-1">
                       <ClipboardList className="h-3 w-3 text-purple-600 flex-shrink-0" />
                       <span className="text-xs text-purple-700 truncate max-w-[150px] font-medium">
                         {truncateText(task.task_description, 40)}
@@ -863,7 +863,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                       cursor-pointer"
                   />
                   {reportFile && (
-                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 rounded-lg">
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
                       <p className="text-sm text-foreground flex items-center gap-2 font-medium">
                         <CheckCircle className="h-4 w-4" />
                         ไฟล์ที่เลือก: {reportFile.name}

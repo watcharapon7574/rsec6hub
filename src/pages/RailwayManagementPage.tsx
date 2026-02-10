@@ -347,7 +347,7 @@ const RailwayManagementPage = () => {
 
         <TabsContent value="control" className="space-y-6">
           {/* Project Selector */}
-          <Card className="border-2 border-blue-200 shadow-lg">
+          <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
               <CardTitle className="flex items-center text-xl gap-2">
                 <Train className="h-6 w-6 text-blue-600" />
@@ -535,7 +535,7 @@ const RailwayManagementPage = () => {
 
                       {/* Status Info */}
                       {!isDeploying && (
-                        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 rounded-lg">
+                        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
                           <p className="text-sm text-blue-800 dark:text-blue-200 flex items-start gap-2">
                             <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <span>

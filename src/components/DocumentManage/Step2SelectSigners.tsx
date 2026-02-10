@@ -47,7 +47,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
               <SelectTrigger>
                 <SelectValue placeholder="เลือกหัวหน้าฝ่าย หรือไม่ระบุ" />
               </SelectTrigger>
-              <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
+              <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
                 <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
                   <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                 </SelectItem>
@@ -78,7 +78,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
               <SelectTrigger>
                 <SelectValue placeholder="เลือกรองผู้อำนวยการ หรือไม่ระบุ" />
               </SelectTrigger>
-              <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
+              <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
                 <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
                   <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                 </SelectItem>
@@ -105,7 +105,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
         </div>
 
         {/* คำอธิบายการข้าม */}
-        <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200">
+        <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
           <p className="font-medium mb-1">หมายเหตุ:</p>
           <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามหัวหน้าฝ่ายหรือรองผู้อำนวยการได้</p>
           <p>• หมายเลขลำดับจะปรับให้ต่อเนื่องตามคนที่เลือกจริง</p>

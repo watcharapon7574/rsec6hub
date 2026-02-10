@@ -989,7 +989,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 border-blue-200 text-blue-600 ${memo.is_assigned ? '' : ''}`}
+                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 ${memo.is_assigned ? '' : ''}`}
                         onClick={() => {
                           const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                           navigate('/document-detail', {
@@ -1049,7 +1049,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 text-blue-600"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600"
                         onClick={() => {
                           const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                           navigate('/document-detail', {
@@ -1065,7 +1065,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       {/* Edit button - only show for memo author and not yet proposed (current_signer_order <= 1) */}
                       {profile?.user_id === memo.user_id && memo.current_signer_order <= 1 && (
                         <div className="relative">
-                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-purple-200 text-purple-600"
+                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-purple-200 dark:border-purple-800 text-purple-600"
                             onClick={() => {
                               // Navigate to edit page based on document type
                               const editRoute = getDocumentEditRoute(memo, memo.id);
@@ -1095,7 +1095,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             className={`h-7 px-2 flex items-center gap-1 ${
                               memo.current_signer_order > 1 
                                 ? 'border-border text-muted-foreground cursor-not-allowed' 
-                                : 'border-purple-200 text-purple-600'
+                                : 'border-purple-200 dark:border-purple-800 text-purple-600'
                             }`}
                             onClick={() => {
                               if (memo.current_signer_order <= 1) {
@@ -1139,7 +1139,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 text-red-600 hover:bg-red-50 dark:bg-red-950"
+                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:bg-red-950"
                       onClick={() => {
                         console.log('🗑️ Delete button clicked for memo:', memo.id);
                         handleDeleteClick(memo);
@@ -1201,7 +1201,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-purple-200"
+                className="h-7 w-7 p-0 border-purple-200 dark:border-purple-800"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
               >
@@ -1213,7 +1213,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-purple-200"
+                className="h-7 w-7 p-0 border-purple-200 dark:border-purple-800"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
               >
@@ -1238,7 +1238,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 rounded-lg p-4">
+            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
                 ⚠️ <strong>คำเตือน:</strong> การลบเอกสารนี้จะไม่สามารถกู้คืนได้
               </p>

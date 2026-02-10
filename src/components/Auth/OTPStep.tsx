@@ -59,7 +59,7 @@ const OTPStep: React.FC<OTPStepProps> = ({
       {/* Error message */}
       {error && (
         <div className="text-center">
-          <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950 border border-red-200 rounded-lg p-2">
+          <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-2">
             {error}
           </p>
         </div>

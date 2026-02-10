@@ -565,15 +565,15 @@ const PDFSignaturePage = () => {
 
           {/* Rejection Comment Alert */}
           {rejectionComment && (
-            <Card className="mb-6 border-red-200 bg-red-50 dark:bg-red-950">
-              <CardHeader className="bg-red-100 border-b border-red-200">
+            <Card className="mb-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
+              <CardHeader className="bg-red-100 border-b border-red-200 dark:border-red-800">
                 <CardTitle className="text-red-800 dark:text-red-200 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
                   ข้อความตีกลับจากผู้อนุมัติ
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4">
-                <Alert className="border-red-200 bg-card">
+                <Alert className="border-red-200 dark:border-red-800 bg-card">
                   <AlertCircle className="h-4 w-4 text-red-600" />
                   <AlertDescription className="text-red-800 dark:text-red-200">
                     <div className="space-y-2">
@@ -646,7 +646,7 @@ const PDFSignaturePage = () => {
                         </p>
                       </div>
                       {formData.pdfFile && (
-                        <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 rounded-lg">
+                        <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
                           <div className="flex items-center gap-2">
                             <FileText className="h-5 w-5 text-green-600" />
                             <span className="text-sm font-medium text-green-800 dark:text-green-200">
@@ -756,7 +756,7 @@ const PDFSignaturePage = () => {
                 </div>
 
                 {/* Notice Section */}
-                <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg">
+                <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div>

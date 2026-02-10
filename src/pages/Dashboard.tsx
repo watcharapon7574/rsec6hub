@@ -63,7 +63,7 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Welcome Section */}
         <Card className="mb-6">
-          <CardContent className="pt-6">
+          <CardContent className="bg-blue-50 border-b border-blue-100 rounded-t-lg pt-6">
             <div className="flex items-center gap-4">
               <img
                 src="/fastdocIcon.png"

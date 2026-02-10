@@ -122,11 +122,11 @@ const LeaveRequestsPage = () => {
         <div className="space-y-6">
           {/* Header */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="bg-orange-50 border-b border-orange-100 rounded-t-lg pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <CalendarDays className="h-5 w-5 text-orange-600" />
+                  <h1 className="text-xl font-bold text-orange-800 flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5 text-orange-700" />
                     คำขอลา
                   </h1>
                   <p className="text-sm text-muted-foreground">จัดการคำขอลาของคุณ</p>

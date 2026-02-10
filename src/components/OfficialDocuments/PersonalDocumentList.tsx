@@ -245,15 +245,15 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   return (
     <Card>
       <CardHeader
-        className={`py-3 px-4 cursor-pointer hover:bg-muted/50 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        className={`bg-blue-50 border-b border-blue-100 py-3 px-4 cursor-pointer hover:bg-blue-100/60 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <CardTitle className="flex items-center gap-2 text-base text-foreground">
-          <div className="p-1.5 rounded-lg bg-blue-100">
-            <User className="h-4 w-4 text-blue-600" />
+        <CardTitle className="flex items-center gap-2 text-base text-blue-800">
+          <div className="p-1.5 rounded-lg bg-blue-200/60">
+            <User className="h-4 w-4 text-blue-700" />
           </div>
           เอกสารส่วนตัวของฉัน
-          <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-700 font-semibold px-2 py-1 rounded-full">
+          <Badge variant="secondary" className="ml-auto bg-blue-200/60 text-blue-800 font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </Badge>
           <Button

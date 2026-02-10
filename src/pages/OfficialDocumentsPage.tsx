@@ -414,11 +414,11 @@ const OfficialDocumentsPage = () => {
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Page Header */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="bg-blue-50 border-b border-blue-100 rounded-t-lg pt-6">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
+                <h1 className="text-xl font-bold text-blue-800 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-700" />
                   เอกสารราชการ
                 </h1>
                 <p className="text-sm text-muted-foreground">จัดการเอกสารราชการและติดตามสถานะการดำเนินงาน</p>

@@ -240,15 +240,15 @@ const MemoList: React.FC<MemoListProps> = ({
   return (
     <Card>
       <CardHeader
-        className={`py-3 px-4 cursor-pointer hover:bg-muted/50 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        className={`bg-amber-50 border-b border-amber-100 py-3 px-4 cursor-pointer hover:bg-amber-100/60 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <CardTitle className="flex items-center gap-2 text-base text-foreground">
-          <div className="p-1.5 rounded-lg bg-amber-100">
-            <FileText className="h-4 w-4 text-amber-600" />
+        <CardTitle className="flex items-center gap-2 text-base text-amber-800">
+          <div className="p-1.5 rounded-lg bg-amber-200/60">
+            <FileText className="h-4 w-4 text-amber-700" />
           </div>
           รายการบันทึกข้อความ
-          <Badge variant="secondary" className="ml-auto bg-amber-100 text-amber-700 font-semibold px-2 py-1 rounded-full">
+          <Badge variant="secondary" className="ml-auto bg-amber-200/60 text-amber-800 font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </Badge>
           <Button

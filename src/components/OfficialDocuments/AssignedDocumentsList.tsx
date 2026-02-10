@@ -473,15 +473,15 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
   return (
     <Card>
       <CardHeader
-        className={`py-3 px-4 cursor-pointer hover:bg-muted/50 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        className={`bg-teal-50 border-b border-teal-100 py-3 px-4 cursor-pointer hover:bg-teal-100/60 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <CardTitle className="flex items-center gap-2 text-base text-foreground">
-          <div className="p-1.5 rounded-lg bg-teal-100">
-            <ClipboardList className="h-4 w-4 text-teal-600" />
+        <CardTitle className="flex items-center gap-2 text-base text-teal-800">
+          <div className="p-1.5 rounded-lg bg-teal-200/60">
+            <ClipboardList className="h-4 w-4 text-teal-700" />
           </div>
           งานที่ได้รับมอบหมาย
-          <Badge variant="secondary" className="ml-auto bg-teal-100 text-teal-700 font-semibold px-2 py-1 rounded-full">
+          <Badge variant="secondary" className="ml-auto bg-teal-200/60 text-teal-800 font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedTasks.length > 0 ? `${filteredAndSortedTasks.length} รายการ` : 'ไม่มีงาน'}
           </Badge>
           <Button

@@ -144,14 +144,14 @@ const NotificationsPage = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <Card className="mb-6">
-          <CardContent className="pt-6">
+          <CardContent className="bg-rose-50 border-b border-rose-100 rounded-t-lg pt-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-rose-100">
-                  <Bell className="h-5 w-5 text-rose-600" />
+                <div className="p-2 rounded-lg bg-rose-200/60">
+                  <Bell className="h-5 w-5 text-rose-700" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">การแจ้งเตือน</h1>
+                  <h1 className="text-xl font-bold text-rose-800">การแจ้งเตือน</h1>
                   <p className="text-sm text-muted-foreground">
                     {unreadCount > 0 ? `มีการแจ้งเตือนใหม่ ${unreadCount} รายการ` : 'ไม่มีการแจ้งเตือนใหม่'}
                   </p>

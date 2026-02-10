@@ -166,7 +166,7 @@ const Dashboard = () => {
                     <p className="text-xs text-muted-foreground">1 วันที่แล้ว</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-teal-50 border border-teal-100">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-teal-50 dark:bg-teal-950 border border-teal-100 dark:border-teal-900">
                   <div className="p-1.5 bg-teal-500 rounded-full">
                     <ClipboardList className="h-3.5 w-3.5 text-white" />
                   </div>

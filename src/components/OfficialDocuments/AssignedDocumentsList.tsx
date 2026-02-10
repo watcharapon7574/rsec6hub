@@ -587,7 +587,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                 setStatusFilter('all');
                 setTypeFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-teal-600 hover:bg-teal-50"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-teal-600 hover:bg-teal-50 dark:bg-teal-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -777,7 +777,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-2 mt-2 border-t border-teal-100">
+          <div className="flex items-center justify-between pt-2 mt-2 border-t border-teal-100 dark:border-teal-900">
             <div className="text-xs text-muted-foreground">
               แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedTasks.length)} จาก {filteredAndSortedTasks.length} รายการ
             </div>

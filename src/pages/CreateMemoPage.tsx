@@ -978,7 +978,7 @@ const CreateMemoPage = () => {
                     variant="outline"
                     onClick={correctGrammar}
                     disabled={loading || loadingMemo || grammarLoading || previewLoading}
-                    className="border-green-300 dark:border-green-700 text-green-700 hover:bg-green-50 dark:bg-green-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="border-green-300 dark:border-green-700 text-green-700 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {grammarLoading ? (
                       <>
@@ -1000,7 +1000,7 @@ const CreateMemoPage = () => {
                     variant="outline"
                     onClick={generatePreview}
                     disabled={loading || loadingMemo || grammarLoading || previewLoading}
-                    className="border-blue-300 dark:border-blue-700 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="border-blue-300 dark:border-blue-700 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {previewLoading ? (
                       <>

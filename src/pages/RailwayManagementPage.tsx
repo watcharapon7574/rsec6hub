@@ -525,7 +525,7 @@ const RailwayManagementPage = () => {
                           onClick={() => loadServiceStatus(service.id, envId)}
                           disabled={loading || isDeploying}
                           variant="outline"
-                          className="min-w-[140px] border-2 hover:bg-blue-50 dark:bg-blue-950 hover:border-blue-400 font-bold py-6 text-base transition-all"
+                          className="min-w-[140px] border-2 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 hover:border-blue-400 font-bold py-6 text-base transition-all"
                           size="lg"
                         >
                           <RefreshCw className={`mr-2 h-5 w-5 ${loading ? 'animate-spin' : ''}`} />

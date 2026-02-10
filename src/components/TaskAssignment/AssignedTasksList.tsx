@@ -594,7 +594,7 @@ const AssignedTasksList = () => {
                     />
                     <label
                       htmlFor="report-file"
-                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 dark:bg-green-950 transition-colors"
+                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950 transition-colors"
                     >
                       <Upload className="h-5 w-5 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">

@@ -359,7 +359,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                 setStatusFilter('all');
                 setTypeFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:bg-blue-950"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>

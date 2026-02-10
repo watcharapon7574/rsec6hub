@@ -26,7 +26,7 @@ const EmployeeTools: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
+            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
           >
             <FileText className="h-5 w-5 text-blue-600" />
             <span className="text-sm">เอกสารธุรการ</span>
@@ -34,7 +34,7 @@ const EmployeeTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
+            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
           >
             <Calendar className="h-5 w-5 text-blue-600" />
             <span className="text-sm">ขอลางาน</span>
@@ -42,7 +42,7 @@ const EmployeeTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
+            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
           >
             <Printer className="h-5 w-5 text-blue-600" />
             <span className="text-sm">พิมพ์เอกสาร</span>
@@ -50,7 +50,7 @@ const EmployeeTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
+            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
           >
             <Phone className="h-5 w-5 text-blue-600" />
             <span className="text-sm">สมุดโทรศัพท์</span>
@@ -58,7 +58,7 @@ const EmployeeTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
+            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
           >
             <Mail className="h-5 w-5 text-blue-600" />
             <span className="text-sm">จดหมายเวียน</span>
@@ -66,7 +66,7 @@ const EmployeeTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
+            className="flex flex-col h-20 gap-2 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 hover:border-blue-300 dark:border-blue-700"
           >
             <Calculator className="h-5 w-5 text-blue-600" />
             <span className="text-sm">คำนวณเงินเดือน</span>

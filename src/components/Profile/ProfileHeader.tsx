@@ -61,7 +61,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           onClick={onExportPDF}
           variant="outline"
           size="sm"
-          className="text-green-600 border-green-600 hover:bg-green-50 dark:bg-green-950"
+          className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950"
         >
           <Download className="h-4 w-4 mr-2" />
           ส่งออก PDF

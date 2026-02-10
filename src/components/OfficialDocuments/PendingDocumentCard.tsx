@@ -360,7 +360,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   setStatusFilter('all');
                   setTypeFilter('all');
                 }}
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:bg-amber-950"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
                 title="ล้างตัวกรอง"
               >
                 <span className="text-sm">×</span>
@@ -579,7 +579,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <Button
                           variant="outline"
                           size="sm"
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 hover:bg-amber-50 dark:bg-amber-950 mt-2 sm:mt-0 sm:ml-auto flex items-center"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950 mt-2 sm:mt-0 sm:ml-auto flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });

@@ -28,7 +28,7 @@ const typeStyles = {
     icon: User,
     bgColor: 'bg-blue-100',
     textColor: 'text-blue-600',
-    hoverBg: 'hover:bg-blue-50 dark:bg-blue-950',
+    hoverBg: 'hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950',
     borderColor: 'border-blue-100 dark:border-blue-900',
     badgeBg: 'bg-blue-100 text-blue-600',
     label: 'ชื่อ'
@@ -37,7 +37,7 @@ const typeStyles = {
     icon: Users,
     bgColor: 'bg-purple-100',
     textColor: 'text-purple-600',
-    hoverBg: 'hover:bg-purple-50 dark:bg-purple-950',
+    hoverBg: 'hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950',
     borderColor: 'border-purple-100 dark:border-purple-900',
     badgeBg: 'bg-purple-100 text-purple-600',
     label: 'กลุ่ม'
@@ -46,7 +46,7 @@ const typeStyles = {
     icon: Briefcase,
     bgColor: 'bg-orange-100',
     textColor: 'text-orange-600',
-    hoverBg: 'hover:bg-orange-50 dark:bg-orange-950',
+    hoverBg: 'hover:bg-orange-50 dark:hover:bg-orange-950 dark:bg-orange-950',
     borderColor: 'border-orange-100 dark:border-orange-900',
     badgeBg: 'bg-orange-100 text-orange-600',
     label: 'หน้าที่'

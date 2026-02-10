@@ -286,7 +286,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                       <button
                         key={user.user_id}
                         onClick={() => handleAddMember(user)}
-                        className="w-full px-4 py-2 text-left hover:bg-pink-50 dark:bg-pink-950 flex items-center gap-2"
+                        className="w-full px-4 py-2 text-left hover:bg-pink-50 dark:hover:bg-pink-950 dark:bg-pink-950 flex items-center gap-2"
                       >
                         <TeamMemberIcon size="sm" />
                         <div>

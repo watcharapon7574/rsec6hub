@@ -55,7 +55,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                   <SelectItem
                     key={`assistant-${profile.id}`}
                     value={profile.user_id || profile.id}
-                    className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
+                    className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
                     textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
                   >
                     <div className="flex flex-col">
@@ -86,7 +86,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                   <SelectItem
                     key={`deputy-${profile.id}`}
                     value={profile.user_id || profile.id}
-                    className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
+                    className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
                     textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
                   >
                     <div className="flex flex-col">

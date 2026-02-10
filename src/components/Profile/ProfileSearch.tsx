@@ -99,7 +99,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
           <Card 
             key={profile.id} 
             className={`cursor-pointer hover:shadow-lg transition-shadow ${
-              showSelectionMode ? 'hover:bg-blue-50 dark:bg-blue-950' : ''
+              showSelectionMode ? 'hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950' : ''
             }`}
             onClick={() => showSelectionMode && onSelectProfile?.(profile)}
           >

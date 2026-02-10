@@ -238,7 +238,7 @@ export default function AdminOtpManagementPage() {
               </div>
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-card text-blue-600 hover:bg-blue-50 dark:bg-blue-950"
+                className="bg-card text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 เพิ่ม Recipient

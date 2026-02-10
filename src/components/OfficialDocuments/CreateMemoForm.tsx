@@ -269,11 +269,11 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                       <SelectValue placeholder="เลือกผู้ช่วย ผอ." />
                     </SelectTrigger>
                     <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
-                      <SelectItem key="none-assistant" value="" className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
+                      <SelectItem key="none-assistant" value="" className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                         ไม่เลือก
                       </SelectItem>
                       {availableSigners.assistant.map((signer) => (
-                        <SelectItem key={`assistant-${signer.id}`} value={signer.id} className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
+                        <SelectItem key={`assistant-${signer.id}`} value={signer.id} className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                           {signer.name} ({signer.employee_id})
                         </SelectItem>
                       ))}
@@ -289,11 +289,11 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                       <SelectValue placeholder="เลือกรอง ผอ." />
                     </SelectTrigger>
                     <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
-                      <SelectItem key="none-deputy" value="" className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
+                      <SelectItem key="none-deputy" value="" className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                         ไม่เลือก
                       </SelectItem>
                       {availableSigners.deputy.map((signer) => (
-                        <SelectItem key={`deputy-${signer.id}`} value={signer.id} className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
+                        <SelectItem key={`deputy-${signer.id}`} value={signer.id} className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                           {signer.name} ({signer.employee_id})
                         </SelectItem>
                       ))}

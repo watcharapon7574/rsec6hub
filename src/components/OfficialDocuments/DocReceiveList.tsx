@@ -630,7 +630,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 setStatusFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:bg-green-950"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -1005,7 +1005,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 hover:bg-amber-50 dark:bg-amber-950"
+                          className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
                           onClick={() => navigate(`/edit-doc-receive/${memo.id}`)}
                         >
                           <Edit className="h-4 w-4" />
@@ -1023,7 +1023,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 px-2 flex items-center gap-1 border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:bg-red-950"
+                              className="h-7 px-2 flex items-center gap-1 border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
                               onClick={() => navigate(`/pdf-signature?edit=${memo.id}`)}
                               title="แก้ไขเอกสารที่ถูกตีกลับ"
                             >

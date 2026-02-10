@@ -36,7 +36,7 @@ const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
             variant="outline"
             size="sm"
             onClick={onClearAll}
-            className="h-7 px-3 text-xs border-orange-400 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:bg-orange-950 hover:border-orange-500"
+            className="h-7 px-3 text-xs border-orange-400 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950 dark:bg-orange-950 hover:border-orange-500"
           >
             <RotateCcw className="h-3.5 w-3.5 mr-1" />
             ล้าง

@@ -349,7 +349,7 @@ const MemoList: React.FC<MemoListProps> = ({
                 setStatusFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-foreground hover:text-amber-600 hover:bg-amber-50 dark:bg-amber-950"
+              className="h-8 w-8 p-0 text-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>

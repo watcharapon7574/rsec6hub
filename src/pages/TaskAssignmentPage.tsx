@@ -318,7 +318,7 @@ const TaskAssignmentPage = () => {
             variant="outline"
             onClick={handlePrevious}
             disabled={currentStep === 1 || loading}
-            className="px-6 border-pink-300 dark:border-pink-700 hover:bg-pink-50 dark:bg-pink-950 relative z-0"
+            className="px-6 border-pink-300 dark:border-pink-700 hover:bg-pink-50 dark:hover:bg-pink-950 dark:bg-pink-950 relative z-0"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             ย้อนกลับ

@@ -204,7 +204,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
                         onEventTimeChange(option.value);
                         setTimePopoverOpen(false);
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 dark:bg-pink-950 transition-colors ${
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 dark:hover:bg-pink-950 dark:bg-pink-950 transition-colors ${
                         eventTime === option.value
                           ? 'bg-pink-100 text-pink-700 font-medium'
                           : 'text-foreground'

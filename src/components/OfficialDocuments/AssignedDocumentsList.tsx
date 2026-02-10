@@ -750,7 +750,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                           size="sm"
                           variant="outline"
                           onClick={() => handleManageTeam(task)}
-                          className="h-7 text-xs px-2.5 border-orange-300 dark:border-orange-700 text-orange-600 hover:bg-orange-50 dark:bg-orange-950"
+                          className="h-7 text-xs px-2.5 border-orange-300 dark:border-orange-700 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950 dark:bg-orange-950"
                         >
                           <Settings2 className="h-3.5 w-3.5 mr-1" />
                           จัดการทีม

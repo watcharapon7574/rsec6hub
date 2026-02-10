@@ -252,7 +252,7 @@ const AdminProfileManagementPage: React.FC = () => {
                     setSearchTerm('');
                     setCurrentPage(1);
                   }}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:bg-blue-950"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
                 >
                   ล้าง
                 </Button>
@@ -319,7 +319,7 @@ const AdminProfileManagementPage: React.FC = () => {
                       size="sm"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:bg-blue-950 disabled:opacity-50"
+                      className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 disabled:opacity-50"
                     >
                       ก่อนหน้า
                     </Button>
@@ -346,7 +346,7 @@ const AdminProfileManagementPage: React.FC = () => {
                             className={`w-10 ${
                               currentPage === pageNumber
                                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                                : 'border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:bg-blue-950'
+                                : 'border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950'
                             }`}
                           >
                             {pageNumber}
@@ -360,7 +360,7 @@ const AdminProfileManagementPage: React.FC = () => {
                       size="sm"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:bg-blue-950 disabled:opacity-50"
+                      className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 disabled:opacity-50"
                     >
                       ถัดไป
                     </Button>

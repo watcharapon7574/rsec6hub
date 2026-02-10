@@ -723,7 +723,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 setTypeFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:bg-purple-950"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -1139,7 +1139,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:bg-red-950"
+                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
                       onClick={() => {
                         console.log('🗑️ Delete button clicked for memo:', memo.id);
                         handleDeleteClick(memo);

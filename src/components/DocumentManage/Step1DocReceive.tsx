@@ -115,7 +115,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                     <SelectItem
                       key={dept.userId}
                       value={dept.value}
-                      className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
+                      className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
                     >
                       {/* แสดงแค่ชื่อฝ่าย ไม่แสดงชื่อคน */}
                       <span className="font-medium">{dept.label}</span>
@@ -145,7 +145,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                     <SelectItem
                       key={`deputy-${profile.id}`}
                       value={profile.user_id || profile.id}
-                      className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
+                      className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
                       textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
                     >
                       <div className="flex flex-col">

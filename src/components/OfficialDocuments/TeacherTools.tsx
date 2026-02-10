@@ -26,7 +26,7 @@ const TeacherTools: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
+            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
           >
             <FileText className="h-5 w-5 text-green-600" />
             <span className="text-sm">แผนการสอน</span>
@@ -34,7 +34,7 @@ const TeacherTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
+            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
           >
             <Calendar className="h-5 w-5 text-green-600" />
             <span className="text-sm">ขอลาการสอน</span>
@@ -42,7 +42,7 @@ const TeacherTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
+            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
           >
             <Users className="h-5 w-5 text-green-600" />
             <span className="text-sm">รายชื่อนักเรียน</span>
@@ -50,7 +50,7 @@ const TeacherTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
+            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
           >
             <BookOpen className="h-5 w-5 text-green-600" />
             <span className="text-sm">หลักสูตร</span>
@@ -58,7 +58,7 @@ const TeacherTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
+            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
           >
             <Award className="h-5 w-5 text-green-600" />
             <span className="text-sm">การประเมิน</span>
@@ -66,7 +66,7 @@ const TeacherTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
+            className="flex flex-col h-20 gap-2 hover:bg-green-50 dark:hover:bg-green-950 dark:bg-green-950 hover:border-green-300 dark:border-green-700"
           >
             <ClipboardList className="h-5 w-5 text-green-600" />
             <span className="text-sm">รายงานผล</span>

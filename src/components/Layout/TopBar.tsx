@@ -145,9 +145,6 @@ const TopBar = () => {
           </div>
 
           <div className="flex items-center flex-shrink-0 ml-2 gap-3">
-            {/* Dark Mode Toggle */}
-            <DarkModeToggle />
-
             <div className="flex flex-col items-center">
             {/* ปุ่มออกจากระบบ (Logout Button) */}
             <button
@@ -167,6 +164,10 @@ const TopBar = () => {
             <div className="mt-1 text-xs text-muted-foreground text-center select-none leading-tight">
               <SessionTimer />
               </div>
+            {/* Dark Mode Toggle - ใต้ session timer */}
+            <div className="mt-0.5">
+              <DarkModeToggle />
+            </div>
             </div>
             </div>
           </div>

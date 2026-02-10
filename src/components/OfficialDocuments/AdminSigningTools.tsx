@@ -96,7 +96,7 @@ const AdminSigningTools: React.FC = () => {
       <CardContent className="p-6 space-y-6">
         {/* File Upload Section */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
             <Upload className="h-4 w-4" />
             อัพโหลดเอกสาร PDF
           </h3>
@@ -127,12 +127,12 @@ const AdminSigningTools: React.FC = () => {
         {/* Signature Positions */}
         {selectedFile && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               กำหนดตำแหน่งลายเซ็น
             </h3>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-muted-foreground mb-2">
                 คลิกบนตัวอย่าง PDF เพื่อกำหนดตำแหน่งลายเซ็น
               </p>
               <div className="space-y-2">
@@ -157,7 +157,7 @@ const AdminSigningTools: React.FC = () => {
 
         {/* Approval Path */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
             <Users className="h-4 w-4" />
             เส้นทางการอนุมัติ
           </h3>
@@ -169,7 +169,7 @@ const AdminSigningTools: React.FC = () => {
                 </div>
                 <div>
                   <div className="font-medium">{approver.name}</div>
-                  <div className="text-sm text-gray-500">{approver.job_position || approver.position}</div>
+                  <div className="text-sm text-muted-foreground">{approver.job_position || approver.position}</div>
                 </div>
               </div>
             ))}
@@ -190,7 +190,7 @@ const AdminSigningTools: React.FC = () => {
         {/* Active Workflows */}
         {workflows.length > 0 && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-800">เวิร์กโฟลว์ที่ดำเนินการ</h3>
+            <h3 className="font-semibold text-foreground">เวิร์กโฟลว์ที่ดำเนินการ</h3>
             {workflows.map((workflow) => (
               <div key={workflow.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -205,7 +205,7 @@ const AdminSigningTools: React.FC = () => {
                   </span>
                 </div>
                 
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   ขั้นตอนปัจจุบัน: {workflow.currentStep + 1}/{workflow.approvalPath.length}
                   {workflow.currentStep < workflow.approvalPath.length && (
                     <span className="ml-2 font-medium">

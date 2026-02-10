@@ -257,7 +257,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
       },
       cancelled: {
         label: 'ยกเลิก',
-        color: 'bg-muted text-foreground border-border',
+        color: 'bg-muted dark:bg-card text-foreground border-border',
         icon: XCircle,
       },
     };

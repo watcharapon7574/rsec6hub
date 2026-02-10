@@ -155,7 +155,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             ? 'text-muted-foreground cursor-not-allowed'
             : isPosition ? 'text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:text-orange-100' : 'text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:text-purple-100';
           const badgeBg = isDisabled
-            ? 'bg-muted text-muted-foreground'
+            ? 'bg-muted dark:bg-background/80 text-muted-foreground'
             : isPosition ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400' : 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 dark:text-purple-600';
           const Icon = isPosition ? Briefcase : Users;
 

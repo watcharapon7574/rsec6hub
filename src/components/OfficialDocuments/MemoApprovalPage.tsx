@@ -262,7 +262,7 @@ const MemoApprovalPage = () => {
                           ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
                           : step.status === 'pending' && step.step_order === workflow.current_step
                           ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                          : 'bg-muted text-muted-foreground'
+                          : 'bg-muted dark:bg-background/80 text-muted-foreground'
                       }`}>
                         {step.step_order}
                       </div>

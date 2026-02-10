@@ -733,7 +733,7 @@ const CreateMemoPage = () => {
 
           <form onSubmit={handleSubmit}>
             <Card className="shadow-lg border-0 bg-card">
-              <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
+              <CardHeader className="bg-muted/50 dark:bg-background/50 border-b border-border rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
                   <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                     <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
@@ -883,7 +883,7 @@ const CreateMemoPage = () => {
                         id="author_name"
                         value={formData.author_name}
                         disabled
-                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
+                        className="bg-muted dark:bg-card text-muted-foreground cursor-not-allowed border-border"
                       />
                     </div>
                     <div className="space-y-2">
@@ -894,7 +894,7 @@ const CreateMemoPage = () => {
                         id="author_position"
                         value={formData.author_position}
                         disabled
-                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
+                        className="bg-muted dark:bg-card text-muted-foreground cursor-not-allowed border-border"
                       />
                     </div>
                   </div>

@@ -236,7 +236,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
       case 'in_progress':
         return { label: 'กำลังทำ', className: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' };
       default:
-        return { label: 'รอ', className: 'bg-muted text-muted-foreground' };
+        return { label: 'รอ', className: 'bg-muted dark:bg-background/80 text-muted-foreground' };
     }
   };
 

@@ -158,7 +158,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
         variant="outline"
         size="sm"
         disabled
-        className="bg-muted border-border text-muted-foreground cursor-not-allowed"
+        className="bg-muted dark:bg-card border-border text-muted-foreground cursor-not-allowed"
       >
         <ClipboardList className="h-4 w-4 mr-1" />
         มอบหมายแล้ว

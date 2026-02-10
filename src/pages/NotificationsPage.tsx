@@ -86,7 +86,7 @@ const NotificationsPage = () => {
       case 'low':
         return 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
       default:
-        return 'bg-muted text-foreground border-border';
+        return 'bg-muted dark:bg-card text-foreground border-border';
     }
   };
 
@@ -254,7 +254,7 @@ const NotificationsPage = () => {
                           key={notification.id} 
                           className={`p-4 rounded-lg border transition-colors ${
                             notification.read 
-                              ? 'bg-muted/50 border-border' 
+                              ? 'bg-muted/50 dark:bg-background/50 border-border' 
                               : 'bg-card border-primary/20'
                           }`}
                         >

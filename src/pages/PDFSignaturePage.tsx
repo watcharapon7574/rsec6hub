@@ -607,7 +607,7 @@ const PDFSignaturePage = () => {
           ) : (
           <form onSubmit={handleSubmit}>
             <Card className="shadow-lg border-0 bg-card">
-              <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
+              <CardHeader className="bg-muted/50 dark:bg-background/50 border-b border-border rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
                   <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
                     <FileText className="w-4 h-4 text-green-600 dark:text-green-400 dark:text-green-600" />
@@ -738,7 +738,7 @@ const PDFSignaturePage = () => {
                         id="author_name"
                         value={profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : ''}
                         disabled
-                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
+                        className="bg-muted dark:bg-card text-muted-foreground cursor-not-allowed border-border"
                       />
                     </div>
                     <div className="space-y-2">
@@ -749,7 +749,7 @@ const PDFSignaturePage = () => {
                         id="author_position"
                         value={profile?.current_position || profile?.job_position || profile?.position || ''}
                         disabled
-                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
+                        className="bg-muted dark:bg-card text-muted-foreground cursor-not-allowed border-border"
                       />
                     </div>
                   </div>

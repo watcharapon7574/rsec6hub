@@ -494,7 +494,7 @@ const PDFReceiveManagePage: React.FC = () => {
                         ? 'bg-blue-500 text-white shadow-lg'
                         : currentStep > step
                         ? 'bg-green-500 text-white'
-                        : 'bg-muted text-muted-foreground'
+                        : 'bg-muted dark:bg-background/80 text-muted-foreground'
                       }
                     `}
                   >

@@ -148,7 +148,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                     "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium",
                     currentStep >= step
                       ? "bg-blue-500 text-white"
-                      : "bg-muted text-muted-foreground"
+                      : "bg-muted dark:bg-background/80 text-muted-foreground"
                   )}
                 >
                   {step}

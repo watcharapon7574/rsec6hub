@@ -20,13 +20,13 @@ const QueueRealtimePage: React.FC = () => {
   const getStatusColor = (status: QueueItemSnapshot['status']) => {
     switch (status) {
       case 'processing':
-        return 'bg-blue-100 text-blue-800 dark:text-blue-200 border-blue-300';
+        return 'bg-blue-100 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:text-yellow-200 border-yellow-300';
+        return 'bg-yellow-100 text-yellow-800 dark:text-yellow-200 border-yellow-300 dark:border-yellow-700';
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:text-green-200 border-green-300';
+        return 'bg-green-100 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700';
       case 'failed':
-        return 'bg-red-100 text-red-800 dark:text-red-200 border-red-300';
+        return 'bg-red-100 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700';
       default:
         return 'bg-muted text-foreground border-border';
     }
@@ -70,7 +70,7 @@ const QueueRealtimePage: React.FC = () => {
               <span className="text-sm text-muted-foreground">/ 8 max</span>
             </div>
             {isProcessing && (
-              <Badge variant="outline" className="mt-2 bg-blue-50 dark:bg-blue-950 text-blue-700 border-blue-300">
+              <Badge variant="outline" className="mt-2 bg-blue-50 dark:bg-blue-950 text-blue-700 border-blue-300 dark:border-blue-700">
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 Processing
               </Badge>
@@ -90,7 +90,7 @@ const QueueRealtimePage: React.FC = () => {
               <span className="text-sm text-muted-foreground">waiting</span>
             </div>
             {queueLength > 10 && (
-              <Badge variant="outline" className="mt-2 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 border-yellow-300">
+              <Badge variant="outline" className="mt-2 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 border-yellow-300 dark:border-yellow-700">
                 High Queue
               </Badge>
             )}

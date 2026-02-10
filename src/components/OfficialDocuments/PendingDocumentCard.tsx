@@ -579,7 +579,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <Button
                           variant="outline"
                           size="sm"
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 hover:bg-amber-50 dark:bg-amber-950 mt-2 sm:mt-0 sm:ml-auto flex items-center"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 hover:bg-amber-50 dark:bg-amber-950 mt-2 sm:mt-0 sm:ml-auto flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });
@@ -602,7 +602,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <Button
                           variant="outline"
                           size="sm"
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 mt-2 sm:mt-0 sm:ml-auto flex items-center"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 mt-2 sm:mt-0 sm:ml-auto flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });
@@ -618,7 +618,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <Button
                           variant="outline"
                           size="sm"
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 text-amber-600 flex items-center"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });
@@ -659,7 +659,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-amber-100 mt-4">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-amber-100 dark:border-amber-900 mt-4">
             <div className="text-sm text-muted-foreground">
               หน้า {currentPage} จาก {totalPages}
             </div>

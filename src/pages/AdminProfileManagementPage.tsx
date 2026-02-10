@@ -309,7 +309,7 @@ const AdminProfileManagementPage: React.FC = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between border-t border-blue-100 pt-4 bg-blue-50 dark:bg-blue-950/30 rounded-b-lg px-4 py-3">
+                <div className="mt-6 flex items-center justify-between border-t border-blue-100 dark:border-blue-900 pt-4 bg-blue-50 dark:bg-blue-950/30 rounded-b-lg px-4 py-3">
                   <div className="text-sm text-muted-foreground">
                     แสดง <span className="font-semibold text-blue-600">{startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)}</span> จาก <span className="font-semibold text-blue-600">{filteredProfiles.length}</span> รายการ
                   </div>

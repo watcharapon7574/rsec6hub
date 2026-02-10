@@ -161,7 +161,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300"
+                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:border-pink-700"
                 >
                   <Calendar className="mr-2 h-4 w-4 text-pink-500" />
                   {eventDate ? formatDisplayDate(eventDate) : (
@@ -184,7 +184,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300"
+                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:border-pink-700"
                 >
                   <Clock className="mr-2 h-4 w-4 text-pink-500" />
                   {eventTime ? (

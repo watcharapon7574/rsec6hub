@@ -402,7 +402,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
       {/* Preview Section */}
       <div className="space-y-6">
         <Card className="bg-card shadow-lg">
-          <CardHeader className="border-b border-blue-100">
+          <CardHeader className="border-b border-blue-100 dark:border-blue-900">
             <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
               <Eye className="h-5 w-5" />
               ตัวอย่างเอกสาร

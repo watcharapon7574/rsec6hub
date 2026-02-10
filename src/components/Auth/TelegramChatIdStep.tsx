@@ -112,7 +112,7 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
         type="button"
         onClick={openTelegramBot}
         variant="outline"
-        className="w-full flex items-center justify-center gap-2 text-blue-600 border-blue-300"
+        className="w-full flex items-center justify-center gap-2 text-blue-600 border-blue-300 dark:border-blue-700"
       >
         <MessageCircle className="w-4 h-4" />
         <span>เปิด @userinfobot</span>

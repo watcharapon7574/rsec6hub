@@ -293,7 +293,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
               
               <Button 
                 variant="outline" 
-                className="flex items-center gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:bg-blue-950"
+                className="flex items-center gap-2 border-blue-300 dark:border-blue-700 text-blue-700 hover:bg-blue-50 dark:bg-blue-950"
               >
                 <Download className="h-4 w-4" />
                 Export PPTX
@@ -306,7 +306,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
       {/* Preview Section */}
       <div className="space-y-6">
         <Card className="bg-card shadow-lg">
-          <CardHeader className="border-b border-blue-100">
+          <CardHeader className="border-b border-blue-100 dark:border-blue-900">
             <CardTitle className="flex items-center gap-2 text-muted-foreground">
               <Eye className="h-5 w-5" />
               ตัวอย่างเอกสาร

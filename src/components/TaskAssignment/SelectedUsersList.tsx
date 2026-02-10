@@ -48,7 +48,7 @@ const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
           <Badge
             key={user.user_id}
             variant="secondary"
-            className="pl-3 pr-2 py-1.5 text-sm bg-pink-100 text-pink-700 border border-pink-300"
+            className="pl-3 pr-2 py-1.5 text-sm bg-pink-100 text-pink-700 border border-pink-300 dark:border-pink-700"
           >
             <span className="mr-2">
               {user.first_name} {user.last_name}

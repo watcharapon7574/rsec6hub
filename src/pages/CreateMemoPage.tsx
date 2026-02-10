@@ -978,7 +978,7 @@ const CreateMemoPage = () => {
                     variant="outline"
                     onClick={correctGrammar}
                     disabled={loading || loadingMemo || grammarLoading || previewLoading}
-                    className="border-green-300 text-green-700 hover:bg-green-50 dark:bg-green-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="border-green-300 dark:border-green-700 text-green-700 hover:bg-green-50 dark:bg-green-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {grammarLoading ? (
                       <>
@@ -1000,7 +1000,7 @@ const CreateMemoPage = () => {
                     variant="outline"
                     onClick={generatePreview}
                     disabled={loading || loadingMemo || grammarLoading || previewLoading}
-                    className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="border-blue-300 dark:border-blue-700 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {previewLoading ? (
                       <>
@@ -1035,7 +1035,7 @@ const CreateMemoPage = () => {
           {/* PDF Preview Section */}
           {previewUrl && (
             <Card className="mt-8 shadow-lg border-0 bg-card">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-blue-100 rounded-t-lg">
+              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-blue-100 dark:border-blue-900 rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">

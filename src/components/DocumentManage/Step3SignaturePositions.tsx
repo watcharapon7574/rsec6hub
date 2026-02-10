@@ -139,7 +139,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
             value={documentSummary}
             onChange={(e) => onDocumentSummaryChange(e.target.value)}
             rows={3}
-            className="mt-2 border-blue-300 focus:border-blue-500 focus:ring-blue-500 text-foreground"
+            className="mt-2 border-blue-300 dark:border-blue-700 focus:border-blue-500 focus:ring-blue-500 text-foreground"
           />
           <p className="text-xs text-muted-foreground mt-1">
             ข้อมูลนี้จะแสดงให้ผู้ลงนามอ่านเพื่อทำความเข้าใจเนื้อหาเอกสารก่อนลงนาม

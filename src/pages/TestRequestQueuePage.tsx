@@ -418,7 +418,7 @@ const TestRequestQueuePage: React.FC = () => {
                 disabled={isRunning}
                 variant="outline"
                 size="sm"
-                className="border-orange-300"
+                className="border-orange-300 dark:border-orange-700"
               >
                 5 PDFs
               </Button>
@@ -427,7 +427,7 @@ const TestRequestQueuePage: React.FC = () => {
                 disabled={isRunning}
                 variant="outline"
                 size="sm"
-                className="border-orange-300"
+                className="border-orange-300 dark:border-orange-700"
               >
                 10 PDFs
               </Button>
@@ -436,7 +436,7 @@ const TestRequestQueuePage: React.FC = () => {
                 disabled={isRunning}
                 variant="outline"
                 size="sm"
-                className="border-orange-300"
+                className="border-orange-300 dark:border-orange-700"
               >
                 20 PDFs
               </Button>
@@ -445,7 +445,7 @@ const TestRequestQueuePage: React.FC = () => {
                 disabled={isRunning}
                 variant="outline"
                 size="sm"
-                className="border-orange-300"
+                className="border-orange-300 dark:border-orange-700"
               >
                 50 PDFs
               </Button>
@@ -472,7 +472,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   10 แจ้งเตือน
                 </Button>
@@ -481,7 +481,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   20 แจ้งเตือน
                 </Button>
@@ -490,7 +490,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   50 แจ้งเตือน
                 </Button>
@@ -499,7 +499,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   100 แจ้งเตือน
                 </Button>
@@ -515,7 +515,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   5 OTP
                 </Button>
@@ -524,7 +524,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   10 OTP
                 </Button>
@@ -533,7 +533,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   20 OTP
                 </Button>
@@ -542,7 +542,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   50 OTP
                 </Button>
@@ -558,7 +558,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   10 Logins
                 </Button>
@@ -567,7 +567,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   25 Logins
                 </Button>
@@ -576,7 +576,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300 font-bold"
+                  className="border-purple-300 dark:border-purple-700 font-bold"
                 >
                   50 Logins
                 </Button>
@@ -585,7 +585,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   100 Logins
                 </Button>
@@ -601,7 +601,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   3 แจ้งเตือน
                 </Button>
@@ -610,7 +610,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300 font-bold"
+                  className="border-purple-300 dark:border-purple-700 font-bold"
                 >
                   5 แจ้งเตือน
                 </Button>
@@ -619,7 +619,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   10 แจ้งเตือน
                 </Button>
@@ -628,7 +628,7 @@ const TestRequestQueuePage: React.FC = () => {
                   disabled={isRunning}
                   variant="outline"
                   size="sm"
-                  className="border-purple-300"
+                  className="border-purple-300 dark:border-purple-700"
                 >
                   20 แจ้งเตือน
                 </Button>
@@ -697,7 +697,7 @@ const TestRequestQueuePage: React.FC = () => {
             </div>
 
             {results.successRate === 100 && (
-              <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
+              <div className="mt-4 p-3 bg-green-100 border border-green-300 dark:border-green-700 rounded-lg">
                 <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
                   <CheckCircle className="h-4 w-4" />
                   <span className="font-medium">
@@ -708,7 +708,7 @@ const TestRequestQueuePage: React.FC = () => {
             )}
 
             {results.successRate < 100 && results.successRate >= 90 && (
-              <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+              <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 dark:border-yellow-700 rounded-lg">
                 <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
                   <Activity className="h-4 w-4" />
                   <span className="font-medium">
@@ -719,7 +719,7 @@ const TestRequestQueuePage: React.FC = () => {
             )}
 
             {results.successRate < 90 && (
-              <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+              <div className="mt-4 p-3 bg-red-100 border border-red-300 dark:border-red-700 rounded-lg">
                 <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
                   <XCircle className="h-4 w-4" />
                   <span className="font-medium">

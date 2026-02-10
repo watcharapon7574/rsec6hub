@@ -242,17 +242,17 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
     const configs = {
       pending: {
         label: 'รอดำเนินการ',
-        color: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+        color: 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:border-yellow-700',
         icon: Clock,
       },
       in_progress: {
         label: 'กำลังดำเนินการ',
-        color: 'bg-blue-100 text-blue-700 border-blue-300',
+        color: 'bg-blue-100 text-blue-700 border-blue-300 dark:border-blue-700',
         icon: PlayCircle,
       },
       completed: {
         label: 'เสร็จสิ้น',
-        color: 'bg-green-100 text-foreground border-green-300',
+        color: 'bg-green-100 text-foreground border-green-300 dark:border-green-700',
         icon: CheckCircle,
       },
       cancelled: {
@@ -697,7 +697,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {/* รายงานผล (completion_note) */}
                   {task.completion_note && (
-                    <div className="hidden lg:flex items-center gap-1.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-md px-2.5 py-1">
+                    <div className="hidden lg:flex items-center gap-1.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 dark:border-green-700 rounded-md px-2.5 py-1">
                       <span className="text-[10px] font-medium text-foreground">✓</span>
                       <span className="text-xs text-green-800 dark:text-green-200 truncate max-w-[100px] font-medium">
                         {truncateText(task.completion_note, 25)}
@@ -750,7 +750,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                           size="sm"
                           variant="outline"
                           onClick={() => handleManageTeam(task)}
-                          className="h-7 text-xs px-2.5 border-orange-300 text-orange-600 hover:bg-orange-50 dark:bg-orange-950"
+                          className="h-7 text-xs px-2.5 border-orange-300 dark:border-orange-700 text-orange-600 hover:bg-orange-50 dark:bg-orange-950"
                         >
                           <Settings2 className="h-3.5 w-3.5 mr-1" />
                           จัดการทีม

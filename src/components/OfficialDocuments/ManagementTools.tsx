@@ -26,7 +26,7 @@ const ManagementTools: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300"
+            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300 dark:border-purple-700"
           >
             <Users className="h-5 w-5 text-purple-600" />
             <span className="text-sm">จัดการผู้ใช้</span>
@@ -34,7 +34,7 @@ const ManagementTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300"
+            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300 dark:border-purple-700"
           >
             <BarChart className="h-5 w-5 text-purple-600" />
             <span className="text-sm">รายงานสถิติ</span>
@@ -42,7 +42,7 @@ const ManagementTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300"
+            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300 dark:border-purple-700"
           >
             <Shield className="h-5 w-5 text-purple-600" />
             <span className="text-sm">จัดการสิทธิ์</span>
@@ -50,7 +50,7 @@ const ManagementTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300"
+            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300 dark:border-purple-700"
           >
             <Archive className="h-5 w-5 text-purple-600" />
             <span className="text-sm">เอกสารเก่า</span>
@@ -58,7 +58,7 @@ const ManagementTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300"
+            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300 dark:border-purple-700"
           >
             <UserCheck className="h-5 w-5 text-purple-600" />
             <span className="text-sm">อนุมัติรายการ</span>
@@ -66,7 +66,7 @@ const ManagementTools: React.FC = () => {
           
           <Button 
             variant="outline" 
-            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300"
+            className="flex flex-col h-20 gap-2 hover:bg-purple-50 dark:bg-purple-950 hover:border-purple-300 dark:border-purple-700"
           >
             <Calendar className="h-5 w-5 text-purple-600" />
             <span className="text-sm">กำหนดการ</span>

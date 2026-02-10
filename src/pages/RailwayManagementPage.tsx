@@ -406,9 +406,9 @@ const RailwayManagementPage = () => {
                       isDeploying
                         ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/50'
                         : isRunning
-                        ? 'border-green-300 bg-green-50 dark:bg-green-950/30'
+                        ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30'
                         : isStopped
-                        ? 'border-red-300 bg-red-50 dark:bg-red-950/30'
+                        ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/30'
                         : 'border-border'
                     }`}
                   >
@@ -467,7 +467,7 @@ const RailwayManagementPage = () => {
                             )}
                           </Badge>
                           {isStaticSite && (
-                            <Badge variant="outline" className="text-sm px-3 py-1 bg-purple-50 dark:bg-purple-950 border-purple-300 flex items-center gap-1">
+                            <Badge variant="outline" className="text-sm px-3 py-1 bg-purple-50 dark:bg-purple-950 border-purple-300 dark:border-purple-700 flex items-center gap-1">
                               <Globe className="h-3 w-3" />
                               Static Site
                             </Badge>

@@ -544,7 +544,7 @@ const MemoList: React.FC<MemoListProps> = ({
                           : 'text-amber-400 dark:text-amber-600'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (
-                        <div className="w-2 h-2 rounded-full mt-1 bg-gray-700"></div>
+                        <div className="w-2 h-2 rounded-full mt-1 bg-gray-700 dark:bg-gray-300"></div>
                       )}
                     </div>
                   )}

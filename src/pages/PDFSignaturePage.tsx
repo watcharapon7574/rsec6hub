@@ -761,7 +761,7 @@ const PDFSignaturePage = () => {
                     <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div>
                       <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">ข้อมูลสำคัญ</h4>
-                      <ul className="text-sm text-blue-700 space-y-1">
+                      <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                         <li>• ไฟล์ PDF ที่อัพโหลดจะถูกนำเข้าสู่ระบบจัดการเอกสาร</li>
                         <li>• หลังจากอัพโหลดเสร็จ ธุรการจะสามารถจัดการและกำหนดเส้นทางการอนุมัติได้</li>
                         <li>• เอกสารจะอยู่ในสถานะ "ฉบับร่าง" จนกว่าจะถูกส่งเข้าสู่กระบวนการอนุมัติ</li>

@@ -69,17 +69,17 @@ const AssignedTasksList = () => {
     const configs = {
       pending: {
         label: 'รอดำเนินการ',
-        color: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:border-yellow-800',
+        color: 'bg-yellow-100 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
         icon: Clock,
       },
       in_progress: {
         label: 'กำลังดำเนินการ',
-        color: 'bg-blue-100 text-blue-700 border-blue-200 dark:border-blue-800',
+        color: 'bg-blue-100 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
         icon: PlayCircle,
       },
       completed: {
         label: 'เสร็จสิ้น',
-        color: 'bg-green-100 text-green-700 border-green-200 dark:border-green-800',
+        color: 'bg-green-100 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
         icon: CheckCircle,
       },
       cancelled: {
@@ -568,7 +568,7 @@ const AssignedTasksList = () => {
                 {reportFile ? (
                   <div className="flex items-center gap-2 p-3 border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 rounded-lg">
                     <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    <span className="text-sm text-green-700 flex-1 truncate">
+                    <span className="text-sm text-green-700 dark:text-green-300 flex-1 truncate">
                       {reportFile.name}
                     </span>
                     <span className="text-xs text-green-600">

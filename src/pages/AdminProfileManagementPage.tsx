@@ -252,7 +252,7 @@ const AdminProfileManagementPage: React.FC = () => {
                     setSearchTerm('');
                     setCurrentPage(1);
                   }}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
                 >
                   ล้าง
                 </Button>

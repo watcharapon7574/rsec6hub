@@ -378,7 +378,7 @@ const MemoList: React.FC<MemoListProps> = ({
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-amber-500'}`} />
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-amber-700'}`} title={memo.subject}>{memo.subject}</span>
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'}`} title={memo.subject}>{memo.subject}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
                   <span
@@ -405,13 +405,13 @@ const MemoList: React.FC<MemoListProps> = ({
                 <div className="flex items-center gap-1 sm:gap-2 ml-2 flex-1 overflow-x-auto">
                   {memo.status === 'draft' ? (
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-amber-700">รอตรวจทาน</span>
+                      <span className="font-semibold sm:text-[10px] text-[9px] text-amber-700 dark:text-amber-300">รอตรวจทาน</span>
                       <div className="w-2 h-2 rounded-full mt-1 bg-amber-500"></div>
                     </div>
                   ) : memo.status === 'rejected' ? (
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700">ตีกลับ</span>
+                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
                       <span className="sm:text-[10px] text-[9px] text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
@@ -441,12 +441,12 @@ const MemoList: React.FC<MemoListProps> = ({
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-amber-700' : 'text-amber-400')
+                            : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-amber-700 font-bold' : 'text-amber-400')
+                            : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
                         }`}>
                           {(() => {
                             // ดึงชื่อผู้ตรวจทาน/ผู้เสนอจาก clerk_id (first_name + last_name)
@@ -484,7 +484,7 @@ const MemoList: React.FC<MemoListProps> = ({
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-amber-700' : 'text-amber-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
                                 }`}>
                                   {(() => {
                                     if (signer.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') {
@@ -505,7 +505,7 @@ const MemoList: React.FC<MemoListProps> = ({
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);

@@ -329,7 +329,7 @@ const DocumentDetailPage: React.FC = () => {
                               <div className="flex items-start gap-2">
                                 <ClipboardList className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
                                 <div>
-                                  <label className="text-xs font-medium text-pink-700">รายละเอียดงาน</label>
+                                  <label className="text-xs font-medium text-pink-700 dark:text-pink-300">รายละเอียดงาน</label>
                                   <p className="text-sm text-foreground whitespace-pre-wrap">{task.task_description}</p>
                                 </div>
                               </div>
@@ -338,7 +338,7 @@ const DocumentDetailPage: React.FC = () => {
                               <div className="flex items-start gap-2">
                                 <Calendar className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
                                 <div>
-                                  <label className="text-xs font-medium text-pink-700">วันที่/เวลา</label>
+                                  <label className="text-xs font-medium text-pink-700 dark:text-pink-300">วันที่/เวลา</label>
                                   <p className="text-sm text-foreground">
                                     {task.event_date && new Date(task.event_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
                                     {task.event_date && task.event_time && ' '}
@@ -351,7 +351,7 @@ const DocumentDetailPage: React.FC = () => {
                               <div className="flex items-start gap-2">
                                 <MapPin className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
                                 <div>
-                                  <label className="text-xs font-medium text-pink-700">สถานที่</label>
+                                  <label className="text-xs font-medium text-pink-700 dark:text-pink-300">สถานที่</label>
                                   <p className="text-sm text-foreground">{task.location}</p>
                                 </div>
                               </div>

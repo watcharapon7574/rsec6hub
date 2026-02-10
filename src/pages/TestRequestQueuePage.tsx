@@ -465,7 +465,7 @@ const TestRequestQueuePage: React.FC = () => {
 
             {/* Telegram Notify Tests */}
             <div className="mb-3">
-              <div className="text-xs font-medium text-purple-700 mb-2">📢 Telegram Notifications</div>
+              <div className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-2">📢 Telegram Notifications</div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <Button
                   onClick={() => runEdgeFunctionNotifyTest(10)}
@@ -508,7 +508,7 @@ const TestRequestQueuePage: React.FC = () => {
 
             {/* OTP Request Tests */}
             <div className="mb-3">
-              <div className="text-xs font-medium text-purple-700 mb-2">🔐 OTP Requests (Rate Limited)</div>
+              <div className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-2">🔐 OTP Requests (Rate Limited)</div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <Button
                   onClick={() => runEdgeFunctionOTPTest(5)}
@@ -551,7 +551,7 @@ const TestRequestQueuePage: React.FC = () => {
 
             {/* Concurrent Login Tests */}
             <div className="mb-3">
-              <div className="text-xs font-medium text-purple-700 mb-2">👥 Concurrent Login (Auth & DB Access)</div>
+              <div className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-2">👥 Concurrent Login (Auth & DB Access)</div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <Button
                   onClick={() => runEdgeFunctionLoginTest(10)}
@@ -594,7 +594,7 @@ const TestRequestQueuePage: React.FC = () => {
 
             {/* Task Completed Notification Tests */}
             <div>
-              <div className="text-xs font-medium text-purple-700 mb-2">📬 Task Completed (FastDoc_report_bot)</div>
+              <div className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-2">📬 Task Completed (FastDoc_report_bot)</div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <Button
                   onClick={() => runTaskCompletedNotificationTest(3)}

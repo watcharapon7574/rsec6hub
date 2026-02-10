@@ -412,15 +412,15 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                       <div className="grid grid-cols-1 gap-2 mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
                         <div className="flex justify-between">
                           <span className="text-xs text-blue-500 font-medium">ตำแหน่งสายงาน:</span>
-                          <span className="text-xs text-blue-700">{approvers.assistant.selectedJobPosition}</span>
+                          <span className="text-xs text-blue-700 dark:text-blue-300">{approvers.assistant.selectedJobPosition}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-xs text-blue-500 font-medium">วิทยฐานะ:</span>
-                          <span className="text-xs text-blue-700">{approvers.assistant.selectedAcademicRank}</span>
+                          <span className="text-xs text-blue-700 dark:text-blue-300">{approvers.assistant.selectedAcademicRank}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-xs text-blue-500 font-medium">โครงสร้างงาน:</span>
-                          <span className="text-xs text-blue-700">{approvers.assistant.selectedOrgStructureRole}</span>
+                          <span className="text-xs text-blue-700 dark:text-blue-300">{approvers.assistant.selectedOrgStructureRole}</span>
                         </div>
                       </div>
                     </div>

@@ -257,11 +257,11 @@ const MemoApprovalPage = () => {
                     <div key={step.id} className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                         step.status === 'approved' 
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-green-100 text-green-700 dark:text-green-300'
                           : step.status === 'rejected'
-                          ? 'bg-red-100 text-red-700'
+                          ? 'bg-red-100 text-red-700 dark:text-red-300'
                           : step.status === 'pending' && step.step_order === workflow.current_step
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-blue-100 text-blue-700 dark:text-blue-300'
                           : 'bg-muted text-muted-foreground'
                       }`}>
                         {step.step_order}
@@ -334,7 +334,7 @@ const MemoApprovalPage = () => {
                     <Clock className="h-5 w-5 text-yellow-600" />
                     <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">รอผู้ลงนามลำดับก่อนหน้า</h3>
                   </div>
-                  <p className="text-yellow-700">
+                  <p className="text-yellow-700 dark:text-yellow-300">
                     กรุณารอให้ผู้ลงนามลำดับที่ {workflow.current_step - 1} ลงนามก่อน
                   </p>
                 </CardContent>
@@ -348,7 +348,7 @@ const MemoApprovalPage = () => {
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <h3 className="font-semibold text-green-800 dark:text-green-200">เอกสารเสร็จสิ้น</h3>
                   </div>
-                  <p className="text-green-700 mb-4">
+                  <p className="text-green-700 dark:text-green-300 mb-4">
                     เอกสารได้รับการลงนามครบถ้วนแล้ว
                   </p>
                   <Button variant="outline" className="w-full">
@@ -365,7 +365,7 @@ const MemoApprovalPage = () => {
                     <XCircle className="h-5 w-5 text-red-600" />
                     <h3 className="font-semibold text-red-800 dark:text-red-200">เอกสารถูกตีกลับ</h3>
                   </div>
-                  <p className="text-red-700">
+                  <p className="text-red-700 dark:text-red-300">
                     เอกสารถูกตีกลับและส่งกลับให้ผู้สร้างแก้ไข
                   </p>
                 </CardContent>

@@ -293,7 +293,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
               
               <Button 
                 variant="outline" 
-                className="flex items-center gap-2 border-blue-300 dark:border-blue-700 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
+                className="flex items-center gap-2 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950"
               >
                 <Download className="h-4 w-4" />
                 Export PPTX

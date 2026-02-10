@@ -390,7 +390,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-blue-500'}`} />
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-blue-700'}`} title={memo.subject}>{memo.subject}</span>
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-blue-700 dark:text-blue-300'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {
@@ -440,13 +440,13 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                   {/* ถ้าเป็นฉบับร่าง แสดงแค่ step รอตรวจทาน step เดียว */}
                   {memo.status === 'draft' ? (
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-blue-700">รอตรวจทาน</span>
+                      <span className="font-semibold sm:text-[10px] text-[9px] text-blue-700 dark:text-blue-300">รอตรวจทาน</span>
                       <div className="w-2 h-2 rounded-full mt-1 bg-blue-500"></div>
                     </div>
                   ) : memo.status === 'rejected' ? (
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700">ตีกลับ</span>
+                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
                       <span className="sm:text-[10px] text-[9px] text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
@@ -475,12 +475,12 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5 
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-blue-700' : 'text-blue-400')
+                            : (memo.current_signer_order === 1 ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-blue-700 font-bold' : 'text-blue-400')
+                            : (memo.current_signer_order === 1 ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400')
                         }`}>
                           {(() => {
                             // ดึงชื่อผู้เสนอจาก clerk_id (first_name + last_name)
@@ -518,7 +518,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-blue-700' : 'text-blue-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400')
                                 }`}>
                                   {(() => {
                                     // แสดงตำแหน่งตาม role (ไม่รวม author)
@@ -533,7 +533,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-blue-700 font-bold' : 'text-blue-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);
@@ -565,7 +565,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-blue-700' : 'text-blue-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400')
                                   }`}>{
                                     // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
                                     (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
@@ -574,7 +574,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 font-bold' : 'text-blue-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400')
                                   }`}>{pos.signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 

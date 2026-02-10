@@ -99,7 +99,7 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
           <HelpCircle className="w-4 h-4 text-blue-600" />
           วิธีหา Chat ID (กดเพื่อดู)
         </summary>
-        <div className="px-3 pb-3 text-sm text-blue-700">
+        <div className="px-3 pb-3 text-sm text-blue-700 dark:text-blue-300">
           <ol className="space-y-1 ml-4 list-decimal">
             <li>เปิด Telegram ค้นหา <code className="bg-blue-100 px-1 rounded">@userinfobot</code></li>
             <li>กดปุ่ม Start</li>

@@ -394,7 +394,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-card border border-border rounded-lg px-3 py-2 shadow-sm hover:bg-muted/50 transition group"
                 >
                   <FileText className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                  <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-[160px] group-hover:text-amber-700 sm:text-base text-sm" title={memo.subject}>{memo.subject}</span>
+                  <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-[160px] group-hover:text-amber-700 dark:text-amber-300 sm:text-base text-sm" title={memo.subject}>{memo.subject}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.date || memo.created_at).toLocaleDateString('th-TH')}</span>
                   <span
@@ -417,7 +417,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                     {/* ถ้าเป็นฉบับร่าง แสดงแค่ step รอตรวจทาน step เดียว */}
                     {memo.status === 'draft' ? (
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                        <span className="font-semibold sm:text-[10px] text-[9px] text-amber-700">รอตรวจทาน</span>
+                        <span className="font-semibold sm:text-[10px] text-[9px] text-amber-700 dark:text-amber-300">รอตรวจทาน</span>
                         <div className="w-2 h-2 rounded-full mt-1 bg-amber-500"></div>
                       </div>
                     ) : (
@@ -427,12 +427,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5
                               ? 'text-muted-foreground'
-                              : (memo.current_signer_order === 1 ? 'text-amber-700' : 'text-amber-400')
+                              : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
                           }`}>{memo.__source_table === 'doc_receive' ? 'ตรวจทาน' : 'ตรวจทาน/เสนอ'}</span>
                           <span className={`sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5
                               ? 'text-muted-foreground'
-                              : (memo.current_signer_order === 1 ? 'text-amber-700 font-bold' : 'text-amber-400')
+                              : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
                           }`}>
                             {(() => {
                               // ดึงชื่อผู้ตรวจทาน/ผู้เสนอจาก clerk_id (first_name + last_name)
@@ -469,12 +469,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700' : 'text-amber-400')
+                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
                                   }`}>ผู้เสนอ</span>
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
+                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
                                   }`}>
                                     {(() => {
                                       // Always use user_id to fetch fresh data from profiles
@@ -509,7 +509,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === signer.order ? 'text-amber-700' : 'text-amber-400')
+                                      : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
                                   }`}>
                                     {(() => {
                                       // แสดงตำแหน่งตาม role
@@ -528,7 +528,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === signer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
+                                      : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
                                   }`}>{(() => {
                                     // Always use user_id to fetch fresh data from profiles
                                     const userProfile = profiles.find(p => p.user_id === signer.user_id);

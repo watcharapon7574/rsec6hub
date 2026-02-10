@@ -204,7 +204,7 @@ const OTPInput: React.FC<OTPInputProps> = ({
           type="button"
           onClick={clearAllInputs}
           disabled={disabled || isSubmitting}
-          className="text-sm text-red-500 hover:text-red-700 transition-colors duration-200 disabled:opacity-50"
+          className="text-sm text-red-500 hover:text-red-700 dark:text-red-300 transition-colors duration-200 disabled:opacity-50"
         >
           ลบทั้งหมด
         </button>

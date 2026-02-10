@@ -234,7 +234,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
       case 'completed':
         return { label: 'เสร็จ', className: 'bg-green-100 text-foreground' };
       case 'in_progress':
-        return { label: 'กำลังทำ', className: 'bg-blue-100 text-blue-700' };
+        return { label: 'กำลังทำ', className: 'bg-blue-100 text-blue-700 dark:text-blue-300' };
       default:
         return { label: 'รอ', className: 'bg-muted text-muted-foreground' };
     }
@@ -254,7 +254,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
           <div className="text-sm text-muted-foreground">
             {isPositionBased ? (
               <span>
-                คุณเป็นหัวหน้างาน: <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 px-2 py-0.5 text-xs font-medium">{positionName}</span>
+                คุณเป็นหัวหน้างาน: <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 dark:text-orange-300 px-2 py-0.5 text-xs font-medium">{positionName}</span>
               </span>
             ) : (
               'คุณเป็นผู้อาวุโสในทีมนี้'
@@ -340,7 +340,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                         <div className="text-sm font-medium flex items-center gap-2">
                           {member.first_name} {member.last_name}
                           {isLeader && (
-                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 text-xs">
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:text-amber-300 text-xs">
                               หัวหน้า
                             </Badge>
                           )}
@@ -427,7 +427,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700">
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">
               {error}
             </div>
           )}

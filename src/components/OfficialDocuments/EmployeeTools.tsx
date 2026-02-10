@@ -75,7 +75,7 @@ const EmployeeTools: React.FC = () => {
         
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
           <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">สิทธิ์เจ้าหน้าที่</h4>
-          <ul className="text-sm text-blue-700 space-y-1">
+          <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
             <li>• จัดการเอกสารธุรการทั่วไป</li>
             <li>• ขอลางานและจัดการวันหยุด</li>
             <li>• เข้าถึงข้อมูลติดต่อภายใน</li>

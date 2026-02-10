@@ -79,7 +79,7 @@ const OTPStep: React.FC<OTPStepProps> = ({
         <Button
           onClick={handleResendOTP}
           variant="ghost"
-          className="w-full text-blue-600 hover:text-blue-700"
+          className="w-full text-blue-600 hover:text-blue-700 dark:text-blue-300"
           disabled={loading}
         >
           ส่งรหัส OTP ใหม่

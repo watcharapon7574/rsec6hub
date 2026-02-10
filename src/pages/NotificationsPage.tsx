@@ -80,11 +80,11 @@ const NotificationsPage = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-700 border-red-200 dark:border-red-800';
+        return 'bg-red-100 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:border-yellow-800';
+        return 'bg-yellow-100 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
       case 'low':
-        return 'bg-green-100 text-green-700 border-green-200 dark:border-green-800';
+        return 'bg-green-100 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
       default:
         return 'bg-muted text-foreground border-border';
     }

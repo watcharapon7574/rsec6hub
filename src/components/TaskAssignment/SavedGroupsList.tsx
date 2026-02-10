@@ -117,7 +117,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setIsDeleteMode(true)}
-              className="h-7 w-7 p-0 border-red-200 dark:border-red-800 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
+              className="h-7 w-7 p-0 border-red-200 dark:border-red-800 text-red-500 hover:text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
               title="ลบกลุ่ม/หน้าที่"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -153,7 +153,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             : isPosition ? 'border-orange-200 dark:border-orange-800' : 'border-purple-200 dark:border-purple-800';
           const textColor = isDisabled
             ? 'text-muted-foreground cursor-not-allowed'
-            : isPosition ? 'text-orange-700 hover:text-orange-900 dark:text-orange-100' : 'text-purple-700 hover:text-purple-900 dark:text-purple-100';
+            : isPosition ? 'text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:text-orange-100' : 'text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:text-purple-100';
           const badgeBg = isDisabled
             ? 'bg-muted text-muted-foreground'
             : isPosition ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600';

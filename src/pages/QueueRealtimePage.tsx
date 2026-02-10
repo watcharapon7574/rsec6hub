@@ -70,7 +70,7 @@ const QueueRealtimePage: React.FC = () => {
               <span className="text-sm text-muted-foreground">/ 8 max</span>
             </div>
             {isProcessing && (
-              <Badge variant="outline" className="mt-2 bg-blue-50 dark:bg-blue-950 text-blue-700 border-blue-300 dark:border-blue-700">
+              <Badge variant="outline" className="mt-2 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 Processing
               </Badge>
@@ -90,7 +90,7 @@ const QueueRealtimePage: React.FC = () => {
               <span className="text-sm text-muted-foreground">waiting</span>
             </div>
             {queueLength > 10 && (
-              <Badge variant="outline" className="mt-2 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 border-yellow-300 dark:border-yellow-700">
+              <Badge variant="outline" className="mt-2 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700">
                 High Queue
               </Badge>
             )}
@@ -146,7 +146,7 @@ const QueueRealtimePage: React.FC = () => {
               {/* Processing Requests */}
               {activeCount > 0 && (
                 <div>
-                  <div className="text-sm font-medium text-blue-700 mb-2 flex items-center gap-2">
+                  <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Processing ({activeCount})
                   </div>
@@ -177,7 +177,7 @@ const QueueRealtimePage: React.FC = () => {
               {/* Pending Requests */}
               {queueLength > 0 && (
                 <div>
-                  <div className="text-sm font-medium text-yellow-700 mb-2 flex items-center gap-2">
+                  <div className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-2 flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     Waiting ({queueLength})
                   </div>

@@ -757,7 +757,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   ) : (
                     <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-purple-500'}`} />
                   )}
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-purple-700'}`} title={memo.subject}>{memo.subject}</span>
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-purple-700 dark:text-purple-300'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {
@@ -805,13 +805,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* ถ้าเป็นฉบับร่าง แสดงแค่ step รอตรวจทาน step เดียว */}
                   {memo.status === 'draft' ? (
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-purple-700">รอตรวจทาน</span>
+                      <span className="font-semibold sm:text-[10px] text-[9px] text-purple-700 dark:text-purple-300">รอตรวจทาน</span>
                       <div className="w-2 h-2 rounded-full mt-1 bg-purple-500"></div>
                     </div>
                   ) : memo.status === 'rejected' ? (
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700">ตีกลับ</span>
+                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
                       <span className="sm:text-[10px] text-[9px] text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
@@ -840,12 +840,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-purple-700' : 'text-purple-400')
+                            : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-purple-700 font-bold' : 'text-purple-400')
+                            : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400')
                         }`}>
                           {(() => {
                             // ดึงชื่อผู้ตรวจทาน/ผู้เสนอจาก clerk_id (first_name + last_name)
@@ -883,7 +883,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-purple-700' : 'text-purple-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400')
                                 }`}>
                                   {(() => {
                                     // ตรวจสอบ user_id: ถ้าเป็น 28ef1822-628a-4dfd-b7ea-2defa97d755b ให้แสดงเป็น ผู้อำนวยการ เสมอ
@@ -907,7 +907,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);
@@ -939,7 +939,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700' : 'text-purple-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400')
                                   }`}>{
                                     // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
                                     (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
@@ -948,7 +948,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 font-bold' : 'text-purple-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400')
                                   }`}>{pos.signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
@@ -1015,7 +1015,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                                   navigate(`/task-assignment?documentId=${memo.id}&documentType=${documentType}`);
                                 }}
-                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 hover:bg-green-100 dark:hover:bg-green-900"
+                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">มอบหมายงาน</span>
@@ -1030,7 +1030,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleViewAssignees(memo)}
-                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900"
+                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">ดูรายชื่อ</span>
@@ -1351,10 +1351,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             <Badge
                               className={`text-[10px] px-1.5 py-0.5 ${
                                 assignee.status === 'completed'
-                                  ? 'bg-green-100 text-green-700 border-green-300 dark:border-green-700'
+                                  ? 'bg-green-100 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700'
                                   : assignee.status === 'in_progress'
-                                  ? 'bg-blue-100 text-blue-700 border-blue-300 dark:border-blue-700'
-                                  : 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:border-yellow-700'
+                                  ? 'bg-blue-100 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
+                                  : 'bg-yellow-100 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
                               }`}
                             >
                               {assignee.status === 'completed'

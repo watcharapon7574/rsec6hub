@@ -61,7 +61,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('created_at');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [assignmentFilter, setAssignmentFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // State สำหรับ pagination
@@ -258,7 +260,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
       const idColumn = documentType === 'doc_receive' ? 'doc_receive_id' : 'memo_id';
 
       // Step 1: Fetch task assignments
-      const { data: assignments, error: assignmentError } = await supabase
+      const { data: assignments, error: assignmentError } = await (supabase as any)
         .from('task_assignments')
         .select(`
           id,
@@ -290,11 +292,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
       }
 
       // Step 2: Get unique user IDs and fetch their profiles
-      const userIds = [...new Set(assignments.map(a => a.assigned_to))];
+      const userIds = Array.from(new Set(assignments.map((a: any) => String(a.assigned_to)))).filter(Boolean) as string[];
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name')
-        .in('user_id', userIds);
+        .in('user_id', userIds as string[]);
 
       if (profileError) {
         console.error('Error fetching profiles:', profileError);
@@ -511,7 +513,27 @@ const DocumentList: React.FC<DocumentListProps> = ({
         }
       }
 
-      return searchMatch && statusMatch;
+      // กรองตามประเภทเอกสาร
+      let typeMatch = true;
+      if (typeFilter !== 'all') {
+        if (typeFilter === 'memo') {
+          typeMatch = memo.__source_table !== 'doc_receive';
+        } else if (typeFilter === 'doc_receive') {
+          typeMatch = memo.__source_table === 'doc_receive';
+        }
+      }
+
+      // กรองตามการมอบหมาย (เฉพาะเอกสารที่เสร็จสิ้นแล้ว)
+      let assignmentMatch = true;
+      if (assignmentFilter !== 'all') {
+        if (assignmentFilter === 'assigned') {
+          assignmentMatch = memo.is_assigned === true;
+        } else if (assignmentFilter === 'not_assigned') {
+          assignmentMatch = memo.current_signer_order === 5 && !memo.is_assigned;
+        }
+      }
+
+      return searchMatch && statusMatch && typeMatch && assignmentMatch;
     });
 
     // จัดเรียงข้อมูล
@@ -533,9 +555,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
           bValue = b.doc_number || '';
           break;
         case 'created_at':
-        default:
           aValue = new Date(a.created_at || 0).getTime();
           bValue = new Date(b.created_at || 0).getTime();
+          break;
+        case 'updated_at':
+        default:
+          aValue = new Date(a.updated_at || a.created_at || 0).getTime();
+          bValue = new Date(b.updated_at || b.created_at || 0).getTime();
           break;
       }
 
@@ -547,7 +573,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
     });
 
     return filtered;
-  }, [localMemos, searchTerm, statusFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
+  }, [localMemos, searchTerm, statusFilter, typeFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedMemos.length / itemsPerPage);
@@ -558,7 +584,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // Reset หน้าเมื่อข้อมูลเปลี่ยน
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [searchTerm, statusFilter, typeFilter, assignmentFilter, sortBy, sortOrder]);
 
   // แสดง Card รายการเอกสารสำหรับทุกตำแหน่ง
   // if (["deputy_director", "director"].includes(permissions.position)) {
@@ -616,17 +642,45 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </div>
 
           {/* ตัวกรองตามสถานะ */}
-          <div className="w-32">
+          <div className="w-28">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-purple-400">
                 <SelectValue placeholder="สถานะ" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">ทั้งหมด</SelectItem>
+                <SelectItem value="all">ทุกสถานะ</SelectItem>
                 <SelectItem value="draft">ฉบับร่าง</SelectItem>
                 <SelectItem value="pending_sign">รอลงนาม</SelectItem>
                 <SelectItem value="completed">เสร็จสิ้น</SelectItem>
                 <SelectItem value="rejected">ตีกลับ</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ตัวกรองตามประเภท */}
+          <div className="w-28">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-purple-400">
+                <SelectValue placeholder="ประเภท" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทุกประเภท</SelectItem>
+                <SelectItem value="memo">บันทึกข้อความ</SelectItem>
+                <SelectItem value="doc_receive">หนังสือรับ</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ตัวกรองตามการมอบหมาย */}
+          <div className="w-32">
+            <Select value={assignmentFilter} onValueChange={setAssignmentFilter}>
+              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-purple-400">
+                <SelectValue placeholder="มอบหมาย" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทั้งหมด</SelectItem>
+                <SelectItem value="assigned">มอบหมายแล้ว</SelectItem>
+                <SelectItem value="not_assigned">ยังไม่มอบหมาย</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -638,7 +692,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <SelectValue placeholder="เรียง" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created_at">วันที่</SelectItem>
+                <SelectItem value="updated_at">ล่าสุด</SelectItem>
+                <SelectItem value="created_at">วันที่สร้าง</SelectItem>
                 <SelectItem value="subject">ชื่อ</SelectItem>
                 <SelectItem value="status">สถานะ</SelectItem>
                 <SelectItem value="doc_number">เลขที่</SelectItem>
@@ -658,13 +713,15 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </Button>
 
           {/* ปุ่มล้างตัวกรอง */}
-          {(searchTerm || statusFilter !== 'all') && (
+          {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || assignmentFilter !== 'all') && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
+                setTypeFilter('all');
+                setAssignmentFilter('all');
               }}
               className="h-8 w-8 p-0 text-gray-400 hover:text-purple-600 hover:bg-purple-50"
               title="ล้างตัวกรอง"
@@ -675,7 +732,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
         </div>
 
         {/* แสดงจำนวนผลลัพธ์ */}
-        {(searchTerm || statusFilter !== 'all') && (
+        {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || assignmentFilter !== 'all') && (
           <div className="text-[10px] text-gray-500 mt-1 text-center">
             แสดง {filteredAndSortedMemos.length} จาก {realMemos.filter(shouldShowMemo).length} รายการ
           </div>

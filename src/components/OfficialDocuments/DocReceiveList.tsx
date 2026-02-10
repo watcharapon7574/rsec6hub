@@ -62,7 +62,8 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('created_at');
+  const [assignmentFilter, setAssignmentFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // State สำหรับ pagination
@@ -189,7 +190,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
 
     try {
       // Step 1: Fetch task assignments
-      const { data: assignments, error: assignmentError } = await supabase
+      const { data: assignments, error: assignmentError } = await (supabase as any)
         .from('task_assignments')
         .select(`
           id,
@@ -221,7 +222,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
       }
 
       // Step 2: Get unique user IDs and fetch their profiles
-      const userIds = [...new Set(assignments.map(a => a.assigned_to))];
+      const userIds = Array.from(new Set(assignments.map((a: any) => String(a.assigned_to)))).filter(Boolean) as string[];
       const { data: profilesData, error: profileError } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name')
@@ -443,7 +444,17 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         }
       }
 
-      return searchMatch && statusMatch;
+      // กรองตามการมอบหมาย (เฉพาะเอกสารที่เสร็จสิ้นแล้ว)
+      let assignmentMatch = true;
+      if (assignmentFilter !== 'all') {
+        if (assignmentFilter === 'assigned') {
+          assignmentMatch = memo.is_assigned === true;
+        } else if (assignmentFilter === 'not_assigned') {
+          assignmentMatch = memo.current_signer_order === 5 && !memo.is_assigned;
+        }
+      }
+
+      return searchMatch && statusMatch && assignmentMatch;
     });
 
     // จัดเรียงข้อมูล
@@ -465,9 +476,13 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           bValue = b.doc_number || '';
           break;
         case 'created_at':
-        default:
           aValue = new Date(a.created_at || 0).getTime();
           bValue = new Date(b.created_at || 0).getTime();
+          break;
+        case 'updated_at':
+        default:
+          aValue = new Date(a.updated_at || a.created_at || 0).getTime();
+          bValue = new Date(b.updated_at || b.created_at || 0).getTime();
           break;
       }
 
@@ -479,7 +494,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
     });
 
     return filtered;
-  }, [localDocReceive, searchTerm, statusFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
+  }, [localDocReceive, searchTerm, statusFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedDocReceive.length / itemsPerPage);
@@ -490,7 +505,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   // Reset หน้าเมื่อข้อมูลเปลี่ยน
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [searchTerm, statusFilter, assignmentFilter, sortBy, sortOrder]);
 
   // แสดง Card รายการหนังสือรับ (PDF อัปโหลด) สำหรับทุกตำแหน่ง
   // if (["deputy_director", "director"].includes(permissions.position)) {
@@ -550,17 +565,31 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           </div>
 
           {/* ตัวกรองตามสถานะ */}
-          <div className="w-32">
+          <div className="w-28">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-green-400">
                 <SelectValue placeholder="สถานะ" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">ทั้งหมด</SelectItem>
+                <SelectItem value="all">ทุกสถานะ</SelectItem>
                 <SelectItem value="draft">ฉบับร่าง</SelectItem>
                 <SelectItem value="pending_sign">รอลงนาม</SelectItem>
                 <SelectItem value="completed">เสร็จสิ้น</SelectItem>
                 <SelectItem value="rejected">ตีกลับ</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ตัวกรองตามการมอบหมาย */}
+          <div className="w-32">
+            <Select value={assignmentFilter} onValueChange={setAssignmentFilter}>
+              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-green-400">
+                <SelectValue placeholder="มอบหมาย" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทั้งหมด</SelectItem>
+                <SelectItem value="assigned">มอบหมายแล้ว</SelectItem>
+                <SelectItem value="not_assigned">ยังไม่มอบหมาย</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -572,7 +601,8 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 <SelectValue placeholder="เรียง" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created_at">วันที่</SelectItem>
+                <SelectItem value="updated_at">ล่าสุด</SelectItem>
+                <SelectItem value="created_at">วันที่สร้าง</SelectItem>
                 <SelectItem value="subject">ชื่อ</SelectItem>
                 <SelectItem value="status">สถานะ</SelectItem>
                 <SelectItem value="doc_number">เลขที่</SelectItem>
@@ -592,13 +622,14 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           </Button>
 
           {/* ปุ่มล้างตัวกรอง */}
-          {(searchTerm || statusFilter !== 'all') && (
+          {(searchTerm || statusFilter !== 'all' || assignmentFilter !== 'all') && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
+                setAssignmentFilter('all');
               }}
               className="h-8 w-8 p-0 text-gray-400 hover:text-green-600 hover:bg-green-50"
               title="ล้างตัวกรอง"
@@ -609,7 +640,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         </div>
 
         {/* แสดงจำนวนผลลัพธ์ */}
-        {(searchTerm || statusFilter !== 'all') && (
+        {(searchTerm || statusFilter !== 'all' || assignmentFilter !== 'all') && (
           <div className="text-[10px] text-gray-500 mt-1 text-center">
             แสดง {filteredAndSortedDocReceive.length} จาก {docReceiveList.filter(shouldShowMemo).length} รายการ
           </div>

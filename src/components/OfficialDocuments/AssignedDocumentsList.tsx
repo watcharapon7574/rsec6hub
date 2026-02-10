@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, FileText, ClipboardList, RotateCcw, ChevronDown, ChevronUp, MapPin, Users, Settings2 } from 'lucide-react';
+import { Eye, Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, FileText, ClipboardList, RotateCcw, ChevronDown, ChevronUp, MapPin, Users, Settings2, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAssignedTasks } from '@/hooks/useAssignedTasks';
 import { TaskStatus, TaskAssignmentWithDetails, taskAssignmentService, TeamMember, AssignmentSource } from '@/services/taskAssignmentService';
 import { extractPdfUrl } from '@/utils/fileUpload';
@@ -40,6 +42,87 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
   const { tasks, loading, updateTaskStatus, fetchTasks } = useAssignedTasks();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  // State สำหรับการค้นหาและกรอง
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('updated_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // State สำหรับ pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Reset หน้าเมื่อข้อมูลเปลี่ยน
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
+
+  // ฟังก์ชันกรองและจัดเรียงข้อมูล
+  const filteredAndSortedTasks = useMemo(() => {
+    let filtered = tasks.filter(task => {
+      // ค้นหาตามชื่อเอกสาร, ผู้มอบหมาย
+      const searchMatch = searchTerm === '' ||
+        task.document_subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.assigned_by_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.task_description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // กรองตามสถานะ
+      let statusMatch = true;
+      if (statusFilter !== 'all') {
+        statusMatch = task.status === statusFilter;
+      }
+
+      // กรองตามประเภทเอกสาร
+      let typeMatch = true;
+      if (typeFilter !== 'all') {
+        typeMatch = task.document_type === typeFilter;
+      }
+
+      return searchMatch && statusMatch && typeMatch;
+    });
+
+    // จัดเรียงข้อมูล
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+
+      switch (sortBy) {
+        case 'document_subject':
+          aValue = a.document_subject || '';
+          bValue = b.document_subject || '';
+          break;
+        case 'status':
+          const statusOrder: Record<string, number> = { pending: 0, in_progress: 1, completed: 2, cancelled: 3 };
+          aValue = statusOrder[a.status] ?? 99;
+          bValue = statusOrder[b.status] ?? 99;
+          break;
+        case 'assigned_at':
+          aValue = new Date(a.assigned_at || 0).getTime();
+          bValue = new Date(b.assigned_at || 0).getTime();
+          break;
+        case 'updated_at':
+        default:
+          aValue = new Date(a.updated_at || a.assigned_at || 0).getTime();
+          bValue = new Date(b.updated_at || b.assigned_at || 0).getTime();
+          break;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      } else {
+        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+    });
+
+    return filtered;
+  }, [tasks, searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
+
+  // คำนวณข้อมูลสำหรับ pagination
+  const totalPages = Math.ceil(filteredAndSortedTasks.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPageTasks = filteredAndSortedTasks.slice(startIndex, endIndex);
 
   // Handle manual refresh
   const handleRefresh = async () => {
@@ -89,7 +172,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
     try {
       const column = documentType === 'memo' ? 'memo_id' : 'doc_receive_id';
-      const { data: assignments, error } = await supabase
+      const { data: assignments, error } = await (supabase as any)
         .from('task_assignments')
         .select('id, assigned_to, status, assigned_at, is_team_leader, is_reporter')
         .eq(column, documentId)
@@ -101,7 +184,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
       if (error) throw error;
 
       // Get unique user IDs
-      const userIds = [...new Set(assignments?.map(a => a.assigned_to) || [])];
+      const userIds = Array.from(new Set((assignments || []).map((a: any) => String(a.assigned_to)))).filter(Boolean) as string[];
 
       // Fetch profiles
       const { data: profiles } = await supabase
@@ -188,7 +271,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
         documentType: task.document_type,
         // Role info for visibility control
         isTeamLeader: task.is_team_leader,
-        currentUserId: task.assigned_to,
+        currentUserId: task.assigned_to_id,
       },
     });
   };
@@ -397,7 +480,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
           <ClipboardList className="h-5 w-5" />
           งานที่ได้รับมอบหมาย
           <Badge variant="secondary" className="ml-auto bg-white text-teal-600 font-semibold px-2 py-1 rounded-full">
-            {tasks.length > 0 ? `${tasks.length} รายการ` : 'ไม่มีงาน'}
+            {filteredAndSortedTasks.length > 0 ? `${filteredAndSortedTasks.length} รายการ` : 'ไม่มีงาน'}
           </Badge>
           <Button
             variant="ghost"
@@ -424,20 +507,133 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
       {!isCollapsed && (
       <>
+      {/* ส่วนค้นหาและกรอง - แถวเดียวแนวนอน */}
+      <div className="bg-white border-b border-teal-100 px-3 py-2">
+        <div className="flex gap-2 items-center">
+          {/* ช่องค้นหา */}
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+            <Input
+              placeholder="ค้นหางาน..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-7 pr-3 py-1 text-xs h-8 border-gray-200 focus:border-teal-400 focus:ring-teal-400 focus:ring-1"
+            />
+          </div>
+
+          {/* ตัวกรองตามสถานะ */}
+          <div className="w-32">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-teal-400">
+                <SelectValue placeholder="สถานะ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทุกสถานะ</SelectItem>
+                <SelectItem value="pending">รอดำเนินการ</SelectItem>
+                <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
+                <SelectItem value="completed">เสร็จสิ้น</SelectItem>
+                <SelectItem value="cancelled">ยกเลิก</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ตัวกรองตามประเภทเอกสาร */}
+          <div className="w-28">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-teal-400">
+                <SelectValue placeholder="ประเภท" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทุกประเภท</SelectItem>
+                <SelectItem value="memo">บันทึกข้อความ</SelectItem>
+                <SelectItem value="doc_receive">หนังสือรับ</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* การจัดเรียง */}
+          <div className="w-20">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-teal-400">
+                <SelectValue placeholder="เรียง" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="updated_at">ล่าสุด</SelectItem>
+                <SelectItem value="assigned_at">วันที่มอบหมาย</SelectItem>
+                <SelectItem value="document_subject">ชื่อ</SelectItem>
+                <SelectItem value="status">สถานะ</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ปุ่มเปลี่ยนทิศทางการเรียง */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="h-8 w-8 p-0 border-gray-200 hover:border-teal-400 hover:text-teal-600"
+            title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
+          >
+            <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+          </Button>
+
+          {/* ปุ่มล้างตัวกรอง */}
+          {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setTypeFilter('all');
+              }}
+              className="h-8 w-8 p-0 text-gray-400 hover:text-teal-600 hover:bg-teal-50"
+              title="ล้างตัวกรอง"
+            >
+              <span className="text-sm">×</span>
+            </Button>
+          )}
+        </div>
+
+        {/* แสดงจำนวนผลลัพธ์ */}
+        {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
+          <div className="text-[10px] text-gray-500 mt-1 text-center">
+            แสดง {filteredAndSortedTasks.length} จาก {tasks.length} รายการ
+          </div>
+        )}
+      </div>
       <CardContent className="p-3">
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-3"></div>
             <div className="text-muted-foreground text-sm">กำลังโหลดรายการงาน...</div>
           </div>
-        ) : tasks.length === 0 ? (
+        ) : filteredAndSortedTasks.length === 0 ? (
           <div className="text-center py-6 text-teal-300">
             <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-60" />
-            <p className="text-sm font-medium">ไม่มีงานที่ได้รับมอบหมาย</p>
+            {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' ? (
+              <div>
+                <p className="text-sm font-medium">ไม่พบงานที่ตรงกับเงื่อนไข</p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('all');
+                    setTypeFilter('all');
+                  }}
+                  className="text-teal-400 hover:text-teal-600 mt-1 text-xs h-6"
+                >
+                  ล้างตัวกรอง
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm font-medium">ไม่มีงานที่ได้รับมอบหมาย</p>
+            )}
           </div>
         ) : (
         <div className="space-y-2">
-      {tasks.map((task) => {
+      {currentPageTasks.map((task) => {
         const statusConfig = getStatusConfig(task.status);
         const StatusIcon = statusConfig.icon;
 
@@ -577,6 +773,38 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
         );
       })}
         </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2 mt-2 border-t border-teal-100">
+            <div className="text-xs text-gray-600">
+              แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedTasks.length)} จาก {filteredAndSortedTasks.length} รายการ
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0 border-teal-200"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronDown className="h-3 w-3 rotate-90" />
+              </Button>
+              <span className="text-xs text-gray-600 px-2">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0 border-teal-200"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronUp className="h-3 w-3 rotate-90" />
+              </Button>
+            </div>
+          </div>
         )}
       </CardContent>
       </>

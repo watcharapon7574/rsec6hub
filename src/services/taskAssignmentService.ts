@@ -77,6 +77,7 @@ export interface TaskAssignmentWithDetails {
   assigned_to_name: string;
   assigned_at: string;
   completed_at: string | null;
+  updated_at: string | null;
   status: TaskStatus;
   note: string | null;
   completion_note: string | null;
@@ -129,7 +130,7 @@ class TaskAssignmentService {
   ): Promise<string> {
     try {
       // Step 1: Create task assignment via RPC (handles authorization)
-      const { data, error } = await supabase.rpc('create_task_assignment', {
+      const { data, error } = await (supabase as any).rpc('create_task_assignment', {
         p_document_id: documentId,
         p_document_type: documentType,
         p_assigned_to: assignedToUserId,
@@ -176,7 +177,7 @@ class TaskAssignmentService {
 
       // Update if we have any data
       if (Object.keys(updateData).length > 0) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await (supabase as any)
           .from('task_assignments')
           .update(updateData)
           .eq('id', assignmentId);
@@ -243,7 +244,7 @@ class TaskAssignmentService {
       // Set team leader
       if (isPositionBased) {
         // For position-based: first user is team leader
-        await supabase
+        await (supabase as any)
           .from('task_assignments')
           .update({ is_team_leader: true })
           .eq('id', assignmentIds[0]);
@@ -251,14 +252,14 @@ class TaskAssignmentService {
         // For name/group-based: most senior user is team leader
         const leaderAssignmentId = assignmentMap.get(teamLeaderUserId);
         if (leaderAssignmentId) {
-          await supabase
+          await (supabase as any)
             .from('task_assignments')
             .update({ is_team_leader: true })
             .eq('id', leaderAssignmentId);
         }
       } else if (assignedToUserIds.length === 1) {
         // Single user: they are the team leader
-        await supabase
+        await (supabase as any)
           .from('task_assignments')
           .update({ is_team_leader: true })
           .eq('id', assignmentIds[0]);
@@ -281,7 +282,7 @@ class TaskAssignmentService {
     offset: number = 0
   ): Promise<TaskAssignmentWithDetails[]> {
     try {
-      const { data, error } = await supabase.rpc('get_user_assigned_tasks', {
+      const { data, error } = await (supabase as any).rpc('get_user_assigned_tasks', {
         p_user_id: userId || null,
         p_status: status || null,
         p_limit: limit,
@@ -310,7 +311,7 @@ class TaskAssignmentService {
     reportFileUrl?: string
   ): Promise<boolean> {
     try {
-      const { data, error } = await supabase.rpc('update_task_status', {
+      const { data, error } = await (supabase as any).rpc('update_task_status', {
         p_assignment_id: assignmentId,
         p_new_status: newStatus,
         p_completion_note: completionNote || null,
@@ -334,7 +335,7 @@ class TaskAssignmentService {
    */
   async getDocumentsReadyForAssignment(): Promise<DocumentReadyForAssignment[]> {
     try {
-      const { data, error } = await supabase.rpc('get_documents_ready_for_assignment');
+      const { data, error } = await (supabase as any).rpc('get_documents_ready_for_assignment');
 
       if (error) {
         console.error('Error getting documents ready for assignment:', error);
@@ -353,7 +354,7 @@ class TaskAssignmentService {
    */
   async deleteTaskAssignment(assignmentId: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase.rpc('soft_delete_task_assignment', {
+      const { data, error } = await (supabase as any).rpc('soft_delete_task_assignment', {
         p_assignment_id: assignmentId
       });
 
@@ -377,7 +378,7 @@ class TaskAssignmentService {
     documentType: DocumentType
   ): Promise<TaskAssignment[]> {
     try {
-      const query = supabase
+      const query = (supabase as any)
         .from('task_assignments')
         .select('*')
         .eq('document_type', documentType)
@@ -418,7 +419,7 @@ class TaskAssignmentService {
         return 0;
       }
 
-      const { count, error } = await supabase
+      const { count, error } = await (supabase as any)
         .from('task_assignments')
         .select('*', { count: 'exact', head: true })
         .eq('assigned_to', targetUserId)
@@ -487,7 +488,7 @@ class TaskAssignmentService {
       const reporterIds = options.reporterIds || [];
 
       // Get the assignment to check source type
-      const { data: assignment, error: fetchError } = await supabase
+      const { data: assignment, error: fetchError } = await (supabase as any)
         .from('task_assignments')
         .select('*')
         .eq('id', assignmentId)
@@ -498,7 +499,7 @@ class TaskAssignmentService {
       }
 
       // Update the main assignment to in_progress
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('task_assignments')
         .update({
           status: 'in_progress',
@@ -528,7 +529,7 @@ class TaskAssignmentService {
         const docId = assignment.document_type === 'memo' ? assignment.memo_id : assignment.doc_receive_id;
 
         // Get all assignments for this document
-        const { data: allAssignments } = await supabase
+        const { data: allAssignments } = await (supabase as any)
           .from('task_assignments')
           .select('id, assigned_to')
           .eq(docColumn, docId)
@@ -537,7 +538,7 @@ class TaskAssignmentService {
         if (allAssignments) {
           for (const a of allAssignments) {
             // Only update is_reporter, don't change status (each member needs to acknowledge themselves)
-            await supabase
+            await (supabase as any)
               .from('task_assignments')
               .update({
                 is_reporter: reporterIds.includes(a.assigned_to)
@@ -564,7 +565,7 @@ class TaskAssignmentService {
   ): Promise<string> {
     try {
       // Get parent assignment details
-      const { data: parent, error: parentError } = await supabase
+      const { data: parent, error: parentError } = await (supabase as any)
         .from('task_assignments')
         .select('*')
         .eq('id', parentAssignmentId)
@@ -599,7 +600,7 @@ class TaskAssignmentService {
         parent_assignment_id: parentAssignmentId
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('task_assignments')
         .insert(newAssignment)
         .select('id')
@@ -622,7 +623,7 @@ class TaskAssignmentService {
   async getTeamMembers(assignmentId: string): Promise<TeamMember[]> {
     try {
       // Get the assignment and all related assignments
-      const { data: assignment } = await supabase
+      const { data: assignment } = await (supabase as any)
         .from('task_assignments')
         .select('*')
         .eq('id', assignmentId)
@@ -637,7 +638,7 @@ class TaskAssignmentService {
       const docId = assignment.document_type === 'memo' ? assignment.memo_id : assignment.doc_receive_id;
 
       // Step 1: Get all assignments
-      const { data: allAssignments, error } = await supabase
+      const { data: allAssignments, error } = await (supabase as any)
         .from('task_assignments')
         .select('id, assigned_to, is_team_leader, is_reporter, status')
         .eq(docColumn, docId)
@@ -649,7 +650,7 @@ class TaskAssignmentService {
       }
 
       // Step 2: Get unique user IDs and fetch profiles separately
-      const userIds = [...new Set(allAssignments.map(a => a.assigned_to))];
+      const userIds = Array.from(new Set(allAssignments.map((a: any) => String(a.assigned_to)))).filter(Boolean) as string[];
 
       const { data: profiles } = await supabase
         .from('profiles')
@@ -690,7 +691,7 @@ class TaskAssignmentService {
     isReporter: boolean
   ): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('task_assignments')
         .update({ is_reporter: isReporter })
         .eq('id', assignmentId);
@@ -721,7 +722,7 @@ class TaskAssignmentService {
       const reporterIds = options.reporterIds || [];
 
       // Get the assignment to find document info
-      const { data: assignment, error: fetchError } = await supabase
+      const { data: assignment, error: fetchError } = await (supabase as any)
         .from('task_assignments')
         .select('*')
         .eq('id', assignmentId)
@@ -736,7 +737,7 @@ class TaskAssignmentService {
       const docId = assignment.document_type === 'memo' ? assignment.memo_id : assignment.doc_receive_id;
 
       // Get all current team members for this document
-      const { data: allAssignments } = await supabase
+      const { data: allAssignments } = await (supabase as any)
         .from('task_assignments')
         .select('id, assigned_to')
         .eq(docColumn, docId)
@@ -745,7 +746,7 @@ class TaskAssignmentService {
       // Update is_reporter for all existing team members
       if (allAssignments) {
         for (const a of allAssignments) {
-          await supabase
+          await (supabase as any)
             .from('task_assignments')
             .update({ is_reporter: reporterIds.includes(a.assigned_to) })
             .eq('id', a.id);
@@ -778,7 +779,7 @@ class TaskAssignmentService {
   async removeTeamMember(assignmentId: string): Promise<boolean> {
     try {
       // Get the assignment to check status and role
-      const { data: assignment, error: fetchError } = await supabase
+      const { data: assignment, error: fetchError } = await (supabase as any)
         .from('task_assignments')
         .select('*')
         .eq('id', assignmentId)
@@ -799,7 +800,7 @@ class TaskAssignmentService {
       }
 
       // Soft delete
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await (supabase as any)
         .from('task_assignments')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', assignmentId);

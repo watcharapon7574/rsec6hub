@@ -22,7 +22,8 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('created_at');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // State สำหรับ pagination
@@ -111,7 +112,17 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
         }
       }
 
-      return searchMatch && statusMatch;
+      // กรองตามประเภทเอกสาร
+      let typeMatch = true;
+      if (typeFilter !== 'all') {
+        if (typeFilter === 'memo') {
+          typeMatch = memo.__source_table !== 'doc_receive';
+        } else if (typeFilter === 'doc_receive') {
+          typeMatch = memo.__source_table === 'doc_receive';
+        }
+      }
+
+      return searchMatch && statusMatch && typeMatch;
     });
 
     // จัดเรียงข้อมูล
@@ -160,9 +171,13 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
           bValue = b.doc_number || '';
           break;
         case 'created_at':
-        default:
           aValue = new Date(a.created_at || 0).getTime();
           bValue = new Date(b.created_at || 0).getTime();
+          break;
+        case 'updated_at':
+        default:
+          aValue = new Date(a.updated_at || a.created_at || 0).getTime();
+          bValue = new Date(b.updated_at || b.created_at || 0).getTime();
           break;
       }
 
@@ -174,7 +189,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     });
 
     return filtered;
-  }, [initialFilteredMemos, searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [initialFilteredMemos, searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedMemos.length / itemsPerPage);
@@ -185,7 +200,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
   // Reset หน้าเมื่อข้อมูลเปลี่ยน
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
 
   console.log('🎯 PendingDocumentCard Debug:', {
     totalPendingMemos: pendingMemos.length,
@@ -281,20 +296,6 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
               />
             </div>
             
-            {/* Sort Controls */}
-            <div className="w-20">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-7 text-xs border-gray-200">
-                  <SelectValue placeholder="เรียง" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="created_at">วันที่</SelectItem>
-                  <SelectItem value="subject">ชื่อ</SelectItem>
-                  <SelectItem value="status">สถานะ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
             {/* Status Filter */}
             <div className="w-28">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -309,17 +310,70 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
               </Select>
             </div>
 
+            {/* Type Filter */}
+            <div className="w-28">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="h-7 text-xs border-gray-200">
+                  <SelectValue placeholder="ประเภท" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">ทุกประเภท</SelectItem>
+                  <SelectItem value="memo">บันทึกข้อความ</SelectItem>
+                  <SelectItem value="doc_receive">หนังสือรับ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort Controls */}
+            <div className="w-20">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-7 text-xs border-gray-200">
+                  <SelectValue placeholder="เรียง" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updated_at">ล่าสุด</SelectItem>
+                  <SelectItem value="created_at">วันที่สร้าง</SelectItem>
+                  <SelectItem value="subject">ชื่อ</SelectItem>
+                  <SelectItem value="status">สถานะ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Sort Direction Button */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="h-7 w-7 p-0 border-gray-200"
+              className="h-7 w-7 p-0 border-gray-200 hover:border-amber-400 hover:text-amber-600"
               title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
             >
               <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
             </Button>
+
+            {/* Clear Filters Button */}
+            {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                  setTypeFilter('all');
+                }}
+                className="h-7 w-7 p-0 text-gray-400 hover:text-amber-600 hover:bg-amber-50"
+                title="ล้างตัวกรอง"
+              >
+                <span className="text-sm">×</span>
+              </Button>
+            )}
           </div>
+
+          {/* Result Count */}
+          {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
+            <div className="text-[10px] text-gray-500 mt-1 text-center">
+              แสดง {filteredAndSortedMemos.length} จาก {initialFilteredMemos.length} รายการ
+            </div>
+          )}
         </div>
 
         {/* Global style for status badge color */}

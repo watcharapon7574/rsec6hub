@@ -175,7 +175,7 @@ const MemoApprovalPage = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">ไม่พบเอกสาร</h2>
+          <h2 className="text-xl font-semibold text-muted-foreground mb-2">ไม่พบเอกสาร</h2>
           <Button onClick={handleBack}>กลับ</Button>
         </div>
       </div>
@@ -200,9 +200,9 @@ const MemoApprovalPage = () => {
               กลับ
             </Button>
             <div className="border-l-4 border-blue-500 pl-4 flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">ลงนามบันทึกข้อความ</h1>
-              <p className="text-gray-600">เลขที่: {workflow.document_number}</p>
-              <p className="text-gray-600">เรื่อง: {workflow.subject}</p>
+              <h1 className="text-3xl font-bold text-muted-foreground mb-2">ลงนามบันทึกข้อความ</h1>
+              <p className="text-muted-foreground">เลขที่: {workflow.document_number}</p>
+              <p className="text-muted-foreground">เรื่อง: {workflow.subject}</p>
             </div>
             <div className="flex items-center gap-2">
               {workflow.status === 'completed' && (
@@ -262,15 +262,15 @@ const MemoApprovalPage = () => {
                           ? 'bg-red-100 text-red-700'
                           : step.status === 'pending' && step.step_order === workflow.current_step
                           ? 'bg-blue-100 text-blue-700'
-                          : 'bg-gray-100 text-gray-500'
+                          : 'bg-gray-100 text-muted-foreground'
                       }`}>
                         {step.step_order}
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">{step.approver_position}</p>
-                        <p className="text-sm text-gray-600">{step.approver_name}</p>
+                        <p className="text-sm text-muted-foreground">{step.approver_name}</p>
                         {step.comment && (
-                          <p className="text-xs text-gray-500 mt-1">"{step.comment}"</p>
+                          <p className="text-xs text-muted-foreground mt-1">"{step.comment}"</p>
                         )}
                       </div>
                       <div>

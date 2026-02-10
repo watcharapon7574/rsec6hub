@@ -113,10 +113,10 @@ const TopBar = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 ml-3">
-                      <div className="text-sm font-medium text-gray-800 truncate">
+                      <div className="text-sm font-medium text-foreground truncate">
                         {profile.first_name} {profile.last_name}
                       </div>
-                      <div className="text-xs text-gray-500 truncate">
+                      <div className="text-xs text-muted-foreground truncate">
                         {profile.employee_id}
                       </div>
                     </div>
@@ -135,7 +135,7 @@ const TopBar = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-gray-800 truncate">
+                  <div className="text-sm font-medium text-foreground truncate">
                     {profile.first_name}
                   </div>
                 </div>
@@ -159,7 +159,7 @@ const TopBar = () => {
               <Power className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             {/* แสดงเวลาการใช้งาน session timer ใต้ปุ่ม logout (Session Timer under Logout button) */}
-            <div className="mt-1 text-xs text-gray-400 text-center select-none leading-tight">
+            <div className="mt-1 text-xs text-muted-foreground text-center select-none leading-tight">
               <SessionTimer />
               </div>
             </div>

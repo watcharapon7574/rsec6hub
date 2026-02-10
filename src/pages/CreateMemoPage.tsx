@@ -500,7 +500,7 @@ const CreateMemoPage = () => {
     <div className="min-h-screen bg-background text-foreground">
       {/* Loading Modal */}
       <Dialog open={loading}>
-        <DialogContent className="bg-white p-6 rounded-lg shadow-lg">
+        <DialogContent className="bg-card p-6 rounded-lg shadow-lg">
           <DialogTitle>กำลังสร้างไฟล์</DialogTitle>
           <DialogDescription>
             กรุณาอย่าปิดหน้านี้จนกว่ากระบวนการจะเสร็จสมบูรณ์
@@ -543,7 +543,7 @@ const CreateMemoPage = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate('/documents')}
-              className="flex items-center gap-2 hover:bg-white border-gray-200 text-gray-600 bg-white shadow-sm"
+              className="flex items-center gap-2 hover:bg-muted border-border text-muted-foreground bg-card shadow-sm"
             >
               <ArrowLeft className="h-4 w-4" />
               ย้อนกลับ
@@ -561,7 +561,7 @@ const CreateMemoPage = () => {
               </CardHeader>
               <CardContent className="p-4">
                 {rejectionComments.map((comment, index) => (
-                  <Alert key={index} className="border-red-200 bg-white">
+                  <Alert key={index} className="border-red-200 bg-card">
                     <AlertCircle className="h-4 w-4 text-red-600" />
                     <AlertDescription className="text-red-800">
                       <div className="space-y-2">
@@ -732,9 +732,9 @@ const CreateMemoPage = () => {
           </Card>
 
           <form onSubmit={handleSubmit}>
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-100 rounded-t-lg">
-                <CardTitle className="text-xl text-gray-800 font-semibold flex items-center gap-2">
+            <Card className="shadow-lg border-0 bg-card">
+              <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
+                <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <FileText className="w-4 h-4 text-blue-600" />
                   </div>
@@ -1034,9 +1034,9 @@ const CreateMemoPage = () => {
 
           {/* PDF Preview Section */}
           {previewUrl && (
-            <Card className="mt-8 shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 rounded-t-lg">
-                <CardTitle className="text-xl text-gray-800 font-semibold flex items-center justify-between">
+            <Card className="mt-8 shadow-lg border-0 bg-card">
+              <CardHeader className="bg-blue-50 border-b border-blue-100 rounded-t-lg">
+                <CardTitle className="text-xl text-foreground font-semibold flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                       <Eye className="w-4 h-4 text-blue-600" />

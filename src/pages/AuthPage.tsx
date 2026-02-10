@@ -238,7 +238,7 @@ const AuthPage = () => {
             onBack={handleBackFromTelegram}
           />
         ) : step === 'telegram_chat_id' ? (
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm min-w-[260px] max-w-[340px] mx-auto">
+          <Card className="border-0 shadow-xl bg-card backdrop-blur-sm min-w-[260px] max-w-[340px] mx-auto">
             <AuthHeader />
             <CardContent className="space-y-6 px-6">
               <TelegramChatIdStep
@@ -252,7 +252,7 @@ const AuthPage = () => {
           </Card>
         ) : (
           <>
-            <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm min-w-[260px] max-w-[340px] mx-auto">
+            <Card className="border-0 shadow-xl bg-card backdrop-blur-sm min-w-[260px] max-w-[340px] mx-auto">
               <AuthHeader />
 
               <CardContent className="space-y-6 px-6">

@@ -10,7 +10,7 @@ const AssignedTasksPage = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="p-3 bg-white rounded-2xl shadow-primary">
+            <div className="p-3 bg-card rounded-2xl shadow-primary">
               <ClipboardList className="h-6 w-6 text-primary" />
             </div>
             <div>

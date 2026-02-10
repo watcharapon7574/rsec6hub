@@ -34,9 +34,9 @@ const SessionTimer = () => {
   return (
     <span className="flex items-center gap-1">
       {/* นาฬิกา (เทา ถ้าใกล้หมดเวลาเป็นแดง) */}
-      <Clock className={`h-3 w-3 ${isExpiring ? 'text-destructive' : 'text-gray-400'}`} />
+      <Clock className={`h-3 w-3 ${isExpiring ? 'text-destructive' : 'text-muted-foreground'}`} />
       {/* เวลา (แดงถ้าใกล้หมดเวลา, เทาถ้าไม่ใกล้) */}
-      <span className={isExpiring ? 'text-destructive' : 'text-gray-400'}>
+      <span className={isExpiring ? 'text-destructive' : 'text-muted-foreground'}>
         {formatTime(hours)}:{formatTime(minutes)}:{formatTime(seconds)}
       </span>
     </span>

@@ -550,7 +550,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
       {!isCollapsed && (
       <>
       {/* ส่วนค้นหาและกรอง - แถวเดียวแนวนอน */}
-      <div className="bg-white border-b border-green-100 px-3 py-2">
+      <div className="bg-card border-b border-border px-3 py-2">
         <div className="flex gap-2 items-center">
           {/* ช่องค้นหา */}
           <div className="relative flex-1">

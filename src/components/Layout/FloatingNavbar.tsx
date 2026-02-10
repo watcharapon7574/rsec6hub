@@ -56,17 +56,17 @@ const FloatingNavbar = () => {
       <div className="flex justify-center mb-2">
         <button
           onClick={() => setIsVisible(!isVisible)}
-          className="bg-white/10 backdrop-blur-sm rounded-full p-2 shadow-lg border border-gray-200/50 hover:bg-white transition-all duration-200 scale-[0.8] hover:scale-110"
+          className="bg-background/50 backdrop-blur-sm rounded-full p-2 shadow-lg border border-border/50 hover:bg-background transition-all duration-200 scale-[0.8] hover:scale-110"
         >
           {isVisible ? (
-            <ChevronDown className="h-4 w-4 text-gray-600" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (
-            <ChevronUp className="h-4 w-4 text-gray-600" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
           )}
         </button>
       </div>
 
-      <div className="bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/30 px-6 py-3">
+      <div className="bg-background/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/30 px-6 py-3">
         <div className="flex items-center justify-center space-x-2">
           {navItems.map((item, index) => {
             const isActive = currentPath === item.to;
@@ -80,7 +80,7 @@ const FloatingNavbar = () => {
                   transition-all duration-300 ease-out
                   ${isActive 
                     ? 'bg-blue-500 text-white shadow-lg transform -translate-y-1 scale-110' 
-                    : 'text-gray-500 hover:bg-gray-100 hover:text-blue-500 hover:transform hover:-translate-y-0.5'
+                    : 'text-muted-foreground hover:bg-muted hover:text-primary hover:transform hover:-translate-y-0.5'
                   }
                 `}
               >

@@ -274,7 +274,7 @@ const MemoList: React.FC<MemoListProps> = ({
       {!isCollapsed && (
       <>
       {/* ส่วนค้นหาและกรอง */}
-      <div className="bg-white border-b border-amber-100 px-3 py-2">
+      <div className="bg-card border-b border-border px-3 py-2">
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />

@@ -482,7 +482,7 @@ const PDFSignaturePage = () => {
     <div className="min-h-screen bg-background text-foreground">
       {/* Loading Modal */}
       <Dialog open={loading}>
-        <DialogContent className="bg-white p-6 rounded-lg shadow-lg">
+        <DialogContent className="bg-card p-6 rounded-lg shadow-lg">
           <DialogTitle>กำลังอัพโหลดไฟล์</DialogTitle>
           <DialogDescription>
             กรุณาอย่าปิดหน้านี้จนกว่ากระบวนการจะเสร็จสมบูรณ์
@@ -506,7 +506,7 @@ const PDFSignaturePage = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate('/documents')}
-              className="flex items-center gap-2 hover:bg-white border-gray-200 text-gray-600 bg-white shadow-sm"
+              className="flex items-center gap-2 hover:bg-muted border-border text-muted-foreground bg-card shadow-sm"
             >
               <ArrowLeft className="h-4 w-4" />
               ย้อนกลับ
@@ -573,7 +573,7 @@ const PDFSignaturePage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4">
-                <Alert className="border-red-200 bg-white">
+                <Alert className="border-red-200 bg-card">
                   <AlertCircle className="h-4 w-4 text-red-600" />
                   <AlertDescription className="text-red-800">
                     <div className="space-y-2">
@@ -597,7 +597,7 @@ const PDFSignaturePage = () => {
           )}
 
           {loadingDoc ? (
-            <Card className="shadow-lg border-0 bg-white p-8 text-center">
+            <Card className="shadow-lg border-0 bg-card p-8 text-center">
               <svg className="animate-spin h-8 w-8 text-green-600 mx-auto mb-4" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
@@ -606,9 +606,9 @@ const PDFSignaturePage = () => {
             </Card>
           ) : (
           <form onSubmit={handleSubmit}>
-            <Card className="shadow-lg border-0 bg-white">
-              <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-100 rounded-t-lg">
-                <CardTitle className="text-xl text-gray-800 font-semibold flex items-center gap-2">
+            <Card className="shadow-lg border-0 bg-card">
+              <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
+                <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <FileText className="w-4 h-4 text-green-600" />
                   </div>

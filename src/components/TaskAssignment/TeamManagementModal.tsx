@@ -232,11 +232,11 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return { label: 'เสร็จ', className: 'bg-green-100 text-green-700' };
+        return { label: 'เสร็จ', className: 'bg-green-100 text-foreground' };
       case 'in_progress':
         return { label: 'กำลังทำ', className: 'bg-blue-100 text-blue-700' };
       default:
-        return { label: 'รอ', className: 'bg-gray-100 text-gray-600' };
+        return { label: 'รอ', className: 'bg-gray-100 text-muted-foreground' };
     }
   };
 
@@ -271,7 +271,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                 เพิ่มสมาชิกทีม (รายคนเท่านั้น)
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="ค้นหาชื่อ..."
                   value={searchQuery}
@@ -293,7 +293,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           <div className="text-sm font-medium">
                             {user.first_name} {user.last_name}
                           </div>
-                          <div className="text-xs text-gray-500">{user.employee_id}</div>
+                          <div className="text-xs text-muted-foreground">{user.employee_id}</div>
                         </div>
                       </button>
                     ))}
@@ -345,7 +345,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                             </Badge>
                           )}
                           {isNewMember && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                            <Badge variant="secondary" className="bg-green-100 text-foreground text-xs">
                               ใหม่
                             </Badge>
                           )}
@@ -356,7 +356,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                             </Badge>
                           )}
                         </div>
-                        <div className="text-xs text-gray-500">{member.employee_id}</div>
+                        <div className="text-xs text-muted-foreground">{member.employee_id}</div>
                       </div>
                     </div>
 
@@ -369,7 +369,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           disabled={!canEditReporter}
                           className="border-pink-400 data-[state=checked]:bg-pink-500"
                         />
-                        <span className="text-xs text-gray-600">ผู้รายงาน</span>
+                        <span className="text-xs text-muted-foreground">ผู้รายงาน</span>
                       </label>
 
                       {/* Remove button for new members */}
@@ -378,7 +378,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveNewMember(member.user_id)}
-                          className="h-6 w-6 p-0 hover:bg-red-100 text-gray-400 hover:text-red-500"
+                          className="h-6 w-6 p-0 hover:bg-red-100 text-muted-foreground hover:text-red-500"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -390,7 +390,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveExistingMember(member as TeamMember)}
-                          className="h-6 w-6 p-0 hover:bg-red-100 text-gray-400 hover:text-red-500"
+                          className="h-6 w-6 p-0 hover:bg-red-100 text-muted-foreground hover:text-red-500"
                           title="ลบสมาชิก"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -402,7 +402,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
               })}
 
               {allMembers.length === 0 && (
-                <div className="px-4 py-6 text-center text-gray-500 text-sm">
+                <div className="px-4 py-6 text-center text-muted-foreground text-sm">
                   ยังไม่มีสมาชิกในทีม
                 </div>
               )}
@@ -418,7 +418,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                 <p className="text-xs mt-1 text-pink-600">
                   สมาชิกที่ไม่ใช่ผู้รายงานจะรายงานแค่ข้อความ (ไม่บังคับเลือก)
                 </p>
-                <p className="text-xs mt-1 text-gray-500">
+                <p className="text-xs mt-1 text-muted-foreground">
                   💡 สมาชิกที่รับทราบงานแล้วไม่สามารถแก้ไขหรือลบได้
                 </p>
               </div>

@@ -101,7 +101,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
           <CardContent className="p-6 space-y-6">
             {/* ข้อมูลเอกสาร */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">ข้อมูลเอกสาร</h3>
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">ข้อมูลเอกสาร</h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -181,7 +181,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
 
             {/* เนื้อหาเอกสาร */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">เนื้อหาเอกสาร</h3>
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">เนื้อหาเอกสาร</h3>
               
               <div className="space-y-2">
                 <Label htmlFor="introduction">ต้นเรื่อง *</Label>
@@ -222,20 +222,20 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
 
             {/* ข้อมูลผู้เขียน */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">ข้อมูลผู้เขียน</h3>
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">ข้อมูลผู้เขียน</h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>ชื่อผู้เขียน</Label>
                   <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-blue-800 font-medium">{formData.author_name}</p>
+                    <p className="text-muted-foreground font-medium">{formData.author_name}</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>ตำแหน่งผู้เขียน</Label>
                   <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-blue-800 font-medium">{formData.author_position}</p>
+                    <p className="text-muted-foreground font-medium">{formData.author_position}</p>
                   </div>
                 </div>
               </div>
@@ -254,7 +254,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
 
             {/* ความเห็นผู้ลงนาม */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">ความเห็นผู้ลงนาม</h3>
+              <h3 className="text-lg font-semibold text-foreground border-b pb-2">ความเห็นผู้ลงนาม</h3>
               
               <div className="space-y-2">
                 <Label htmlFor="signer2_comment">ความเห็นรองผอ.</Label>
@@ -307,7 +307,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
       <div className="space-y-6">
         <Card className="bg-card shadow-lg">
           <CardHeader className="border-b border-blue-100">
-            <CardTitle className="flex items-center gap-2 text-blue-800">
+            <CardTitle className="flex items-center gap-2 text-muted-foreground">
               <Eye className="h-5 w-5" />
               ตัวอย่างเอกสาร
             </CardTitle>

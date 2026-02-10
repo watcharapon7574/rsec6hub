@@ -39,6 +39,50 @@
     --ring: 217 91% 60%;
     --radius: 0.75rem;
 
+    /* Popover (dropdown, select, etc.) */
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 33% 17%;
+
+    /* Accent (hover highlight) */
+    --accent: 214 32% 93%;
+    --accent-foreground: 217 33% 17%;
+
+    /* Secondary */
+    --secondary: 214 32% 93%;
+    --secondary-foreground: 217 33% 17%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success / Warning / Info */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+
+    /* Primary glow (referenced in tailwind config) */
+    --primary-glow: 217 91% 60%;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 217 33% 17%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 32% 93%;
+    --sidebar-accent-foreground: 217 33% 17%;
+    --sidebar-border: 217 91% 85%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Chart colors */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 68% 60%;
+    --chart-5: 0 84% 60%;
+
     /* Shadow for main card/button */
     --shadow-primary: 0 2px 4px rgba(59, 130, 246, 0.10);
     --shadow-primary-lg: 0 20px 10px rgba(59, 130, 246, 0.18);
@@ -66,6 +110,50 @@
     --border: 215 25% 27%;
     --input: 215 25% 27%;
     --ring: 221 83% 53%;
+
+    /* Popover */
+    --popover: 215 25% 19%;
+    --popover-foreground: 210 20% 98%;
+
+    /* Accent */
+    --accent: 215 25% 27%;
+    --accent-foreground: 210 20% 98%;
+
+    /* Secondary */
+    --secondary: 215 25% 27%;
+    --secondary-foreground: 210 20% 98%;
+
+    /* Destructive */
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success / Warning / Info */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
+
+    /* Primary glow */
+    --primary-glow: 221 83% 53%;
+
+    /* Sidebar */
+    --sidebar-background: 215 25% 15%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 27%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 215 25% 27%;
+    --sidebar-ring: 221 83% 53%;
+
+    /* Chart colors */
+    --chart-1: 221 83% 53%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 68% 60%;
+    --chart-5: 0 84% 60%;
 
     --shadow-primary: 0 2px 8px rgba(59, 130, 246, 0.09);
     --shadow-primary-lg: 0 10px 20px rgba(59, 130, 246, 0.13);

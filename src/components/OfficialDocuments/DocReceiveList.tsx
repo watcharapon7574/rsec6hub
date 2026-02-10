@@ -653,7 +653,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               const isCompleted = memo.current_signer_order === 5;
               const baseClasses = "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border rounded-lg px-2 sm:px-3 py-2 shadow-sm transition group min-w-0";
               const completedClasses = isCompleted 
-                ? "bg-gray-50 border-border hover:bg-gray-100" 
+                ? "bg-muted border-border hover:bg-gray-100" 
                 : "bg-card border-border hover:bg-muted/50";
               
               return (
@@ -1169,7 +1169,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 {/* Table */}
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b bg-gray-50">
+                    <tr className="border-b bg-muted">
                       <th className="py-2 px-2 text-left font-medium text-muted-foreground w-12">#</th>
                       <th className="py-2 px-2 text-left font-medium text-muted-foreground">ชื่อ</th>
                       <th className="py-2 px-2 text-center font-medium text-muted-foreground w-24">สถานะ</th>
@@ -1179,7 +1179,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                     {assigneesList
                       .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
                       .map((assignee, index) => (
-                        <tr key={assignee.id} className="border-b hover:bg-gray-50">
+                        <tr key={assignee.id} className="border-b hover:bg-muted">
                           <td className="py-2 px-2 text-muted-foreground">
                             {(assigneesPage - 1) * assigneesPerPage + index + 1}
                           </td>

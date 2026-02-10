@@ -74,7 +74,7 @@ const Accordion: React.FC<AccordionProps> = ({
       <CardHeader className="pb-3">
         <div
           onClick={toggleAccordion}
-          className="flex items-center justify-between w-full cursor-pointer hover:bg-gray-50 rounded px-2 py-1"
+          className="flex items-center justify-between w-full cursor-pointer hover:bg-muted rounded px-2 py-1"
         >
           <CardTitle className="flex items-center gap-2 text-base">
             <Paperclip className="h-4 w-4 text-blue-600" />

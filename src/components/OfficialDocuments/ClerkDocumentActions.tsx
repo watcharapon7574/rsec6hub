@@ -158,7 +158,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
         variant="outline"
         size="sm"
         disabled
-        className="bg-gray-50 border-border text-muted-foreground cursor-not-allowed"
+        className="bg-muted border-border text-muted-foreground cursor-not-allowed"
       >
         <ClipboardList className="h-4 w-4 mr-1" />
         มอบหมายแล้ว
@@ -267,7 +267,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
                     {executives.map((profile) => (
                       <div 
                         key={profile.user_id}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
                         onClick={() => addSigner(profile)}
                       >
                         <div>

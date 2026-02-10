@@ -108,7 +108,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                   <SelectValue placeholder="เลือกฝ่าย หรือไม่ระบุ" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
-                  <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
+                  <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
                     <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
                   {departmentOptions.map((dept) => (
@@ -138,7 +138,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                   <SelectValue placeholder="เลือกรองผู้อำนวยการ หรือไม่ระบุ" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
-                  <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
+                  <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
                     <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
                   {deputyDirectors.map((profile) => (
@@ -176,7 +176,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
             <Label>ลำดับการลงนาม ({signers.length} คน)</Label>
             <div className="mt-2 space-y-2">
               {signers.map((signer, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                   <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
                   <div className="flex-1">
                     <p className="font-semibold">{signer.name}</p>

@@ -86,7 +86,7 @@ const Step4Review: React.FC<Step4Props> = ({
           <h3 className="font-medium mb-3">ตำแหน่งลายเซ็นที่กำหนด</h3>
           <div className="space-y-2">
             {signaturePositions.map((pos, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div>
                   <p className="font-medium">{pos.signer.name}</p>
                   <p className="text-sm text-muted-foreground">

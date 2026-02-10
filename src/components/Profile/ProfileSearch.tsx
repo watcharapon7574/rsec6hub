@@ -63,7 +63,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
   return (
     <div className="space-y-4">
       {/* Search and Filter Controls */}
-      <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center space-x-4 p-4 bg-muted rounded-lg">
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />

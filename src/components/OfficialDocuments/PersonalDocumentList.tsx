@@ -383,7 +383,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               const isCompleted = memo.current_signer_order === 5;
               const baseClasses = "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border rounded-lg px-2 sm:px-3 py-2 shadow-sm transition group min-w-0";
               const completedClasses = isCompleted 
-                ? "bg-gray-50 border-border hover:bg-gray-100" 
+                ? "bg-muted border-border hover:bg-gray-100" 
                 : "bg-card border-border hover:bg-muted/50";
               
               return (

@@ -328,7 +328,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                 return (
                   <div
                     key={member.user_id}
-                    className={`flex items-center justify-between px-4 py-3 ${!canEditReporter ? 'bg-gray-50' : 'hover:bg-gray-50'}`}
+                    className={`flex items-center justify-between px-4 py-3 ${!canEditReporter ? 'bg-muted' : 'hover:bg-muted'}`}
                   >
                     <div className="flex items-center gap-3">
                       <TeamMemberIcon

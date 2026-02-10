@@ -120,7 +120,7 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
 
         {menuItems.map((section, sectionIndex) => (
           <React.Fragment key={sectionIndex}>
-            <div className="px-3 py-2 bg-gray-50">
+            <div className="px-3 py-2 bg-muted">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 <section.icon className="h-3 w-3" />
                 {section.label}

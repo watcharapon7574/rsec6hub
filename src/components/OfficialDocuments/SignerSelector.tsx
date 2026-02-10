@@ -201,7 +201,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
               <div
                 key={profile.id}
                 className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                  isSelected(profile.id) ? 'border-green-500 bg-green-50' : 'hover:bg-gray-50'
+                  isSelected(profile.id) ? 'border-green-500 bg-green-50' : 'hover:bg-muted'
                 }`}
                 onClick={() => toggleSigner(profile, 'assistant')}
               >
@@ -243,7 +243,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
               <div
                 key={profile.id}
                 className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                  isSelected(profile.id) ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                  isSelected(profile.id) ? 'border-blue-500 bg-blue-50' : 'hover:bg-muted'
                 }`}
                 onClick={() => toggleSigner(profile, 'deputy')}
               >

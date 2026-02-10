@@ -113,7 +113,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
             <Users className="h-4 w-4 text-pink-500" />
             ผู้รับมอบหมาย
           </Label>
-          <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg border">
             {selectedUsers.slice(0, 5).map((user) => (
               <Badge
                 key={user.user_id}

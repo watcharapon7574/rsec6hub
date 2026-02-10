@@ -441,7 +441,7 @@ const RailwayManagementPage = () => {
                                 ? 'bg-green-600 hover:bg-green-700'
                                 : isStopped
                                 ? 'bg-red-600 hover:bg-red-700'
-                                : 'bg-gray-500'
+                                : 'bg-muted0'
                             }`}
                           >
                             {isDeploying ? (

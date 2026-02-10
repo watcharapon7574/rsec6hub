@@ -75,7 +75,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
           <div>
             <Label htmlFor="doc-number">เลขหนังสือราชการ</Label>
             <div className="flex items-stretch">
-              <div className="text-lg font-medium text-muted-foreground bg-gray-50 px-4 rounded-l-md border border-r-0 border-border flex items-center">
+              <div className="text-lg font-medium text-muted-foreground bg-muted px-4 rounded-l-md border border-r-0 border-border flex items-center">
                 {docNumberPrefix}
               </div>
               <Input

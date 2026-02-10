@@ -213,7 +213,7 @@ const QueueRealtimePage: React.FC = () => {
       </Card>
 
       {/* System Info */}
-      <Card className="mt-6 bg-gray-50">
+      <Card className="mt-6 bg-muted">
         <CardHeader>
           <CardTitle className="text-lg">ข้อมูลระบบ</CardTitle>
         </CardHeader>

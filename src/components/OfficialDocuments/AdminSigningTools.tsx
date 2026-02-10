@@ -131,7 +131,7 @@ const AdminSigningTools: React.FC = () => {
               <MapPin className="h-4 w-4" />
               กำหนดตำแหน่งลายเซ็น
             </h3>
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg">
               <p className="text-sm text-muted-foreground mb-2">
                 คลิกบนตัวอย่าง PDF เพื่อกำหนดตำแหน่งลายเซ็น
               </p>
@@ -163,7 +163,7 @@ const AdminSigningTools: React.FC = () => {
           </h3>
           <div className="space-y-2">
             {approvalPath.map((approver, index) => (
-              <div key={approver.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div key={approver.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                 <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
                   {index + 1}
                 </div>

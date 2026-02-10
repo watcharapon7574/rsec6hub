@@ -191,7 +191,7 @@ const SignaturePositionSelector: React.FC<SignaturePositionSelectorProps> = ({
         </div>
 
         {/* คำแนะนำ */}
-        <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded-lg">
+        <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
           <p className="font-medium mb-1">คำแนะนำ:</p>
           <ul className="space-y-1 text-xs">
             <li>• คลิกบน PDF เพื่อวางจุดลายเซ็น</li>
@@ -210,7 +210,7 @@ const SignaturePositionSelector: React.FC<SignaturePositionSelectorProps> = ({
                 <div 
                   key={signer.user_id}
                   className={`p-2 border rounded text-xs ${
-                    position ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-border'
+                    position ? 'bg-green-50 border-green-200' : 'bg-muted border-border'
                   }`}
                 >
                   <span className="font-medium">

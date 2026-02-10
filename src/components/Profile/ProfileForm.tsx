@@ -156,7 +156,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ profile, setProfile, editing 
                 id="position"
                 value={profile.position || ''}
                 disabled={true}
-                className="bg-gray-50"
+                className="bg-muted"
               />
             </div>
             <div>

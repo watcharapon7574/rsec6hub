@@ -369,7 +369,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={loading}
-            className="border-border hover:bg-gray-50"
+            className="border-border hover:bg-muted"
           >
             <X className="h-4 w-4 mr-2" />
             ยกเลิก
@@ -408,7 +408,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-border hover:bg-gray-50">
+            <AlertDialogCancel className="border-border hover:bg-muted">
               ยกเลิก
             </AlertDialogCancel>
             <AlertDialogAction

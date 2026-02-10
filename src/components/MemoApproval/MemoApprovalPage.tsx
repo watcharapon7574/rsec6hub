@@ -263,7 +263,7 @@ const MemoApprovalPage = () => {
 
             <div>
               <Label className="text-sm font-medium text-muted-foreground">เนื้อหา</Label>
-              <div className="bg-gray-50 p-4 rounded-lg mt-2">
+              <div className="bg-muted p-4 rounded-lg mt-2">
                 {workflow.content && typeof workflow.content === 'object' ? (
                   <div dangerouslySetInnerHTML={{ __html: workflow.content.html || 'ไม่มีเนื้อหา' }} />
                 ) : (
@@ -315,7 +315,7 @@ const MemoApprovalPage = () => {
                     )}
                     
                     {step.comment && (
-                      <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                      <div className="mt-2 p-2 bg-muted rounded text-sm">
                         <MessageSquare className="h-3 w-3 inline mr-1" />
                         {step.comment}
                       </div>

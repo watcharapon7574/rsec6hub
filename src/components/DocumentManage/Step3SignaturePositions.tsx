@@ -88,7 +88,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                       ? 'border-blue-500 bg-blue-50 shadow-md' 
                       : positionsCount > 0 
                         ? 'border-green-500 bg-green-50' 
-                        : 'border-border hover:border-border hover:bg-gray-50'
+                        : 'border-border hover:border-border hover:bg-muted'
                   }`}
                   onClick={() => onSelectedSignerIndexChange(index)}
                 >

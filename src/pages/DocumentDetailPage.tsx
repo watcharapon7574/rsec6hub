@@ -191,7 +191,7 @@ const DocumentDetailPage: React.FC = () => {
       cancelled: { label: 'ยกเลิก', className: 'bg-red-500' }
     };
 
-    const config = statusConfig[status] || { label: status, className: 'bg-gray-500' };
+    const config = statusConfig[status] || { label: status, className: 'bg-muted0' };
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
@@ -362,7 +362,7 @@ const DocumentDetailPage: React.FC = () => {
                         {task.note && (
                           <div className="mt-2">
                             <label className="text-sm font-medium text-muted-foreground">หมายเหตุ:</label>
-                            <p className="text-sm bg-gray-50 p-2 rounded">{task.note}</p>
+                            <p className="text-sm bg-muted p-2 rounded">{task.note}</p>
                           </div>
                         )}
 
@@ -436,7 +436,7 @@ const DocumentDetailPage: React.FC = () => {
                   title="PDF Viewer"
                 />
               ) : (
-                <div className="flex items-center justify-center h-[400px] bg-gray-50 rounded">
+                <div className="flex items-center justify-center h-[400px] bg-muted rounded">
                   <p className="text-muted-foreground">ไม่มีไฟล์ PDF</p>
                 </div>
               )}

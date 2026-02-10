@@ -48,9 +48,9 @@ const ApprovalProcess: React.FC = () => {
         };
       case 'gray':
         return {
-          bg: 'bg-gray-50',
+          bg: 'bg-muted',
           border: 'border-border',
-          circle: 'bg-gray-500',
+          circle: 'bg-muted0',
           hover: 'hover:bg-gray-100'
         };
       case 'purple':
@@ -62,9 +62,9 @@ const ApprovalProcess: React.FC = () => {
         };
       default:
         return {
-          bg: 'bg-gray-50',
+          bg: 'bg-muted',
           border: 'border-border',
-          circle: 'bg-gray-500',
+          circle: 'bg-muted0',
           hover: 'hover:bg-gray-100'
         };
     }

@@ -942,7 +942,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                 {assigneesList.map((assignee) => (
                   <div
                     key={assignee.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border gap-2"
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg border gap-2"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       {/* Role Icon */}

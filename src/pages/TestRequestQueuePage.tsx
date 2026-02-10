@@ -769,7 +769,7 @@ const TestRequestQueuePage: React.FC = () => {
       )}
 
       {/* Instructions Card */}
-      <Card className="mt-6 bg-gray-50">
+      <Card className="mt-6 bg-muted">
         <CardHeader>
           <CardTitle className="text-lg">วิธีใช้งาน</CardTitle>
         </CardHeader>

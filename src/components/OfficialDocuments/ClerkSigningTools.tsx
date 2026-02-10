@@ -107,7 +107,7 @@ const ClerkSigningTools: React.FC = () => {
           
           <div className="space-y-3">
             {pendingDocuments.map((doc) => (
-              <div key={doc.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+              <div key={doc.id} className="border rounded-lg p-4 hover:bg-muted transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h4 className="font-medium text-muted-foreground mb-1">{doc.fileName}</h4>
@@ -124,7 +124,7 @@ const ClerkSigningTools: React.FC = () => {
 
                 {/* Comments History */}
                 {doc.comments.length > 0 && (
-                  <div className="bg-gray-50 rounded p-3 mb-3">
+                  <div className="bg-muted rounded p-3 mb-3">
                     <h5 className="text-sm font-medium text-foreground mb-2 flex items-center gap-1">
                       <MessageSquare className="h-3 w-3" />
                       ความเห็นการอนุมัติ

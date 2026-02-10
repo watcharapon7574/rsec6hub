@@ -83,7 +83,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-pink-900">
             {groupType === 'position' ? (
-              <Briefcase className="h-5 w-5 text-orange-600" />
+              <Briefcase className="h-5 w-5 text-muted-foreground" />
             ) : (
               <Users className="h-5 w-5 text-purple-600" />
             )}
@@ -100,7 +100,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           {/* Type Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">
-              ประเภท <span className="text-red-500">*</span>
+              ประเภท <span className="text-muted-foreground">*</span>
             </Label>
             <RadioGroup
               value={groupType}
@@ -112,15 +112,15 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                 <Label htmlFor="type-group" className="flex items-center gap-1.5 cursor-pointer">
                   <Users className="h-4 w-4 text-purple-500" />
                   <span>กลุ่ม</span>
-                  <span className="text-xs text-gray-500">(หลายคน)</span>
+                  <span className="text-xs text-muted-foreground">(หลายคน)</span>
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="position" id="type-position" className="border-orange-400 text-orange-600" />
+                <RadioGroupItem value="position" id="type-position" className="border-orange-400 text-muted-foreground" />
                 <Label htmlFor="type-position" className="flex items-center gap-1.5 cursor-pointer">
                   <Briefcase className="h-4 w-4 text-orange-500" />
                   <span>หน้าที่</span>
-                  <span className="text-xs text-gray-500">(1 คน)</span>
+                  <span className="text-xs text-muted-foreground">(1 คน)</span>
                 </Label>
               </div>
             </RadioGroup>
@@ -129,7 +129,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           {/* Group/Position Name */}
           <div className="space-y-2">
             <Label htmlFor="groupName" className="text-sm font-medium">
-              {groupType === 'position' ? 'ชื่อหน้าที่' : 'ชื่อกลุ่ม'} <span className="text-red-500">*</span>
+              {groupType === 'position' ? 'ชื่อหน้าที่' : 'ชื่อกลุ่ม'} <span className="text-muted-foreground">*</span>
             </Label>
             <Input
               id="groupName"
@@ -147,7 +147,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           {/* Member Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">
-              {groupType === 'position' ? 'ผู้รับผิดชอบ' : 'สมาชิกในกลุ่ม'} <span className="text-red-500">*</span>
+              {groupType === 'position' ? 'ผู้รับผิดชอบ' : 'สมาชิกในกลุ่ม'} <span className="text-muted-foreground">*</span>
             </Label>
             <UserSearchInput
               selectedUsers={selectedMembers}
@@ -165,7 +165,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               excludeUserIds={excludeUserIds}
             />
             {groupType === 'position' && selectedMembers.length > 0 && (
-              <p className="text-xs text-orange-600">
+              <p className="text-xs text-muted-foreground">
                 เลือกได้ 1 คนเท่านั้น
               </p>
             )}
@@ -190,7 +190,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
           {/* Validation message for position */}
           {groupType === 'position' && selectedMembers.length !== 1 && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               กรุณาเลือกผู้รับผิดชอบ 1 คน
             </p>
           )}

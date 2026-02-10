@@ -94,9 +94,9 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{signer.name}</p>
+                      <p className="font-semibold text-foreground">{signer.name}</p>
                       {/* job_position (เล็กสุด) */}
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                         {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                         {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
@@ -105,7 +105,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                       </p>
                       {/* org_structure_role (เด่นรอง) */}
                       {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           {signer.org_structure_role}
                         </p>
                       )}
@@ -139,14 +139,14 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
             value={documentSummary}
             onChange={(e) => onDocumentSummaryChange(e.target.value)}
             rows={3}
-            className="mt-2 border-blue-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+            className="mt-2 border-blue-300 focus:border-blue-500 focus:ring-blue-500 text-foreground"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             ข้อมูลนี้จะแสดงให้ผู้ลงนามอ่านเพื่อทำความเข้าใจเนื้อหาเอกสารก่อนลงนาม
           </p>
         </div>
 
-        <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+        <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg">
           <p className="font-medium mb-1">วิธีการใช้งาน:</p>
           <p>1. เลือกผู้ลงนามจากรายการข้างต้น</p>
           <p>2. กรอกสรุปเนื้อหาเอกสาร (เพื่อให้ผู้ลงนามเข้าใจ)</p>
@@ -170,7 +170,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
             />
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             ไม่มีไฟล์ PDF สำหรับวางตำแหน่งลายเซ็น
           </div>
         )}

@@ -63,12 +63,12 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
             <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 space-y-2">
               <div>
                 <span className="text-sm text-pink-600 font-medium">เรื่อง: </span>
-                <span className="text-sm text-gray-900">{subject}</span>
+                <span className="text-sm text-muted-foreground">{subject}</span>
               </div>
               {docNumber && (
                 <div>
                   <span className="text-sm text-pink-600 font-medium">เลขที่: </span>
-                  <span className="text-sm text-gray-900">{docNumber}</span>
+                  <span className="text-sm text-muted-foreground">{docNumber}</span>
                 </div>
               )}
             </div>
@@ -105,7 +105,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                 <h3 className="font-semibold text-pink-900">รายละเอียดงาน</h3>
               </div>
               <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
-                <p className="text-sm text-gray-900 whitespace-pre-wrap">{taskDescription}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{taskDescription}</p>
               </div>
             </div>
           )}
@@ -123,13 +123,13 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                   <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
                     <div className="flex flex-col gap-1">
                       {eventDate && (
-                        <div className="flex items-center gap-2 text-sm text-gray-900">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-3.5 w-3.5 text-pink-500" />
                           {formatDisplayDate(eventDate)}
                         </div>
                       )}
                       {eventTime && (
-                        <div className="flex items-center gap-2 text-sm text-gray-900">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="h-3.5 w-3.5 text-pink-500" />
                           {formatDisplayTime(eventTime)}
                         </div>
@@ -147,7 +147,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                     <h3 className="font-semibold text-pink-900">สถานที่</h3>
                   </div>
                   <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-900">{location}</p>
+                    <p className="text-sm text-muted-foreground">{location}</p>
                   </div>
                 </div>
               )}
@@ -162,7 +162,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                 <h3 className="font-semibold text-pink-900">หมายเหตุเพิ่มเติม</h3>
               </div>
               <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
-                <p className="text-sm text-gray-900 whitespace-pre-wrap">{note}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{note}</p>
               </div>
             </div>
           )}

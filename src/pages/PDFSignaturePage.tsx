@@ -152,7 +152,7 @@ const PDFSignaturePage = () => {
   }, [profile, permissions.isAdmin, permissions.position, navigate, toast]);
 
   // แสดง loading ขณะตรวจสอบสิทธิ์
-  if (!profile || permissions.position !== 'clerk_teacher') {
+  if (!profile || (!permissions.isAdmin && permissions.position !== 'clerk_teacher')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="p-8 rounded-lg animate-pulse">

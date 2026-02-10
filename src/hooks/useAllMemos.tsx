@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
+import { getFirstSignerOrder, calculateNextSignerOrder, calculateRejection } from '@/services/approvalWorkflowService';
 
 export interface MemoRecord {
   id: string;
@@ -307,12 +308,14 @@ export const useAllMemos = () => {
 
       console.log('✅ Found memo:', existingMemo);
 
+      const firstOrder = getFirstSignerOrder(signaturePositions);
+
       const { error } = await supabase
         .from('memos')
         .update({
           signature_positions: signaturePositions,
           status: 'pending_sign',
-          current_signer_order: 2 // เมื่อส่งเอกสารเข้ากระบวนการ ให้ set current_signer_order = 2 (หรือ 4 ถ้าเป็นผอ.)
+          current_signer_order: firstOrder // ใช้ order แรกจริงจาก signaturePositions (รองรับการข้ามผู้ลงนาม)
         })
         .eq('id', memoId);
 
@@ -365,36 +368,18 @@ export const useAllMemos = () => {
 
       const memo = freshMemo as any;
 
-      let newStatus = memo.status;
-      let newSignerOrder = memo.current_signer_order || 1;
+      const signaturePositions = Array.isArray(memo.signature_positions) 
+        ? memo.signature_positions 
+        : [];
+      const currentOrder = memo.current_signer_order || 1;
 
-      if (action === 'approve') {
-        // Move to next signer
-        const signaturePositions = Array.isArray(memo.signature_positions) 
-          ? memo.signature_positions 
-          : [];
-        const maxOrder = Math.max(...(signaturePositions.map((pos: any) => pos.signer?.order) || [1]));
-        
-        
-        // หา current_signer_order ถัดไป (ข้าม order 1 ถ้าเป็นผู้เขียน)
-        const currentOrder = memo.current_signer_order || 1;
-        const nextOrder = currentOrder === 1 ? 2 : currentOrder; // ถ้าเป็น 1 (ผู้เขียน) ให้เริ่มที่ 2
-        
-        
-        if (nextOrder < maxOrder) {
-          // More approvers needed - ไปคนต่อไป
-          newSignerOrder = nextOrder + 1;
-          newStatus = 'pending_sign';
-        } else {
-          // All approvals complete
-          newStatus = 'completed';
-          newSignerOrder = 5; // เมื่อ approve คนสุดท้าย ให้ set current_signer_order = 5
-        }
-      } else {
-        // Rejection
-        newStatus = 'rejected';
-        newSignerOrder = 0; // เมื่อ reject ให้ set current_signer_order = 0
-      }
+      // ใช้ centralized logic จาก approvalWorkflowService
+      const result = action === 'approve'
+        ? calculateNextSignerOrder(currentOrder, signaturePositions)
+        : calculateRejection();
+
+      const newStatus = result.newStatus;
+      const newSignerOrder = result.nextSignerOrder;
 
       const updateData: any = {
         status: newStatus,

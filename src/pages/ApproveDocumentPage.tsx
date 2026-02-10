@@ -27,6 +27,7 @@ import { railwayPDFQueue } from '@/utils/requestQueue';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
+import { calculateNextSignerOrder } from '@/services/approvalWorkflowService';
 
 const ApproveDocumentPage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
@@ -679,24 +680,13 @@ const ApproveDocumentPage: React.FC = () => {
             .from('documents')
             .getPublicUrl(newFilePath);
           
-          // หา nextSignerOrder - ปรับ logic สำหรับกรณีที่ผอ.เซ็น
+          // หา nextSignerOrder - ใช้ centralized logic จาก approvalWorkflowService
           const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;
-          const signatureOrders = signaturePositions.map((pos: any) => pos.signer?.order).filter(Boolean);
-          const maxOrder = Math.max(...signatureOrders);
           
-          let nextSignerOrder: number;
-          let newStatus: string;
-          
-          // ถ้าเป็นผอ. (director) หรือ admin ลงนามแทน director ให้ set current_signer_order = 5
-          if (signingPosition === 'director') {
-            nextSignerOrder = 5;
-            newStatus = 'completed';
-            console.log('🎯 Director approved: Setting current_signer_order = 5 (completed)', { isAdminSigning });
-          } else {
-            // สำหรับตำแหน่งอื่นๆ ใช้ logic เดิม
-            nextSignerOrder = currentOrder < maxOrder ? currentOrder + 1 : currentOrder;
-            newStatus = nextSignerOrder > maxOrder ? 'completed' : 'pending_sign';
-          }
+          // calculateNextSignerOrder รองรับการข้ามผู้ลงนาม + Director shortcut
+          const approvalResult = calculateNextSignerOrder(currentOrder, signaturePositions, signingPosition);
+          const nextSignerOrder = approvalResult.nextSignerOrder;
+          const newStatus = approvalResult.newStatus;
           
           const updateResult = await updateDocumentStatus(memoId, newStatus, undefined, undefined, nextSignerOrder, newPublicUrl);
           

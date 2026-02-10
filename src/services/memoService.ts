@@ -4,6 +4,7 @@ import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDeviceFingerprint } from '@/utils/deviceInfo';
 import { requestQueue, railwayPDFQueue } from '@/utils/requestQueue';
 import { formatThaiDateFull } from '@/utils/dateUtils';
+import { calculateNextSignerOrder, calculateRejection, SIGNER_ORDER } from '@/services/approvalWorkflowService';
 
 export class MemoService {
   // Line-wrap text using Edge Function (Vertex AI)
@@ -401,23 +402,24 @@ export class MemoService {
 
       const updatedSignatures = [...currentSignatures, newSignature];
       
-      let newStatus = memo.status;
-      let nextSignerOrder = memo.current_signer_order;
+      // ใช้ centralized logic จาก approvalWorkflowService
+      let newStatus: string;
+      let nextSignerOrder: number;
 
       if (action === 'reject') {
-        newStatus = 'rejected';
-        nextSignerOrder = 0; // Set to 0 for reject
+        const rejectionResult = calculateRejection();
+        newStatus = rejectionResult.newStatus;
+        nextSignerOrder = rejectionResult.nextSignerOrder;
       } else {
-        // Check if this is the last signer
-        const maxOrder = Math.max(...positions.map((p: SignaturePosition) => p.order));
-        if (userPosition.order === maxOrder) {
+        const approvalResult = calculateNextSignerOrder(userPosition.order, positions);
+        newStatus = approvalResult.newStatus;
+        nextSignerOrder = approvalResult.nextSignerOrder;
+
+        if (nextSignerOrder === SIGNER_ORDER.COMPLETED) {
           // Last signer approved - generate final PDF
-          newStatus = 'approved';
           await this.generateFinalPDF(memo, updatedSignatures, positions);
-          nextSignerOrder = 5; // Set to 5 for last approved
         } else {
-          // Move to next signer
-          nextSignerOrder = userPosition.order + 1;
+          // Send notification to next signer
           const nextSigner = positions.find((p: SignaturePosition) => p.order === nextSignerOrder);
           if (nextSigner) {
             await this.sendNotification(memoId, nextSigner.user_id, 'signature_request', 'คุณมีเอกสารรอการลงนาม');

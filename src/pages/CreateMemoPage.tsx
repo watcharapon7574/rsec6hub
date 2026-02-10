@@ -553,7 +553,7 @@ const CreateMemoPage = () => {
           {/* Rejection Comments Card */}
           {rejectionComments.length > 0 && (
             <Card className="mb-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
-              <CardHeader className="bg-red-100 border-b border-red-200 dark:border-red-800">
+              <CardHeader className="bg-red-100 dark:bg-red-900 border-b border-red-200 dark:border-red-800">
                 <CardTitle className="text-red-800 dark:text-red-200 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
                   ข้อความตีกลับจากผู้อนุมัติ
@@ -624,7 +624,7 @@ const CreateMemoPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg border border-red-200 dark:border-red-800">
                       <h5 className="font-medium text-red-700 dark:text-red-300 mb-2">คำเดิม</h5>
-                      <p className={`font-mono bg-red-100 p-2 rounded ${
+                      <p className={`font-mono bg-red-100 dark:bg-red-900 p-2 rounded ${
                         grammarSuggestions[currentSuggestionIndex].applied 
                           ? 'text-red-500 line-through' 
                           : 'text-red-800 dark:text-red-200'
@@ -636,7 +636,7 @@ const CreateMemoPage = () => {
                       <h5 className="font-medium text-green-700 dark:text-green-300 mb-2">
                         {grammarSuggestions[currentSuggestionIndex].applied ? 'คำที่ใช้แล้ว' : 'คำที่แนะนำ'}
                       </h5>
-                      <p className={`font-mono bg-green-100 p-2 rounded ${
+                      <p className={`font-mono bg-green-100 dark:bg-green-900 p-2 rounded ${
                         grammarSuggestions[currentSuggestionIndex].applied 
                           ? 'text-green-800 dark:text-green-200 font-bold' 
                           : 'text-green-800 dark:text-green-200'
@@ -735,7 +735,7 @@ const CreateMemoPage = () => {
             <Card className="shadow-lg border-0 bg-card">
               <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                     <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   ข้อมูลเอกสาร
@@ -820,7 +820,7 @@ const CreateMemoPage = () => {
                               attached_files: fileNames
                             }));
                           }}
-                          className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 dark:bg-blue-950 file:text-blue-700 dark:text-blue-300 hover:file:bg-blue-100"
+                          className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 dark:bg-blue-950 file:text-blue-700 dark:text-blue-300 hover:file:bg-blue-100 dark:bg-blue-900"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
                           รองรับไฟล์: PDF, Word, รูปภาพ (JPG, PNG) ขนาดไม่เกิน 10MB ต่อไฟล์
@@ -1038,7 +1038,7 @@ const CreateMemoPage = () => {
               <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-blue-100 dark:border-blue-900 rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                       <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     ตัวอย่าง PDF

@@ -399,9 +399,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // ฟังก์ชันสำหรับสีความเร่งด่วน
   const getUrgencyColor = (urgency: string): string => {
     switch (urgency.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800 dark:text-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:text-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 dark:text-green-200';
+      case 'high': return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200';
+      case 'medium': return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200';
+      case 'low': return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
       default: return 'bg-muted text-foreground';
     }
   };
@@ -1015,7 +1015,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                                   navigate(`/task-assignment?documentId=${memo.id}&documentType=${documentType}`);
                                 }}
-                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900"
+                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 dark:text-green-300 hover:bg-green-100 dark:bg-green-900 dark:hover:bg-green-900"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">มอบหมายงาน</span>
@@ -1030,7 +1030,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleViewAssignees(memo)}
-                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:bg-blue-900 dark:hover:bg-blue-900"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">ดูรายชื่อ</span>
@@ -1351,10 +1351,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             <Badge
                               className={`text-[10px] px-1.5 py-0.5 ${
                                 assignee.status === 'completed'
-                                  ? 'bg-green-100 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700'
+                                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700'
                                   : assignee.status === 'in_progress'
-                                  ? 'bg-blue-100 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
-                                  : 'bg-yellow-100 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
+                                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
+                                  : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
                               }`}
                             >
                               {assignee.status === 'completed'

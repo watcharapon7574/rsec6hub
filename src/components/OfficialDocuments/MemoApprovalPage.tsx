@@ -257,11 +257,11 @@ const MemoApprovalPage = () => {
                     <div key={step.id} className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                         step.status === 'approved' 
-                          ? 'bg-green-100 text-green-700 dark:text-green-300'
+                          ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
                           : step.status === 'rejected'
-                          ? 'bg-red-100 text-red-700 dark:text-red-300'
+                          ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
                           : step.status === 'pending' && step.step_order === workflow.current_step
-                          ? 'bg-blue-100 text-blue-700 dark:text-blue-300'
+                          ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                           : 'bg-muted text-muted-foreground'
                       }`}>
                         {step.step_order}

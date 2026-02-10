@@ -89,7 +89,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
         <div className="absolute left-[80px] right-[140px] top-[60px] z-0 pointer-events-none flex justify-end">{renderLineChart()}</div>
         <CardContent className="pt-6 flex-1 flex flex-col justify-between relative z-10">
           <div className="flex items-start justify-between">
-            <div className="p-3 rounded-xl bg-blue-100">
+            <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900">
               <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
             <span className="text-6xl font-extrabold text-blue-600 dark:text-blue-400 leading-none tracking-tight">{totalCount}</span>
@@ -108,7 +108,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
           <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-purple-100">
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900">
                   <AlertCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <span className="text-3xl sm:text-5xl font-bold text-purple-600 dark:text-purple-400">{inProgressCount}</span>
@@ -125,7 +125,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
           <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-amber-100">
+                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900">
                   <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
                 <span className="text-3xl sm:text-5xl font-bold text-amber-600 dark:text-amber-400">{pendingCount}</span>
@@ -142,7 +142,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
           <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-green-100">
+                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
                   <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 <span className="text-3xl sm:text-5xl font-bold text-green-600 dark:text-green-400">{approvedCount}</span>

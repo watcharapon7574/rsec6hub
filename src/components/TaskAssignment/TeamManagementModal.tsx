@@ -232,9 +232,9 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return { label: 'เสร็จ', className: 'bg-green-100 text-foreground' };
+        return { label: 'เสร็จ', className: 'bg-green-100 dark:bg-green-900 text-foreground' };
       case 'in_progress':
-        return { label: 'กำลังทำ', className: 'bg-blue-100 text-blue-700 dark:text-blue-300' };
+        return { label: 'กำลังทำ', className: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' };
       default:
         return { label: 'รอ', className: 'bg-muted text-muted-foreground' };
     }
@@ -254,7 +254,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
           <div className="text-sm text-muted-foreground">
             {isPositionBased ? (
               <span>
-                คุณเป็นหัวหน้างาน: <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 dark:text-orange-300 px-2 py-0.5 text-xs font-medium">{positionName}</span>
+                คุณเป็นหัวหน้างาน: <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-2 py-0.5 text-xs font-medium">{positionName}</span>
               </span>
             ) : (
               'คุณเป็นผู้อาวุโสในทีมนี้'
@@ -340,12 +340,12 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                         <div className="text-sm font-medium flex items-center gap-2">
                           {member.first_name} {member.last_name}
                           {isLeader && (
-                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:text-amber-300 text-xs">
+                            <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-xs">
                               หัวหน้า
                             </Badge>
                           )}
                           {isNewMember && (
-                            <Badge variant="secondary" className="bg-green-100 text-foreground text-xs">
+                            <Badge variant="secondary" className="bg-green-100 dark:bg-green-900 text-foreground text-xs">
                               ใหม่
                             </Badge>
                           )}
@@ -378,7 +378,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveNewMember(member.user_id)}
-                          className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-muted-foreground hover:text-red-500"
+                          className="h-6 w-6 p-0 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-900 text-muted-foreground hover:text-red-500"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -390,7 +390,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveExistingMember(member as TeamMember)}
-                          className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-muted-foreground hover:text-red-500"
+                          className="h-6 w-6 p-0 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-900 text-muted-foreground hover:text-red-500"
                           title="ลบสมาชิก"
                         >
                           <Trash2 className="h-4 w-4" />

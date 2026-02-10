@@ -490,7 +490,7 @@ const RailwayManagementPage = () => {
                     <CardContent>
                       {/* Deployment Progress */}
                       {isDeploying && progressMessage && (
-                        <div className="mb-4 p-4 bg-blue-100 border-2 border-blue-400 rounded-lg animate-pulse">
+                        <div className="mb-4 p-4 bg-blue-100 dark:bg-blue-900 border-2 border-blue-400 rounded-lg animate-pulse">
                           <div className="flex items-center gap-3">
                             <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
                             <p className="text-base font-semibold text-blue-900 dark:text-blue-100">{progressMessage}</p>

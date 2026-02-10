@@ -64,10 +64,10 @@ const LeaveRequestsPage = () => {
   };
 
   const statusColors = {
-    pending: 'bg-yellow-100 text-yellow-800 dark:text-yellow-200',
-    approved: 'bg-green-100 text-green-800 dark:text-green-200',
-    rejected: 'bg-red-100 text-red-800 dark:text-red-200',
-    in_progress: 'bg-blue-100 text-blue-800 dark:text-blue-200'
+    pending: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+    approved: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
+    rejected: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
+    in_progress: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
   };
 
   const calculateDays = (startDate: string, endDate: string) => {
@@ -223,7 +223,7 @@ const LeaveRequestsPage = () => {
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 rounded-lg bg-amber-100">
+                  <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900">
                     <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   </div>
                   <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
@@ -236,7 +236,7 @@ const LeaveRequestsPage = () => {
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 rounded-lg bg-green-100">
+                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
                     <CalendarDays className="h-4 w-4 text-green-600 dark:text-green-400" />
                   </div>
                   <span className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -249,7 +249,7 @@ const LeaveRequestsPage = () => {
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 rounded-lg bg-red-100">
+                  <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900">
                     <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
                   </div>
                   <span className="text-2xl font-bold text-red-600 dark:text-red-400">
@@ -262,7 +262,7 @@ const LeaveRequestsPage = () => {
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 rounded-lg bg-orange-100">
+                  <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900">
                     <CalendarDays className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   </div>
                   <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">{leaveRequests.length}</span>

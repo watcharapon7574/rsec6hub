@@ -118,7 +118,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
               <Badge
                 key={user.user_id}
                 variant="secondary"
-                className="bg-pink-100 text-pink-700 dark:text-pink-300"
+                className="bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300"
               >
                 {user.first_name} {user.last_name}
               </Badge>
@@ -206,7 +206,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
                       }}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 dark:hover:bg-pink-950 dark:bg-pink-950 transition-colors ${
                         eventTime === option.value
-                          ? 'bg-pink-100 text-pink-700 dark:text-pink-300 font-medium'
+                          ? 'bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300 font-medium'
                           : 'text-foreground'
                       }`}
                     >

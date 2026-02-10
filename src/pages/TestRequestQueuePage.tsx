@@ -697,7 +697,7 @@ const TestRequestQueuePage: React.FC = () => {
             </div>
 
             {results.successRate === 100 && (
-              <div className="mt-4 p-3 bg-green-100 border border-green-300 dark:border-green-700 rounded-lg">
+              <div className="mt-4 p-3 bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg">
                 <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
                   <CheckCircle className="h-4 w-4" />
                   <span className="font-medium">
@@ -708,7 +708,7 @@ const TestRequestQueuePage: React.FC = () => {
             )}
 
             {results.successRate < 100 && results.successRate >= 90 && (
-              <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 dark:border-yellow-700 rounded-lg">
+              <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded-lg">
                 <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
                   <Activity className="h-4 w-4" />
                   <span className="font-medium">
@@ -719,7 +719,7 @@ const TestRequestQueuePage: React.FC = () => {
             )}
 
             {results.successRate < 90 && (
-              <div className="mt-4 p-3 bg-red-100 border border-red-300 dark:border-red-700 rounded-lg">
+              <div className="mt-4 p-3 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg">
                 <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
                   <XCircle className="h-4 w-4" />
                   <span className="font-medium">

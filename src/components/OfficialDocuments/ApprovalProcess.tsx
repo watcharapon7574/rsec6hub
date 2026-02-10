@@ -37,14 +37,14 @@ const ApprovalProcess: React.FC = () => {
           bg: 'bg-blue-50 dark:bg-blue-950',
           border: 'border-blue-200 dark:border-blue-800',
           circle: 'bg-blue-500',
-          hover: 'hover:bg-blue-100 dark:hover:bg-blue-900'
+          hover: 'hover:bg-blue-100 dark:bg-blue-900 dark:hover:bg-blue-900'
         };
       case 'green':
         return {
           bg: 'bg-green-50 dark:bg-green-950',
           border: 'border-green-200 dark:border-green-800',
           circle: 'bg-green-500',
-          hover: 'hover:bg-green-100 dark:hover:bg-green-900'
+          hover: 'hover:bg-green-100 dark:bg-green-900 dark:hover:bg-green-900'
         };
       case 'gray':
         return {
@@ -58,7 +58,7 @@ const ApprovalProcess: React.FC = () => {
           bg: 'bg-purple-50 dark:bg-purple-950',
           border: 'border-purple-200 dark:border-purple-800',
           circle: 'bg-purple-500',
-          hover: 'hover:bg-purple-100 dark:hover:bg-purple-900'
+          hover: 'hover:bg-purple-100 dark:bg-purple-900 dark:hover:bg-purple-900'
         };
       default:
         return {

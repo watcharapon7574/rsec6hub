@@ -242,17 +242,17 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
     const configs = {
       pending: {
         label: 'รอดำเนินการ',
-        color: 'bg-yellow-100 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700',
+        color: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700',
         icon: Clock,
       },
       in_progress: {
         label: 'กำลังดำเนินการ',
-        color: 'bg-blue-100 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
+        color: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
         icon: PlayCircle,
       },
       completed: {
         label: 'เสร็จสิ้น',
-        color: 'bg-green-100 text-foreground border-green-300 dark:border-green-700',
+        color: 'bg-green-100 dark:bg-green-900 text-foreground border-green-300 dark:border-green-700',
         icon: CheckCircle,
       },
       cancelled: {
@@ -970,9 +970,9 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                       variant="secondary"
                       className={`flex-shrink-0 text-xs ${
                         assignee.status === 'completed'
-                          ? 'bg-green-100 text-foreground'
+                          ? 'bg-green-100 dark:bg-green-900 text-foreground'
                           : assignee.status === 'in_progress'
-                          ? 'bg-blue-100 text-blue-700 dark:text-blue-300'
+                          ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                           : 'bg-muted text-foreground'
                       }`}
                     >

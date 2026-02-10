@@ -87,7 +87,7 @@ const Dashboard = () => {
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/leave-requests')}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-orange-100">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900">
                   <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
                 <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">12</span>
@@ -100,7 +100,7 @@ const Dashboard = () => {
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/documents')}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-blue-100">
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
                   <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">8</span>

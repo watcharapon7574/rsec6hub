@@ -181,7 +181,7 @@ const DailyReportsPage = () => {
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 rounded-lg bg-green-100">
+                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
                     <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
                   </div>
                   <span className="text-2xl font-bold text-green-600 dark:text-green-400">7</span>
@@ -192,7 +192,7 @@ const DailyReportsPage = () => {
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 rounded-lg bg-orange-100">
+                  <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900">
                     <MapPin className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   </div>
                   <span className="text-sm font-medium text-muted-foreground">วันนี้</span>

@@ -566,7 +566,7 @@ const PDFSignaturePage = () => {
           {/* Rejection Comment Alert */}
           {rejectionComment && (
             <Card className="mb-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
-              <CardHeader className="bg-red-100 border-b border-red-200 dark:border-red-800">
+              <CardHeader className="bg-red-100 dark:bg-red-900 border-b border-red-200 dark:border-red-800">
                 <CardTitle className="text-red-800 dark:text-red-200 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
                   ข้อความตีกลับจากผู้อนุมัติ
@@ -609,7 +609,7 @@ const PDFSignaturePage = () => {
             <Card className="shadow-lg border-0 bg-card">
               <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
                     <FileText className="w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>
                   ข้อมูลเอกสาร PDF

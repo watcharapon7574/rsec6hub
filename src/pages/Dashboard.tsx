@@ -63,7 +63,7 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Welcome Section */}
         <Card className="mb-6">
-          <CardContent className="bg-blue-50 border-b border-blue-100 rounded-t-lg pt-6">
+          <CardContent className="bg-blue-600 rounded-t-lg pt-6">
             <div className="flex items-center gap-4">
               <img
                 src="/fastdocIcon.png"
@@ -71,10 +71,10 @@ const Dashboard = () => {
                 className="h-10 w-10 object-contain"
               />
               <div>
-                <h1 className="text-2xl font-bold text-foreground">
+                <h1 className="text-2xl font-bold text-white">
                   ยินดีต้อนรับ, {displayName}
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-blue-100">
                   {profile?.employee_id} • {profile?.job_position || profile?.current_position || getPositionText(profile?.position || '')} • {profile?.workplace || 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6'}
                 </p>
               </div>

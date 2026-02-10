@@ -240,15 +240,13 @@ const MemoList: React.FC<MemoListProps> = ({
   return (
     <Card>
       <CardHeader
-        className={`bg-amber-50 border-b border-amber-100 py-3 px-4 cursor-pointer hover:bg-amber-100/60 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        className={`bg-amber-500 py-3 px-4 cursor-pointer hover:bg-amber-600 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <CardTitle className="flex items-center gap-2 text-base text-amber-800">
-          <div className="p-1.5 rounded-lg bg-amber-200/60">
-            <FileText className="h-4 w-4 text-amber-700" />
-          </div>
+        <CardTitle className="flex items-center gap-2 text-base text-white">
+          <FileText className="h-4 w-4 text-amber-100" />
           รายการบันทึกข้อความ
-          <Badge variant="secondary" className="ml-auto bg-amber-200/60 text-amber-800 font-semibold px-2 py-1 rounded-full">
+          <Badge variant="secondary" className="ml-auto bg-amber-600 text-white font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </Badge>
           <Button
@@ -256,19 +254,19 @@ const MemoList: React.FC<MemoListProps> = ({
             size="sm"
             onClick={(e) => { e.stopPropagation(); onRefresh?.(); }}
             disabled={!onRefresh}
-            className="ml-2 p-1 h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-50"
+            className="ml-2 p-1 h-8 w-8 text-white/70 hover:text-white disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
-          <div className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-muted transition-colors">
+          <div className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-white/10 transition-colors">
             {isCollapsed ? (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              <ChevronDown className="h-5 w-5 text-white/70" />
             ) : (
-              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              <ChevronUp className="h-5 w-5 text-white/70" />
             )}
           </div>
         </CardTitle>
-        <div className="text-sm text-muted-foreground font-normal mt-1">
+        <div className="text-sm text-amber-100 font-normal mt-1">
           {isCollapsed ? 'คลิกเพื่อแสดงรายการ' : 'จัดการบันทึกข้อความ ตรวจสอบความถูกต้อง และจัดเส้นทางการอนุมัติ'}
         </div>
       </CardHeader>

@@ -593,18 +593,16 @@ const DocumentList: React.FC<DocumentListProps> = ({
 
   return (
     <Card>
-      <CardHeader className="bg-purple-50 border-b border-purple-100 py-3 px-4 rounded-t-lg">
-        <CardTitle className="flex items-center gap-2 text-base text-purple-800">
-          <div className="p-1.5 rounded-lg bg-purple-200/60">
-            <FileText className="h-4 w-4 text-purple-700" />
-          </div>
+      <CardHeader className="bg-purple-600 py-3 px-4 rounded-t-lg">
+        <CardTitle className="flex items-center gap-2 text-base text-white">
+          <FileText className="h-4 w-4 text-purple-100" />
           {permissions.position === "clerk_teacher" ? 
             "เอกสารภายในสถานศึกษา" : 
             (["assistant_director", "deputy_director"].includes(permissions.position) ? 
               "เอกสารของผู้อื่น" : 
               "รายการเอกสาร")
           }
-          <Badge variant="secondary" className="ml-auto bg-purple-200/60 text-purple-800 font-semibold px-2 py-1 rounded-full">
+          <Badge variant="secondary" className="ml-auto bg-purple-700 text-white font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </Badge>
           <Button
@@ -612,18 +610,18 @@ const DocumentList: React.FC<DocumentListProps> = ({
             size="sm"
             onClick={onRefresh}
             disabled={!onRefresh}
-            className="ml-2 p-1 h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-50"
+            className="ml-2 p-1 h-8 w-8 text-white/70 hover:text-white disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
         </CardTitle>
         {permissions.position === "clerk_teacher" && (
-          <div className="text-sm text-muted-foreground font-normal mt-1">
+          <div className="text-sm text-purple-100 font-normal mt-1">
             จัดการเอกสารภายในสถานศึกษา ตรวจสอบความถูกต้อง กำหนดเลขที่ และจัดเส้นทางการอนุมัติ
           </div>
         )}
         {["assistant_director", "deputy_director"].includes(permissions.position) && (
-          <div className="text-sm text-muted-foreground font-normal mt-1">
+          <div className="text-sm text-purple-100 font-normal mt-1">
             เอกสารที่สร้างโดยผู้อื่น (เอกสารของคุณแสดงในส่วนข้างบน)
           </div>
         )}

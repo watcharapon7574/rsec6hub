@@ -92,14 +92,14 @@ const DailyReportsPage = () => {
         <div className="space-y-6">
           {/* Header */}
           <Card>
-            <CardContent className="bg-teal-50 border-b border-teal-100 rounded-t-lg pt-6">
+            <CardContent className="bg-teal-600 rounded-t-lg pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-xl font-bold text-teal-800 flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5 text-teal-700" />
+                  <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-teal-100" />
                     รายงานประจำวัน
                   </h1>
-                  <p className="text-sm text-muted-foreground">บันทึกและติดตามการทำงานประจำวัน</p>
+                  <p className="text-sm text-teal-100">บันทึกและติดตามการทำงานประจำวัน</p>
                 </div>
                 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

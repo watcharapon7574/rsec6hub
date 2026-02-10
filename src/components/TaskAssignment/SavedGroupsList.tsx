@@ -70,7 +70,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             variant="outline"
             size="sm"
             onClick={onCreateGroup}
-            className="h-7 px-2 text-xs border-purple-200 text-purple-600 hover:text-purple-800 hover:bg-purple-50 dark:bg-purple-950"
+            className="h-7 px-2 text-xs border-purple-200 text-purple-600 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:bg-purple-950"
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
             สร้างใหม่
@@ -129,7 +129,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               variant="outline"
               size="sm"
               onClick={onCreateGroup}
-              className="h-7 px-2 text-xs border-purple-200 text-purple-600 hover:text-purple-800 hover:bg-purple-50 dark:bg-purple-950"
+              className="h-7 px-2 text-xs border-purple-200 text-purple-600 hover:text-purple-800 dark:text-purple-200 hover:bg-purple-50 dark:bg-purple-950"
             >
               <Plus className="h-3.5 w-3.5 mr-1" />
               สร้างใหม่
@@ -153,7 +153,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             : isPosition ? 'border-orange-200' : 'border-purple-200';
           const textColor = isDisabled
             ? 'text-muted-foreground cursor-not-allowed'
-            : isPosition ? 'text-orange-700 hover:text-orange-900' : 'text-purple-700 hover:text-purple-900';
+            : isPosition ? 'text-orange-700 hover:text-orange-900 dark:text-orange-100' : 'text-purple-700 hover:text-purple-900 dark:text-purple-100';
           const badgeBg = isDisabled
             ? 'bg-muted text-muted-foreground'
             : isPosition ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600';

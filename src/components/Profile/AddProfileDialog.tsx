@@ -196,7 +196,7 @@ export const AddProfileDialog: React.FC<AddProfileDialogProps> = ({
           {/* Next Employee ID Preview */}
           <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200">
             <AlertCircle className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
               {loadingEmployeeId ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -319,7 +319,7 @@ export const AddProfileDialog: React.FC<AddProfileDialogProps> = ({
 
           <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200">
             <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800 text-sm">
+            <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
               <strong>หมายเหตุ:</strong> ระบบจะสร้าง Supabase Auth account โดยอัตโนมัติพร้อมกับโปรไฟล์ •
               รหัสบุคลากร (employee_id) จะถูกสร้างอัตโนมัติและไม่สามารถแก้ไขได้ •
               ฟิลด์ที่มี * จำเป็นต้องกรอก

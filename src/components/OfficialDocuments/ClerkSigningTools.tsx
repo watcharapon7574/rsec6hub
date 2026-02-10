@@ -66,11 +66,11 @@ const ClerkSigningTools: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending_approval':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 dark:text-yellow-200';
       case 'approved':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:text-blue-200';
       case 'signed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:text-green-200';
       default:
         return 'bg-muted text-foreground';
     }
@@ -200,7 +200,7 @@ const ClerkSigningTools: React.FC = () => {
             จัดการลายเซ็น
           </h3>
           <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-            <p className="text-sm text-blue-800 mb-2">ลายเซ็นดิจิทัล</p>
+            <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">ลายเซ็นดิจิทัล</p>
             <div className="flex items-center gap-3">
               <div className="w-24 h-12 bg-card border-2 border-dashed border-blue-300 rounded flex items-center justify-center">
                 <span className="text-xs text-blue-600">ลายเซ็น</span>

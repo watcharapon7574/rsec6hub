@@ -214,11 +214,11 @@ const MemoApprovalPage = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800">อนุมัติแล้ว</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:text-green-200">อนุมัติแล้ว</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">ปฏิเสธ</Badge>;
+        return <Badge className="bg-red-100 text-red-800 dark:text-red-200">ปฏิเสธ</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">รอการอนุมัติ</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:text-yellow-200">รอการอนุมัติ</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }

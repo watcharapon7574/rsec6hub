@@ -493,7 +493,7 @@ const RailwayManagementPage = () => {
                         <div className="mb-4 p-4 bg-blue-100 border-2 border-blue-400 rounded-lg animate-pulse">
                           <div className="flex items-center gap-3">
                             <Loader2 className="h-5 w-5 text-blue-600 animate-spin flex-shrink-0" />
-                            <p className="text-base font-semibold text-blue-900">{progressMessage}</p>
+                            <p className="text-base font-semibold text-blue-900 dark:text-blue-100">{progressMessage}</p>
                           </div>
                         </div>
                       )}
@@ -536,7 +536,7 @@ const RailwayManagementPage = () => {
                       {/* Status Info */}
                       {!isDeploying && (
                         <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 rounded-lg">
-                          <p className="text-sm text-blue-800 flex items-start gap-2">
+                          <p className="text-sm text-blue-800 dark:text-blue-200 flex items-start gap-2">
                             <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <span>
                               <strong>คำแนะนำ:</strong>
@@ -703,7 +703,7 @@ const RailwayManagementPage = () => {
 
               <div className="pt-4 border-t-2 border-dashed">
                 <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 dark:bg-blue-950 rounded-lg mb-4">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 dark:text-blue-100 flex items-center gap-2">
                     <Lightbulb className="h-5 w-5 flex-shrink-0" />
                     <span>
                       ตัวอย่าง: ตั้งเปิด 08:00 ปิด 18:00 จันทร์-ศุกร์ = ประหยัด ~70% ค่าใช้จ่าย!

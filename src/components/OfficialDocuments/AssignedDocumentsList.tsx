@@ -699,7 +699,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                   {task.completion_note && (
                     <div className="hidden lg:flex items-center gap-1.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-md px-2.5 py-1">
                       <span className="text-[10px] font-medium text-foreground">✓</span>
-                      <span className="text-xs text-green-800 truncate max-w-[100px] font-medium">
+                      <span className="text-xs text-green-800 dark:text-green-200 truncate max-w-[100px] font-medium">
                         {truncateText(task.completion_note, 25)}
                       </span>
                     </div>

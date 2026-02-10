@@ -15,7 +15,7 @@ const Step3AddNote: React.FC<Step3AddNoteProps> = ({
   return (
     <Card className="bg-card border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow">
       <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
-        <CardTitle className="flex items-center text-lg text-pink-900">
+        <CardTitle className="flex items-center text-lg text-pink-900 dark:text-pink-100">
           <MessageSquare className="h-5 w-5 mr-2 text-pink-600" />
           หมายเหตุเพิ่มเติม
         </CardTitle>

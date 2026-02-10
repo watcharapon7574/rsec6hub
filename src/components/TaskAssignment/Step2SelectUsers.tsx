@@ -213,7 +213,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
   return (
     <Card className="bg-card border-2 border-pink-200 shadow-lg hover:shadow-xl transition-shadow overflow-visible">
       <CardHeader className="bg-gradient-to-r from-pink-50 to-pink-100 border-b border-pink-200">
-        <CardTitle className="flex items-center text-lg text-pink-900">
+        <CardTitle className="flex items-center text-lg text-pink-900 dark:text-pink-100">
           <Users className="h-5 w-5 mr-2 text-pink-600" />
           เลือกผู้รับมอบหมาย
         </CardTitle>
@@ -261,7 +261,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
 
         {/* Position mode warning */}
         {isPositionMode && (
-          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
+          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 rounded-lg p-3 text-sm text-orange-800 dark:text-orange-200">
             <div className="flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-orange-500" />
               <span className="font-medium">โหมดหน้าที่:</span>
@@ -275,7 +275,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
 
         {/* Name/Group mode warning */}
         {isNameOrGroupMode && (
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-blue-500" />
               <span className="font-medium">

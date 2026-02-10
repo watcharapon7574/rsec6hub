@@ -406,7 +406,7 @@ const TestRequestQueuePage: React.FC = () => {
 
           {/* Railway PDF Tests */}
           <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 rounded-lg p-3">
-            <div className="text-sm font-medium text-orange-800 mb-2">
+            <div className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2">
               📄 Railway PDF Generation Tests
             </div>
             <div className="text-xs text-orange-600 mb-3">
@@ -456,7 +456,7 @@ const TestRequestQueuePage: React.FC = () => {
 
           {/* Edge Function Tests */}
           <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 rounded-lg p-3">
-            <div className="text-sm font-medium text-purple-800 mb-2">
+            <div className="text-sm font-medium text-purple-800 dark:text-purple-200 mb-2">
               ⚡ Supabase Edge Function Tests
             </div>
             <div className="text-xs text-purple-600 mb-3">
@@ -698,7 +698,7 @@ const TestRequestQueuePage: React.FC = () => {
 
             {results.successRate === 100 && (
               <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
-                <div className="flex items-center gap-2 text-green-800">
+                <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
                   <CheckCircle className="h-4 w-4" />
                   <span className="font-medium">
                     ระบบ Request Queue ทำงานได้ปกติ! 🎉
@@ -709,7 +709,7 @@ const TestRequestQueuePage: React.FC = () => {
 
             {results.successRate < 100 && results.successRate >= 90 && (
               <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
-                <div className="flex items-center gap-2 text-yellow-800">
+                <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
                   <Activity className="h-4 w-4" />
                   <span className="font-medium">
                     ระบบทำงานได้ดี แต่มีบางส่วนที่ล้มเหลว ({results.failed} requests)
@@ -720,7 +720,7 @@ const TestRequestQueuePage: React.FC = () => {
 
             {results.successRate < 90 && (
               <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
-                <div className="flex items-center gap-2 text-red-800">
+                <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
                   <XCircle className="h-4 w-4" />
                   <span className="font-medium">
                     พบปัญหาในระบบ! Success Rate ต่ำกว่า 90%

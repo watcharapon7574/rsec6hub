@@ -74,7 +74,7 @@ const ManagementTools: React.FC = () => {
         </div>
         
         <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
-          <h4 className="font-semibold text-purple-800 mb-2">สิทธิ์ผู้บริหาร</h4>
+          <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">สิทธิ์ผู้บริหาร</h4>
           <ul className="text-sm text-purple-700 space-y-1">
             <li>• อนุมัติเอกสารทุกประเภท</li>
             <li>• จัดการผู้ใช้และสิทธิ์การเข้าถึง</li>

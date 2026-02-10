@@ -74,7 +74,7 @@ const TeacherTools: React.FC = () => {
         </div>
         
         <div className="mt-6 p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-          <h4 className="font-semibold text-green-800 mb-2">สิทธิ์ครู</h4>
+          <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">สิทธิ์ครู</h4>
           <ul className="text-sm text-green-700 space-y-1">
             <li>• สร้างและจัดการแผนการสอน</li>
             <li>• ขอลาการสอนและหาครูทดแทน</li>

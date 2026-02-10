@@ -567,7 +567,7 @@ const PDFSignaturePage = () => {
           {rejectionComment && (
             <Card className="mb-6 border-red-200 bg-red-50 dark:bg-red-950">
               <CardHeader className="bg-red-100 border-b border-red-200">
-                <CardTitle className="text-red-800 flex items-center gap-2">
+                <CardTitle className="text-red-800 dark:text-red-200 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
                   ข้อความตีกลับจากผู้อนุมัติ
                 </CardTitle>
@@ -575,7 +575,7 @@ const PDFSignaturePage = () => {
               <CardContent className="p-4">
                 <Alert className="border-red-200 bg-card">
                   <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800">
+                  <AlertDescription className="text-red-800 dark:text-red-200">
                     <div className="space-y-2">
                       <p className="font-medium">{rejectionComment.comment || 'ไม่ระบุเหตุผล'}</p>
                       <div className="text-sm text-red-600">
@@ -649,7 +649,7 @@ const PDFSignaturePage = () => {
                         <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 rounded-lg">
                           <div className="flex items-center gap-2">
                             <FileText className="h-5 w-5 text-green-600" />
-                            <span className="text-sm font-medium text-green-800">
+                            <span className="text-sm font-medium text-green-800 dark:text-green-200">
                               ไฟล์ที่เลือก: {formData.pdfFile.name}
                             </span>
                           </div>
@@ -760,7 +760,7 @@ const PDFSignaturePage = () => {
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-blue-800 mb-2">ข้อมูลสำคัญ</h4>
+                      <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">ข้อมูลสำคัญ</h4>
                       <ul className="text-sm text-blue-700 space-y-1">
                         <li>• ไฟล์ PDF ที่อัพโหลดจะถูกนำเข้าสู่ระบบจัดการเอกสาร</li>
                         <li>• หลังจากอัพโหลดเสร็จ ธุรการจะสามารถจัดการและกำหนดเส้นทางการอนุมัติได้</li>

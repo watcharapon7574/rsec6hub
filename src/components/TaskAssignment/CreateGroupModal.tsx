@@ -81,7 +81,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-pink-900">
+          <DialogTitle className="flex items-center gap-2 text-pink-900 dark:text-pink-100">
             {groupType === 'position' ? (
               <Briefcase className="h-5 w-5 text-muted-foreground" />
             ) : (
@@ -179,7 +179,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                 : 'bg-purple-50 dark:bg-purple-950 border-purple-200'
             }`}>
               <div className={`text-sm ${
-                groupType === 'position' ? 'text-orange-800' : 'text-purple-800'
+                groupType === 'position' ? 'text-orange-800 dark:text-orange-200' : 'text-purple-800 dark:text-purple-200'
               }`}>
                 {groupType === 'position'
                   ? `ผู้รับผิดชอบ: ${selectedMembers[0]?.first_name} ${selectedMembers[0]?.last_name}`

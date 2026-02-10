@@ -305,7 +305,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 <div className="space-y-3">
                   <Label>ลำดับที่ 3: ผอ. (บังคับ) *</Label>
                   <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
-                    <p className="text-blue-800 font-medium">{availableSigners.director[0].name}</p>
+                    <p className="text-blue-800 dark:text-blue-200 font-medium">{availableSigners.director[0].name}</p>
                     <p className="text-sm text-muted-foreground">ผู้อำนวยการ ({availableSigners.director[0].employee_id})</p>
                   </div>
                 </div>
@@ -345,12 +345,12 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 
                 <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
                   <div>
-                    <p className="font-medium text-blue-900">เรื่อง:</p>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">เรื่อง:</p>
                     <p className="text-foreground">{formData.subject}</p>
                   </div>
                   
                   <div>
-                    <p className="font-medium text-blue-900">ผู้ลงนาม:</p>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">ผู้ลงนาม:</p>
                     <ul className="text-foreground">
                       {formData.signers.assistant && <li>• ผู้ช่วย ผอ.: {formData.signers.assistant}</li>}
                       {formData.signers.deputy && <li>• รอง ผอ.: {formData.signers.deputy}</li>}
@@ -359,7 +359,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                   </div>
                   
                   <div>
-                    <p className="font-medium text-blue-900">ตำแหน่งลายเซ็น:</p>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">ตำแหน่งลายเซ็น:</p>
                     <p className="text-foreground">{formData.signaturePositions.length} ตำแหน่ง</p>
                   </div>
                 </div>
@@ -403,7 +403,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
       <div className="space-y-6">
         <Card className="bg-card shadow-lg">
           <CardHeader className="border-b border-blue-100">
-            <CardTitle className="flex items-center gap-2 text-blue-800">
+            <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
               <Eye className="h-5 w-5" />
               ตัวอย่างเอกสาร
             </CardTitle>

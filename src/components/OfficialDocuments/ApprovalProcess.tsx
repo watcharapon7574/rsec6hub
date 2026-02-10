@@ -97,7 +97,7 @@ const ApprovalProcess: React.FC = () => {
           <div className="mt-6">
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-foreground">
-                <span className="font-medium text-blue-800">หมายเหตุ:</span> หลังจากผ่านการอนุมัติแล้ว เอกสารจะได้รับเลขที่อ้างอิงอัตโนมัติ
+                <span className="font-medium text-blue-800 dark:text-blue-200">หมายเหตุ:</span> หลังจากผ่านการอนุมัติแล้ว เอกสารจะได้รับเลขที่อ้างอิงอัตโนมัติ
               </p>
             </div>
           </div>

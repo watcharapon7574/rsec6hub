@@ -190,21 +190,21 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-100">
-                  <p className="text-sm font-medium text-amber-800">รอการอนุมัติคำขอลา</p>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">รอการอนุมัติคำขอลา</p>
                   <p className="text-xs text-amber-600 mb-2">มี 2 คำขอรอการพิจารณา</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/leave-requests')}>
                     ดูรายละเอียด
                   </Button>
                 </div>
                 <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100">
-                  <p className="text-sm font-medium text-blue-800">เอกสารใหม่</p>
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">เอกสารใหม่</p>
                   <p className="text-xs text-blue-600 mb-2">ได้รับหนังสือราชการ 1 ฉบับ</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/documents')}>
                     เปิดดู
                   </Button>
                 </div>
                 <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100">
-                  <p className="text-sm font-medium text-green-800">รายงานสำเร็จ</p>
+                  <p className="text-sm font-medium text-green-800 dark:text-green-200">รายงานสำเร็จ</p>
                   <p className="text-xs text-green-600 mb-2">ส่งรายงานครบถ้วนแล้ว</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/daily-reports')}>
                     ตรวจสอบ

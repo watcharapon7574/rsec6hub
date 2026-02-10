@@ -264,7 +264,7 @@ const AdminProfileManagementPage: React.FC = () => {
         {/* Info Alert */}
         <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 shadow">
           <AlertCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
+          <AlertDescription className="text-blue-800 dark:text-blue-200">
             <strong>หมายเหตุ:</strong> รหัสบุคลากร (employee_id) จะถูกสร้างอัตโนมัติและไม่สามารถแก้ไขได้
             • เพิ่มโปรไฟล์ใหม่จะสร้าง Supabase Auth account อัตโนมัติ
             • ไม่สามารถลบโปรไฟล์ได้ (เพื่อรักษาประวัติข้อมูล)

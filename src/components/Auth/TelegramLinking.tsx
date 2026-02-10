@@ -54,7 +54,7 @@ const TelegramLinking: React.FC<TelegramLinkingProps> = ({ phone, onLinked, onBa
         <div className="space-y-4">
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-blue-900">ขั้นตอนการเชื่อมต่อ:</p>
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">ขั้นตอนการเชื่อมต่อ:</p>
               <ol className="text-xs text-blue-700 space-y-1 ml-4">
                 <li>1. กดปุ่ม "เปิด Telegram" ด้านล่าง</li>
                 <li>2. ส่งข้อความ /start ให้กับบอท</li>

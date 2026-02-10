@@ -399,9 +399,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // ฟังก์ชันสำหรับสีความเร่งด่วน
   const getUrgencyColor = (urgency: string): string => {
     switch (urgency.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
+      case 'high': return 'bg-red-100 text-red-800 dark:text-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:text-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 dark:text-green-200';
       default: return 'bg-muted text-foreground';
     }
   };
@@ -1239,7 +1239,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
 
           <div className="space-y-4 py-4">
             <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
                 ⚠️ <strong>คำเตือน:</strong> การลบเอกสารนี้จะไม่สามารถกู้คืนได้
               </p>
             </div>

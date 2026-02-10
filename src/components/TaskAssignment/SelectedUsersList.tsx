@@ -28,7 +28,7 @@ const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium text-pink-900">
+        <div className="text-sm font-medium text-pink-900 dark:text-pink-100">
           ผู้ที่ได้รับมอบหมาย ({selectedUsers.length} คน)
         </div>
         {onClearAll && selectedUsers.length > 0 && (

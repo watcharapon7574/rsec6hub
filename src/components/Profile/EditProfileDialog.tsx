@@ -358,7 +358,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
 
           <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200">
             <AlertCircle className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800 text-sm">
+            <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
               <strong>หมายเหตุ:</strong> รหัสบุคลากร (employee_id) ไม่สามารถแก้ไขได้ • ฟิลด์ที่มี * จำเป็นต้องกรอก
             </AlertDescription>
           </Alert>

@@ -332,7 +332,7 @@ const MemoApprovalPage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <Clock className="h-5 w-5 text-yellow-600" />
-                    <h3 className="font-semibold text-yellow-800">รอผู้ลงนามลำดับก่อนหน้า</h3>
+                    <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">รอผู้ลงนามลำดับก่อนหน้า</h3>
                   </div>
                   <p className="text-yellow-700">
                     กรุณารอให้ผู้ลงนามลำดับที่ {workflow.current_step - 1} ลงนามก่อน
@@ -346,7 +346,7 @@ const MemoApprovalPage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <CheckCircle className="h-5 w-5 text-green-600" />
-                    <h3 className="font-semibold text-green-800">เอกสารเสร็จสิ้น</h3>
+                    <h3 className="font-semibold text-green-800 dark:text-green-200">เอกสารเสร็จสิ้น</h3>
                   </div>
                   <p className="text-green-700 mb-4">
                     เอกสารได้รับการลงนามครบถ้วนแล้ว
@@ -363,7 +363,7 @@ const MemoApprovalPage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <XCircle className="h-5 w-5 text-red-600" />
-                    <h3 className="font-semibold text-red-800">เอกสารถูกตีกลับ</h3>
+                    <h3 className="font-semibold text-red-800 dark:text-red-200">เอกสารถูกตีกลับ</h3>
                   </div>
                   <p className="text-red-700">
                     เอกสารถูกตีกลับและส่งกลับให้ผู้สร้างแก้ไข

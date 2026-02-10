@@ -35,10 +35,10 @@ const CreateDocumentPage = () => {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl font-bold text-muted-foreground mb-4">
               สร้างเอกสารใหม่
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               เลือกประเภทเอกสารที่ต้องการสร้าง
             </p>
           </div>
@@ -57,12 +57,12 @@ const CreateDocumentPage = () => {
                     <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${option.color} text-white mb-4 mx-auto group-hover:scale-110 transition-transform duration-200`}>
                       <IconComponent className="h-8 w-8" />
                     </div>
-                    <CardTitle className="text-xl text-gray-800">
+                    <CardTitle className="text-xl text-foreground">
                       {option.title}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-center pb-8">
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-muted-foreground mb-6">
                       {option.description}
                     </p>
                     <Button 

@@ -52,15 +52,15 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
     <div className="space-y-4">
       <div className="text-center space-y-1">
         <MessageCircle className="w-10 h-10 mx-auto text-blue-500" />
-        <h3 className="text-lg font-semibold text-gray-900">เข้าใช้งานครั้งแรก</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className="text-lg font-semibold text-muted-foreground">เข้าใช้งานครั้งแรก</h3>
+        <p className="text-sm text-muted-foreground">
           กรุณาใส่ Telegram Chat ID เพื่อรับรหัส OTP
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-2">
-          <label htmlFor="chatId" className="text-sm font-medium text-gray-700">
+          <label htmlFor="chatId" className="text-sm font-medium text-foreground">
             Telegram Chat ID
           </label>
           <Input
@@ -122,7 +122,7 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
         type="button"
         onClick={onBack}
         variant="ghost"
-        className="w-full flex items-center justify-center gap-2 text-gray-500"
+        className="w-full flex items-center justify-center gap-2 text-muted-foreground"
         disabled={loading}
       >
         <ArrowLeft className="w-4 h-4" />

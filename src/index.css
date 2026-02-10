@@ -233,6 +233,18 @@
   background: #a8a8a8;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
 /* ========== Autofill Chrome/Edge fix ========== */
 input:-webkit-autofill,
 textarea:-webkit-autofill,
@@ -241,4 +253,12 @@ select:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px #fafbfc inset !important;
   -webkit-text-fill-color: #1e2328 !important;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+  box-shadow: 0 0 0px 1000px hsl(215 25% 19%) inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px hsl(215 25% 19%) inset !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
 }

@@ -5,6 +5,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Power, User } from 'lucide-react';
 import SessionTimer from './SessionTimer';
+import DarkModeToggle from './DarkModeToggle';
 
 const TopBar = () => {
   const navigate = useNavigate();
@@ -143,7 +144,11 @@ const TopBar = () => {
             )}
           </div>
 
-          <div className="flex items-center flex-shrink-0 ml-2 flex-col">
+          <div className="flex items-center flex-shrink-0 ml-2 gap-3">
+            {/* Dark Mode Toggle */}
+            <DarkModeToggle />
+
+            <div className="flex flex-col items-center">
             {/* ปุ่มออกจากระบบ (Logout Button) */}
             <button
               onClick={handleSignOut}
@@ -162,6 +167,7 @@ const TopBar = () => {
             <div className="mt-1 text-xs text-muted-foreground text-center select-none leading-tight">
               <SessionTimer />
               </div>
+            </div>
             </div>
           </div>
         </div>

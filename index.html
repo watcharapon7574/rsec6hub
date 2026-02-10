@@ -47,6 +47,15 @@
   </head>
 
   <body>
+    <script>
+      // Apply dark mode class before React loads to prevent flash
+      (function() {
+        var theme = localStorage.getItem('rsec6hub-theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     

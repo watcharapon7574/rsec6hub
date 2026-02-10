@@ -262,21 +262,10 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
         {/* Position mode warning */}
         {isPositionMode && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-orange-500" />
-                <span className="font-medium">โหมดหน้าที่:</span>
-                {selectionInfo?.positionName}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClear}
-                className="h-6 px-2 text-xs text-orange-600 hover:text-orange-800 hover:bg-orange-100"
-              >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                ล้าง
-              </Button>
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-orange-500" />
+              <span className="font-medium">โหมดหน้าที่:</span>
+              {selectionInfo?.positionName}
             </div>
             <p className="text-xs mt-1 text-orange-600">
               เพิ่มสมาชิกทีมได้เฉพาะรายคน (ค้นหาชื่อ) • ไม่สามารถเพิ่มกลุ่มหรือหน้าที่อื่นได้
@@ -287,23 +276,12 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
         {/* Name/Group mode warning */}
         {isNameOrGroupMode && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-500" />
-                <span className="font-medium">
-                  {selectionInfo?.source === 'group' ? 'โหมดกลุ่ม:' : 'โหมดรายชื่อ:'}
-                </span>
-                {selectionInfo?.groupName || `${selectedUsers.length} คน`}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClear}
-                className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-              >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                ล้าง
-              </Button>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-blue-500" />
+              <span className="font-medium">
+                {selectionInfo?.source === 'group' ? 'โหมดกลุ่ม:' : 'โหมดรายชื่อ:'}
+              </span>
+              {selectionInfo?.groupName || `${selectedUsers.length} คน`}
             </div>
             <p className="text-xs mt-1 text-blue-600">
               สามารถเพิ่มได้เฉพาะรายคนหรือกลุ่ม • ไม่สามารถเพิ่มหน้าที่ได้

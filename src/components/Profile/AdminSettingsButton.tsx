@@ -102,7 +102,7 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
         <Button
           variant="outline"
           size="sm"
-          className="text-foreground border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all"
+          className="text-foreground border-border hover:bg-muted hover:border-border transition-all"
         >
           <Settings className="h-4 w-4 mr-2" />
           ตั้งค่าแอดมิน

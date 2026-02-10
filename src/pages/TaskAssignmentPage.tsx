@@ -218,7 +218,7 @@ const TaskAssignmentPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <div className="text-lg text-gray-600">กำลังโหลดข้อมูลเอกสาร...</div>
+            <div className="text-lg text-muted-foreground">กำลังโหลดข้อมูลเอกสาร...</div>
           </div>
         </div>
       </div>
@@ -248,8 +248,8 @@ const TaskAssignmentPage = () => {
               <Users className="h-6 w-6 text-pink-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">มอบหมายงาน</h1>
-              <p className="text-gray-600">ทำตามขั้นตอนเพื่อมอบหมายงานให้ผู้รับผิดชอบ</p>
+              <h1 className="text-3xl font-bold text-muted-foreground">มอบหมายงาน</h1>
+              <p className="text-muted-foreground">ทำตามขั้นตอนเพื่อมอบหมายงานให้ผู้รับผิดชอบ</p>
             </div>
           </div>
         </div>

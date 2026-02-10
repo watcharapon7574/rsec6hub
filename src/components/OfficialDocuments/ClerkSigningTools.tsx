@@ -72,7 +72,7 @@ const ClerkSigningTools: React.FC = () => {
       case 'signed':
         return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-foreground';
     }
   };
 
@@ -100,7 +100,7 @@ const ClerkSigningTools: React.FC = () => {
       <CardContent className="p-6 space-y-6">
         {/* Document Queue */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
             <Clock className="h-4 w-4" />
             เอกสารรอดำเนินการ ({pendingDocuments.length})
           </h3>
@@ -110,8 +110,8 @@ const ClerkSigningTools: React.FC = () => {
               <div key={doc.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900 mb-1">{doc.fileName}</h4>
-                    <div className="text-sm text-gray-600 space-y-1">
+                    <h4 className="font-medium text-muted-foreground mb-1">{doc.fileName}</h4>
+                    <div className="text-sm text-muted-foreground space-y-1">
                       <p>ส่งโดย: {doc.submittedBy}</p>
                       <p>เวลา: {doc.submittedAt}</p>
                       <p>ผู้อนุมัติปัจจุบัน: {doc.currentApprover}</p>
@@ -125,16 +125,16 @@ const ClerkSigningTools: React.FC = () => {
                 {/* Comments History */}
                 {doc.comments.length > 0 && (
                   <div className="bg-gray-50 rounded p-3 mb-3">
-                    <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <h5 className="text-sm font-medium text-foreground mb-2 flex items-center gap-1">
                       <MessageSquare className="h-3 w-3" />
                       ความเห็นการอนุมัติ
                     </h5>
                     <div className="space-y-2">
                       {doc.comments.map((comment, index) => (
                         <div key={index} className="text-sm">
-                          <div className="font-medium text-gray-700">{comment.approver}</div>
-                          <div className="text-gray-600">{comment.comment}</div>
-                          <div className="text-xs text-gray-500">{comment.timestamp}</div>
+                          <div className="font-medium text-foreground">{comment.approver}</div>
+                          <div className="text-muted-foreground">{comment.comment}</div>
+                          <div className="text-xs text-muted-foreground">{comment.timestamp}</div>
                         </div>
                       ))}
                     </div>
@@ -176,7 +176,7 @@ const ClerkSigningTools: React.FC = () => {
 
         {/* Comment Section for Approval */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             เพิ่มความเห็น
           </h3>
@@ -187,7 +187,7 @@ const ClerkSigningTools: React.FC = () => {
               placeholder="ระบุความเห็นในการอนุมัติ..."
               className="w-full p-3 border rounded-lg resize-none h-20 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               ความเห็นจะถูกแสดงใกล้กับตำแหน่งลายเซ็นในเอกสาร PDF
             </p>
           </div>
@@ -195,7 +195,7 @@ const ClerkSigningTools: React.FC = () => {
 
         {/* Signature Management */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
             <PenTool className="h-4 w-4" />
             จัดการลายเซ็น
           </h3>
@@ -218,19 +218,19 @@ const ClerkSigningTools: React.FC = () => {
             <div className="text-2xl font-bold text-yellow-600">
               {pendingDocuments.filter(d => d.status === 'pending_approval').length}
             </div>
-            <div className="text-sm text-gray-600">รอการอนุมัติ</div>
+            <div className="text-sm text-muted-foreground">รอการอนุมัติ</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
               {pendingDocuments.filter(d => d.status === 'approved').length}
             </div>
-            <div className="text-sm text-gray-600">รอลงนาม</div>
+            <div className="text-sm text-muted-foreground">รอลงนาม</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
               {pendingDocuments.filter(d => d.status === 'signed').length}
             </div>
-            <div className="text-sm text-gray-600">เสร็จสิ้น</div>
+            <div className="text-sm text-muted-foreground">เสร็จสิ้น</div>
           </div>
         </div>
       </CardContent>

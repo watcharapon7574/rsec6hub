@@ -237,17 +237,17 @@ const DocumentDetailPage: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">เรื่อง</label>
+                <label className="text-sm font-medium text-muted-foreground">เรื่อง</label>
                 <p className="text-base font-semibold">{document.subject}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">เลขที่หนังสือ</label>
+                  <label className="text-sm font-medium text-muted-foreground">เลขที่หนังสือ</label>
                   <p className="text-base">{document.doc_number || 'ยังไม่มีเลขที่'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">ประเภท</label>
+                  <label className="text-sm font-medium text-muted-foreground">ประเภท</label>
                   <p className="text-base">{document.document_type === 'memo' ? 'บันทึกข้อความ' : 'หนังสือรับ'}</p>
                 </div>
               </div>
@@ -255,18 +255,18 @@ const DocumentDetailPage: React.FC = () => {
               <Separator />
 
               <div className="flex items-start gap-2">
-                <User className="h-4 w-4 mt-1 text-gray-500" />
+                <User className="h-4 w-4 mt-1 text-muted-foreground" />
                 <div>
-                  <label className="text-sm font-medium text-gray-500">ผู้เขียน</label>
+                  <label className="text-sm font-medium text-muted-foreground">ผู้เขียน</label>
                   <p className="text-base">{document.author_name}</p>
-                  <p className="text-sm text-gray-500">{document.author_position}</p>
+                  <p className="text-sm text-muted-foreground">{document.author_position}</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-2">
-                <Calendar className="h-4 w-4 mt-1 text-gray-500" />
+                <Calendar className="h-4 w-4 mt-1 text-muted-foreground" />
                 <div>
-                  <label className="text-sm font-medium text-gray-500">วันที่สร้าง</label>
+                  <label className="text-sm font-medium text-muted-foreground">วันที่สร้าง</label>
                   <p className="text-base">{new Date(document.created_at).toLocaleDateString('th-TH', {
                     year: 'numeric',
                     month: 'long',
@@ -305,7 +305,7 @@ const DocumentDetailPage: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             {task.status === 'completed' ? (
-                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <CheckCircle className="h-5 w-5 text-foreground" />
                             ) : (
                               <Clock className="h-5 w-5 text-blue-500" />
                             )}
@@ -314,7 +314,7 @@ const DocumentDetailPage: React.FC = () => {
                           {getStatusBadge(task.status)}
                         </div>
 
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           <p>มอบหมายโดย: {task.assigned_by_name}</p>
                           <p>วันที่มอบหมาย: {new Date(task.assigned_at).toLocaleDateString('th-TH')}</p>
                           {task.completed_at && (
@@ -330,7 +330,7 @@ const DocumentDetailPage: React.FC = () => {
                                 <ClipboardList className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
                                 <div>
                                   <label className="text-xs font-medium text-pink-700">รายละเอียดงาน</label>
-                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.task_description}</p>
+                                  <p className="text-sm text-foreground whitespace-pre-wrap">{task.task_description}</p>
                                 </div>
                               </div>
                             )}
@@ -339,7 +339,7 @@ const DocumentDetailPage: React.FC = () => {
                                 <Calendar className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
                                 <div>
                                   <label className="text-xs font-medium text-pink-700">วันที่/เวลา</label>
-                                  <p className="text-sm text-gray-700">
+                                  <p className="text-sm text-foreground">
                                     {task.event_date && new Date(task.event_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
                                     {task.event_date && task.event_time && ' '}
                                     {task.event_time && `เวลา ${task.event_time} น.`}
@@ -352,7 +352,7 @@ const DocumentDetailPage: React.FC = () => {
                                 <MapPin className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
                                 <div>
                                   <label className="text-xs font-medium text-pink-700">สถานที่</label>
-                                  <p className="text-sm text-gray-700">{task.location}</p>
+                                  <p className="text-sm text-foreground">{task.location}</p>
                                 </div>
                               </div>
                             )}
@@ -361,14 +361,14 @@ const DocumentDetailPage: React.FC = () => {
 
                         {task.note && (
                           <div className="mt-2">
-                            <label className="text-sm font-medium text-gray-500">หมายเหตุ:</label>
+                            <label className="text-sm font-medium text-muted-foreground">หมายเหตุ:</label>
                             <p className="text-sm bg-gray-50 p-2 rounded">{task.note}</p>
                           </div>
                         )}
 
                         {task.status === 'completed' && reportText && (
                           <div className="mt-2">
-                            <label className="text-sm font-medium text-gray-500">รายงานผล:</label>
+                            <label className="text-sm font-medium text-muted-foreground">รายงานผล:</label>
                             <p className="text-sm bg-green-50 p-2 rounded whitespace-pre-wrap">{reportText}</p>
 
                             {reportFileUrl && (
@@ -390,7 +390,7 @@ const DocumentDetailPage: React.FC = () => {
                   {/* Pagination */}
                   {totalPages > 1 && (
                     <div className="flex items-center justify-between pt-4 border-t">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         แสดง {startIndex + 1}-{Math.min(endIndex, totalItems)} จาก {totalItems} รายการ
                       </span>
                       <div className="flex items-center gap-2">
@@ -437,7 +437,7 @@ const DocumentDetailPage: React.FC = () => {
                 />
               ) : (
                 <div className="flex items-center justify-center h-[400px] bg-gray-50 rounded">
-                  <p className="text-gray-500">ไม่มีไฟล์ PDF</p>
+                  <p className="text-muted-foreground">ไม่มีไฟล์ PDF</p>
                 </div>
               )}
             </CardContent>

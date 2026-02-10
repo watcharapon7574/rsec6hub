@@ -51,7 +51,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
     return (
       <div className="flex items-center justify-center py-4">
         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-pink-500" />
-        <span className="ml-2 text-sm text-gray-500">กำลังโหลดกลุ่ม...</span>
+        <span className="ml-2 text-sm text-muted-foreground">กำลังโหลดกลุ่ม...</span>
       </div>
     );
   }
@@ -61,10 +61,10 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
     if (onCreateGroup) {
       return (
         <div className="flex items-center justify-between">
-          <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <div className="text-sm font-medium text-foreground flex items-center gap-2">
             <Users className="h-4 w-4 text-purple-500" />
             <span>กลุ่ม/หน้าที่</span>
-            <span className="text-xs text-gray-400">(ยังไม่มี)</span>
+            <span className="text-xs text-muted-foreground">(ยังไม่มี)</span>
           </div>
           <Button
             variant="outline"
@@ -85,7 +85,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
     <div className="space-y-2">
       {/* Header with title and badges */}
       <div className="flex items-center justify-between gap-2">
-        <div className="text-sm font-medium text-gray-700 flex items-center gap-2 flex-wrap">
+        <div className="text-sm font-medium text-foreground flex items-center gap-2 flex-wrap">
           <Users className="h-4 w-4 text-purple-500" />
           <span>กลุ่ม/หน้าที่</span>
           {groupsOnly.length > 0 && (
@@ -107,7 +107,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setIsDeleteMode(false)}
-              className="h-7 px-2 text-xs border-gray-300 text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+              className="h-7 px-2 text-xs border-gray-300 text-muted-foreground hover:text-foreground hover:bg-gray-100"
             >
               <X className="h-3.5 w-3.5 mr-1" />
               เสร็จสิ้น
@@ -152,10 +152,10 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             ? 'border-gray-200'
             : isPosition ? 'border-orange-200' : 'border-purple-200';
           const textColor = isDisabled
-            ? 'text-gray-400 cursor-not-allowed'
+            ? 'text-muted-foreground cursor-not-allowed'
             : isPosition ? 'text-orange-700 hover:text-orange-900' : 'text-purple-700 hover:text-purple-900';
           const badgeBg = isDisabled
-            ? 'bg-gray-100 text-gray-400'
+            ? 'bg-gray-100 text-muted-foreground'
             : isPosition ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600';
           const Icon = isPosition ? Briefcase : Users;
 

@@ -75,7 +75,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
           <div>
             <Label htmlFor="doc-number">เลขหนังสือราชการ</Label>
             <div className="flex items-stretch">
-              <div className="text-lg font-medium text-gray-700 bg-gray-50 px-4 rounded-l-md border border-r-0 border-gray-300 flex items-center">
+              <div className="text-lg font-medium text-muted-foreground bg-gray-50 px-4 rounded-l-md border border-r-0 border-gray-300 flex items-center">
                 {docNumberPrefix}
               </div>
               <Input
@@ -84,8 +84,8 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
                 value={docNumberSuffix}
                 onChange={(e) => onDocNumberSuffixChange(e.target.value)}
                 className={`text-lg rounded-l-none flex-1 ${isNumberAssigned 
-                  ? 'bg-gray-100 text-gray-700 cursor-not-allowed border-gray-300' 
-                  : 'bg-white text-gray-900 border-gray-300'
+                  ? 'bg-gray-100 text-muted-foreground cursor-not-allowed border-gray-300' 
+                  : 'bg-white text-foreground border-gray-300'
                 }`}
                 disabled={isNumberAssigned}
                 readOnly={isNumberAssigned}
@@ -106,7 +106,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
                 onClick={onAssignNumber}
                 disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || isNumberAssigned || isAssigningNumber}
                 className={isNumberAssigned 
-                  ? "bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed" 
+                  ? "bg-gray-100 text-muted-foreground border-gray-200 cursor-not-allowed" 
                   : "bg-green-600 text-white hover:bg-green-700 transition-colors"
                 }
               >
@@ -159,7 +159,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
               />
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               ไม่มีไฟล์ PDF สำหรับแสดงตัวอย่าง
             </div>
           )}

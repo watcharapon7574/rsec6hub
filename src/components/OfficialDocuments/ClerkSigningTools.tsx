@@ -202,7 +202,7 @@ const ClerkSigningTools: React.FC = () => {
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-800 mb-2">ลายเซ็นดิจิทัล</p>
             <div className="flex items-center gap-3">
-              <div className="w-24 h-12 bg-white border-2 border-dashed border-blue-300 rounded flex items-center justify-center">
+              <div className="w-24 h-12 bg-card border-2 border-dashed border-blue-300 rounded flex items-center justify-center">
                 <span className="text-xs text-blue-600">ลายเซ็น</span>
               </div>
               <Button size="sm" variant="outline">

@@ -28,7 +28,7 @@ const SignatureUpload: React.FC<SignatureUploadProps> = ({
             <img
               src={signatureUrl}
               alt="ลายเซ็น"
-              className="max-h-24 mx-auto mb-4 border rounded-lg bg-white p-2"
+              className="max-h-24 mx-auto mb-4 border rounded-lg bg-card p-2"
             />
           ) : (
             <div className="h-24 mx-auto mb-4 bg-muted border rounded-lg flex items-center justify-center">

@@ -24,7 +24,7 @@ export const LoadingQueue: React.FC<LoadingQueueProps> = ({ className }) => {
     <div
       className={cn(
         'fixed bottom-4 right-4 z-50',
-        'bg-white dark:bg-gray-800 shadow-lg rounded-lg',
+        'bg-card shadow-lg rounded-lg',
         'border border-border dark:border-gray-700',
         'px-4 py-3',
         'flex items-center gap-3',

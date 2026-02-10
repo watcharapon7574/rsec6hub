@@ -88,8 +88,8 @@ const ApprovalProcess: React.FC = () => {
                   <div className={`w-12 h-12 ${colors.circle} rounded-full flex items-center justify-center mx-auto mb-3`}>
                     <span className="text-white font-bold text-lg">{step.step}</span>
                   </div>
-                  <h4 className="font-semibold text-gray-800 mb-2 text-sm">{step.title}</h4>
-                  <p className="text-xs text-gray-600">{step.description}</p>
+                  <h4 className="font-semibold text-muted-foreground mb-2 text-sm">{step.title}</h4>
+                  <p className="text-xs text-muted-foreground">{step.description}</p>
                 </div>
               );
             })}

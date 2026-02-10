@@ -272,7 +272,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
       <CardContent className="p-6 space-y-6">
         {/* ข้อมูลเอกสาร */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">ข้อมูลเอกสาร</h3>
+          <h3 className="text-lg font-semibold text-muted-foreground border-b pb-2">ข้อมูลเอกสาร</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -327,7 +327,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
 
         {/* เนื้อหาเอกสาร */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">เนื้อหาเอกสาร</h3>
+          <h3 className="text-lg font-semibold text-muted-foreground border-b pb-2">เนื้อหาเอกสาร</h3>
           
           <div className="space-y-2">
             <Label htmlFor="introduction">ต้นเรื่อง *</Label>
@@ -368,7 +368,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
 
         {/* ผู้ลงนาม */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-muted-foreground border-b pb-2 flex items-center gap-2">
             <Users className="h-5 w-5" />
             ผู้ลงนาม (เลือกได้)
           </h3>

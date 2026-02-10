@@ -13,11 +13,11 @@ const WorkflowProgressBar: React.FC<WorkflowProgressBarProps> = ({ currentStep }
     <Card className="mb-8">
       <CardContent className="pt-6">
         <div className="flex justify-between items-center mb-4">
-          <span className="text-sm font-medium text-gray-700">ขั้นตอนที่ {currentStep} จาก 4</span>
-          <span className="text-sm text-gray-500">{Math.round(progressValue)}%</span>
+          <span className="text-sm font-medium text-muted-foreground">ขั้นตอนที่ {currentStep} จาก 4</span>
+          <span className="text-sm text-muted-foreground">{Math.round(progressValue)}%</span>
         </div>
         <Progress value={progressValue} className="h-2" />
-        <div className="flex justify-between text-xs text-gray-500 mt-2">
+        <div className="flex justify-between text-xs text-muted-foreground mt-2">
           <span>อัปโหลด PDF</span>
           <span>เลือกผู้ลงนาม</span>
           <span>จัดตำแหน่ง</span>

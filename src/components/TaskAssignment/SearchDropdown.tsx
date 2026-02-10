@@ -123,7 +123,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
         {/* Divider if there are both users and groups/positions */}
         {userResults.length > 0 && (groupResults.length > 0 || positionResults.length > 0) && (
-          <div className="border-t-2 border-gray-200 my-1" />
+          <div className="border-t-2 border-border my-1" />
         )}
 
         {/* Groups section */}
@@ -135,7 +135,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
         {/* Divider between groups and positions */}
         {groupResults.length > 0 && positionResults.length > 0 && (
-          <div className="border-t border-gray-100" />
+          <div className="border-t border-border" />
         )}
 
         {/* Positions section */}

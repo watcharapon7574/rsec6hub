@@ -100,7 +100,7 @@ const AdminSigningTools: React.FC = () => {
             <Upload className="h-4 w-4" />
             อัพโหลดเอกสาร PDF
           </h3>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+          <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
             <input
               ref={fileInputRef}
               type="file"

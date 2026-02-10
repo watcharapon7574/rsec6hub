@@ -84,7 +84,7 @@ const AssignedTasksList = () => {
       },
       cancelled: {
         label: 'ยกเลิก',
-        color: 'bg-gray-100 text-foreground border-gray-200',
+        color: 'bg-gray-100 text-foreground border-border',
         icon: XCircle,
       },
     };
@@ -594,7 +594,7 @@ const AssignedTasksList = () => {
                     />
                     <label
                       htmlFor="report-file"
-                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
+                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
                     >
                       <Upload className="h-5 w-5 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">

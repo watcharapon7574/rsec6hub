@@ -329,7 +329,7 @@ const TaskAssignmentPage = () => {
               variant="outline"
               onClick={() => navigate('/documents')}
               disabled={loading}
-              className="px-6 border-gray-300 hover:bg-gray-50 relative z-0"
+              className="px-6 border-border hover:bg-gray-50 relative z-0"
             >
               ยกเลิก
             </Button>

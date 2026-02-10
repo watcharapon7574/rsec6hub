@@ -263,7 +263,7 @@ const EditDocReceivePage = () => {
                         onChange={(e) => handleInputChange('subject', e.target.value)}
                         required
                         placeholder="ระบุเรื่องของเอกสาร"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                        className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
                       />
                       <p className="text-xs text-green-600">
                         ✓ สามารถแก้ไขเรื่องของเอกสารได้
@@ -273,7 +273,7 @@ const EditDocReceivePage = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 pt-6 border-t border-gray-200">
+                <div className="flex gap-4 pt-6 border-t border-border">
                   <Button
                     type="submit"
                     disabled={loading}

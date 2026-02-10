@@ -292,14 +292,14 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                 placeholder="ค้นหาเอกสาร..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-7 pr-3 py-1 text-xs h-7 border-gray-200"
+                className="pl-7 pr-3 py-1 text-xs h-7 border-border"
               />
             </div>
             
             {/* Status Filter */}
             <div className="w-28">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-7 text-xs border-gray-200">
+                <SelectTrigger className="h-7 text-xs border-border">
                   <SelectValue placeholder="สถานะ" />
                 </SelectTrigger>
                 <SelectContent>
@@ -313,7 +313,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
             {/* Type Filter */}
             <div className="w-28">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="h-7 text-xs border-gray-200">
+                <SelectTrigger className="h-7 text-xs border-border">
                   <SelectValue placeholder="ประเภท" />
                 </SelectTrigger>
                 <SelectContent>
@@ -327,7 +327,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
             {/* Sort Controls */}
             <div className="w-20">
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-7 text-xs border-gray-200">
+                <SelectTrigger className="h-7 text-xs border-border">
                   <SelectValue placeholder="เรียง" />
                 </SelectTrigger>
                 <SelectContent>
@@ -344,7 +344,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
               variant="outline"
               size="sm"
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="h-7 w-7 p-0 border-gray-200 hover:border-amber-400 hover:text-amber-600"
+              className="h-7 w-7 p-0 border-border hover:border-amber-400 hover:text-amber-600"
               title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
             >
               <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>

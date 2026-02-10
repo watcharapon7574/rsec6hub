@@ -28,7 +28,7 @@ const QueueRealtimePage: React.FC = () => {
       case 'failed':
         return 'bg-red-100 text-red-800 border-red-300';
       default:
-        return 'bg-gray-100 text-foreground border-gray-300';
+        return 'bg-gray-100 text-foreground border-border';
     }
   };
 

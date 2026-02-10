@@ -25,7 +25,7 @@ export const LoadingQueue: React.FC<LoadingQueueProps> = ({ className }) => {
       className={cn(
         'fixed bottom-4 right-4 z-50',
         'bg-white dark:bg-gray-800 shadow-lg rounded-lg',
-        'border border-gray-200 dark:border-gray-700',
+        'border border-border dark:border-gray-700',
         'px-4 py-3',
         'flex items-center gap-3',
         'animate-in slide-in-from-bottom-4',

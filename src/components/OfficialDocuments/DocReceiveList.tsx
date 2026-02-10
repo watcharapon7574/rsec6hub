@@ -559,14 +559,14 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               placeholder="ค้นหาเอกสาร..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 pr-3 py-1 text-xs h-8 border-gray-200 focus:border-green-400 focus:ring-green-400 focus:ring-1"
+              className="pl-7 pr-3 py-1 text-xs h-8 border-border focus:border-green-400 focus:ring-green-400 focus:ring-1"
             />
           </div>
 
           {/* ตัวกรองตามสถานะ */}
           <div className="w-28">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-green-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-green-400">
                 <SelectValue placeholder="สถานะ" />
               </SelectTrigger>
               <SelectContent>
@@ -582,7 +582,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           {/* ตัวกรองตามการมอบหมาย */}
           <div className="w-32">
             <Select value={assignmentFilter} onValueChange={setAssignmentFilter}>
-              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-green-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-green-400">
                 <SelectValue placeholder="มอบหมาย" />
               </SelectTrigger>
               <SelectContent>
@@ -596,7 +596,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           {/* การจัดเรียง */}
           <div className="w-20">
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-green-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-green-400">
                 <SelectValue placeholder="เรียง" />
               </SelectTrigger>
               <SelectContent>
@@ -614,7 +614,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-gray-200 hover:border-green-400 hover:text-green-600"
+            className="h-8 w-8 p-0 border-border hover:border-green-400 hover:text-green-600"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -653,7 +653,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               const isCompleted = memo.current_signer_order === 5;
               const baseClasses = "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border rounded-lg px-2 sm:px-3 py-2 shadow-sm transition group min-w-0";
               const completedClasses = isCompleted 
-                ? "bg-gray-50 border-gray-200 hover:bg-gray-100" 
+                ? "bg-gray-50 border-border hover:bg-gray-100" 
                 : "bg-card border-border hover:bg-muted/50";
               
               return (
@@ -1036,7 +1036,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               size="sm"
                               className={`h-7 px-2 flex items-center gap-1 ${
                                 memo.current_signer_order > 1
-                                  ? 'border-gray-200 text-muted-foreground cursor-not-allowed'
+                                  ? 'border-border text-muted-foreground cursor-not-allowed'
                                   : 'border-green-200 text-green-600'
                               }`}
                               onClick={() => {

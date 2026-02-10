@@ -257,7 +257,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
       },
       cancelled: {
         label: 'ยกเลิก',
-        color: 'bg-gray-100 text-foreground border-gray-300',
+        color: 'bg-gray-100 text-foreground border-border',
         icon: XCircle,
       },
     };
@@ -517,14 +517,14 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
               placeholder="ค้นหางาน..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 pr-3 py-1 text-xs h-8 border-gray-200 focus:border-teal-400 focus:ring-teal-400 focus:ring-1"
+              className="pl-7 pr-3 py-1 text-xs h-8 border-border focus:border-teal-400 focus:ring-teal-400 focus:ring-1"
             />
           </div>
 
           {/* ตัวกรองตามสถานะ */}
           <div className="w-32">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-teal-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-teal-400">
                 <SelectValue placeholder="สถานะ" />
               </SelectTrigger>
               <SelectContent>
@@ -540,7 +540,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
           {/* ตัวกรองตามประเภทเอกสาร */}
           <div className="w-28">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-teal-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-teal-400">
                 <SelectValue placeholder="ประเภท" />
               </SelectTrigger>
               <SelectContent>
@@ -554,7 +554,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
           {/* การจัดเรียง */}
           <div className="w-20">
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-8 text-xs border-gray-200 focus:border-teal-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-teal-400">
                 <SelectValue placeholder="เรียง" />
               </SelectTrigger>
               <SelectContent>
@@ -571,7 +571,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-gray-200 hover:border-teal-400 hover:text-teal-600"
+            className="h-8 w-8 p-0 border-border hover:border-teal-400 hover:text-teal-600"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -847,7 +847,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                 <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
                   💡 คุณเป็นผู้รายงาน ต้องแนบไฟล์รายงาน
                 </p>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
+                <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-blue-400 transition-colors">
                   <input
                     id="report-file"
                     type="file"

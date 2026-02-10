@@ -734,7 +734,7 @@ const TestRequestQueuePage: React.FC = () => {
 
       {/* Logs Card */}
       {showLogs && logs.length > 0 && (
-        <Card className="mt-6 border-gray-300">
+        <Card className="mt-6 border-border">
           <CardHeader>
             <CardTitle className="text-lg flex items-center justify-between">
               <span>Test Logs</span>

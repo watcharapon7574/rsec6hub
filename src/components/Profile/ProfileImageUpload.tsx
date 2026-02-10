@@ -28,7 +28,7 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
             <img
               src={profileImageUrl}
               alt="รูปโปรไฟล์"
-              className="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-gray-200"
+              className="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-border"
             />
           ) : (
             <div className="w-32 h-32 rounded-full mx-auto mb-4 bg-gray-200 flex items-center justify-center">

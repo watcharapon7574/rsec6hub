@@ -372,7 +372,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 variant="outline"
                 onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
                 disabled={currentStep === 1}
-                className="border-gray-300 hover:border-gray-400 text-muted-foreground"
+                className="border-border hover:border-border text-muted-foreground"
               >
                 ย้อนกลับ
               </Button>

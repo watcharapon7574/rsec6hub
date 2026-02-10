@@ -758,7 +758,7 @@ const CreateMemoPage = () => {
                         value={formData.date}
                         onChange={(e) => handleInputChange('date', e.target.value)}
                         required
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                        className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
                       />
                     </div>
                   </div>
@@ -777,7 +777,7 @@ const CreateMemoPage = () => {
                       onChange={(e) => handleInputChange('subject', e.target.value)}
                       required
                       placeholder="ระบุเรื่องที่ต้องการสื่อสาร"
-                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                      className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
                     />
                   </div>
                 </div>
@@ -798,7 +798,7 @@ const CreateMemoPage = () => {
                           value={formData.attachment_title}
                           onChange={(e) => handleInputChange('attachment_title', e.target.value)}
                           placeholder="ระบุเอกสารหรือสิ่งที่แนบมาด้วย (ถ้ามี)"
-                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                          className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
                         />
                       </div>
 
@@ -820,7 +820,7 @@ const CreateMemoPage = () => {
                               attached_files: fileNames
                             }));
                           }}
-                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
                           รองรับไฟล์: PDF, Word, รูปภาพ (JPG, PNG) ขนาดไม่เกิน 10MB ต่อไฟล์
@@ -863,7 +863,7 @@ const CreateMemoPage = () => {
                         onChange={(e) => handleInputChange('introduction', e.target.value)}
                         rows={3}
                         placeholder="ข้อความเปิดหรือบริบทของเรื่อง"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
+                        className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
                       />
                     </div>
                   </div>
@@ -916,7 +916,7 @@ const CreateMemoPage = () => {
                         onChange={(e) => handleInputChange('fact', e.target.value)}
                         rows={4}
                         placeholder="ระบุข้อเท็จจริงที่เกิดขึ้น"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
+                        className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
                       />
                     </div>
 
@@ -930,7 +930,7 @@ const CreateMemoPage = () => {
                         onChange={(e) => handleInputChange('proposal', e.target.value)}
                         rows={4}
                         placeholder="ระบุข้อเสนอแนะหรือแนวทางดำเนินการ"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
+                        className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
                       />
                     </div>
 
@@ -965,7 +965,7 @@ const CreateMemoPage = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 pt-6 border-t border-gray-200">
+                <div className="flex gap-4 pt-6 border-t border-border">
                   <Button 
                     type="submit" 
                     disabled={loading || loadingMemo || grammarLoading}
@@ -1022,7 +1022,7 @@ const CreateMemoPage = () => {
                     type="button" 
                     variant="outline"
                     onClick={() => navigate('/documents')}
-                    className="border-gray-300 text-foreground hover:bg-gray-50 font-semibold px-8 py-2 rounded-lg transition-all duration-200"
+                    className="border-border text-foreground hover:bg-gray-50 font-semibold px-8 py-2 rounded-lg transition-all duration-200"
                     disabled={loading || loadingMemo || grammarLoading}
                   >
                     ยกเลิก

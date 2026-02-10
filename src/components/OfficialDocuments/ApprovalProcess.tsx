@@ -49,7 +49,7 @@ const ApprovalProcess: React.FC = () => {
       case 'gray':
         return {
           bg: 'bg-gray-50',
-          border: 'border-gray-200',
+          border: 'border-border',
           circle: 'bg-gray-500',
           hover: 'hover:bg-gray-100'
         };
@@ -63,7 +63,7 @@ const ApprovalProcess: React.FC = () => {
       default:
         return {
           bg: 'bg-gray-50',
-          border: 'border-gray-200',
+          border: 'border-border',
           circle: 'bg-gray-500',
           hover: 'hover:bg-gray-100'
         };

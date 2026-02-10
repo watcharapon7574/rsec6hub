@@ -167,7 +167,7 @@ const SignedPDFGeneratorForm: React.FC = () => {
             {/* Signature Upload */}
             <div className="space-y-2">
               <Label htmlFor="signature">ลายเซ็น</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div className="border-2 border-dashed border-border rounded-lg p-4">
                 <input
                   ref={signatureInputRef}
                   id="signature"

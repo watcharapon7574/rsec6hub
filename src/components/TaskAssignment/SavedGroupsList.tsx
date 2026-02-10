@@ -107,7 +107,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setIsDeleteMode(false)}
-              className="h-7 px-2 text-xs border-gray-300 text-muted-foreground hover:text-foreground hover:bg-gray-100"
+              className="h-7 px-2 text-xs border-border text-muted-foreground hover:text-foreground hover:bg-gray-100"
             >
               <X className="h-3.5 w-3.5 mr-1" />
               เสร็จสิ้น
@@ -149,7 +149,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
           const isDisabled = isPositionMode || (isNameOrGroupMode && isPosition);
 
           const borderColor = isDisabled
-            ? 'border-gray-200'
+            ? 'border-border'
             : isPosition ? 'border-orange-200' : 'border-purple-200';
           const textColor = isDisabled
             ? 'text-muted-foreground cursor-not-allowed'

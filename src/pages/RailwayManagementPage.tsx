@@ -378,7 +378,7 @@ const RailwayManagementPage = () => {
 
           {/* Services Control */}
           {services.length === 0 ? (
-            <Card className="border-2 border-dashed border-gray-300">
+            <Card className="border-2 border-dashed border-border">
               <CardContent className="py-12 text-center">
                 <Layers className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
                 <p className="text-lg text-muted-foreground">
@@ -409,7 +409,7 @@ const RailwayManagementPage = () => {
                         ? 'border-green-300 bg-green-50/30'
                         : isStopped
                         ? 'border-red-300 bg-red-50/30'
-                        : 'border-gray-300'
+                        : 'border-border'
                     }`}
                   >
                     <CardHeader className="pb-4">

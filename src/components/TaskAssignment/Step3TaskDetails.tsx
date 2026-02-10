@@ -131,7 +131,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
           </div>
         </div>
 
-        <div className="border-t border-gray-200" />
+        <div className="border-t border-border" />
 
         {/* What - Task Description */}
         <div className="space-y-2">
@@ -232,7 +232,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
           </div>
         </div>
 
-        <div className="border-t border-gray-200" />
+        <div className="border-t border-border" />
 
         {/* Note - Additional notes */}
         <div className="space-y-2">

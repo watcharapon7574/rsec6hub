@@ -86,7 +86,7 @@ const NotificationsPage = () => {
       case 'low':
         return 'bg-green-100 text-green-700 border-green-200';
       default:
-        return 'bg-gray-100 text-foreground border-gray-200';
+        return 'bg-gray-100 text-foreground border-border';
     }
   };
 

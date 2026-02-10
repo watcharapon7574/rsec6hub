@@ -374,7 +374,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
           </h3>
           
           {/* ผู้ช่วยผู้อำนวยการ */}
-          <div className="space-y-2 p-4 border border-gray-200 rounded-lg">
+          <div className="space-y-2 p-4 border border-border rounded-lg">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="assistant-enabled"
@@ -431,7 +431,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
           </div>
 
           {/* รองผู้อำนวยการ */}
-          <div className="space-y-2 p-4 border border-gray-200 rounded-lg">
+          <div className="space-y-2 p-4 border border-border rounded-lg">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="deputy-enabled"

@@ -626,7 +626,7 @@ const PDFSignaturePage = () => {
                       <Label htmlFor="pdf_file" className="text-sm font-medium text-foreground">
                         เลือกไฟล์ PDF *
                       </Label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
+                      <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-green-400 transition-colors">
                         <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <Input
                           id="pdf_file"
@@ -678,7 +678,7 @@ const PDFSignaturePage = () => {
                         value={formData.date}
                         onChange={(e) => handleInputChange('date', e.target.value)}
                         required
-                        className="border-gray-300 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                        className="border-border focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
                       />
                     </div>
                     <div className="space-y-2">
@@ -686,7 +686,7 @@ const PDFSignaturePage = () => {
                         เลขรับ *
                       </Label>
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-foreground font-medium whitespace-nowrap">
+                        <div className="flex items-center gap-1 px-3 py-2 bg-gray-100 border border-border rounded-md text-foreground font-medium whitespace-nowrap">
                           <span className="text-sm"> {new Date().getFullYear() + 543} /</span>
                         </div>
                         <Input
@@ -694,7 +694,7 @@ const PDFSignaturePage = () => {
                           value={formData.docNumber}
                           onChange={(e) => handleInputChange('docNumber', e.target.value)}
                           placeholder={getSuggestedNumber() || '001'}
-                          className="flex-1 border-gray-300 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                          className="flex-1 border-border focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
                         />
                       </div>
                       {suggestedDocNumber && !formData.docNumber && (
@@ -718,7 +718,7 @@ const PDFSignaturePage = () => {
                         onChange={(e) => handleInputChange('subject', e.target.value)}
                         required
                         placeholder="ระบุเรื่องของเอกสาร PDF"
-                        className="border-gray-300 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                        className="border-border focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
                       />
                     </div>
                   </div>
@@ -771,7 +771,7 @@ const PDFSignaturePage = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 pt-6 border-t border-gray-200">
+                <div className="flex gap-4 pt-6 border-t border-border">
                   <Button
                     type="submit"
                     disabled={loading || !formData.pdfFile || !formData.subject.trim()}

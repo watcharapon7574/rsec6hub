@@ -202,7 +202,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             variant="outline"
             onClick={handleClose}
             disabled={saving}
-            className="border-gray-300"
+            className="border-border"
           >
             ยกเลิก
           </Button>

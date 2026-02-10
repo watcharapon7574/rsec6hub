@@ -243,7 +243,7 @@ const AdminProfileManagementPage: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1); // Reset to first page when searching
                 }}
-                className="flex-1 border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                className="flex-1 border-border focus:border-blue-400 focus:ring-blue-400"
               />
               {searchTerm && (
                 <Button

@@ -177,7 +177,7 @@ const SignaturePositionSelector: React.FC<SignaturePositionSelectorProps> = ({
         {/* PDF Viewer */}
         <div 
           ref={containerRef}
-          className="relative border border-gray-300 rounded-lg overflow-hidden"
+          className="relative border border-border rounded-lg overflow-hidden"
           style={{ minHeight: '400px' }}
         >
           <canvas
@@ -210,7 +210,7 @@ const SignaturePositionSelector: React.FC<SignaturePositionSelectorProps> = ({
                 <div 
                   key={signer.user_id}
                   className={`p-2 border rounded text-xs ${
-                    position ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                    position ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-border'
                   }`}
                 >
                   <span className="font-medium">

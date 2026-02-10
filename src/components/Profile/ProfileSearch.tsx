@@ -54,7 +54,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
 
   if (error) {
     return (
-      <div className="text-center text-red-600 p-4">
+      <div className="text-center text-error p-4">
         เกิดข้อผิดพลาดในการโหลดข้อมูล: {error.message}
       </div>
     );
@@ -66,7 +66,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
       <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
         <div className="flex-1">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="ค้นหาพนักงาน..."
               value={searchTerm}
@@ -76,7 +76,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-gray-400" />
+          <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={filterPosition} onValueChange={(value) => setFilterPosition(value as Position | 'all')}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="กรองตามตำแหน่ง" />
@@ -119,34 +119,34 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">รหัส:</span>
+                  <span className="text-muted-foreground">รหัส:</span>
                   <span className="font-medium">{profile.employee_id}</span>
                 </div>
                 {profile.nickname && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">ชื่อเล่น:</span>
+                    <span className="text-muted-foreground">ชื่อเล่น:</span>
                     <span>{profile.nickname}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-gray-500">ตำแหน่ง:</span>
+                  <span className="text-muted-foreground">ตำแหน่ง:</span>
                   <span>{getPositionDisplayName(profile.position)}</span>
                 </div>
                 {profile.job_position && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">ตำแหน่งเต็ม:</span>
+                    <span className="text-muted-foreground">ตำแหน่งเต็ม:</span>
                     <span className="text-right">{profile.job_position}</span>
                   </div>
                 )}
                 {profile.org_structure_role && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">บทบาท:</span>
+                    <span className="text-muted-foreground">บทบาท:</span>
                     <span className="text-right text-xs">{profile.org_structure_role}</span>
                   </div>
                 )}
                 {profile.workplace && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">หน่วยงาน:</span>
+                    <span className="text-muted-foreground">หน่วยงาน:</span>
                     <span className="text-right text-xs">{profile.workplace}</span>
                   </div>
                 )}
@@ -157,12 +157,12 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
       </div>
 
       {filteredProfiles.length === 0 && (
-        <div className="text-center text-gray-500 py-8">
+        <div className="text-center text-muted-foreground py-8">
           ไม่พบข้อมูลพนักงานที่ค้นหา
         </div>
       )}
 
-      <div className="text-sm text-gray-500 text-center">
+      <div className="text-sm text-muted-foreground text-center">
         พบ {filteredProfiles.length} จาก {profiles.length} คน
       </div>
     </div>

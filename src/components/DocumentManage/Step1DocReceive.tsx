@@ -109,7 +109,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                 </SelectTrigger>
                 <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
                   <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
-                    <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
+                    <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
                   {departmentOptions.map((dept) => (
                     <SelectItem
@@ -124,7 +124,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                 </SelectContent>
               </Select>
               {selectedDepartment && selectedDepartment !== 'skip' && (
-                <p className="text-sm text-blue-600 mt-1">
+                <p className="text-sm text-foreground mt-1">
                   ฝ่ายที่รับผิดชอบ: {selectedDepartment}
                 </p>
               )}
@@ -139,7 +139,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                 </SelectTrigger>
                 <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
                   <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
-                    <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
+                    <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
                   {deputyDirectors.map((profile) => (
                     <SelectItem
@@ -152,7 +152,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                         <span className="font-semibold">
                           {profile.prefix || ''}{profile.first_name} {profile.last_name}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           {profile.org_structure_role || ''}
                         </span>
                       </div>
@@ -164,7 +164,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
           </div>
 
           {/* คำอธิบาย */}
-          <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+          <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded-lg border border-yellow-200">
             <p className="font-medium mb-1">หมายเหตุ:</p>
             <p>• เลือกฝ่ายที่รับผิดชอบเอกสารนี้ (เพื่อคัดกรองประเภทหนังสือรับ)</p>
             <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามรองผู้อำนวยการได้</p>
@@ -181,7 +181,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                   <div className="flex-1">
                     <p className="font-semibold">{signer.name}</p>
                     {/* job_position (เล็กสุด) */}
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                       {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                       {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
@@ -189,7 +189,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                     </p>
                     {/* org_structure_role (เด่นรอง) */}
                     {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {signer.org_structure_role}
                       </p>
                     )}
@@ -231,7 +231,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
               />
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               ไม่มีไฟล์ PDF สำหรับแสดงตัวอย่าง
             </div>
           )}

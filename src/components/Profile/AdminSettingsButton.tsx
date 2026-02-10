@@ -102,7 +102,7 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
         <Button
           variant="outline"
           size="sm"
-          className="text-slate-700 border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all"
+          className="text-foreground border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all"
         >
           <Settings className="h-4 w-4 mr-2" />
           ตั้งค่าแอดมิน
@@ -115,13 +115,13 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
       >
         <DropdownMenuLabel className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 py-3">
           <Settings className="h-4 w-4 text-blue-600" />
-          <span className="font-semibold text-gray-800">เมนูตั้งค่าแอดมิน</span>
+          <span className="font-semibold text-foreground">เมนูตั้งค่าแอดมิน</span>
         </DropdownMenuLabel>
 
         {menuItems.map((section, sectionIndex) => (
           <React.Fragment key={sectionIndex}>
             <div className="px-3 py-2 bg-gray-50">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 <section.icon className="h-3 w-3" />
                 {section.label}
               </div>
@@ -134,9 +134,9 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
               >
                 <div className="flex items-center gap-2 w-full">
                   <item.icon className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium text-sm text-gray-800">{item.label}</span>
+                  <span className="font-medium text-sm text-foreground">{item.label}</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1 ml-6">
+                <p className="text-xs text-muted-foreground mt-1 ml-6">
                   {item.description}
                 </p>
               </DropdownMenuItem>

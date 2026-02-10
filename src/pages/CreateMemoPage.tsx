@@ -611,7 +611,7 @@ const CreateMemoPage = () => {
                         ช่อง: {grammarSuggestions[currentSuggestionIndex].fieldLabel}
                       </h4>
                       {grammarSuggestions[currentSuggestionIndex].applied && (
-                        <span className="text-xs bg-green-200 text-green-800 dark:text-green-200 px-2 py-1 rounded-full">
+                        <span className="text-xs bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 px-2 py-1 rounded-full">
                           ✓ แก้ไขแล้ว
                         </span>
                       )}
@@ -942,7 +942,7 @@ const CreateMemoPage = () => {
                       >
                         <span>
                           <span className="font-semibold">💡 เครื่องหมายพิเศษ:</span>{' '}
-                          พิมพ์ <code className="bg-blue-200 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่ย่อหน้า
+                          พิมพ์ <code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่ย่อหน้า
                         </span>
                         {showSpecialCharHelp ? (
                           <ChevronUp className="h-5 w-5 flex-shrink-0 ml-2" />
@@ -954,9 +954,9 @@ const CreateMemoPage = () => {
                         <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800 space-y-1.5">
                           <p className="text-blue-600 dark:text-blue-400 font-medium">ตัวอย่าง ถ้า ! มากกว่า 1:</p>
                           <div className="pl-3 space-y-1">
-                            <p><code className="bg-blue-200 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 2 ครั้ง</p>
-                            <p><code className="bg-blue-200 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 3 ครั้ง</p>
-                            <p><code className="bg-blue-200 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 4 ครั้ง</p>
+                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 2 ครั้ง</p>
+                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 3 ครั้ง</p>
+                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 4 ครั้ง</p>
                           </div>
                         </div>
                       )}

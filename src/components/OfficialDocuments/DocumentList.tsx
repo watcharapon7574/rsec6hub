@@ -867,10 +867,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <div className={`w-2 h-2 rounded-full mt-1 ${
                           memo.current_signer_order === 5
                             ? 'bg-muted'
-                            : (memo.current_signer_order === 1 ? 'bg-purple-500' : 'bg-purple-200')
+                            : (memo.current_signer_order === 1 ? 'bg-purple-500' : 'bg-purple-200 dark:bg-purple-800')
                         }`}></div>
                       </div>
-                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200'}`} />
+                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
 
                       {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author) */}
                       {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
@@ -919,11 +919,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5 
                                     ? 'bg-muted'
-                                    : (memo.current_signer_order === signer.order ? 'bg-purple-500' : 'bg-purple-200')
+                                    : (memo.current_signer_order === signer.order ? 'bg-purple-500' : 'bg-purple-200 dark:bg-purple-800')
                                 }`}></div>
                               </div>
                               {idx < arr.length - 1 && (
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200'}`} />
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                               )}
                             </React.Fragment>
                           ))
@@ -953,10 +953,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
                                       ? 'bg-muted'
-                                      : (memo.current_signer_order === pos.signer.order ? 'bg-purple-500' : 'bg-purple-200')
+                                      : (memo.current_signer_order === pos.signer.order ? 'bg-purple-500' : 'bg-purple-200 dark:bg-purple-800')
                                   }`}></div>
                                 </div>
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200'}`} />
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                               </React.Fragment>
                           ))
                         ) : (
@@ -967,7 +967,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       {/* Connector to final step */}
                       {((memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0) || 
                         (memo.signature_positions && memo.signature_positions.length > 0)) && (
-                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200'}`} />
+                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                       )}
                     </>
                   )}

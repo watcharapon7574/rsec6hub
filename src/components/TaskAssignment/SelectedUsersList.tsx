@@ -57,7 +57,7 @@ const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onRemoveUser(user.user_id)}
-              className="h-4 w-4 p-0 hover:bg-pink-200 rounded-full"
+              className="h-4 w-4 p-0 hover:bg-pink-200 dark:bg-pink-800 rounded-full"
             >
               <X className="h-3 w-3" />
             </Button>

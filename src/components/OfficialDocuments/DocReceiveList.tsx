@@ -770,10 +770,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <div className={`w-2 h-2 rounded-full mt-1 ${
                           memo.current_signer_order === 5 
                             ? 'bg-muted'
-                            : (memo.current_signer_order === 1 ? 'bg-green-500' : 'bg-green-200')
+                            : (memo.current_signer_order === 1 ? 'bg-green-500' : 'bg-green-200 dark:bg-green-800')
                         }`}></div>
                       </div>
-                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200'}`} />
+                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200 dark:bg-green-800'}`} />
 
                       {/* แสดงผู้เสนอ (clerk_teacher) สำหรับหนังสือรับ */}
                       {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 && (() => {
@@ -804,10 +804,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5
                                     ? 'bg-muted'
-                                    : (memo.current_signer_order === proposer.order ? 'bg-green-500' : 'bg-green-200')
+                                    : (memo.current_signer_order === proposer.order ? 'bg-green-500' : 'bg-green-200 dark:bg-green-800')
                                 }`}></div>
                               </div>
-                              <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200'}`} />
+                              <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200 dark:bg-green-800'}`} />
                             </>
                           );
                         }
@@ -856,11 +856,11 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5 
                                     ? 'bg-muted'
-                                    : (memo.current_signer_order === signer.order ? 'bg-green-500' : 'bg-green-200')
+                                    : (memo.current_signer_order === signer.order ? 'bg-green-500' : 'bg-green-200 dark:bg-green-800')
                                 }`}></div>
                               </div>
                               {idx < arr.length - 1 && (
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200'}`} />
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200 dark:bg-green-800'}`} />
                               )}
                             </React.Fragment>
                           ))
@@ -890,10 +890,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
                                       ? 'bg-muted'
-                                      : (memo.current_signer_order === pos.signer.order ? 'bg-green-500' : 'bg-green-200')
+                                      : (memo.current_signer_order === pos.signer.order ? 'bg-green-500' : 'bg-green-200 dark:bg-green-800')
                                   }`}></div>
                                 </div>
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200'}`} />
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200 dark:bg-green-800'}`} />
                               </React.Fragment>
                           ))
                         ) : (
@@ -904,7 +904,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       {/* Connector to final step */}
                       {((memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0) || 
                         (memo.signature_positions && memo.signature_positions.length > 0)) && (
-                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200'}`} />
+                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-green-200 dark:bg-green-800'}`} />
                       )}
                     </>
                   )}

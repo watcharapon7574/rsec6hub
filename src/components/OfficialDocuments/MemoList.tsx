@@ -468,10 +468,10 @@ const MemoList: React.FC<MemoListProps> = ({
                         <div className={`w-2 h-2 rounded-full mt-1 ${
                           memo.current_signer_order === 5
                             ? 'bg-muted'
-                            : (memo.current_signer_order === 1 ? 'bg-amber-500' : 'bg-amber-200')
+                            : (memo.current_signer_order === 1 ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800')
                         }`}></div>
                       </div>
-                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200'}`} />
+                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
 
                       {/* ผู้ลงนามทั้งหมด */}
                       {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
@@ -517,11 +517,11 @@ const MemoList: React.FC<MemoListProps> = ({
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
                                   memo.current_signer_order === 5
                                     ? 'bg-muted'
-                                    : (memo.current_signer_order === signer.order ? 'bg-amber-500' : 'bg-amber-200')
+                                    : (memo.current_signer_order === signer.order ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800')
                                 }`}></div>
                               </div>
                               {idx < arr.length - 1 && (
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200'}`} />
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
                               )}
                             </React.Fragment>
                           ))
@@ -531,7 +531,7 @@ const MemoList: React.FC<MemoListProps> = ({
 
                       {/* Connector to final step */}
                       {memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author' && s.role !== 'clerk').length > 0 && (
-                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200'}`} />
+                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
                       )}
                     </>
                   )}

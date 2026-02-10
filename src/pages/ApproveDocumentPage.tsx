@@ -763,11 +763,11 @@ const ApproveDocumentPage: React.FC = () => {
 
   if (!memo || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardContent className="text-center py-8">
-              <p className="text-gray-500">ไม่พบเอกสารที่ต้องการพิจารณา</p>
+              <p className="text-muted-foreground">ไม่พบเอกสารที่ต้องการพิจารณา</p>
               <Button onClick={() => navigate('/documents')} className="mt-4">
                 กลับไปรายการเอกสาร
               </Button>
@@ -779,12 +779,12 @@ const ApproveDocumentPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <div className="bg-card border-b">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -794,8 +794,8 @@ const ApproveDocumentPage: React.FC = () => {
                 กลับ
               </Button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">พิจารณาอนุมัติเอกสาร</h1>
-                <p className="text-sm text-gray-500">{memo.subject}</p>
+                <h1 className="text-lg font-semibold text-foreground">พิจารณาอนุมัติเอกสาร</h1>
+                <p className="text-sm text-muted-foreground">{memo.subject}</p>
               </div>
             </div>
             

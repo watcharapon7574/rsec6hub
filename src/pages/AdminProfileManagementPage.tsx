@@ -155,21 +155,22 @@ const AdminProfileManagementPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Page Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex justify-between items-start">
-            <div className="border-l-4 border-blue-500 pl-4 flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">จัดการโปรไฟล์ทั้งหมด</h1>
-              <p className="text-gray-600">จัดการข้อมูลบุคลากรทั้งหมดในระบบ (Admin Only)</p>
-              {profile && (
-                <div className="mt-2 text-sm text-blue-600">
-                  ผู้ใช้: {profile.first_name} {profile.last_name}
-                  {permissions.isAdmin && " | ผู้ดูแลระบบ"}
-                </div>
-              )}
-            </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-xl font-bold text-foreground mb-1">จัดการโปรไฟล์ทั้งหมด</h1>
+                <p className="text-sm text-muted-foreground">จัดการข้อมูลบุคลากรทั้งหมดในระบบ (Admin Only)</p>
+                {profile && (
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {profile.first_name} {profile.last_name}
+                    {permissions.isAdmin && " • ผู้ดูแลระบบ"}
+                  </div>
+                )}
+              </div>
             <div className="ml-4">
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
@@ -181,7 +182,8 @@ const AdminProfileManagementPage: React.FC = () => {
               </Button>
             </div>
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

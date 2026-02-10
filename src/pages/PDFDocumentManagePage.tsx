@@ -653,12 +653,12 @@ const PDFDocumentManagePage: React.FC = () => {
 
   if (!docReceive) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardContent className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-500">กำลังโหลดข้อมูลเอกสาร...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">กำลังโหลดข้อมูลเอกสาร...</p>
             </CardContent>
           </Card>
         </div>
@@ -667,12 +667,12 @@ const PDFDocumentManagePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <div className="bg-card border-b">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="sm"

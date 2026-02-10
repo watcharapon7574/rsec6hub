@@ -145,10 +145,10 @@ const EditDocReceivePage = () => {
 
   if (loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-        <div className="glass-card p-8 rounded-3xl animate-pulse">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="p-8 rounded-lg animate-pulse">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-4 text-center text-apple">กำลังโหลดข้อมูล...</p>
+          <p className="text-muted-foreground mt-4 text-center">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     );

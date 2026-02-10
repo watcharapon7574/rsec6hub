@@ -226,7 +226,7 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-sky-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       {/* Loading Modal */}
       <LoadingModal isOpen={verifyingOTP} message="กำลังตรวจสอบรหัส OTP" />
 

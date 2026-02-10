@@ -521,7 +521,7 @@ const CreateMemoPage = () => {
       {loadingMemo && (
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            <Card className="glass-card border-card-glass-border shadow-glass-lg">
+            <Card>
               <CardContent className="p-8 text-center">
                 <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-4" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>

@@ -213,20 +213,20 @@ export default function AdminOtpManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Page Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="border-l-4 border-blue-500 pl-4">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-              <Shield className="h-8 w-8 text-blue-600" />
+        <Card>
+          <CardContent className="pt-6">
+            <h1 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-blue-600" />
               จัดการ Admin OTP Recipients
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm text-muted-foreground">
               จัดการรายชื่อคนที่จะรับ OTP เมื่อ Admin (036776259) เข้าสู่ระบบ
             </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Recipients Section */}
         <Card className="shadow-lg">

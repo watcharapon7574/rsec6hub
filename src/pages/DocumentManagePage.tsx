@@ -1132,11 +1132,11 @@ const DocumentManagePage: React.FC = () => {
 
   if (!memo) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardContent className="text-center py-8">
-              <p className="text-gray-500">ไม่พบเอกสารที่ต้องการจัดการ</p>
+              <p className="text-muted-foreground">ไม่พบเอกสารที่ต้องการจัดการ</p>
               <Button onClick={() => navigate('/documents')} className="mt-4">
                 กลับไปรายการเอกสาร
               </Button>
@@ -1150,13 +1150,13 @@ const DocumentManagePage: React.FC = () => {
   // ตรวจสอบว่ามี PDF หรือไม่ (กรณี memo ถูกตีกลับและยังไม่ได้ส่งใหม่)
   if (!memo.pdf_draft_path) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto">
           <Card>
             <CardContent className="text-center py-8">
-              <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">ไม่พบไฟล์ PDF</h2>
-              <p className="text-gray-500 mb-4">
+              <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-foreground mb-2">ไม่พบไฟล์ PDF</h2>
+              <p className="text-muted-foreground mb-4">
                 เอกสารนี้ยังไม่มีไฟล์ PDF สำหรับจัดการ<br />
                 {memo.status === 'draft' && 'กรุณาแก้ไขและกด "ส่ง" เอกสารใหม่อีกครั้ง'}
                 {memo.status === 'rejected' && 'เอกสารถูกตีกลับ กรุณาแก้ไขและส่งใหม่'}
@@ -1172,12 +1172,12 @@ const DocumentManagePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <div className="bg-card border-b">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -1187,8 +1187,8 @@ const DocumentManagePage: React.FC = () => {
                 กลับ
               </Button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">จัดการเอกสาร</h1>
-                <p className="text-sm text-gray-500">{memo.subject}</p>
+                <h1 className="text-lg font-semibold text-foreground">จัดการเอกสาร</h1>
+                <p className="text-sm text-muted-foreground">{memo.subject}</p>
               </div>
             </div>
             

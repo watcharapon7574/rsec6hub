@@ -51,7 +51,7 @@ const PDFjustPreview: React.FC = () => {
   }, [memoId, getMemoById]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start py-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-start py-6 pb-24">
       <div className="w-full max-w-4xl mx-auto space-y-4">
         <div className="flex items-center">
           <Button variant="outline" onClick={() => navigate(-1)} className="flex items-center gap-2">

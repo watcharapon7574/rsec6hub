@@ -214,10 +214,10 @@ const TaskAssignmentPage = () => {
 
   if (loadingDocument) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-pink-50 to-slate-100 pt-20 pb-24 px-4">
+      <div className="min-h-screen bg-background pt-20 pb-24 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <div className="text-lg text-gray-600">กำลังโหลดข้อมูลเอกสาร...</div>
           </div>
         </div>
@@ -230,7 +230,7 @@ const TaskAssignmentPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-pink-50 to-slate-100 pt-20 pb-24 px-4">
+    <div className="min-h-screen bg-background pt-20 pb-24 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-6">

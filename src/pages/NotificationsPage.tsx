@@ -140,7 +140,7 @@ const NotificationsPage = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 pt-20 pb-24 px-4">
+    <div className="min-h-screen bg-background pt-20 pb-24 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">

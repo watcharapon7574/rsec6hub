@@ -494,14 +494,14 @@ const PDFReceiveManagePage: React.FC = () => {
                         ? 'bg-blue-500 text-white shadow-lg'
                         : currentStep > step
                         ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-muted-foreground'
+                        : 'bg-muted text-muted-foreground'
                       }
                     `}
                   >
                     {step}
                   </button>
                   {step < 3 && (
-                    <div className={`w-12 h-1 ${currentStep > step ? 'bg-green-500' : 'bg-gray-200'}`} />
+                    <div className={`w-12 h-1 ${currentStep > step ? 'bg-green-500' : 'bg-muted'}`} />
                   )}
                 </div>
               ))}

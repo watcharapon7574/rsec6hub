@@ -29,7 +29,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                     w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm
                     ${isCompleted ? 'bg-pink-500 text-white' : ''}
                     ${isCurrent ? 'bg-pink-500 text-white ring-4 ring-pink-200' : ''}
-                    ${!isCompleted && !isCurrent ? 'bg-gray-200 text-muted-foreground' : ''}
+                    ${!isCompleted && !isCurrent ? 'bg-muted text-muted-foreground' : ''}
                   `}
                 >
                   {isCompleted ? (
@@ -53,7 +53,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                 <div
                   className={`
                     flex-1 h-1 mx-2 mb-7
-                    ${stepNumber < currentStep ? 'bg-pink-500' : 'bg-gray-200'}
+                    ${stepNumber < currentStep ? 'bg-pink-500' : 'bg-muted'}
                   `}
                 />
               )}

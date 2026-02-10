@@ -124,7 +124,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
               </Badge>
             ))}
             {selectedUsers.length > 5 && (
-              <Badge variant="secondary" className="bg-gray-200 text-foreground">
+              <Badge variant="secondary" className="bg-muted text-foreground">
                 +{selectedUsers.length - 5} คน
               </Badge>
             )}

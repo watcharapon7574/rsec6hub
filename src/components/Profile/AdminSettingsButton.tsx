@@ -141,7 +141,7 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
                 </p>
               </DropdownMenuItem>
             ))}
-            {sectionIndex < menuItems.length - 1 && <DropdownMenuSeparator className="bg-gray-200" />}
+            {sectionIndex < menuItems.length - 1 && <DropdownMenuSeparator className="bg-muted" />}
           </React.Fragment>
         ))}
       </DropdownMenuContent>

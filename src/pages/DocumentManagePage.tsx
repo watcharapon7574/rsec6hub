@@ -1203,7 +1203,7 @@ const DocumentManagePage: React.FC = () => {
                         ? 'bg-blue-600 text-white' 
                         : isStepComplete(step) 
                           ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-gray-200 text-muted-foreground hover:bg-gray-300'
+                          : 'bg-muted text-muted-foreground hover:bg-gray-300'
                     }`}
                   >
                     {isStepComplete(step) && currentStep !== step ? (
@@ -1212,7 +1212,7 @@ const DocumentManagePage: React.FC = () => {
                       step
                     )}
                   </button>
-                  {step < 4 && <div className="w-6 h-0.5 bg-gray-200 mx-1" />}
+                  {step < 4 && <div className="w-6 h-0.5 bg-muted mx-1" />}
                 </div>
               ))}
             </div>

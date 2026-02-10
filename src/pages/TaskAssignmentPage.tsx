@@ -244,7 +244,7 @@ const TaskAssignmentPage = () => {
           </Button>
 
           <div className="flex items-center space-x-3 mb-2">
-            <div className="p-3 bg-white rounded-2xl shadow-lg">
+            <div className="p-3 bg-card rounded-2xl shadow-lg">
               <Users className="h-6 w-6 text-pink-500" />
             </div>
             <div>

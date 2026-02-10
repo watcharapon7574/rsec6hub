@@ -15,7 +15,7 @@ import {
 
 const EmployeeTools: React.FC = () => {
   return (
-    <Card className="bg-white shadow-lg">
+    <Card className="bg-card shadow-lg">
       <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
         <CardTitle className="text-white flex items-center gap-2 text-lg">
           <Briefcase className="h-5 w-5" />

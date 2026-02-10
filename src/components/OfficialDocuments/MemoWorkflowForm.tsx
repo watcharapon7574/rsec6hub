@@ -262,7 +262,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
   };
 
   return (
-    <Card className="bg-white shadow-lg">
+    <Card className="bg-card shadow-lg">
       <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
         <CardTitle className="text-white flex items-center gap-2 text-lg">
           <FileText className="h-5 w-5" />
@@ -301,7 +301,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                     {formData.date ? format(formData.date, "dd/MM/yyyy") : "เลือกวันที่"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-white">
+                <PopoverContent className="w-auto p-0 bg-card">
                   <Calendar
                     mode="single"
                     selected={formData.date}
@@ -396,7 +396,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                   <SelectTrigger className="border-blue-200 focus:border-blue-500">
                     <SelectValue placeholder="เลือกผู้ช่วยผู้อำนวยการ" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-blue-200">
+                  <SelectContent className="bg-card border border-blue-200">
                     {availableSigners.assistant.map((signer) => (
                       <SelectItem key={signer.id} value={signer.id}>
                         {signer.name}
@@ -453,7 +453,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                   <SelectTrigger className="border-blue-200 focus:border-blue-500">
                     <SelectValue placeholder="เลือกรองผู้อำนวยการ" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-blue-200">
+                  <SelectContent className="bg-card border border-blue-200">
                     {availableSigners.deputy.map((signer) => (
                       <SelectItem key={signer.id} value={signer.id}>
                         {signer.name}
@@ -476,7 +476,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
             <Label className="font-medium text-red-800">
               ผู้อำนวยการ (ลำดับสุดท้าย - บังคับ) *
             </Label>
-            <div className="p-3 bg-white rounded-lg border border-red-200">
+            <div className="p-3 bg-card rounded-lg border border-red-200">
               <p className="font-medium text-red-800">{approvers.director.selectedName}</p>
               <p className="text-sm text-red-600">{approvers.director.selectedPosition}</p>
             </div>

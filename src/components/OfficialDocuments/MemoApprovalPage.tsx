@@ -189,7 +189,7 @@ const MemoApprovalPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Page Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-card rounded-xl shadow-lg p-6">
           <div className="flex items-center gap-4">
             <Button
               variant="outline"

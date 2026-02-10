@@ -37,7 +37,7 @@ const CurrentUserInfo: React.FC<CurrentUserInfoProps> = ({ currentUser }) => {
       {currentUser.signature_url && (
         <div>
           <Label>ลายเซ็น</Label>
-          <div className="mt-2 p-2 border rounded-lg bg-white">
+          <div className="mt-2 p-2 border rounded-lg bg-card">
             <img 
               src={currentUser.signature_url} 
               alt="ลายเซ็น" 

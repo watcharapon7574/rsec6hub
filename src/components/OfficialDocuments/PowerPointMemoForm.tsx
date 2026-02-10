@@ -91,7 +91,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Form Section */}
       <div className="space-y-6">
-        <Card className="bg-white shadow-lg">
+        <Card className="bg-card shadow-lg">
           <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
             <CardTitle className="text-white flex items-center gap-2 text-lg">
               <FileText className="h-5 w-5" />
@@ -130,7 +130,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
                         {formData.date ? format(formData.date, "dd/MM/yyyy") : "เลือกวันที่"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-white">
+                    <PopoverContent className="w-auto p-0 bg-card">
                       <Calendar
                         mode="single"
                         selected={formData.date || undefined}
@@ -305,7 +305,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
 
       {/* Preview Section */}
       <div className="space-y-6">
-        <Card className="bg-white shadow-lg">
+        <Card className="bg-card shadow-lg">
           <CardHeader className="border-b border-blue-100">
             <CardTitle className="flex items-center gap-2 text-blue-800">
               <Eye className="h-5 w-5" />

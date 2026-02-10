@@ -72,7 +72,7 @@ const ApprovalProcess: React.FC = () => {
 
   return (
     <div className="w-full">
-      <Card className="bg-white shadow-lg">
+      <Card className="bg-card shadow-lg">
         <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
           <CardTitle className="text-white text-lg">ขั้นตอนการอนุมัติ</CardTitle>
         </CardHeader>

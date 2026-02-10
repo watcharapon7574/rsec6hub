@@ -86,7 +86,7 @@ const AdminSigningTools: React.FC = () => {
   };
 
   return (
-    <Card className="bg-white shadow-lg">
+    <Card className="bg-card shadow-lg">
       <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
         <CardTitle className="text-white flex items-center gap-2 text-lg">
           <Settings className="h-5 w-5" />
@@ -137,7 +137,7 @@ const AdminSigningTools: React.FC = () => {
               </p>
               <div className="space-y-2">
                 {signaturePositions.map((pos, index) => (
-                  <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                  <div key={index} className="flex items-center justify-between bg-card p-2 rounded border">
                     <span className="text-sm">
                       หน้า {pos.page}, X: {pos.x}, Y: {pos.y}
                     </span>

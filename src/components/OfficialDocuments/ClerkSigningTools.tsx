@@ -90,7 +90,7 @@ const ClerkSigningTools: React.FC = () => {
   };
 
   return (
-    <Card className="bg-white shadow-lg">
+    <Card className="bg-card shadow-lg">
       <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-lg">
         <CardTitle className="text-white flex items-center gap-2 text-lg">
           <FileText className="h-5 w-5" />

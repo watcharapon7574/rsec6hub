@@ -283,7 +283,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
         <div className="flex gap-2 items-center">
           {/* ช่องค้นหา */}
           <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
               placeholder="ค้นหาเอกสารของฉัน..."
               value={searchTerm}
@@ -359,7 +359,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                 setStatusFilter('all');
                 setTypeFilter('all');
               }}
-              className="h-8 w-8 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -369,7 +369,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 
         {/* แสดงจำนวนผลลัพธ์ */}
         {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
-          <div className="text-[10px] text-gray-500 mt-1 text-center">
+          <div className="text-[10px] text-muted-foreground mt-1 text-center">
             แสดง {filteredAndSortedMemos.length} จาก {personalMemos.length} รายการ
           </div>
         )}
@@ -389,8 +389,8 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-gray-400' : 'text-blue-500'}`} />
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-gray-600 group-hover:text-gray-700' : 'text-gray-900 group-hover:text-blue-700'}`} title={memo.subject}>{memo.subject}</span>
+                  <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-blue-500'}`} />
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-gray-700' : 'text-foreground group-hover:text-blue-700'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {
@@ -408,13 +408,13 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                     
                     return attachedFileCount > 0 && (
                       <div className="flex items-center gap-1">
-                        <Paperclip className="h-3 w-3 text-gray-500" />
-                        <span className="text-xs text-gray-500">{attachedFileCount}</span>
+                        <Paperclip className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">{attachedFileCount}</span>
                       </div>
                     );
                   })()}
-                  <span className="text-xs text-gray-500 whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
                   <span
                     style={{
                       background: memo.current_signer_order === 1 ? '#2563eb' : // ฉบับร่าง - น้ำเงิน
@@ -474,12 +474,12 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5 
-                            ? 'text-gray-400'
+                            ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-blue-700' : 'text-blue-400')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
-                            ? 'text-gray-400'
+                            ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-blue-700 font-bold' : 'text-blue-400')
                         }`}>
                           {(() => {
@@ -517,7 +517,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
-                                    ? 'text-gray-400'
+                                    ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-blue-700' : 'text-blue-400')
                                 }`}>
                                   {(() => {
@@ -532,7 +532,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
-                                    ? 'text-gray-400'
+                                    ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-blue-700 font-bold' : 'text-blue-400')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
@@ -564,7 +564,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
-                                      ? 'text-gray-400'
+                                      ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-blue-700' : 'text-blue-400')
                                   }`}>{
                                     // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
@@ -573,7 +573,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                   }</span>
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
-                                      ? 'text-gray-400'
+                                      ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 font-bold' : 'text-blue-400')
                                   }`}>{pos.signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
@@ -586,7 +586,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                               </React.Fragment>
                             ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-gray-400' : 'text-blue-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-blue-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )
                       )}
                       
@@ -706,7 +706,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-blue-100 bg-blue-50/50">
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-muted-foreground">
               แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedMemos.length)} จาก {filteredAndSortedMemos.length} รายการ
             </div>
             <div className="flex items-center gap-1">
@@ -719,7 +719,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
-              <span className="text-xs text-gray-600 px-2">
+              <span className="text-xs text-muted-foreground px-2">
                 {currentPage} / {totalPages}
               </span>
               <Button

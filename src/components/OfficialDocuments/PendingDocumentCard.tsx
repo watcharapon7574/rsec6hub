@@ -287,7 +287,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
           <div className="flex gap-2 items-center">
             {/* Search Box */}
             <div className="relative flex-1">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3" />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3" />
               <Input
                 placeholder="ค้นหาเอกสาร..."
                 value={searchTerm}
@@ -360,7 +360,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   setStatusFilter('all');
                   setTypeFilter('all');
                 }}
-                className="h-7 w-7 p-0 text-gray-400 hover:text-amber-600 hover:bg-amber-50"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 hover:bg-amber-50"
                 title="ล้างตัวกรอง"
               >
                 <span className="text-sm">×</span>
@@ -370,7 +370,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
 
           {/* Result Count */}
           {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
-            <div className="text-[10px] text-gray-500 mt-1 text-center">
+            <div className="text-[10px] text-muted-foreground mt-1 text-center">
               แสดง {filteredAndSortedMemos.length} จาก {initialFilteredMemos.length} รายการ
             </div>
           )}
@@ -394,9 +394,9 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-card border border-border rounded-lg px-3 py-2 shadow-sm hover:bg-muted/50 transition group"
                 >
                   <FileText className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                  <span className="font-medium text-gray-900 truncate max-w-[120px] sm:max-w-[160px] group-hover:text-amber-700 sm:text-base text-sm" title={memo.subject}>{memo.subject}</span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(memo.date || memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-[160px] group-hover:text-amber-700 sm:text-base text-sm" title={memo.subject}>{memo.subject}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.date || memo.created_at).toLocaleDateString('th-TH')}</span>
                   <span
                     style={{
                       background: getStatusColorBySignerOrder(memo.current_signer_order),
@@ -426,12 +426,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5
-                              ? 'text-gray-400'
+                              ? 'text-muted-foreground'
                               : (memo.current_signer_order === 1 ? 'text-amber-700' : 'text-amber-400')
                           }`}>{memo.__source_table === 'doc_receive' ? 'ตรวจทาน' : 'ตรวจทาน/เสนอ'}</span>
                           <span className={`sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5
-                              ? 'text-gray-400'
+                              ? 'text-muted-foreground'
                               : (memo.current_signer_order === 1 ? 'text-amber-700 font-bold' : 'text-amber-400')
                           }`}>
                             {(() => {
@@ -468,12 +468,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
-                                      ? 'text-gray-400'
+                                      ? 'text-muted-foreground'
                                       : (memo.current_signer_order === proposer.order ? 'text-amber-700' : 'text-amber-400')
                                   }`}>ผู้เสนอ</span>
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
-                                      ? 'text-gray-400'
+                                      ? 'text-muted-foreground'
                                       : (memo.current_signer_order === proposer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
                                   }`}>
                                     {(() => {
@@ -508,7 +508,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
-                                      ? 'text-gray-400'
+                                      ? 'text-muted-foreground'
                                       : (memo.current_signer_order === signer.order ? 'text-amber-700' : 'text-amber-400')
                                   }`}>
                                     {(() => {
@@ -527,7 +527,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   </span>
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
-                                      ? 'text-gray-400'
+                                      ? 'text-muted-foreground'
                                       : (memo.current_signer_order === signer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
                                   }`}>{(() => {
                                     // Always use user_id to fetch fresh data from profiles
@@ -549,7 +549,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                               </React.Fragment>
                             ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-gray-400' : 'text-amber-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-amber-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )}
                         
                         {/* Connector to final step */}
@@ -660,7 +660,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
         {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-amber-100 mt-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               หน้า {currentPage} จาก {totalPages}
             </div>
             <div className="flex items-center gap-2">

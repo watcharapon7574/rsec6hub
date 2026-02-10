@@ -686,7 +686,7 @@ const PDFSignaturePage = () => {
                         เลขรับ *
                       </Label>
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 px-3 py-2 bg-muted border border-border rounded-md text-foreground font-medium whitespace-nowrap">
+                        <div className="flex items-center gap-1 px-3 py-2 bg-muted dark:bg-card/60 border border-border rounded-md text-foreground font-medium whitespace-nowrap">
                           <span className="text-sm"> {new Date().getFullYear() + 543} /</span>
                         </div>
                         <Input

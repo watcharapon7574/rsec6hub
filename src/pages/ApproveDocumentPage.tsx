@@ -862,7 +862,7 @@ const ApproveDocumentPage: React.FC = () => {
                         <p className="text-sm text-foreground leading-relaxed">{summaryText}</p>
                       </div>
                     ) : (
-                      <div className="mt-2 p-3 bg-muted border border-border rounded-lg">
+                      <div className="mt-2 p-3 bg-muted dark:bg-card/60 border border-border rounded-lg">
                         <p className="text-sm text-muted-foreground italic">
                           {isDocReceive
                             ? 'ยังไม่มีข้อมูลเรื่อง'

@@ -43,10 +43,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 w-full">
-        <div className="glass-card p-8 rounded-3xl animate-pulse">
+      <div className="min-h-screen flex items-center justify-center bg-background w-full">
+        <div className="p-8 rounded-lg animate-pulse">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-4 text-center text-apple">กำลังโหลด...</p>
+          <p className="text-muted-foreground mt-4 text-center">กำลังโหลด...</p>
         </div>
       </div>
     );
@@ -57,7 +57,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   return (
-    <div className="w-full bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 min-h-screen overflow-x-hidden">
+    <div className="w-full bg-background min-h-screen overflow-x-hidden">
       <TopBar />
       <main className="w-full">
         {children}
@@ -72,10 +72,10 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 w-full">
-        <div className="glass-card p-8 rounded-3xl animate-pulse">
+      <div className="min-h-screen flex items-center justify-center bg-background w-full">
+        <div className="p-8 rounded-lg animate-pulse">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-4 text-center text-apple">กำลังโหลด...</p>
+          <p className="text-muted-foreground mt-4 text-center">กำลังโหลด...</p>
         </div>
       </div>
     );

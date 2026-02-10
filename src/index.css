@@ -37,7 +37,7 @@
     --border: 217 91% 85%;
     --input: 220 14% 96%;
     --ring: 217 91% 60%;
-    --radius: 1.2rem;
+    --radius: 0.75rem;
 
     /* Shadow for main card/button */
     --shadow-primary: 0 2px 4px rgba(59, 130, 246, 0.10);

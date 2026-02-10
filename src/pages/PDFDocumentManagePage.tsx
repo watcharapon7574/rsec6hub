@@ -682,8 +682,8 @@ const PDFDocumentManagePage: React.FC = () => {
                 กลับ
               </Button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">จัดการหนังสือรับ</h1>
-                <p className="text-sm text-gray-500">{docReceive?.subject}</p>
+                <h1 className="text-xl font-semibold text-foreground">จัดการหนังสือรับ</h1>
+                <p className="text-sm text-muted-foreground">{docReceive?.subject}</p>
               </div>
             </div>
 
@@ -698,7 +698,7 @@ const PDFDocumentManagePage: React.FC = () => {
                         ? 'bg-blue-600 text-white'
                         : isStepComplete(step)
                           ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          : 'bg-gray-200 text-muted-foreground hover:bg-gray-300'
                     }`}
                   >
                     {isStepComplete(step) && currentStep !== step ? (
@@ -775,7 +775,7 @@ const PDFDocumentManagePage: React.FC = () => {
           </DialogDescription>
           <div className="flex flex-col items-center space-y-4 py-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-            <div className="text-sm text-gray-600 text-center">
+            <div className="text-sm text-muted-foreground text-center">
               กำลังดึงข้อมูลเอกสารจากฐานข้อมูล<br />
               โปรดรอสักครู่
             </div>

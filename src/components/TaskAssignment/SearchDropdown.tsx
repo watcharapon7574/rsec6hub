@@ -63,7 +63,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   if (loading) {
     return (
       <div className="absolute z-[9999] w-full mt-1 bg-card border border-border rounded-lg shadow-lg p-4">
-        <div className="text-sm text-gray-600 text-center flex items-center justify-center gap-2">
+        <div className="text-sm text-muted-foreground text-center flex items-center justify-center gap-2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
           กำลังค้นหา...
         </div>
@@ -91,7 +91,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
             <Icon className={`h-4 w-4 ${style.textColor}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm text-gray-900 flex items-center gap-2">
+            <div className="font-medium text-sm text-foreground flex items-center gap-2">
               {item.name}
               <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${style.badgeBg}`}>
                 {style.label}
@@ -150,7 +150,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
   if (searchTerm) {
     return (
-      <div className="absolute z-[9999] w-full mt-1 bg-card border border-border rounded-lg shadow-lg p-4 text-sm text-gray-600 text-center">
+      <div className="absolute z-[9999] w-full mt-1 bg-card border border-border rounded-lg shadow-lg p-4 text-sm text-muted-foreground text-center">
         ไม่พบผลการค้นหา
       </div>
     );

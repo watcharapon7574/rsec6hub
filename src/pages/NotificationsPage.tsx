@@ -143,67 +143,69 @@ const NotificationsPage = () => {
     <div className="min-h-screen bg-background pt-20 pb-24 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-white rounded-2xl shadow-primary">
-                <Bell className="h-6 w-6 text-primary" />
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-rose-100">
+                  <Bell className="h-5 w-5 text-rose-600" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-foreground">การแจ้งเตือน</h1>
+                  <p className="text-sm text-muted-foreground">
+                    {unreadCount > 0 ? `มีการแจ้งเตือนใหม่ ${unreadCount} รายการ` : 'ไม่มีการแจ้งเตือนใหม่'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">การแจ้งเตือน</h1>
-                <p className="text-muted-foreground">
-                  {unreadCount > 0 ? `มีการแจ้งเตือนใหม่ ${unreadCount} รายการ` : 'ไม่มีการแจ้งเตือนใหม่'}
-                </p>
-              </div>
+              
+              {unreadCount > 0 && (
+                <Button 
+                  onClick={markAllAsRead}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Check className="h-4 w-4 mr-1" />
+                  อ่านทั้งหมด
+                </Button>
+              )}
             </div>
-            
-            {unreadCount > 0 && (
-              <Button 
-                onClick={markAllAsRead}
-                variant="outline" 
-                className="text-primary border-primary hover:bg-primary hover:text-white"
-              >
-                <Check className="h-4 w-4 mr-2" />
-                อ่านทั้งหมด
-              </Button>
-            )}
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-white border border-border/50">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-primary">{notifications.length}</div>
-                <div className="text-sm text-muted-foreground">ทั้งหมด</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border border-border/50">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-orange-500">{unreadCount}</div>
-                <div className="text-sm text-muted-foreground">ยังไม่อ่าน</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border border-border/50">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-500">
-                  {notifications.filter(n => n.priority === 'high' && !n.read).length}
-                </div>
-                <div className="text-sm text-muted-foreground">ลำดับสูง</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border border-border/50">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-500">
-                  {notifications.filter(n => n.type === 'approval').length}
-                </div>
-                <div className="text-sm text-muted-foreground">รออนุมัติ</div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <Card>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="text-2xl font-bold text-primary">{notifications.length}</div>
+              <div className="text-xs text-muted-foreground">ทั้งหมด</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="text-2xl font-bold text-amber-500">{unreadCount}</div>
+              <div className="text-xs text-muted-foreground">ยังไม่อ่าน</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="text-2xl font-bold text-red-500">
+                {notifications.filter(n => n.priority === 'high' && !n.read).length}
+              </div>
+              <div className="text-xs text-muted-foreground">ลำดับสูง</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="text-2xl font-bold text-blue-500">
+                {notifications.filter(n => n.type === 'approval').length}
+              </div>
+              <div className="text-xs text-muted-foreground">รออนุมัติ</div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filters and Tabs */}
-        <Card className="bg-white border border-border/50 mb-6">
+        <Card className="mb-6">
           <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex items-center justify-between mb-4">
@@ -254,8 +256,8 @@ const NotificationsPage = () => {
                           key={notification.id} 
                           className={`p-4 rounded-lg border transition-colors ${
                             notification.read 
-                              ? 'bg-gray-50 border-gray-200' 
-                              : 'bg-white border-blue-200'
+                              ? 'bg-muted/50 border-border' 
+                              : 'bg-card border-primary/20'
                           }`}
                         >
                           <div className="flex items-start space-x-3">
@@ -267,7 +269,7 @@ const NotificationsPage = () => {
                               <div className="flex items-start justify-between mb-2">
                                 <div className="flex items-center space-x-2">
                                   <h3 className={`font-medium ${
-                                    notification.read ? 'text-gray-600' : 'text-gray-900'
+                                    notification.read ? 'text-muted-foreground' : 'text-foreground'
                                   }`}>
                                     {notification.title}
                                   </h3>
@@ -282,14 +284,14 @@ const NotificationsPage = () => {
                                 </div>
                                 
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs text-muted-foreground">
                                     {formatTimeAgo(notification.timestamp)}
                                   </span>
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => deleteNotification(notification.id)}
-                                    className="p-1 h-6 w-6 text-gray-400 hover:text-red-500"
+                                    className="p-1 h-6 w-6 text-muted-foreground hover:text-destructive"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
@@ -297,7 +299,7 @@ const NotificationsPage = () => {
                               </div>
                               
                               <p className={`text-sm mb-3 ${
-                                notification.read ? 'text-gray-500' : 'text-gray-700'
+                                notification.read ? 'text-muted-foreground' : 'text-foreground/80'
                               }`}>
                                 {notification.message}
                               </p>

@@ -85,9 +85,9 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                   key={signer.order}
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
                     isSelected 
-                      ? 'border-blue-500 bg-blue-50 shadow-md' 
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 shadow-md' 
                       : positionsCount > 0 
-                        ? 'border-green-500 bg-green-50' 
+                        ? 'border-green-500 bg-green-50 dark:bg-green-950' 
                         : 'border-border hover:border-border hover:bg-muted'
                   }`}
                   onClick={() => onSelectedSignerIndexChange(index)}
@@ -117,7 +117,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                         </Badge>
                       )}
                       {isSelected && (
-                        <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
+                        <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-950">
                           เลือกอยู่
                         </Badge>
                       )}
@@ -146,7 +146,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
           </p>
         </div>
 
-        <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg">
+        <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
           <p className="font-medium mb-1">วิธีการใช้งาน:</p>
           <p>1. เลือกผู้ลงนามจากรายการข้างต้น</p>
           <p>2. กรอกสรุปเนื้อหาเอกสาร (เพื่อให้ผู้ลงนามเข้าใจ)</p>

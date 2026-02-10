@@ -163,7 +163,7 @@ const TestTools: React.FC = () => {
           </Button>
         </div>
         
-        <div className="text-xs text-muted-foreground bg-yellow-50 p-2 rounded">
+        <div className="text-xs text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-2 rounded">
           <strong>หมายเหตุ:</strong> เครื่องมือนี้สำหรับทดสอบระบบเท่านั้น
         </div>
       </CardContent>

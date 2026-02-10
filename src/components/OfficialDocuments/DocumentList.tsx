@@ -723,7 +723,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 setTypeFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-purple-600 hover:bg-purple-50"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:bg-purple-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -1015,7 +1015,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                                   navigate(`/task-assignment?documentId=${memo.id}&documentType=${documentType}`);
                                 }}
-                                className="h-7 px-2 flex items-center gap-1 bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
+                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 hover:bg-green-100"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">มอบหมายงาน</span>
@@ -1030,7 +1030,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleViewAssignees(memo)}
-                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 text-blue-700 hover:bg-blue-100"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">ดูรายชื่อ</span>
@@ -1139,7 +1139,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 text-red-600 hover:bg-red-50"
+                      className="h-7 w-7 p-0 flex items-center justify-center border-red-200 text-red-600 hover:bg-red-50 dark:bg-red-950"
                       onClick={() => {
                         console.log('🗑️ Delete button clicked for memo:', memo.id);
                         handleDeleteClick(memo);
@@ -1193,7 +1193,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
         
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-3 py-2 border-t border-purple-100 bg-purple-50/50">
+          <div className="flex items-center justify-between px-3 py-2 border-t border-purple-100 bg-purple-50 dark:bg-purple-950/50">
             <div className="text-xs text-muted-foreground">
               แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedMemos.length)} จาก {filteredAndSortedMemos.length} รายการ
             </div>
@@ -1238,7 +1238,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 rounded-lg p-4">
               <p className="text-sm text-yellow-800">
                 ⚠️ <strong>คำเตือน:</strong> การลบเอกสารนี้จะไม่สามารถกู้คืนได้
               </p>

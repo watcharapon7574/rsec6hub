@@ -55,7 +55,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                   <SelectItem
                     key={`assistant-${profile.id}`}
                     value={profile.user_id || profile.id}
-                    className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer"
+                    className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
                     textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
                   >
                     <div className="flex flex-col">
@@ -86,7 +86,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                   <SelectItem
                     key={`deputy-${profile.id}`}
                     value={profile.user_id || profile.id}
-                    className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer"
+                    className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer"
                     textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
                   >
                     <div className="flex flex-col">
@@ -105,7 +105,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
         </div>
 
         {/* คำอธิบายการข้าม */}
-        <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+        <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200">
           <p className="font-medium mb-1">หมายเหตุ:</p>
           <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามหัวหน้าฝ่ายหรือรองผู้อำนวยการได้</p>
           <p>• หมายเลขลำดับจะปรับให้ต่อเนื่องตามคนที่เลือกจริง</p>

@@ -404,11 +404,11 @@ const RailwayManagementPage = () => {
                     key={service.id}
                     className={`border-2 shadow-lg transition-all ${
                       isDeploying
-                        ? 'border-blue-400 bg-blue-50/50'
+                        ? 'border-blue-400 bg-blue-50 dark:bg-blue-950/50'
                         : isRunning
-                        ? 'border-green-300 bg-green-50/30'
+                        ? 'border-green-300 bg-green-50 dark:bg-green-950/30'
                         : isStopped
-                        ? 'border-red-300 bg-red-50/30'
+                        ? 'border-red-300 bg-red-50 dark:bg-red-950/30'
                         : 'border-border'
                     }`}
                   >
@@ -467,7 +467,7 @@ const RailwayManagementPage = () => {
                             )}
                           </Badge>
                           {isStaticSite && (
-                            <Badge variant="outline" className="text-sm px-3 py-1 bg-purple-50 border-purple-300 flex items-center gap-1">
+                            <Badge variant="outline" className="text-sm px-3 py-1 bg-purple-50 dark:bg-purple-950 border-purple-300 flex items-center gap-1">
                               <Globe className="h-3 w-3" />
                               Static Site
                             </Badge>
@@ -525,7 +525,7 @@ const RailwayManagementPage = () => {
                           onClick={() => loadServiceStatus(service.id, envId)}
                           disabled={loading || isDeploying}
                           variant="outline"
-                          className="min-w-[140px] border-2 hover:bg-blue-50 hover:border-blue-400 font-bold py-6 text-base transition-all"
+                          className="min-w-[140px] border-2 hover:bg-blue-50 dark:bg-blue-950 hover:border-blue-400 font-bold py-6 text-base transition-all"
                           size="lg"
                         >
                           <RefreshCw className={`mr-2 h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
@@ -535,7 +535,7 @@ const RailwayManagementPage = () => {
 
                       {/* Status Info */}
                       {!isDeploying && (
-                        <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 rounded-lg">
                           <p className="text-sm text-blue-800 flex items-start gap-2">
                             <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <span>
@@ -702,7 +702,7 @@ const RailwayManagementPage = () => {
               </div>
 
               <div className="pt-4 border-t-2 border-dashed">
-                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg mb-4">
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 dark:bg-blue-950 rounded-lg mb-4">
                   <p className="text-sm font-medium text-blue-900 dark:text-blue-100 flex items-center gap-2">
                     <Lightbulb className="h-5 w-5 flex-shrink-0" />
                     <span>

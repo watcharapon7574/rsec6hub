@@ -552,7 +552,7 @@ const CreateMemoPage = () => {
 
           {/* Rejection Comments Card */}
           {rejectionComments.length > 0 && (
-            <Card className="mb-6 border-red-200 bg-red-50">
+            <Card className="mb-6 border-red-200 bg-red-50 dark:bg-red-950">
               <CardHeader className="bg-red-100 border-b border-red-200">
                 <CardTitle className="text-red-800 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
@@ -599,8 +599,8 @@ const CreateMemoPage = () => {
                 <div className="space-y-4">
                   <div className={`p-4 rounded-lg border ${
                     grammarSuggestions[currentSuggestionIndex].applied 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-blue-50 border-blue-200'
+                      ? 'bg-green-50 dark:bg-green-950 border-green-200' 
+                      : 'bg-blue-50 dark:bg-blue-950 border-blue-200'
                   }`}>
                     <div className="flex items-center justify-between mb-2">
                       <h4 className={`font-medium ${
@@ -622,7 +622,7 @@ const CreateMemoPage = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                    <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg border border-red-200">
                       <h5 className="font-medium text-red-700 mb-2">คำเดิม</h5>
                       <p className={`font-mono bg-red-100 p-2 rounded ${
                         grammarSuggestions[currentSuggestionIndex].applied 
@@ -632,7 +632,7 @@ const CreateMemoPage = () => {
                         "{grammarSuggestions[currentSuggestionIndex].originalWord}"
                       </p>
                     </div>
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200">
                       <h5 className="font-medium text-green-700 mb-2">
                         {grammarSuggestions[currentSuggestionIndex].applied ? 'คำที่ใช้แล้ว' : 'คำที่แนะนำ'}
                       </h5>
@@ -820,7 +820,7 @@ const CreateMemoPage = () => {
                               attached_files: fileNames
                             }));
                           }}
-                          className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 dark:bg-blue-950 file:text-blue-700 hover:file:bg-blue-100"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
                           รองรับไฟล์: PDF, Word, รูปภาพ (JPG, PNG) ขนาดไม่เกิน 10MB ต่อไฟล์
@@ -935,7 +935,7 @@ const CreateMemoPage = () => {
                     </div>
 
                     {/* Special Character Help (Collapsible) */}
-                    <div className="text-sm text-blue-700 bg-blue-50 rounded-md p-3 border border-blue-200">
+                    <div className="text-sm text-blue-700 bg-blue-50 dark:bg-blue-950 rounded-md p-3 border border-blue-200">
                       <div
                         className="flex items-center justify-between cursor-pointer"
                         onClick={() => setShowSpecialCharHelp(!showSpecialCharHelp)}
@@ -978,7 +978,7 @@ const CreateMemoPage = () => {
                     variant="outline"
                     onClick={correctGrammar}
                     disabled={loading || loadingMemo || grammarLoading || previewLoading}
-                    className="border-green-300 text-green-700 hover:bg-green-50 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="border-green-300 text-green-700 hover:bg-green-50 dark:bg-green-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {grammarLoading ? (
                       <>
@@ -1000,7 +1000,7 @@ const CreateMemoPage = () => {
                     variant="outline"
                     onClick={generatePreview}
                     disabled={loading || loadingMemo || grammarLoading || previewLoading}
-                    className="border-blue-300 text-blue-700 hover:bg-blue-50 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:bg-blue-950 font-semibold px-6 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {previewLoading ? (
                       <>
@@ -1035,7 +1035,7 @@ const CreateMemoPage = () => {
           {/* PDF Preview Section */}
           {previewUrl && (
             <Card className="mt-8 shadow-lg border-0 bg-card">
-              <CardHeader className="bg-blue-50 border-b border-blue-100 rounded-t-lg">
+              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-blue-100 rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">

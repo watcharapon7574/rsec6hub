@@ -324,7 +324,7 @@ const DocumentDetailPage: React.FC = () => {
 
                         {/* Task Details: Description, Date/Time, Location */}
                         {(task.task_description || task.event_date || task.event_time || task.location) && (
-                          <div className="mt-3 space-y-2 bg-pink-50 border border-pink-200 rounded-lg p-3">
+                          <div className="mt-3 space-y-2 bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-lg p-3">
                             {task.task_description && (
                               <div className="flex items-start gap-2">
                                 <ClipboardList className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
@@ -369,7 +369,7 @@ const DocumentDetailPage: React.FC = () => {
                         {task.status === 'completed' && reportText && (
                           <div className="mt-2">
                             <label className="text-sm font-medium text-muted-foreground">รายงานผล:</label>
-                            <p className="text-sm bg-green-50 p-2 rounded whitespace-pre-wrap">{reportText}</p>
+                            <p className="text-sm bg-green-50 dark:bg-green-950 p-2 rounded whitespace-pre-wrap">{reportText}</p>
 
                             {reportFileUrl && (
                               <Button

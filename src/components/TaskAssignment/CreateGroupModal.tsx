@@ -175,8 +175,8 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           {selectedMembers.length > 0 && (
             <div className={`rounded-lg p-3 border ${
               groupType === 'position'
-                ? 'bg-orange-50 border-orange-200'
-                : 'bg-purple-50 border-purple-200'
+                ? 'bg-orange-50 dark:bg-orange-950 border-orange-200'
+                : 'bg-purple-50 dark:bg-purple-950 border-purple-200'
             }`}>
               <div className={`text-sm ${
                 groupType === 'position' ? 'text-orange-800' : 'text-purple-800'

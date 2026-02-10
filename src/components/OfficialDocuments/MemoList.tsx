@@ -349,7 +349,7 @@ const MemoList: React.FC<MemoListProps> = ({
                 setStatusFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-foreground hover:text-amber-600 hover:bg-amber-50"
+              className="h-8 w-8 p-0 text-foreground hover:text-amber-600 hover:bg-amber-50 dark:bg-amber-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -652,7 +652,7 @@ const MemoList: React.FC<MemoListProps> = ({
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-3 py-2 border-t border-amber-100 bg-amber-50/50">
+          <div className="flex items-center justify-between px-3 py-2 border-t border-amber-100 bg-amber-50 dark:bg-amber-950/50">
             <div className="text-xs text-muted-foreground">
               แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedMemos.length)} จาก {filteredAndSortedMemos.length} รายการ
             </div>

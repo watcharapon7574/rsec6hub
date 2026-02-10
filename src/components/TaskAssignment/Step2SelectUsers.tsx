@@ -261,7 +261,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
 
         {/* Position mode warning */}
         {isPositionMode && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
+          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
             <div className="flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-orange-500" />
               <span className="font-medium">โหมดหน้าที่:</span>
@@ -275,7 +275,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
 
         {/* Name/Group mode warning */}
         {isNameOrGroupMode && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-blue-500" />
               <span className="font-medium">

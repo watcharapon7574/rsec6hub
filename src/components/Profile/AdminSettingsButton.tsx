@@ -130,7 +130,7 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
               <DropdownMenuItem
                 key={itemIndex}
                 onClick={() => handleItemClick(item)}
-                className="cursor-pointer flex flex-col items-start py-3 px-3 hover:bg-blue-50 focus:bg-blue-50 bg-card"
+                className="cursor-pointer flex flex-col items-start py-3 px-3 hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 bg-card"
               >
                 <div className="flex items-center gap-2 w-full">
                   <item.icon className="h-4 w-4 text-blue-600" />

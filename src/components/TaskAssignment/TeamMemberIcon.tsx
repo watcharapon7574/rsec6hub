@@ -58,8 +58,8 @@ const TeamMemberIcon: React.FC<TeamMemberIconProps> = ({
   };
 
   const getBackgroundColor = () => {
-    if (isLeader) return 'bg-amber-50';
-    if (isReporter) return 'bg-pink-50';
+    if (isLeader) return 'bg-amber-50 dark:bg-amber-950';
+    if (isReporter) return 'bg-pink-50 dark:bg-pink-950';
     return 'bg-muted';
   };
 

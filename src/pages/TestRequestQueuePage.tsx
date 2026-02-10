@@ -307,7 +307,7 @@ const TestRequestQueuePage: React.FC = () => {
       </div>
 
       {/* Queue Status Card */}
-      <Card className="mb-6 border-blue-200 bg-blue-50/50">
+      <Card className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
@@ -405,7 +405,7 @@ const TestRequestQueuePage: React.FC = () => {
           <Separator />
 
           {/* Railway PDF Tests */}
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 rounded-lg p-3">
             <div className="text-sm font-medium text-orange-800 mb-2">
               📄 Railway PDF Generation Tests
             </div>
@@ -455,7 +455,7 @@ const TestRequestQueuePage: React.FC = () => {
           <Separator />
 
           {/* Edge Function Tests */}
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+          <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 rounded-lg p-3">
             <div className="text-sm font-medium text-purple-800 mb-2">
               ⚡ Supabase Edge Function Tests
             </div>
@@ -637,7 +637,7 @@ const TestRequestQueuePage: React.FC = () => {
           </div>
 
           {isRunning && (
-            <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
               <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
               <span className="text-blue-600 font-medium">กำลังทดสอบ...</span>
             </div>
@@ -647,7 +647,7 @@ const TestRequestQueuePage: React.FC = () => {
 
       {/* Results Card */}
       {results && (
-        <Card className="border-green-200 bg-green-50/50">
+        <Card className="border-green-200 bg-green-50 dark:bg-green-950/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {results.successRate === 100 ? (
@@ -798,7 +798,7 @@ const TestRequestQueuePage: React.FC = () => {
           <div className="text-xs text-muted-foreground">
             💡 <strong>Tip:</strong> ใช้ Health Check สำหรับทดสอบเบื้องต้น และใช้ Stress Test เพื่อทดสอบแบบหนักๆ
           </div>
-          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded text-xs">
             🔍 <strong>หลักฐานที่เชื่อถือได้:</strong>
             <ul className="ml-4 mt-1 space-y-1">
               <li>• Network Tab: ดู requests ทีละ 8 (ไม่พร้อมกัน 20+)</li>

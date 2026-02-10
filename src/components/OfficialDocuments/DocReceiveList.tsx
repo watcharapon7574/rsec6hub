@@ -630,7 +630,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 setStatusFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-green-600 hover:bg-green-50"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:bg-green-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -952,7 +952,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 onClick={() => {
                                   navigate(`/task-assignment?documentId=${memo.id}&documentType=doc_receive`);
                                 }}
-                                className="h-7 px-2 flex items-center gap-1 bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
+                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 hover:bg-green-100"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">มอบหมายงาน</span>
@@ -967,7 +967,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleViewAssignees(memo)}
-                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 text-blue-700 hover:bg-blue-100"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">ดูรายชื่อ</span>
@@ -1005,7 +1005,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 px-2 flex items-center border-amber-200 text-amber-600 hover:bg-amber-50"
+                          className="h-7 px-2 flex items-center border-amber-200 text-amber-600 hover:bg-amber-50 dark:bg-amber-950"
                           onClick={() => navigate(`/edit-doc-receive/${memo.id}`)}
                         >
                           <Edit className="h-4 w-4" />
@@ -1023,7 +1023,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 px-2 flex items-center gap-1 border-red-200 text-red-600 hover:bg-red-50"
+                              className="h-7 px-2 flex items-center gap-1 border-red-200 text-red-600 hover:bg-red-50 dark:bg-red-950"
                               onClick={() => navigate(`/pdf-signature?edit=${memo.id}`)}
                               title="แก้ไขเอกสารที่ถูกตีกลับ"
                             >
@@ -1112,7 +1112,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-3 py-2 border-t border-green-100 bg-green-50/50">
+          <div className="flex items-center justify-between px-3 py-2 border-t border-green-100 bg-green-50 dark:bg-green-950/50">
             <div className="text-xs text-muted-foreground">
               แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedDocReceive.length)} จาก {filteredAndSortedDocReceive.length} รายการ
             </div>

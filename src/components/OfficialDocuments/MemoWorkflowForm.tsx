@@ -405,7 +405,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                   </SelectContent>
                 </Select>
                 {approvers.assistant.selectedName && (
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
                     <div className="space-y-2">
                       <p className="font-medium text-blue-800">{approvers.assistant.selectedName}</p>
                       <p className="text-sm text-blue-600">{approvers.assistant.selectedPosition}</p>
@@ -462,7 +462,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
                   </SelectContent>
                 </Select>
                 {approvers.deputy.selectedName && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
                     <p className="font-medium text-blue-800">{approvers.deputy.selectedName}</p>
                     <p className="text-sm text-blue-600">{approvers.deputy.selectedPosition}</p>
                   </div>
@@ -472,7 +472,7 @@ const MemoWorkflowForm: React.FC<MemoWorkflowFormProps> = ({ onWorkflowCreated }
           </div>
 
           {/* ผู้อำนวยการ */}
-          <div className="space-y-2 p-4 border border-red-200 rounded-lg bg-red-50">
+          <div className="space-y-2 p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-950">
             <Label className="font-medium text-red-800">
               ผู้อำนวยการ (ลำดับสุดท้าย - บังคับ) *
             </Label>

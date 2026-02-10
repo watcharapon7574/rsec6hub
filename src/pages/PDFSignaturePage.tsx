@@ -565,7 +565,7 @@ const PDFSignaturePage = () => {
 
           {/* Rejection Comment Alert */}
           {rejectionComment && (
-            <Card className="mb-6 border-red-200 bg-red-50">
+            <Card className="mb-6 border-red-200 bg-red-50 dark:bg-red-950">
               <CardHeader className="bg-red-100 border-b border-red-200">
                 <CardTitle className="text-red-800 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
@@ -646,7 +646,7 @@ const PDFSignaturePage = () => {
                         </p>
                       </div>
                       {formData.pdfFile && (
-                        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 rounded-lg">
                           <div className="flex items-center gap-2">
                             <FileText className="h-5 w-5 text-green-600" />
                             <span className="text-sm font-medium text-green-800">
@@ -756,7 +756,7 @@ const PDFSignaturePage = () => {
                 </div>
 
                 {/* Notice Section */}
-                <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div>

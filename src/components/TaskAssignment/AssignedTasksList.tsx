@@ -427,7 +427,7 @@ const AssignedTasksList = () => {
                     )}
 
                     {task.note && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-3">
                         <div className="text-xs text-muted-foreground mb-1">
                           💬 หมายเหตุจากผู้มอบหมาย
                         </div>
@@ -436,7 +436,7 @@ const AssignedTasksList = () => {
                     )}
 
                     {task.completion_note && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="bg-green-50 dark:bg-green-950 border border-green-200 rounded-lg p-3">
                         <div className="text-xs text-muted-foreground mb-1">
                           ✅ หมายเหตุการดำเนินการ
                         </div>
@@ -566,7 +566,7 @@ const AssignedTasksList = () => {
                   แนบไฟล์รายงาน (ถ้ามี)
                 </label>
                 {reportFile ? (
-                  <div className="flex items-center gap-2 p-3 border-2 border-green-200 bg-green-50 rounded-lg">
+                  <div className="flex items-center gap-2 p-3 border-2 border-green-200 bg-green-50 dark:bg-green-950 rounded-lg">
                     <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
                     <span className="text-sm text-green-700 flex-1 truncate">
                       {reportFile.name}
@@ -594,7 +594,7 @@ const AssignedTasksList = () => {
                     />
                     <label
                       htmlFor="report-file"
-                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
+                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 dark:bg-green-950 transition-colors"
                     >
                       <Upload className="h-5 w-5 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">

@@ -201,7 +201,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
               <div
                 key={profile.id}
                 className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                  isSelected(profile.id) ? 'border-green-500 bg-green-50' : 'hover:bg-muted'
+                  isSelected(profile.id) ? 'border-green-500 bg-green-50 dark:bg-green-950' : 'hover:bg-muted'
                 }`}
                 onClick={() => toggleSigner(profile, 'assistant')}
               >
@@ -243,7 +243,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
               <div
                 key={profile.id}
                 className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                  isSelected(profile.id) ? 'border-blue-500 bg-blue-50' : 'hover:bg-muted'
+                  isSelected(profile.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' : 'hover:bg-muted'
                 }`}
                 onClick={() => toggleSigner(profile, 'deputy')}
               >
@@ -284,7 +284,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
             {getProfilesByRole('director').map((profile) => (
               <div
                 key={profile.id}
-                className="flex items-center gap-3 p-3 border border-red-200 bg-red-50 rounded-lg"
+                className="flex items-center gap-3 p-3 border border-red-200 bg-red-50 dark:bg-red-950 rounded-lg"
               >
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={profile.profile_picture_url} />

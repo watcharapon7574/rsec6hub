@@ -227,14 +227,14 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>ชื่อผู้เขียน</Label>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
                     <p className="text-muted-foreground font-medium">{formData.author_name}</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>ตำแหน่งผู้เขียน</Label>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
                     <p className="text-muted-foreground font-medium">{formData.author_position}</p>
                   </div>
                 </div>
@@ -293,7 +293,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
               
               <Button 
                 variant="outline" 
-                className="flex items-center gap-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+                className="flex items-center gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:bg-blue-950"
               >
                 <Download className="h-4 w-4" />
                 Export PPTX

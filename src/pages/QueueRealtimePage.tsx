@@ -70,7 +70,7 @@ const QueueRealtimePage: React.FC = () => {
               <span className="text-sm text-muted-foreground">/ 8 max</span>
             </div>
             {isProcessing && (
-              <Badge variant="outline" className="mt-2 bg-blue-50 text-blue-700 border-blue-300">
+              <Badge variant="outline" className="mt-2 bg-blue-50 dark:bg-blue-950 text-blue-700 border-blue-300">
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 Processing
               </Badge>
@@ -90,7 +90,7 @@ const QueueRealtimePage: React.FC = () => {
               <span className="text-sm text-muted-foreground">waiting</span>
             </div>
             {queueLength > 10 && (
-              <Badge variant="outline" className="mt-2 bg-yellow-50 text-yellow-700 border-yellow-300">
+              <Badge variant="outline" className="mt-2 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 border-yellow-300">
                 High Queue
               </Badge>
             )}

@@ -148,7 +148,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-100">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100">
                   <div className="p-1.5 bg-green-500 rounded-full">
                     <CheckCircle className="h-3.5 w-3.5 text-white" />
                   </div>
@@ -157,7 +157,7 @@ const Dashboard = () => {
                     <p className="text-xs text-muted-foreground">2 ชั่วโมงที่แล้ว</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-100">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100">
                   <div className="p-1.5 bg-blue-500 rounded-full">
                     <FileText className="h-3.5 w-3.5 text-white" />
                   </div>
@@ -189,21 +189,21 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-100">
                   <p className="text-sm font-medium text-amber-800">รอการอนุมัติคำขอลา</p>
                   <p className="text-xs text-amber-600 mb-2">มี 2 คำขอรอการพิจารณา</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/leave-requests')}>
                     ดูรายละเอียด
                   </Button>
                 </div>
-                <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100">
                   <p className="text-sm font-medium text-blue-800">เอกสารใหม่</p>
                   <p className="text-xs text-blue-600 mb-2">ได้รับหนังสือราชการ 1 ฉบับ</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/documents')}>
                     เปิดดู
                   </Button>
                 </div>
-                <div className="p-3 rounded-lg bg-green-50 border border-green-100">
+                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100">
                   <p className="text-sm font-medium text-green-800">รายงานสำเร็จ</p>
                   <p className="text-xs text-green-600 mb-2">ส่งรายงานครบถ้วนแล้ว</p>
                   <Button size="sm" variant="outline" onClick={() => navigate('/daily-reports')}>
@@ -225,7 +225,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 rounded-lg bg-amber-50 border border-amber-100">
+                <div className="text-center p-4 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-100">
                   <div className="bg-amber-500 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                     <span className="text-lg font-bold text-white">7</span>
                   </div>
@@ -234,7 +234,7 @@ const Dashboard = () => {
                     จัดการ
                   </Button>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-blue-50 border border-blue-100">
+                <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100">
                   <div className="bg-blue-500 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                     <span className="text-lg font-bold text-white">3</span>
                   </div>
@@ -243,7 +243,7 @@ const Dashboard = () => {
                     ลงนาม
                   </Button>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-green-50 border border-green-100">
+                <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100">
                   <div className="bg-green-500 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                     <span className="text-lg font-bold text-white">12</span>
                   </div>

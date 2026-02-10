@@ -269,11 +269,11 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                       <SelectValue placeholder="เลือกผู้ช่วย ผอ." />
                     </SelectTrigger>
                     <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
-                      <SelectItem key="none-assistant" value="" className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer">
+                      <SelectItem key="none-assistant" value="" className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                         ไม่เลือก
                       </SelectItem>
                       {availableSigners.assistant.map((signer) => (
-                        <SelectItem key={`assistant-${signer.id}`} value={signer.id} className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer">
+                        <SelectItem key={`assistant-${signer.id}`} value={signer.id} className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                           {signer.name} ({signer.employee_id})
                         </SelectItem>
                       ))}
@@ -289,11 +289,11 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                       <SelectValue placeholder="เลือกรอง ผอ." />
                     </SelectTrigger>
                     <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
-                      <SelectItem key="none-deputy" value="" className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer">
+                      <SelectItem key="none-deputy" value="" className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                         ไม่เลือก
                       </SelectItem>
                       {availableSigners.deputy.map((signer) => (
-                        <SelectItem key={`deputy-${signer.id}`} value={signer.id} className="hover:bg-blue-50 focus:bg-blue-50 cursor-pointer">
+                        <SelectItem key={`deputy-${signer.id}`} value={signer.id} className="hover:bg-blue-50 dark:bg-blue-950 focus:bg-blue-50 dark:bg-blue-950 cursor-pointer">
                           {signer.name} ({signer.employee_id})
                         </SelectItem>
                       ))}
@@ -304,7 +304,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                 {/* Director */}
                 <div className="space-y-3">
                   <Label>ลำดับที่ 3: ผอ. (บังคับ) *</Label>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
                     <p className="text-blue-800 font-medium">{availableSigners.director[0].name}</p>
                     <p className="text-sm text-muted-foreground">ผู้อำนวยการ ({availableSigners.director[0].employee_id})</p>
                   </div>
@@ -343,7 +343,7 @@ const CreateMemoForm: React.FC<CreateMemoFormProps> = ({ onSubmit }) => {
                   ตรวจสอบข้อมูลก่อนส่ง
                 </h3>
                 
-                <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
                   <div>
                     <p className="font-medium text-blue-900">เรื่อง:</p>
                     <p className="text-foreground">{formData.subject}</p>

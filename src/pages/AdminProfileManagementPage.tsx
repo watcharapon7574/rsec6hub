@@ -252,7 +252,7 @@ const AdminProfileManagementPage: React.FC = () => {
                     setSearchTerm('');
                     setCurrentPage(1);
                   }}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:bg-blue-950"
                 >
                   ล้าง
                 </Button>
@@ -262,7 +262,7 @@ const AdminProfileManagementPage: React.FC = () => {
         </Card>
 
         {/* Info Alert */}
-        <Alert className="bg-blue-50 border-blue-200 shadow">
+        <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 shadow">
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-800">
             <strong>หมายเหตุ:</strong> รหัสบุคลากร (employee_id) จะถูกสร้างอัตโนมัติและไม่สามารถแก้ไขได้
@@ -309,7 +309,7 @@ const AdminProfileManagementPage: React.FC = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between border-t border-blue-100 pt-4 bg-blue-50/30 rounded-b-lg px-4 py-3">
+                <div className="mt-6 flex items-center justify-between border-t border-blue-100 pt-4 bg-blue-50 dark:bg-blue-950/30 rounded-b-lg px-4 py-3">
                   <div className="text-sm text-muted-foreground">
                     แสดง <span className="font-semibold text-blue-600">{startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)}</span> จาก <span className="font-semibold text-blue-600">{filteredProfiles.length}</span> รายการ
                   </div>
@@ -319,7 +319,7 @@ const AdminProfileManagementPage: React.FC = () => {
                       size="sm"
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="border-blue-200 hover:bg-blue-50 disabled:opacity-50"
+                      className="border-blue-200 hover:bg-blue-50 dark:bg-blue-950 disabled:opacity-50"
                     >
                       ก่อนหน้า
                     </Button>
@@ -346,7 +346,7 @@ const AdminProfileManagementPage: React.FC = () => {
                             className={`w-10 ${
                               currentPage === pageNumber
                                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                                : 'border-blue-200 hover:bg-blue-50'
+                                : 'border-blue-200 hover:bg-blue-50 dark:bg-blue-950'
                             }`}
                           >
                             {pageNumber}
@@ -360,7 +360,7 @@ const AdminProfileManagementPage: React.FC = () => {
                       size="sm"
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="border-blue-200 hover:bg-blue-50 disabled:opacity-50"
+                      className="border-blue-200 hover:bg-blue-50 dark:bg-blue-950 disabled:opacity-50"
                     >
                       ถัดไป
                     </Button>

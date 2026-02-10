@@ -669,7 +669,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {/* เวลา/สถานที่ของงาน */}
                   {(task.event_time || task.location) && (
-                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-pink-600 bg-pink-50 border border-pink-200 rounded-md px-2 py-0.5">
+                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-pink-600 bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-md px-2 py-0.5">
                       {task.event_time && (
                         <span className="flex items-center gap-0.5">
                           <Clock className="h-3 w-3" />
@@ -750,7 +750,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                           size="sm"
                           variant="outline"
                           onClick={() => handleManageTeam(task)}
-                          className="h-7 text-xs px-2.5 border-orange-300 text-orange-600 hover:bg-orange-50"
+                          className="h-7 text-xs px-2.5 border-orange-300 text-orange-600 hover:bg-orange-50 dark:bg-orange-950"
                         >
                           <Settings2 className="h-3.5 w-3.5 mr-1" />
                           จัดการทีม
@@ -844,7 +844,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                 <Label htmlFor="report-file" className="text-sm font-medium flex items-center gap-2">
                   📎 แนบไฟล์เอกสาร <span className="text-red-500">*</span>
                 </Label>
-                <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 p-2 rounded">
                   💡 คุณเป็นผู้รายงาน ต้องแนบไฟล์รายงาน
                 </p>
                 <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-blue-400 transition-colors">
@@ -863,7 +863,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                       cursor-pointer"
                   />
                   {reportFile && (
-                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 rounded-lg">
                       <p className="text-sm text-foreground flex items-center gap-2 font-medium">
                         <CheckCircle className="h-4 w-4" />
                         ไฟล์ที่เลือก: {reportFile.name}

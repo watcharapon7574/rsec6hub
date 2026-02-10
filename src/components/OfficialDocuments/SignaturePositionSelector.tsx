@@ -163,12 +163,12 @@ const SignaturePositionSelector: React.FC<SignaturePositionSelectorProps> = ({
             กำลังกำหนดตำแหน่งสำหรับ: 
           </p>
           {getCurrentSigner() ? (
-            <Badge variant="outline" className="bg-blue-50">
+            <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950">
               {getCurrentSigner().first_name} {getCurrentSigner().last_name} 
               (ลำดับที่ {currentSignerIndex + 1})
             </Badge>
           ) : (
-            <Badge variant="outline" className="bg-green-50">
+            <Badge variant="outline" className="bg-green-50 dark:bg-green-950">
               เสร็จสิ้นแล้ว
             </Badge>
           )}
@@ -210,7 +210,7 @@ const SignaturePositionSelector: React.FC<SignaturePositionSelectorProps> = ({
                 <div 
                   key={signer.user_id}
                   className={`p-2 border rounded text-xs ${
-                    position ? 'bg-green-50 border-green-200' : 'bg-muted border-border'
+                    position ? 'bg-green-50 dark:bg-green-950 border-green-200' : 'bg-muted border-border'
                   }`}
                 >
                   <span className="font-medium">

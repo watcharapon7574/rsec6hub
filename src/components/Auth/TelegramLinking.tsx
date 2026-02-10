@@ -52,7 +52,7 @@ const TelegramLinking: React.FC<TelegramLinkingProps> = ({ phone, onLinked, onBa
         </div>
 
         <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-lg p-4">
             <div className="space-y-2">
               <p className="text-sm font-medium text-blue-900">ขั้นตอนการเชื่อมต่อ:</p>
               <ol className="text-xs text-blue-700 space-y-1 ml-4">

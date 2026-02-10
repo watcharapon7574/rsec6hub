@@ -60,7 +60,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
               <FileText className="h-4 w-4 mr-2 text-pink-600" />
               <h3 className="font-semibold text-pink-900">เอกสาร</h3>
             </div>
-            <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 space-y-2">
+            <div className="bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-lg p-4 space-y-2">
               <div>
                 <span className="text-sm text-pink-600 font-medium">เรื่อง: </span>
                 <span className="text-sm text-muted-foreground">{subject}</span>
@@ -82,7 +82,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                 ผู้รับมอบหมาย ({selectedUsers.length} คน)
               </h3>
             </div>
-            <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+            <div className="bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-lg p-4">
               <div className="flex flex-wrap gap-2">
                 {selectedUsers.map((user) => (
                   <Badge
@@ -104,7 +104,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                 <ClipboardList className="h-4 w-4 mr-2 text-pink-600" />
                 <h3 className="font-semibold text-pink-900">รายละเอียดงาน</h3>
               </div>
-              <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+              <div className="bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-lg p-4">
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{taskDescription}</p>
               </div>
             </div>
@@ -120,7 +120,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                     <Calendar className="h-4 w-4 mr-2 text-pink-600" />
                     <h3 className="font-semibold text-pink-900">วันที่/เวลา</h3>
                   </div>
-                  <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                  <div className="bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-lg p-4">
                     <div className="flex flex-col gap-1">
                       {eventDate && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -146,7 +146,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                     <MapPin className="h-4 w-4 mr-2 text-pink-600" />
                     <h3 className="font-semibold text-pink-900">สถานที่</h3>
                   </div>
-                  <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                  <div className="bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-lg p-4">
                     <p className="text-sm text-muted-foreground">{location}</p>
                   </div>
                 </div>
@@ -161,7 +161,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                 <MessageSquare className="h-4 w-4 mr-2 text-pink-600" />
                 <h3 className="font-semibold text-pink-900">หมายเหตุเพิ่มเติม</h3>
               </div>
-              <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+              <div className="bg-pink-50 dark:bg-pink-950 border border-pink-200 rounded-lg p-4">
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{note}</p>
               </div>
             </div>
@@ -169,7 +169,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
         </CardContent>
       </Card>
 
-      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
           <strong>📋 หมายเหตุ:</strong> เมื่อกดปุ่ม "มอบหมายงาน" งานจะถูกส่งไปยังผู้รับมอบหมายทันที
           และไม่สามารถแก้ไขได้

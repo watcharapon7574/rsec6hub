@@ -199,7 +199,7 @@ const ClerkSigningTools: React.FC = () => {
             <PenTool className="h-4 w-4" />
             จัดการลายเซ็น
           </h3>
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
             <p className="text-sm text-blue-800 mb-2">ลายเซ็นดิจิทัล</p>
             <div className="flex items-center gap-3">
               <div className="w-24 h-12 bg-card border-2 border-dashed border-blue-300 rounded flex items-center justify-center">

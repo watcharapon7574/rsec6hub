@@ -94,7 +94,7 @@ export const ProfileManagementTable: React.FC<ProfileManagementTableProps> = ({
 
               {/* Position */}
               <TableCell>
-                <Badge variant="outline" className="font-normal !bg-blue-50 !text-blue-700 !border-blue-200">
+                <Badge variant="outline" className="font-normal !bg-blue-50 dark:bg-blue-950 !text-blue-700 !border-blue-200">
                   {profile.job_position || getPositionDisplayName(profile.position, profile.org_structure_role)}
                 </Badge>
               </TableCell>

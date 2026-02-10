@@ -139,7 +139,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
           onClick={() => {
             navigate(`/task-assignment?documentId=${documentId}&documentType=${documentType}`);
           }}
-          className="bg-green-50 border-green-500 text-foreground hover:bg-green-100"
+          className="bg-green-50 dark:bg-green-950 border-green-500 text-foreground hover:bg-green-100"
         >
           <ClipboardList className="h-4 w-4 mr-1" />
           มอบหมายงาน
@@ -296,7 +296,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
                       <p className="text-muted-foreground text-center py-4">ยังไม่ได้เลือกผู้ลงนาม</p>
                     ) : (
                       selectedSigners.map((signer, index) => (
-                        <div key={signer.user_id} className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
+                        <div key={signer.user_id} className="flex items-center justify-between p-3 border rounded-lg bg-blue-50 dark:bg-blue-950">
                           <div>
                             <p className="font-medium">{signer.first_name} {signer.last_name}</p>
                             <p className="text-sm text-muted-foreground">ลำดับที่ {index + 1}</p>

@@ -84,7 +84,7 @@ const AssignedTasksList = () => {
       },
       cancelled: {
         label: 'ยกเลิก',
-        color: 'bg-gray-100 text-foreground border-border',
+        color: 'bg-muted text-foreground border-border',
         icon: XCircle,
       },
     };

@@ -51,7 +51,7 @@ const ApprovalProcess: React.FC = () => {
           bg: 'bg-muted',
           border: 'border-border',
           circle: 'bg-muted0',
-          hover: 'hover:bg-gray-100'
+          hover: 'hover:bg-accent'
         };
       case 'purple':
         return {
@@ -65,7 +65,7 @@ const ApprovalProcess: React.FC = () => {
           bg: 'bg-muted',
           border: 'border-border',
           circle: 'bg-muted0',
-          hover: 'hover:bg-gray-100'
+          hover: 'hover:bg-accent'
         };
     }
   };

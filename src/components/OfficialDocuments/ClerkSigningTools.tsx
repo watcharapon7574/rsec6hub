@@ -72,7 +72,7 @@ const ClerkSigningTools: React.FC = () => {
       case 'signed':
         return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-100 text-foreground';
+        return 'bg-muted text-foreground';
     }
   };
 

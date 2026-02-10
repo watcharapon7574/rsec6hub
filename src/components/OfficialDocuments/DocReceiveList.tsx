@@ -332,7 +332,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
       case 'high': return 'bg-red-100 text-red-800';
       case 'medium': return 'bg-yellow-100 text-yellow-800';
       case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -653,7 +653,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               const isCompleted = memo.current_signer_order === 5;
               const baseClasses = "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border rounded-lg px-2 sm:px-3 py-2 shadow-sm transition group min-w-0";
               const completedClasses = isCompleted 
-                ? "bg-muted border-border hover:bg-gray-100" 
+                ? "bg-muted border-border hover:bg-accent" 
                 : "bg-card border-border hover:bg-muted/50";
               
               return (

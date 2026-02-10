@@ -103,7 +103,7 @@ const InstallPrompt: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={handleDismiss}
-              className="h-6 w-6 p-0 hover:bg-gray-100"
+              className="h-6 w-6 p-0 hover:bg-accent"
             >
               <X className="h-4 w-4" />
             </Button>

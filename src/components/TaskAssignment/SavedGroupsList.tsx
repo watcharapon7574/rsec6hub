@@ -107,7 +107,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setIsDeleteMode(false)}
-              className="h-7 px-2 text-xs border-border text-muted-foreground hover:text-foreground hover:bg-gray-100"
+              className="h-7 px-2 text-xs border-border text-muted-foreground hover:text-foreground hover:bg-accent"
             >
               <X className="h-3.5 w-3.5 mr-1" />
               เสร็จสิ้น
@@ -155,7 +155,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             ? 'text-muted-foreground cursor-not-allowed'
             : isPosition ? 'text-orange-700 hover:text-orange-900' : 'text-purple-700 hover:text-purple-900';
           const badgeBg = isDisabled
-            ? 'bg-gray-100 text-muted-foreground'
+            ? 'bg-muted text-muted-foreground'
             : isPosition ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600';
           const Icon = isPosition ? Briefcase : Users;
 

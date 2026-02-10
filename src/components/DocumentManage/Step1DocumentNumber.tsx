@@ -84,7 +84,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
                 value={docNumberSuffix}
                 onChange={(e) => onDocNumberSuffixChange(e.target.value)}
                 className={`text-lg rounded-l-none flex-1 ${isNumberAssigned 
-                  ? 'bg-gray-100 text-muted-foreground cursor-not-allowed border-border' 
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed border-border' 
                   : 'bg-white text-foreground border-border'
                 }`}
                 disabled={isNumberAssigned}
@@ -106,7 +106,7 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
                 onClick={onAssignNumber}
                 disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || isNumberAssigned || isAssigningNumber}
                 className={isNumberAssigned 
-                  ? "bg-gray-100 text-muted-foreground border-border cursor-not-allowed" 
+                  ? "bg-muted text-muted-foreground border-border cursor-not-allowed" 
                   : "bg-green-600 text-white hover:bg-green-700 transition-colors"
                 }
               >

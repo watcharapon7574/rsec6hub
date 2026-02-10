@@ -257,7 +257,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
       },
       cancelled: {
         label: 'ยกเลิก',
-        color: 'bg-gray-100 text-foreground border-border',
+        color: 'bg-muted text-foreground border-border',
         icon: XCircle,
       },
     };
@@ -973,7 +973,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                           ? 'bg-green-100 text-foreground'
                           : assignee.status === 'in_progress'
                           ? 'bg-blue-100 text-blue-700'
-                          : 'bg-gray-100 text-foreground'
+                          : 'bg-muted text-foreground'
                       }`}
                     >
                       {assignee.status === 'completed' ? 'เสร็จ' : assignee.status === 'in_progress' ? 'กำลังทำ' : 'รอ'}

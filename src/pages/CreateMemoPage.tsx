@@ -1060,7 +1060,7 @@ const CreateMemoPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4">
-                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                <div className="bg-muted rounded-lg overflow-hidden">
                   <iframe
                     src={previewUrl}
                     className="w-full h-[800px] border-0"

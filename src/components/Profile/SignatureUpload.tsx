@@ -31,7 +31,7 @@ const SignatureUpload: React.FC<SignatureUploadProps> = ({
               className="max-h-24 mx-auto mb-4 border rounded-lg bg-white p-2"
             />
           ) : (
-            <div className="h-24 mx-auto mb-4 bg-gray-100 border rounded-lg flex items-center justify-center">
+            <div className="h-24 mx-auto mb-4 bg-muted border rounded-lg flex items-center justify-center">
               <span className="text-muted-foreground text-sm">ไม่มีลายเซ็น</span>
             </div>
           )}

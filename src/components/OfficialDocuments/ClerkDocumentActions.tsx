@@ -139,7 +139,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
           onClick={() => {
             navigate(`/task-assignment?documentId=${documentId}&documentType=${documentType}`);
           }}
-          className="bg-green-50 border-green-500 text-green-700 hover:bg-green-100"
+          className="bg-green-50 border-green-500 text-foreground hover:bg-green-100"
         >
           <ClipboardList className="h-4 w-4 mr-1" />
           มอบหมายงาน
@@ -158,7 +158,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
         variant="outline"
         size="sm"
         disabled
-        className="bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed"
+        className="bg-gray-50 border-gray-300 text-muted-foreground cursor-not-allowed"
       >
         <ClipboardList className="h-4 w-4 mr-1" />
         มอบหมายแล้ว
@@ -272,7 +272,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
                       >
                         <div>
                           <p className="font-medium">{profile.first_name} {profile.last_name}</p>
-                          <p className="text-sm text-gray-500">{profile.job_position || profile.current_position || profile.position}</p>
+                          <p className="text-sm text-muted-foreground">{profile.job_position || profile.current_position || profile.position}</p>
                         </div>
                         <Button 
                           size="sm" 
@@ -293,13 +293,13 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
                 <CardContent>
                   <div className="space-y-2">
                     {selectedSigners.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">ยังไม่ได้เลือกผู้ลงนาม</p>
+                      <p className="text-muted-foreground text-center py-4">ยังไม่ได้เลือกผู้ลงนาม</p>
                     ) : (
                       selectedSigners.map((signer, index) => (
                         <div key={signer.user_id} className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
                           <div>
                             <p className="font-medium">{signer.first_name} {signer.last_name}</p>
-                            <p className="text-sm text-gray-500">ลำดับที่ {index + 1}</p>
+                            <p className="text-sm text-muted-foreground">ลำดับที่ {index + 1}</p>
                           </div>
                           <Button 
                             size="sm" 
@@ -339,11 +339,11 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
                           return (
                             <div key={signer.user_id} className="p-3 border rounded-lg">
                               <p className="font-medium">{signer.first_name} {signer.last_name}</p>
-                              <p className="text-sm text-gray-500">{signer.job_position || signer.current_position || signer.position}</p>
+                              <p className="text-sm text-muted-foreground">{signer.job_position || signer.current_position || signer.position}</p>
                               {position ? (
                                 <p className="text-xs text-green-600">✓ กำหนดตำแหน่งแล้ว</p>
                               ) : (
-                                <p className="text-xs text-red-600">! ยังไม่ได้กำหนดตำแหน่ง</p>
+                                <p className="text-xs text-muted-foreground">! ยังไม่ได้กำหนดตำแหน่ง</p>
                               )}
                             </div>
                           );
@@ -365,7 +365,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
             ) : (
               <Card>
                 <CardContent className="text-center py-8">
-                  <p className="text-gray-500">ไม่มีไฟล์ PDF สำหรับวางจุดลายเซ็น</p>
+                  <p className="text-muted-foreground">ไม่มีไฟล์ PDF สำหรับวางจุดลายเซ็น</p>
                 </CardContent>
               </Card>
             )}

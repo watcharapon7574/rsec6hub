@@ -5,7 +5,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Power, User } from 'lucide-react';
 import SessionTimer from './SessionTimer';
-import DarkModeToggle from './DarkModeToggle';
+
 
 const TopBar = () => {
   const navigate = useNavigate();
@@ -164,10 +164,6 @@ const TopBar = () => {
             <div className="mt-1 text-xs text-muted-foreground text-center select-none leading-tight">
               <SessionTimer />
               </div>
-            {/* Dark Mode Toggle - ใต้ session timer */}
-            <div className="mt-0.5">
-              <DarkModeToggle />
-            </div>
             </div>
             </div>
           </div>

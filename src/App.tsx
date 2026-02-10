@@ -34,6 +34,7 @@ import AdminProfileManagementPage from "@/pages/AdminProfileManagementPage";
 import AdminOtpManagementPage from "@/pages/AdminOtpManagementPage";
 import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
+import DarkModeToggle from "@/components/Layout/DarkModeToggle";
 
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         {children}
       </main>
       <FloatingNavbar />
+      <DarkModeToggle />
     </div>
   );
 };

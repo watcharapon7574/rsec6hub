@@ -277,7 +277,7 @@ const MemoList: React.FC<MemoListProps> = ({
       <div className="bg-card border-b border-border px-3 py-2">
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-foreground" />
             <Input
               placeholder="ค้นหาเอกสาร..."
               value={searchTerm}
@@ -349,7 +349,7 @@ const MemoList: React.FC<MemoListProps> = ({
                 setStatusFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-gray-400 hover:text-amber-600 hover:bg-amber-50"
+              className="h-8 w-8 p-0 text-foreground hover:text-amber-600 hover:bg-amber-50"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -358,7 +358,7 @@ const MemoList: React.FC<MemoListProps> = ({
         </div>
 
         {(searchTerm || statusFilter !== 'all' || assignmentFilter !== 'all') && (
-          <div className="text-[10px] text-gray-500 mt-1 text-center">
+          <div className="text-[10px] text-foreground mt-1 text-center">
             แสดง {filteredAndSortedMemos.length} จาก {memoList.filter(shouldShowMemo).length} รายการ
           </div>
         )}
@@ -377,10 +377,10 @@ const MemoList: React.FC<MemoListProps> = ({
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-gray-400' : 'text-amber-500'}`} />
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-gray-600 group-hover:text-gray-700' : 'text-gray-900 group-hover:text-amber-700'}`} title={memo.subject}>{memo.subject}</span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-amber-500'}`} />
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-amber-700'}`} title={memo.subject}>{memo.subject}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
                   <span
                     style={{
                       background: memo.current_signer_order === 1 ? '#2563eb' :
@@ -440,12 +440,12 @@ const MemoList: React.FC<MemoListProps> = ({
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
-                            ? 'text-gray-400'
+                            ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-amber-700' : 'text-amber-400')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
-                            ? 'text-gray-400'
+                            ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-amber-700 font-bold' : 'text-amber-400')
                         }`}>
                           {(() => {
@@ -483,7 +483,7 @@ const MemoList: React.FC<MemoListProps> = ({
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
-                                    ? 'text-gray-400'
+                                    ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-amber-700' : 'text-amber-400')
                                 }`}>
                                   {(() => {
@@ -504,7 +504,7 @@ const MemoList: React.FC<MemoListProps> = ({
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
-                                    ? 'text-gray-400'
+                                    ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-amber-700 font-bold' : 'text-amber-400')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
@@ -526,7 +526,7 @@ const MemoList: React.FC<MemoListProps> = ({
                             </React.Fragment>
                           ))
                       ) : (
-                        <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-gray-400' : 'text-amber-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                        <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-amber-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                       )}
 
                       {/* Connector to final step */}
@@ -540,7 +540,7 @@ const MemoList: React.FC<MemoListProps> = ({
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5
-                          ? 'text-gray-700'
+                          ? 'text-foreground'
                           : 'text-amber-400'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (
@@ -611,7 +611,7 @@ const MemoList: React.FC<MemoListProps> = ({
                             size="sm"
                             className={`h-7 px-2 flex items-center gap-1 ${
                               memo.current_signer_order > 1
-                                ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                                ? 'border-gray-200 text-muted-foreground cursor-not-allowed'
                                 : 'border-amber-200 text-amber-600'
                             }`}
                             onClick={() => {
@@ -653,7 +653,7 @@ const MemoList: React.FC<MemoListProps> = ({
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-amber-100 bg-amber-50/50">
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-muted-foreground">
               แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedMemos.length)} จาก {filteredAndSortedMemos.length} รายการ
             </div>
             <div className="flex items-center gap-1">
@@ -666,7 +666,7 @@ const MemoList: React.FC<MemoListProps> = ({
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
-              <span className="text-xs text-gray-600 px-2">
+              <span className="text-xs text-muted-foreground px-2">
                 {currentPage} / {totalPages}
               </span>
               <Button

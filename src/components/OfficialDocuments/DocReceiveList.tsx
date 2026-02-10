@@ -260,7 +260,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
       case 'pending_sign': return 'text-orange-500'; // ส้ม
       case 'approved': return 'text-green-600'; // เขียว
       case 'rejected': return 'text-red-500'; // แดง
-      default: return 'text-gray-600';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -286,7 +286,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
       case 4: return 'text-orange-500'; // รอลงนาม - ส้ม
       case 5: return 'text-green-600'; // เสร็จสิ้น - เขียว
       case 0: return 'text-red-500'; // ตีกลับ - แดง
-      default: return 'text-gray-600';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -332,7 +332,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
       case 'high': return 'bg-red-100 text-red-800';
       case 'medium': return 'bg-yellow-100 text-yellow-800';
       case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-foreground';
     }
   };
 
@@ -554,7 +554,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         <div className="flex gap-2 items-center">
           {/* ช่องค้นหา */}
           <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
               placeholder="ค้นหาเอกสาร..."
               value={searchTerm}
@@ -630,7 +630,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 setStatusFilter('all');
                 setAssignmentFilter('all');
               }}
-              className="h-8 w-8 p-0 text-gray-400 hover:text-green-600 hover:bg-green-50"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-green-600 hover:bg-green-50"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -640,7 +640,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
 
         {/* แสดงจำนวนผลลัพธ์ */}
         {(searchTerm || statusFilter !== 'all' || assignmentFilter !== 'all') && (
-          <div className="text-[10px] text-gray-500 mt-1 text-center">
+          <div className="text-[10px] text-muted-foreground mt-1 text-center">
             แสดง {filteredAndSortedDocReceive.length} จาก {docReceiveList.filter(shouldShowMemo).length} รายการ
           </div>
         )}
@@ -659,8 +659,8 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <FileInput className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-gray-400' : 'text-green-500'}`} />
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-gray-600 group-hover:text-gray-700' : 'text-gray-900 group-hover:text-green-700'}`} title={memo.subject}>{memo.subject}</span>
+                  <FileInput className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-green-500'}`} />
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-green-700'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {
@@ -682,8 +682,8 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       </div>
                     );
                   })()}
-                  <span className="text-xs text-gray-500 whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
                   <span
                     style={{
                       background: memo.current_signer_order === 1 ? '#2563eb' : // ฉบับร่าง - น้ำเงิน
@@ -742,12 +742,12 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
-                            ? 'text-gray-400'
+                            ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-green-700' : 'text-green-400')
                         }`}>ตรวจทาน</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5 
-                            ? 'text-gray-400'
+                            ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-green-700 font-bold' : 'text-green-400')
                         }`}>
                           {(() => {
@@ -784,12 +784,12 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
-                                    ? 'text-gray-400'
+                                    ? 'text-muted-foreground'
                                     : (memo.current_signer_order === proposer.order ? 'text-green-700' : 'text-green-400')
                                 }`}>ผู้เสนอ</span>
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
-                                    ? 'text-gray-400'
+                                    ? 'text-muted-foreground'
                                     : (memo.current_signer_order === proposer.order ? 'text-green-700 font-bold' : 'text-green-400')
                                 }`}>
                                   {(() => {
@@ -824,7 +824,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
-                                    ? 'text-gray-400'
+                                    ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-green-700' : 'text-green-400')
                                 }`}>
                                   {(() => {
@@ -843,7 +843,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
-                                    ? 'text-gray-400'
+                                    ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-green-700 font-bold' : 'text-green-400')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
@@ -875,7 +875,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
-                                      ? 'text-gray-400'
+                                      ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-green-700' : 'text-green-400')
                                   }`}>{
                                     // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
@@ -884,7 +884,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                   }</span>
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
-                                      ? 'text-gray-400'
+                                      ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-green-700 font-bold' : 'text-green-400')
                                   }`}>{pos.signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
@@ -897,7 +897,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               </React.Fragment>
                           ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-gray-400' : 'text-green-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-green-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )
                       )}
                       
@@ -913,7 +913,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5 
-                          ? 'text-gray-700' 
+                          ? 'text-foreground' 
                           : 'text-green-400'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (
@@ -1036,7 +1036,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               size="sm"
                               className={`h-7 px-2 flex items-center gap-1 ${
                                 memo.current_signer_order > 1
-                                  ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                                  ? 'border-gray-200 text-muted-foreground cursor-not-allowed'
                                   : 'border-green-200 text-green-600'
                               }`}
                               onClick={() => {
@@ -1095,12 +1095,12 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 permissions.position === "clerk_teacher" ? (
                   <div className="text-sm">
                     <p>ยังไม่มีเอกสารในสถานศึกษา</p>
-                    <span className="text-xs text-gray-400">รอเอกสารจากครูและบุคลากรเพื่อทำการจัดการ</span>
+                    <span className="text-xs text-muted-foreground">รอเอกสารจากครูและบุคลากรเพื่อทำการจัดการ</span>
                   </div>
                 ) : (["assistant_director", "deputy_director"].includes(permissions.position) ? (
                   <div className="text-sm">
                     <p>ไม่มีเอกสารของผู้อื่น</p>
-                    <span className="text-xs text-gray-400">เอกสารส่วนตัวแสดงในส่วนข้างบน</span>
+                    <span className="text-xs text-muted-foreground">เอกสารส่วนตัวแสดงในส่วนข้างบน</span>
                   </div>
                 ) : (
                   <p className="text-sm">ไม่มีเอกสารในระบบ</p>
@@ -1113,7 +1113,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-green-100 bg-green-50/50">
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-muted-foreground">
               แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedDocReceive.length)} จาก {filteredAndSortedDocReceive.length} รายการ
             </div>
             <div className="flex items-center gap-1">
@@ -1126,7 +1126,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
-              <span className="text-xs text-gray-600 px-2">
+              <span className="text-xs text-muted-foreground px-2">
                 {currentPage} / {totalPages}
               </span>
               <Button
@@ -1161,7 +1161,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
               </div>
             ) : assigneesList.length === 0 ? (
-              <div className="text-center py-4 text-gray-500 text-sm">
+              <div className="text-center py-4 text-muted-foreground text-sm">
                 ไม่พบรายชื่อผู้รับมอบหมาย
               </div>
             ) : (
@@ -1170,9 +1170,9 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-gray-50">
-                      <th className="py-2 px-2 text-left font-medium text-gray-600 w-12">#</th>
-                      <th className="py-2 px-2 text-left font-medium text-gray-600">ชื่อ</th>
-                      <th className="py-2 px-2 text-center font-medium text-gray-600 w-24">สถานะ</th>
+                      <th className="py-2 px-2 text-left font-medium text-muted-foreground w-12">#</th>
+                      <th className="py-2 px-2 text-left font-medium text-muted-foreground">ชื่อ</th>
+                      <th className="py-2 px-2 text-center font-medium text-muted-foreground w-24">สถานะ</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1180,10 +1180,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
                       .map((assignee, index) => (
                         <tr key={assignee.id} className="border-b hover:bg-gray-50">
-                          <td className="py-2 px-2 text-gray-500">
+                          <td className="py-2 px-2 text-muted-foreground">
                             {(assigneesPage - 1) * assigneesPerPage + index + 1}
                           </td>
-                          <td className="py-2 px-2 text-gray-900">{assignee.assignee_name}</td>
+                          <td className="py-2 px-2 text-foreground">{assignee.assignee_name}</td>
                           <td className="py-2 px-2 text-center">
                             <Badge
                               className={`text-[10px] px-1.5 py-0.5 ${
@@ -1219,7 +1219,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       <ChevronLeft className="h-3 w-3 mr-1" />
                       ก่อนหน้า
                     </Button>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {assigneesPage} / {Math.ceil(assigneesList.length / assigneesPerPage)}
                     </span>
                     <Button

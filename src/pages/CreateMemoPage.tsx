@@ -506,7 +506,7 @@ const CreateMemoPage = () => {
             กรุณาอย่าปิดหน้านี้จนกว่ากระบวนการจะเสร็จสมบูรณ์
           </DialogDescription>
           <div className="flex flex-col items-center gap-4 mt-4">
-            <svg className="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24">
+            <svg className="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400 dark:text-blue-600" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
@@ -523,7 +523,7 @@ const CreateMemoPage = () => {
           <div className="max-w-4xl mx-auto">
             <Card>
               <CardContent className="p-8 text-center">
-                <svg className="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-4" viewBox="0 0 24 24">
+                <svg className="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400 dark:text-blue-600 mx-auto mb-4" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                 </svg>
@@ -562,11 +562,11 @@ const CreateMemoPage = () => {
               <CardContent className="p-4">
                 {rejectionComments.map((comment, index) => (
                   <Alert key={index} className="border-red-200 dark:border-red-800 bg-card">
-                    <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 dark:text-red-600" />
                     <AlertDescription className="text-red-800 dark:text-red-200">
                       <div className="space-y-2">
                         <p className="font-medium">{comment.comment}</p>
-                        <div className="text-sm text-red-600 dark:text-red-400">
+                        <div className="text-sm text-red-600 dark:text-red-400 dark:text-red-600">
                           โดย: {comment.rejected_by}
                           {comment.position && ` (${comment.position})`} • {new Date(comment.rejected_at).toLocaleDateString('th-TH', {
                             year: 'numeric',
@@ -588,7 +588,7 @@ const CreateMemoPage = () => {
           <Dialog open={showGrammarModal} onOpenChange={setShowGrammarModal}>
             <DialogContent className="bg-card p-6 rounded-lg shadow-lg max-w-2xl">
               <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                <Sparkles className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <Sparkles className="h-5 w-5 text-green-600 dark:text-green-400 dark:text-green-600" />
                 ตรวจสอบไวยากรณ์
               </DialogTitle>
               <DialogDescription className="text-muted-foreground mb-4">
@@ -736,7 +736,7 @@ const CreateMemoPage = () => {
               <CardHeader className="bg-muted/50 border-b border-border rounded-t-lg">
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
                   <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
                   </div>
                   ข้อมูลเอกสาร
                 </CardTitle>
@@ -952,7 +952,7 @@ const CreateMemoPage = () => {
                       </div>
                       {showSpecialCharHelp && (
                         <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800 space-y-1.5">
-                          <p className="text-blue-600 dark:text-blue-400 font-medium">ตัวอย่าง ถ้า ! มากกว่า 1:</p>
+                          <p className="text-blue-600 dark:text-blue-400 dark:text-blue-600 font-medium">ตัวอย่าง ถ้า ! มากกว่า 1:</p>
                           <div className="pl-3 space-y-1">
                             <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 2 ครั้ง</p>
                             <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 3 ครั้ง</p>
@@ -1039,7 +1039,7 @@ const CreateMemoPage = () => {
                 <CardTitle className="text-xl text-foreground font-semibold flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                      <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
                     </div>
                     ตัวอย่าง PDF
                   </div>

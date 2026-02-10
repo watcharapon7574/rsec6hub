@@ -96,7 +96,7 @@ const TelegramChatIdStep: React.FC<TelegramChatIdStepProps> = ({
       {/* ส่วนคำแนะนำ - ย่อให้กะทัดรัด */}
       <details className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
         <summary className="p-3 cursor-pointer flex items-center gap-2 text-sm font-medium text-blue-900 dark:text-blue-100">
-          <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <HelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
           วิธีหา Chat ID (กดเพื่อดู)
         </summary>
         <div className="px-3 pb-3 text-sm text-blue-700 dark:text-blue-300">

@@ -224,9 +224,9 @@ const LeaveRequestsPage = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900">
-                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 dark:text-amber-600" />
                   </div>
-                  <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                  <span className="text-2xl font-bold text-amber-600 dark:text-amber-400 dark:text-amber-600">
                     {leaveRequests.filter(req => req.status === 'pending').length}
                   </span>
                 </div>
@@ -237,9 +237,9 @@ const LeaveRequestsPage = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
-                    <CalendarDays className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <CalendarDays className="h-4 w-4 text-green-600 dark:text-green-400 dark:text-green-600" />
                   </div>
-                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  <span className="text-2xl font-bold text-green-600 dark:text-green-400 dark:text-green-600">
                     {leaveRequests.filter(req => req.status === 'approved').length}
                   </span>
                 </div>
@@ -250,9 +250,9 @@ const LeaveRequestsPage = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900">
-                    <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    <FileText className="h-4 w-4 text-red-600 dark:text-red-400 dark:text-red-600" />
                   </div>
-                  <span className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  <span className="text-2xl font-bold text-red-600 dark:text-red-400 dark:text-red-600">
                     {leaveRequests.filter(req => req.status === 'rejected').length}
                   </span>
                 </div>

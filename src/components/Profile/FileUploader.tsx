@@ -96,7 +96,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-muted-foreground">{label}</label>
         {uploadStatus === 'success' && (
-          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+          <div className="flex items-center gap-1 text-green-600 dark:text-green-400 dark:text-green-600">
             <CheckCircle className="h-4 w-4" />
             <span className="text-xs">อัปโหลดสำเร็จ</span>
           </div>
@@ -149,7 +149,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       {uploadStatus === 'error' && (
         <div className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md">
-          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-400 dark:text-red-600">
             <AlertCircle className="h-4 w-4" />
             <span className="text-xs">{errorMessage}</span>
           </div>

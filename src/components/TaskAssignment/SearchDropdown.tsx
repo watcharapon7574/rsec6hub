@@ -27,19 +27,19 @@ const typeStyles = {
   user: {
     icon: User,
     bgColor: 'bg-blue-100 dark:bg-blue-900',
-    textColor: 'text-blue-600 dark:text-blue-400',
+    textColor: 'text-blue-600 dark:text-blue-400 dark:text-blue-600',
     hoverBg: 'hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950',
     borderColor: 'border-blue-100 dark:border-blue-900',
-    badgeBg: 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400',
+    badgeBg: 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 dark:text-blue-600',
     label: 'ชื่อ'
   },
   group: {
     icon: Users,
     bgColor: 'bg-purple-100 dark:bg-purple-900',
-    textColor: 'text-purple-600 dark:text-purple-400',
+    textColor: 'text-purple-600 dark:text-purple-400 dark:text-purple-600',
     hoverBg: 'hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950',
     borderColor: 'border-purple-100 dark:border-purple-900',
-    badgeBg: 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400',
+    badgeBg: 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 dark:text-purple-600',
     label: 'กลุ่ม'
   },
   position: {
@@ -104,7 +104,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
             </div>
           </div>
           {item.type === 'group' && item.memberCount && (
-            <Badge variant="secondary" className="bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs">
+            <Badge variant="secondary" className="bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 dark:text-purple-600 text-xs">
               {item.memberCount} คน
             </Badge>
           )}

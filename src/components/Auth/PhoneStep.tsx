@@ -19,7 +19,7 @@ const PhoneStep: React.FC<PhoneStepProps> = ({
     <form onSubmit={onSubmit} className="space-y-5">
       <div className="space-y-2">
         <div className="relative">
-          <Phone className="absolute left-3 top-3 h-5 w-5 text-blue-400" />
+          <Phone className="absolute left-3 top-3 h-5 w-5 text-blue-400 dark:text-blue-600" />
           <input
             type="tel"
             required

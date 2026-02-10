@@ -106,7 +106,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-between text-lg">
                 <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
                   <span>{profile.first_name} {profile.last_name}</span>
                 </div>
                 {profile.is_admin && (

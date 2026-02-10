@@ -20,7 +20,7 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, message = 'กำ�
           {/* Spinner */}
           <div className="relative">
             <div className="w-16 h-16 rounded-full border-4 border-blue-100 dark:border-blue-900 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 dark:text-blue-600 animate-spin" />
             </div>
           </div>
 

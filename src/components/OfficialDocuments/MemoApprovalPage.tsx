@@ -206,19 +206,19 @@ const MemoApprovalPage = () => {
             </div>
             <div className="flex items-center gap-2">
               {workflow.status === 'completed' && (
-                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 dark:text-green-600">
                   <CheckCircle className="h-5 w-5" />
                   <span className="font-medium">เสร็จสิ้น</span>
                 </div>
               )}
               {workflow.status === 'in_progress' && (
-                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 dark:text-blue-600">
                   <Clock className="h-5 w-5" />
                   <span className="font-medium">อยู่ระหว่างดำเนินการ</span>
                 </div>
               )}
               {workflow.status === 'rejected' && (
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 dark:text-red-600">
                   <XCircle className="h-5 w-5" />
                   <span className="font-medium">ถูกตีกลับ</span>
                 </div>
@@ -345,7 +345,7 @@ const MemoApprovalPage = () => {
               <Card className="shadow-lg border-green-200 dark:border-green-800">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
-                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 dark:text-green-600" />
                     <h3 className="font-semibold text-green-800 dark:text-green-200">เอกสารเสร็จสิ้น</h3>
                   </div>
                   <p className="text-green-700 dark:text-green-300 mb-4">
@@ -362,7 +362,7 @@ const MemoApprovalPage = () => {
               <Card className="shadow-lg border-red-200 dark:border-red-800">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-3">
-                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 dark:text-red-600" />
                     <h3 className="font-semibold text-red-800 dark:text-red-200">เอกสารถูกตีกลับ</h3>
                   </div>
                   <p className="text-red-700 dark:text-red-300">

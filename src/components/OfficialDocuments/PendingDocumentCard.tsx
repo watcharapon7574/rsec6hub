@@ -344,7 +344,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
               variant="outline"
               size="sm"
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="h-7 w-7 p-0 border-border hover:border-amber-400 hover:text-amber-600 dark:text-amber-400"
+              className="h-7 w-7 p-0 border-border hover:border-amber-400 hover:text-amber-600 dark:text-amber-400 dark:text-amber-600"
               title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
             >
               <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -427,12 +427,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5
                               ? 'text-muted-foreground'
-                              : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
+                              : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                           }`}>{memo.__source_table === 'doc_receive' ? 'ตรวจทาน' : 'ตรวจทาน/เสนอ'}</span>
                           <span className={`sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5
                               ? 'text-muted-foreground'
-                              : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
+                              : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
                           }`}>
                             {(() => {
                               // ดึงชื่อผู้ตรวจทาน/ผู้เสนอจาก clerk_id (first_name + last_name)
@@ -469,12 +469,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
+                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                                   }`}>ผู้เสนอ</span>
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
+                                      : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
                                   }`}>
                                     {(() => {
                                       // Always use user_id to fetch fresh data from profiles
@@ -509,7 +509,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
+                                      : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                                   }`}>
                                     {(() => {
                                       // แสดงตำแหน่งตาม role
@@ -528,7 +528,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
+                                      : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
                                   }`}>{(() => {
                                     // Always use user_id to fetch fresh data from profiles
                                     const userProfile = profiles.find(p => p.user_id === signer.user_id);
@@ -549,7 +549,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                               </React.Fragment>
                             ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-amber-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-amber-400 dark:text-amber-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )}
                         
                         {/* Connector to final step */}
@@ -562,7 +562,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5 
                               ? 'text-foreground' 
-                              : 'text-amber-400'
+                              : 'text-amber-400 dark:text-amber-600'
                           }`}>เกษียนหนังสือแล้ว</span>
                           {memo.current_signer_order === 5 && (
                             <div className="w-2 h-2 rounded-full mt-1 bg-gray-700"></div>
@@ -602,7 +602,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <Button
                           variant="outline"
                           size="sm"
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 mt-2 sm:mt-0 sm:ml-auto flex items-center"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 dark:text-amber-600 mt-2 sm:mt-0 sm:ml-auto flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });
@@ -618,7 +618,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <Button
                           variant="outline"
                           size="sm"
-                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 flex items-center"
+                          className="px-3 py-1 rounded-full text-xs font-semibold border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 dark:text-amber-600 flex items-center"
                           onClick={() => {
                             const fileUrl = memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                             navigate('/pdf-just-preview', { state: { fileUrl, fileName: memo.subject || memo.title || 'ไฟล์ PDF' } });

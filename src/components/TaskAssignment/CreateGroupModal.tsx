@@ -85,7 +85,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
             {groupType === 'position' ? (
               <Briefcase className="h-5 w-5 text-muted-foreground" />
             ) : (
-              <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <Users className="h-5 w-5 text-purple-600 dark:text-purple-400 dark:text-purple-600" />
             )}
             {groupType === 'position' ? 'สร้างหน้าที่' : 'สร้างกลุ่มผู้รับมอบหมาย'}
           </DialogTitle>
@@ -108,7 +108,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               className="flex gap-4"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="group" id="type-group" className="border-purple-400 text-purple-600 dark:text-purple-400" />
+                <RadioGroupItem value="group" id="type-group" className="border-purple-400 text-purple-600 dark:text-purple-400 dark:text-purple-600" />
                 <Label htmlFor="type-group" className="flex items-center gap-1.5 cursor-pointer">
                   <Users className="h-4 w-4 text-purple-500" />
                   <span>กลุ่ม</span>

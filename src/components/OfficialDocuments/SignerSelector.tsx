@@ -172,7 +172,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
                     <p className="text-sm text-muted-foreground">{signer.job_position || signer.position}</p>
                   </div>
                   {signer.signatureUrl && (
-                    <div className="text-xs text-green-600 dark:text-green-400">✓ มีลายเซ็น</div>
+                    <div className="text-xs text-green-600 dark:text-green-400 dark:text-green-600">✓ มีลายเซ็น</div>
                   )}
                 </div>
               ))
@@ -220,7 +220,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
                     <Badge variant="outline" className="text-xs">มีลายเซ็น</Badge>
                   )}
                   {isSelected(profile.id) && (
-                    <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <Check className="h-5 w-5 text-green-600 dark:text-green-400 dark:text-green-600" />
                   )}
                 </div>
               </div>
@@ -262,7 +262,7 @@ const SignerSelector: React.FC<SignerSelectorProps> = ({
                     <Badge variant="outline" className="text-xs">มีลายเซ็น</Badge>
                   )}
                   {isSelected(profile.id) && (
-                    <Check className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <Check className="h-5 w-5 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
                   )}
                 </div>
               </div>

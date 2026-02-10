@@ -117,7 +117,7 @@ const AdminSigningTools: React.FC = () => {
               เลือกไฟล์ PDF
             </Button>
             {selectedFile && (
-              <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+              <p className="text-sm text-green-600 dark:text-green-400 dark:text-green-600 mt-2">
                 ไฟล์ที่เลือก: {selectedFile.name}
               </p>
             )}

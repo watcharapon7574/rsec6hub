@@ -147,7 +147,7 @@ const AdminProfileManagementPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600 dark:text-blue-400" />
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
           <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
@@ -263,7 +263,7 @@ const AdminProfileManagementPage: React.FC = () => {
 
         {/* Info Alert */}
         <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 shadow">
-          <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
           <AlertDescription className="text-blue-800 dark:text-blue-200">
             <strong>หมายเหตุ:</strong> รหัสบุคลากร (employee_id) จะถูกสร้างอัตโนมัติและไม่สามารถแก้ไขได้
             • เพิ่มโปรไฟล์ใหม่จะสร้าง Supabase Auth account อัตโนมัติ
@@ -277,7 +277,7 @@ const AdminProfileManagementPage: React.FC = () => {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="h-5 w-5" />
               รายการโปรไฟล์ทั้งหมด
-              <Badge variant="secondary" className="ml-auto bg-card text-blue-600 dark:text-blue-400 font-semibold px-3 py-1">
+              <Badge variant="secondary" className="ml-auto bg-card text-blue-600 dark:text-blue-400 dark:text-blue-600 font-semibold px-3 py-1">
                 {filteredProfiles.length} รายการ
               </Badge>
             </CardTitle>
@@ -311,7 +311,7 @@ const AdminProfileManagementPage: React.FC = () => {
               {totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between border-t border-blue-100 dark:border-blue-900 pt-4 bg-blue-50 dark:bg-blue-950/30 rounded-b-lg px-4 py-3">
                   <div className="text-sm text-muted-foreground">
-                    แสดง <span className="font-semibold text-blue-600 dark:text-blue-400">{startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)}</span> จาก <span className="font-semibold text-blue-600 dark:text-blue-400">{filteredProfiles.length}</span> รายการ
+                    แสดง <span className="font-semibold text-blue-600 dark:text-blue-400">{startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)}</span> จาก <span className="font-semibold text-blue-600 dark:text-blue-400 dark:text-blue-600">{filteredProfiles.length}</span> รายการ
                   </div>
                   <div className="flex items-center gap-2">
                     <Button

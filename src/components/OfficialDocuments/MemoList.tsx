@@ -334,7 +334,7 @@ const MemoList: React.FC<MemoListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-amber-400 hover:text-amber-600 dark:text-amber-400"
+            className="h-8 w-8 p-0 border-border hover:border-amber-400 hover:text-amber-600 dark:text-amber-400 dark:text-amber-600"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -412,7 +412,7 @@ const MemoList: React.FC<MemoListProps> = ({
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                       <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 font-medium">
+                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -441,12 +441,12 @@ const MemoList: React.FC<MemoListProps> = ({
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
+                            : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
+                            : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
                         }`}>
                           {(() => {
                             // ดึงชื่อผู้ตรวจทาน/ผู้เสนอจาก clerk_id (first_name + last_name)
@@ -484,7 +484,7 @@ const MemoList: React.FC<MemoListProps> = ({
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                                 }`}>
                                   {(() => {
                                     if (signer.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') {
@@ -505,7 +505,7 @@ const MemoList: React.FC<MemoListProps> = ({
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);
@@ -526,7 +526,7 @@ const MemoList: React.FC<MemoListProps> = ({
                             </React.Fragment>
                           ))
                       ) : (
-                        <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-amber-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                        <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-amber-400 dark:text-amber-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                       )}
 
                       {/* Connector to final step */}
@@ -541,7 +541,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5
                           ? 'text-foreground'
-                          : 'text-amber-400'
+                          : 'text-amber-400 dark:text-amber-600'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (
                         <div className="w-2 h-2 rounded-full mt-1 bg-gray-700"></div>
@@ -553,7 +553,7 @@ const MemoList: React.FC<MemoListProps> = ({
                 <div className="flex gap-1 ml-auto">
                   {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                       onClick={() => {
                         const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
                         navigate('/pdf-just-preview', {
@@ -570,7 +570,7 @@ const MemoList: React.FC<MemoListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
                           navigate('/pdf-just-preview', {
@@ -588,7 +588,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       {/* Edit button - only show for memo author and not yet proposed (current_signer_order <= 1) */}
                       {profile?.user_id === memo.user_id && memo.current_signer_order <= 1 && (
                         <div className="relative">
-                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400"
+                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 dark:text-amber-600"
                             onClick={() => {
                               const editRoute = getDocumentEditRoute(memo, memo.id);
                               navigate(editRoute);
@@ -612,7 +612,7 @@ const MemoList: React.FC<MemoListProps> = ({
                             className={`h-7 px-2 flex items-center gap-1 ${
                               memo.current_signer_order > 1
                                 ? 'border-border text-muted-foreground cursor-not-allowed'
-                                : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400'
+                                : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 dark:text-amber-600'
                             }`}
                             onClick={() => {
                               if (memo.current_signer_order <= 1) {

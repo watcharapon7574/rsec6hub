@@ -343,7 +343,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-blue-400 hover:text-blue-600 dark:text-blue-400"
+            className="h-8 w-8 p-0 border-border hover:border-blue-400 hover:text-blue-600 dark:text-blue-400 dark:text-blue-600"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -447,7 +447,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                       <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 font-medium">
+                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -475,12 +475,12 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5 
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400')
+                            : (memo.current_signer_order === 1 ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400')
+                            : (memo.current_signer_order === 1 ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600')
                         }`}>
                           {(() => {
                             // ดึงชื่อผู้เสนอจาก clerk_id (first_name + last_name)
@@ -518,7 +518,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600')
                                 }`}>
                                   {(() => {
                                     // แสดงตำแหน่งตาม role (ไม่รวม author)
@@ -533,7 +533,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);
@@ -565,7 +565,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600')
                                   }`}>{
                                     // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
                                     (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
@@ -574,7 +574,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600')
                                   }`}>{pos.signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
@@ -586,7 +586,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                               </React.Fragment>
                             ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-blue-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-blue-400 dark:text-blue-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )
                       )}
                       
@@ -603,7 +603,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5 
                           ? 'text-foreground' 
-                          : 'text-blue-400'
+                          : 'text-blue-400 dark:text-blue-600'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (
                         <div className="w-2 h-2 rounded-full mt-1 bg-gray-700"></div>
@@ -615,7 +615,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                 <div className="flex gap-1 ml-auto">
                   {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                       onClick={() => {
                         const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                         navigate('/pdf-just-preview', {
@@ -632,7 +632,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -649,7 +649,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 
                       {/* Edit button - แสดงเสมอเนื่องจากเป็นเอกสารของตนเอง */}
                       <div className="relative">
-                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                           onClick={() => {
                             // Navigate to edit memo page with memo id
                             navigate(`/create-memo?edit=${memo.id}`);
@@ -681,7 +681,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                       setSearchTerm('');
                       setStatusFilter('all');
                     }}
-                    className="text-blue-400 hover:text-blue-600 dark:text-blue-400 mt-1 text-xs h-6"
+                    className="text-blue-400 hover:text-blue-600 dark:text-blue-400 dark:text-blue-600 mt-1 text-xs h-6"
                   >
                     ล้างตัวกรอง
                   </Button>
@@ -693,7 +693,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                     variant="link" 
                     size="sm" 
                     onClick={() => navigate('/create-memo')}
-                    className="text-blue-400 hover:text-blue-600 dark:text-blue-400 mt-1 text-xs h-6"
+                    className="text-blue-400 hover:text-blue-600 dark:text-blue-400 dark:text-blue-600 mt-1 text-xs h-6"
                   >
                     สร้างเอกสารแรก
                   </Button>

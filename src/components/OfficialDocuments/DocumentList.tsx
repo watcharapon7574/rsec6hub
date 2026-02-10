@@ -326,9 +326,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'draft': return 'text-blue-600 dark:text-blue-400'; // ฟ้า
+      case 'draft': return 'text-blue-600 dark:text-blue-400 dark:text-blue-600'; // ฟ้า
       case 'pending_sign': return 'text-orange-500'; // ส้ม
-      case 'approved': return 'text-green-600 dark:text-green-400'; // เขียว
+      case 'approved': return 'text-green-600 dark:text-green-400 dark:text-green-600'; // เขียว
       case 'rejected': return 'text-red-500'; // แดง
       default: return 'text-muted-foreground';
     }
@@ -350,11 +350,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
   // ฟังก์ชันสำหรับสีสถานะตาม current_signer_order
   const getStatusColorBySignerOrder = (signerOrder: number): string => {
     switch (signerOrder) {
-      case 1: return 'text-blue-600 dark:text-blue-400'; // ฉบับร่าง - น้ำเงิน
+      case 1: return 'text-blue-600 dark:text-blue-400 dark:text-blue-600'; // ฉบับร่าง - น้ำเงิน
       case 2:
       case 3:
       case 4: return 'text-orange-500'; // รอลงนาม - ส้ม
-      case 5: return 'text-green-600 dark:text-green-400'; // เสร็จสิ้น - เขียว
+      case 5: return 'text-green-600 dark:text-green-400 dark:text-green-600'; // เสร็จสิ้น - เขียว
       case 0: return 'text-red-500'; // ตีกลับ - แดง
       default: return 'text-muted-foreground';
     }
@@ -706,7 +706,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-purple-400 hover:text-purple-600 dark:text-purple-400"
+            className="h-8 w-8 p-0 border-border hover:border-purple-400 hover:text-purple-600 dark:text-purple-400 dark:text-purple-600"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -775,7 +775,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     
                     return attachedFileCount > 0 && (
                       <div className="flex items-center gap-1">
-                        <Paperclip className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                        <Paperclip className="h-3 w-3 text-purple-600 dark:text-purple-400 dark:text-purple-600" />
                       </div>
                     );
                   })()}
@@ -812,7 +812,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                       <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 font-medium">
+                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -840,12 +840,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400')
+                            : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400')
+                            : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
                         }`}>
                           {(() => {
                             // ดึงชื่อผู้ตรวจทาน/ผู้เสนอจาก clerk_id (first_name + last_name)
@@ -883,7 +883,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
                                 }`}>
                                   {(() => {
                                     // ตรวจสอบ user_id: ถ้าเป็น 28ef1822-628a-4dfd-b7ea-2defa97d755b ให้แสดงเป็น ผู้อำนวยการ เสมอ
@@ -907,7 +907,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);
@@ -939,7 +939,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
                                   }`}>{
                                     // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
                                     (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
@@ -948,7 +948,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
                                   }`}>{pos.signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
@@ -960,7 +960,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                               </React.Fragment>
                           ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-purple-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-purple-400 dark:text-purple-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )
                       )}
                       
@@ -977,7 +977,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5 
                           ? 'text-foreground' 
-                          : 'text-purple-400'
+                          : 'text-purple-400 dark:text-purple-600'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (
                         <div className="w-2 h-2 rounded-full mt-1 bg-gray-700"></div>
@@ -989,7 +989,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 ${memo.is_assigned ? '' : ''}`}
+                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600 ${memo.is_assigned ? '' : ''}`}
                         onClick={() => {
                           const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                           navigate('/document-detail', {
@@ -1049,7 +1049,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                         onClick={() => {
                           const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                           navigate('/document-detail', {
@@ -1065,7 +1065,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       {/* Edit button - only show for memo author and not yet proposed (current_signer_order <= 1) */}
                       {profile?.user_id === memo.user_id && memo.current_signer_order <= 1 && (
                         <div className="relative">
-                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400"
+                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 dark:text-purple-600"
                             onClick={() => {
                               // Navigate to edit page based on document type
                               const editRoute = getDocumentEditRoute(memo, memo.id);
@@ -1095,7 +1095,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             className={`h-7 px-2 flex items-center gap-1 ${
                               memo.current_signer_order > 1 
                                 ? 'border-border text-muted-foreground cursor-not-allowed' 
-                                : 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400'
+                                : 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 dark:text-purple-600'
                             }`}
                             onClick={() => {
                               if (memo.current_signer_order <= 1) {
@@ -1166,7 +1166,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       setSearchTerm('');
                       setStatusFilter('all');
                     }}
-                    className="text-purple-400 hover:text-purple-600 dark:text-purple-400 mt-1 text-xs h-6"
+                    className="text-purple-400 hover:text-purple-600 dark:text-purple-400 dark:text-purple-600 mt-1 text-xs h-6"
                   >
                     ล้างตัวกรอง
                   </Button>
@@ -1228,7 +1228,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-600 dark:text-red-400 flex items-center gap-2">
+            <DialogTitle className="text-red-600 dark:text-red-400 dark:text-red-600 flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
               ยืนยันการลบเอกสาร
             </DialogTitle>
@@ -1313,7 +1313,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
               รายชื่อผู้ได้รับมอบหมาย
             </DialogTitle>
           </DialogHeader>

@@ -52,7 +52,7 @@ const TeamMemberIcon: React.FC<TeamMemberIconProps> = ({
 
   // Determine colors
   const getPersonColor = () => {
-    if (isLeader) return 'text-amber-600 dark:text-amber-400';
+    if (isLeader) return 'text-amber-600 dark:text-amber-400 dark:text-amber-600';
     if (isReporter) return 'text-pink-600 dark:text-pink-400';
     return 'text-muted-foreground';
   };
@@ -68,7 +68,7 @@ const TeamMemberIcon: React.FC<TeamMemberIconProps> = ({
       {/* Crown for leader */}
       {isLeader && (
         <CrownIcon
-          className={`absolute ${config.crown} text-amber-400 drop-shadow-sm`}
+          className={`absolute ${config.crown} text-amber-400 dark:text-amber-600 drop-shadow-sm`}
         />
       )}
 

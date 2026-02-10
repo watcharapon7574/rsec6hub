@@ -279,7 +279,7 @@ const SinglePDFSignatureForm: React.FC = () => {
                     เลือกไฟล์ PDF (หากมี)
                   </Button>
                   {pdfFile && (
-                    <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+                    <p className="mt-2 text-sm text-green-600 dark:text-green-400 dark:text-green-600">
                       ✓ {pdfFile.name}
                     </p>
                   )}
@@ -338,7 +338,7 @@ const SinglePDFSignatureForm: React.FC = () => {
                         เลือกไฟล์ลายเซ็น 1
                       </Button>
                       {signatureFiles.find(f => f.key === 'signature1') && (
-                        <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+                        <p className="mt-2 text-xs text-green-600 dark:text-green-400 dark:text-green-600">
                           ✓ {signatureFiles.find(f => f.key === 'signature1')?.file.name}
                         </p>
                       )}
@@ -367,7 +367,7 @@ const SinglePDFSignatureForm: React.FC = () => {
                         เลือกไฟล์ลายเซ็น 2
                       </Button>
                       {signatureFiles.find(f => f.key === 'signature2') && (
-                        <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+                        <p className="mt-2 text-xs text-green-600 dark:text-green-400 dark:text-green-600">
                           ✓ {signatureFiles.find(f => f.key === 'signature2')?.file.name}
                         </p>
                       )}

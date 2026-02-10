@@ -288,9 +288,9 @@ const MemoApprovalPage = () => {
                 <div key={step.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                   <div className="flex-shrink-0">
                     {step.status === 'approved' ? (
-                      <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 dark:text-green-600" />
                     ) : step.status === 'rejected' ? (
-                      <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                      <XCircle className="h-6 w-6 text-red-600 dark:text-red-400 dark:text-red-600" />
                     ) : step.step_order === workflow.current_step ? (
                       <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400 animate-pulse" />
                     ) : (

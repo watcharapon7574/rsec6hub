@@ -341,7 +341,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             <div className="space-y-2">
               <Label htmlFor="telegram_chat_id" className="flex items-center gap-2">
                 Telegram Chat ID
-                <span className="text-xs text-blue-600 dark:text-blue-400 font-normal">(แก้ไขได้เฉพาะคนที่มี Chat ID)</span>
+                <span className="text-xs text-blue-600 dark:text-blue-400 dark:text-blue-600 font-normal">(แก้ไขได้เฉพาะคนที่มี Chat ID)</span>
               </Label>
               <Input
                 id="telegram_chat_id"
@@ -357,7 +357,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
           )}
 
           <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
             <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
               <strong>หมายเหตุ:</strong> รหัสบุคลากร (employee_id) ไม่สามารถแก้ไขได้ • ฟิลด์ที่มี * จำเป็นต้องกรอก
             </AlertDescription>

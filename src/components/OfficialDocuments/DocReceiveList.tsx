@@ -256,9 +256,9 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   // ฟังก์ชันสำหรับจัดการสีตามสถานะ (แปลสีตาม UI)
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'draft': return 'text-blue-600 dark:text-blue-400'; // ฟ้า
+      case 'draft': return 'text-blue-600 dark:text-blue-400 dark:text-blue-600'; // ฟ้า
       case 'pending_sign': return 'text-orange-500'; // ส้ม
-      case 'approved': return 'text-green-600 dark:text-green-400'; // เขียว
+      case 'approved': return 'text-green-600 dark:text-green-400 dark:text-green-600'; // เขียว
       case 'rejected': return 'text-red-500'; // แดง
       default: return 'text-muted-foreground';
     }
@@ -280,11 +280,11 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   // ฟังก์ชันสำหรับสีสถานะตาม current_signer_order
   const getStatusColorBySignerOrder = (signerOrder: number): string => {
     switch (signerOrder) {
-      case 1: return 'text-blue-600 dark:text-blue-400'; // ฉบับร่าง - น้ำเงิน
+      case 1: return 'text-blue-600 dark:text-blue-400 dark:text-blue-600'; // ฉบับร่าง - น้ำเงิน
       case 2:
       case 3:
       case 4: return 'text-orange-500'; // รอลงนาม - ส้ม
-      case 5: return 'text-green-600 dark:text-green-400'; // เสร็จสิ้น - เขียว
+      case 5: return 'text-green-600 dark:text-green-400 dark:text-green-600'; // เสร็จสิ้น - เขียว
       case 0: return 'text-red-500'; // ตีกลับ - แดง
       default: return 'text-muted-foreground';
     }
@@ -614,7 +614,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-green-400 hover:text-green-600 dark:text-green-400"
+            className="h-8 w-8 p-0 border-border hover:border-green-400 hover:text-green-600 dark:text-green-400 dark:text-green-600"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -678,7 +678,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                     
                     return attachedFileCount > 0 && (
                       <div className="flex items-center gap-1">
-                        <Paperclip className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <Paperclip className="h-3 w-3 text-green-600 dark:text-green-400 dark:text-green-600" />
                       </div>
                     );
                   })()}
@@ -715,7 +715,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                       <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 font-medium">
+                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -743,12 +743,12 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-green-700 dark:text-green-300' : 'text-green-400')
+                            : (memo.current_signer_order === 1 ? 'text-green-700 dark:text-green-300' : 'text-green-400 dark:text-green-600')
                         }`}>ตรวจทาน</span>
                         <span className={`sm:text-[10px] text-[9px] ${
                           memo.current_signer_order === 5 
                             ? 'text-muted-foreground'
-                            : (memo.current_signer_order === 1 ? 'text-green-700 dark:text-green-300 font-bold' : 'text-green-400')
+                            : (memo.current_signer_order === 1 ? 'text-green-700 dark:text-green-300 font-bold' : 'text-green-400 dark:text-green-600')
                         }`}>
                           {(() => {
                             // ดึงชื่อธุรการผู้ตรวจทานจาก clerk_id (first_name + last_name)
@@ -785,12 +785,12 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === proposer.order ? 'text-green-700 dark:text-green-300' : 'text-green-400')
+                                    : (memo.current_signer_order === proposer.order ? 'text-green-700 dark:text-green-300' : 'text-green-400 dark:text-green-600')
                                 }`}>ผู้เสนอ</span>
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === proposer.order ? 'text-green-700 dark:text-green-300 font-bold' : 'text-green-400')
+                                    : (memo.current_signer_order === proposer.order ? 'text-green-700 dark:text-green-300 font-bold' : 'text-green-400 dark:text-green-600')
                                 }`}>
                                   {(() => {
                                     // Always use user_id to fetch fresh data from profiles
@@ -825,7 +825,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5 
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-green-700 dark:text-green-300' : 'text-green-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-green-700 dark:text-green-300' : 'text-green-400 dark:text-green-600')
                                 }`}>
                                   {(() => {
                                     // แสดงตำแหน่งตาม role
@@ -844,7 +844,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
                                     ? 'text-muted-foreground'
-                                    : (memo.current_signer_order === signer.order ? 'text-green-700 dark:text-green-300 font-bold' : 'text-green-400')
+                                    : (memo.current_signer_order === signer.order ? 'text-green-700 dark:text-green-300 font-bold' : 'text-green-400 dark:text-green-600')
                                 }`}>{(() => {
                                   // Always use user_id to fetch fresh data from profiles
                                   const userProfile = profiles.find(p => p.user_id === signer.user_id);
@@ -876,7 +876,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-green-700 dark:text-green-300' : 'text-green-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-green-700 dark:text-green-300' : 'text-green-400 dark:text-green-600')
                                   }`}>{
                                     // เฉพาะ นายอานนท์ จ่าแก้ว ให้แสดงเป็น ผู้อำนวยการ
                                     (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
@@ -885,7 +885,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                   <span className={`sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
                                       ? 'text-muted-foreground'
-                                      : (memo.current_signer_order === pos.signer.order ? 'text-green-700 dark:text-green-300 font-bold' : 'text-green-400')
+                                      : (memo.current_signer_order === pos.signer.order ? 'text-green-700 dark:text-green-300 font-bold' : 'text-green-400 dark:text-green-600')
                                   }`}>{pos.signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 
@@ -897,7 +897,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               </React.Fragment>
                           ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-green-400'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-green-400 dark:text-green-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )
                       )}
                       
@@ -914,7 +914,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5 
                           ? 'text-foreground' 
-                          : 'text-green-400'
+                          : 'text-green-400 dark:text-green-600'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (
                         <div className="w-2 h-2 rounded-full mt-1 bg-gray-700"></div>
@@ -926,7 +926,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -986,7 +986,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
-                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                      <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                         onClick={() => {
                           const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
                           navigate('/pdf-just-preview', {
@@ -1037,7 +1037,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               className={`h-7 px-2 flex items-center gap-1 ${
                                 memo.current_signer_order > 1
                                   ? 'border-border text-muted-foreground cursor-not-allowed'
-                                  : 'border-green-200 dark:border-green-800 text-green-600 dark:text-green-400'
+                                  : 'border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 dark:text-green-600'
                               }`}
                               onClick={() => {
                                 if (memo.current_signer_order <= 1) {
@@ -1085,7 +1085,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       setSearchTerm('');
                       setStatusFilter('all');
                     }}
-                    className="text-green-400 hover:text-green-600 dark:text-green-400 mt-1 text-xs h-6"
+                    className="text-green-400 hover:text-green-600 dark:text-green-400 dark:text-green-600 mt-1 text-xs h-6"
                   >
                     ล้างตัวกรอง
                   </Button>
@@ -1150,7 +1150,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
               รายชื่อผู้ได้รับมอบหมาย
             </DialogTitle>
           </DialogHeader>

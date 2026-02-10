@@ -90,9 +90,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
         <CardContent className="pt-6 flex-1 flex flex-col justify-between relative z-10">
           <div className="flex items-start justify-between">
             <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900">
-              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
             </div>
-            <span className="text-6xl font-extrabold text-blue-600 dark:text-blue-400 leading-none tracking-tight">{totalCount}</span>
+            <span className="text-6xl font-extrabold text-blue-600 dark:text-blue-400 dark:text-blue-600 leading-none tracking-tight">{totalCount}</span>
           </div>
           <div className="mt-4">
             <h3 className="font-bold text-xl text-foreground mb-1">เอกสารทั้งหมด</h3>
@@ -109,9 +109,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900">
-                  <AlertCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  <AlertCircle className="h-4 w-4 text-purple-600 dark:text-purple-400 dark:text-purple-600" />
                 </div>
-                <span className="text-3xl sm:text-5xl font-bold text-purple-600 dark:text-purple-400">{inProgressCount}</span>
+                <span className="text-3xl sm:text-5xl font-bold text-purple-600 dark:text-purple-400 dark:text-purple-600">{inProgressCount}</span>
               </div>
               <div className="mt-2">
                 <h3 className="font-semibold text-foreground text-sm sm:text-base">รอตรวจทาน</h3>
@@ -126,9 +126,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900">
-                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 dark:text-amber-600" />
                 </div>
-                <span className="text-3xl sm:text-5xl font-bold text-amber-600 dark:text-amber-400">{pendingCount}</span>
+                <span className="text-3xl sm:text-5xl font-bold text-amber-600 dark:text-amber-400 dark:text-amber-600">{pendingCount}</span>
               </div>
               <div className="mt-2">
                 <h3 className="font-semibold text-foreground text-sm sm:text-base">รอลงนาม</h3>
@@ -143,9 +143,9 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 dark:text-green-600" />
                 </div>
-                <span className="text-3xl sm:text-5xl font-bold text-green-600 dark:text-green-400">{approvedCount}</span>
+                <span className="text-3xl sm:text-5xl font-bold text-green-600 dark:text-green-400 dark:text-green-600">{approvedCount}</span>
               </div>
               <div className="mt-2">
                 <h3 className="font-semibold text-foreground text-sm sm:text-base">เสร็จสิ้น</h3>

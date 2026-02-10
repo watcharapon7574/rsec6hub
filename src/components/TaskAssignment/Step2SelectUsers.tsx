@@ -283,7 +283,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
               </span>
               {selectionInfo?.groupName || `${selectedUsers.length} คน`}
             </div>
-            <p className="text-xs mt-1 text-blue-600 dark:text-blue-400">
+            <p className="text-xs mt-1 text-blue-600 dark:text-blue-400 dark:text-blue-600">
               สามารถเพิ่มได้เฉพาะรายคนหรือกลุ่ม • ไม่สามารถเพิ่มหน้าที่ได้
             </p>
           </div>

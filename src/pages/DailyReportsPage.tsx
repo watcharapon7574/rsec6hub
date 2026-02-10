@@ -182,9 +182,9 @@ const DailyReportsPage = () => {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
-                    <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <Calendar className="h-4 w-4 text-green-600 dark:text-green-400 dark:text-green-600" />
                   </div>
-                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">7</span>
+                  <span className="text-2xl font-bold text-green-600 dark:text-green-400 dark:text-green-600">7</span>
                 </div>
                 <h3 className="font-semibold text-foreground text-sm">สัปดาห์นี้</h3>
               </CardContent>

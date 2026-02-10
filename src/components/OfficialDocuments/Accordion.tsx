@@ -77,7 +77,7 @@ const Accordion: React.FC<AccordionProps> = ({
           className="flex items-center justify-between w-full cursor-pointer hover:bg-muted rounded px-2 py-1"
         >
           <CardTitle className="flex items-center gap-2 text-base">
-            <Paperclip className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <Paperclip className="h-4 w-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
             {attachmentTitle ? `สิ่งที่ส่งมาด้วย ${attachmentTitle}` : title}
           </CardTitle>
           {isOpen ? (

@@ -688,7 +688,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                   {/* รายละเอียดงาน (task_description) - แสดง 40 ตัวอักษร */}
                   {task.task_description && (
                     <div className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950 border border-purple-200 dark:border-purple-800 rounded-md px-2.5 py-1">
-                      <ClipboardList className="h-3 w-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                      <ClipboardList className="h-3 w-3 text-purple-600 dark:text-purple-400 dark:text-purple-600 flex-shrink-0" />
                       <span className="text-xs text-purple-700 dark:text-purple-300 truncate max-w-[150px] font-medium">
                         {truncateText(task.task_description, 40)}
                       </span>
@@ -868,7 +868,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                         <CheckCircle className="h-4 w-4" />
                         ไฟล์ที่เลือก: {reportFile.name}
                       </p>
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      <p className="text-xs text-green-600 dark:text-green-400 dark:text-green-600 mt-1">
                         ขนาด: {(reportFile.size / 1024).toFixed(2)} KB
                       </p>
                     </div>
@@ -956,7 +956,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                         {/* Role badges */}
                         <div className="flex gap-1">
                           {assignee.is_team_leader && (
-                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">หัวหน้า</span>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 dark:text-amber-600 font-medium">หัวหน้า</span>
                           )}
                           {assignee.is_reporter && (
                             <span className="text-[10px] text-pink-600 dark:text-pink-400 font-medium">

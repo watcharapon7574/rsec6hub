@@ -201,7 +201,7 @@ export default function AdminOtpManagementPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600 dark:text-blue-400" />
+          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
           <p className="text-muted-foreground">กำลังโหลด...</p>
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function AdminOtpManagementPage() {
         <Card>
           <CardContent className="pt-6">
             <h1 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
               จัดการ Admin OTP Recipients
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -251,7 +251,7 @@ export default function AdminOtpManagementPage() {
           <CardContent className="pt-6">
             {loading ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 dark:text-blue-600" />
               </div>
             ) : recipients.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
@@ -333,7 +333,7 @@ export default function AdminOtpManagementPage() {
           <CardContent className="pt-6">
             {logsLoading ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-green-600 dark:text-green-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-green-600 dark:text-green-400 dark:text-green-600" />
               </div>
             ) : loginLogs.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">

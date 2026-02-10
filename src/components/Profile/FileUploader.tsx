@@ -94,7 +94,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label className="text-sm font-medium text-muted-foreground">{label}</label>
         {uploadStatus === 'success' && (
           <div className="flex items-center gap-1 text-green-600">
             <CheckCircle className="h-4 w-4" />
@@ -104,7 +104,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       </div>
 
       {description && (
-        <p className="text-xs text-gray-500">{description}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       )}
 
       <div className="flex items-center gap-3">
@@ -131,7 +131,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
-            <span className="text-xs text-gray-600">รูปปัจจุบัน</span>
+            <span className="text-xs text-muted-foreground">รูปปัจจุบัน</span>
             {onFileDelete && (
               <Button
                 type="button"

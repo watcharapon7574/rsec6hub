@@ -698,7 +698,7 @@ const PDFDocumentManagePage: React.FC = () => {
                         ? 'bg-blue-600 text-white'
                         : isStepComplete(step)
                           ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-muted text-muted-foreground hover:bg-gray-300'
+                          : 'bg-muted text-muted-foreground hover:bg-accent'
                     }`}
                   >
                     {isStepComplete(step) && currentStep !== step ? (

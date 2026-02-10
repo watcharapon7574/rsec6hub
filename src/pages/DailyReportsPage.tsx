@@ -238,7 +238,7 @@ const DailyReportsPage = () => {
                         </TableCell>
                         <TableCell>
                           {report.location ? (
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               <MapPin className="h-3 w-3" />
                               {report.location}
                             </div>

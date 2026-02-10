@@ -40,8 +40,8 @@ const OTPStep: React.FC<OTPStepProps> = ({
   return (
     <div className="space-y-5">
       <div className="text-center space-y-2">
-        <h3 className="text-lg font-semibold text-gray-900">ใส่รหัส OTP</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className="text-lg font-semibold text-foreground">ใส่รหัส OTP</h3>
+        <p className="text-sm text-muted-foreground">
           เราได้ส่งรหัส 6 หลักไปที่ Telegram ของ {phoneNumber}
         </p>
       </div>

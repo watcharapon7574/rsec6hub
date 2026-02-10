@@ -1203,7 +1203,7 @@ const DocumentManagePage: React.FC = () => {
                         ? 'bg-blue-600 text-white' 
                         : isStepComplete(step) 
                           ? 'bg-green-600 text-white hover:bg-green-700'
-                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          : 'bg-gray-200 text-muted-foreground hover:bg-gray-300'
                     }`}
                   >
                     {isStepComplete(step) && currentStep !== step ? (

@@ -288,7 +288,7 @@ export default function AdminOtpManagementPage() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">
+                      <TableCell className="text-sm text-muted-foreground">
                         {formatDate(recipient.created_at)}
                       </TableCell>
                       <TableCell className="text-right">

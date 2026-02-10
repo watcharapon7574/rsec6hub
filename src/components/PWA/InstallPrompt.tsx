@@ -97,7 +97,7 @@ const InstallPrompt: React.FC = () => {
                 alt="RSEC6 OfficeHub"
                 className="h-8 w-8"
               />
-              <h3 className="font-semibold text-gray-900">ติดตั้งแอป</h3>
+              <h3 className="font-semibold text-foreground">ติดตั้งแอป</h3>
             </div>
             <Button
               variant="ghost"
@@ -109,7 +109,7 @@ const InstallPrompt: React.FC = () => {
             </Button>
           </div>
           
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             ติดตั้ง RSEC6 OfficeHub บนอุปกรณ์ของคุณเพื่อการเข้าใช้งานที่รวดเร็วและสะดวก
           </p>
           

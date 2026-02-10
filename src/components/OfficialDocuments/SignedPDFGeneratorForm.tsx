@@ -177,7 +177,7 @@ const SignedPDFGeneratorForm: React.FC = () => {
                   className="hidden"
                 />
                 <div className="text-center">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                   <Button
                     type="button"
                     variant="outline"
@@ -190,7 +190,7 @@ const SignedPDFGeneratorForm: React.FC = () => {
                       ไฟล์: {signatureFile.name}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     รองรับไฟล์ PNG, JPG, JPEG
                   </p>
                 </div>

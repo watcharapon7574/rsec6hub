@@ -235,7 +235,7 @@ const AdminProfileManagementPage: React.FC = () => {
         <Card className="shadow-lg">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className="h-5 w-5 text-muted-foreground" />
               <Input
                 placeholder="ค้นหาด้วย รหัสบุคลากร, ชื่อ, นามสกุล, เบอร์โทร, ตำแหน่ง..."
                 value={searchTerm}
@@ -310,7 +310,7 @@ const AdminProfileManagementPage: React.FC = () => {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between border-t border-blue-100 pt-4 bg-blue-50/30 rounded-b-lg px-4 py-3">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     แสดง <span className="font-semibold text-blue-600">{startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)}</span> จาก <span className="font-semibold text-blue-600">{filteredProfiles.length}</span> รายการ
                   </div>
                   <div className="flex items-center gap-2">

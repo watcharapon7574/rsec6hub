@@ -477,8 +477,8 @@ const PDFReceiveManagePage: React.FC = () => {
                 กลับ
               </Button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">จัดการหนังสือรับ</h1>
-                <p className="text-sm text-gray-500">{docReceive?.subject}</p>
+                <h1 className="text-xl font-semibold text-foreground">จัดการหนังสือรับ</h1>
+                <p className="text-sm text-muted-foreground">{docReceive?.subject}</p>
               </div>
             </div>
 
@@ -494,7 +494,7 @@ const PDFReceiveManagePage: React.FC = () => {
                         ? 'bg-blue-500 text-white shadow-lg'
                         : currentStep > step
                         ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-500'
+                        : 'bg-gray-200 text-muted-foreground'
                       }
                     `}
                   >

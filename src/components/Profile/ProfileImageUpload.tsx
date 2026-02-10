@@ -32,7 +32,7 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
             />
           ) : (
             <div className="w-32 h-32 rounded-full mx-auto mb-4 bg-gray-200 flex items-center justify-center">
-              <User className="h-16 w-16 text-gray-400" />
+              <User className="h-16 w-16 text-muted-foreground" />
             </div>
           )}
         </div>

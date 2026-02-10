@@ -137,7 +137,7 @@ const TestTools: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-muted-foreground">
           <p><strong>ผู้ใช้ปัจจุบัน:</strong> {profile?.first_name} {profile?.last_name}</p>
           <p><strong>ตำแหน่ง:</strong> {profile?.position}</p>
           <p><strong>User ID:</strong> {profile?.user_id}</p>
@@ -163,7 +163,7 @@ const TestTools: React.FC = () => {
           </Button>
         </div>
         
-        <div className="text-xs text-gray-500 bg-yellow-50 p-2 rounded">
+        <div className="text-xs text-muted-foreground bg-yellow-50 p-2 rounded">
           <strong>หมายเหตุ:</strong> เครื่องมือนี้สำหรับทดสอบระบบเท่านั้น
         </div>
       </CardContent>

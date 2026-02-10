@@ -26,8 +26,8 @@ const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen, message = 'กำ�
 
           {/* Message */}
           <div className="text-center space-y-2">
-            <h3 className="text-lg font-semibold text-gray-900">{message}</h3>
-            <p className="text-sm text-gray-500">กรุณารอสักครู่...</p>
+            <h3 className="text-lg font-semibold text-foreground">{message}</h3>
+            <p className="text-sm text-muted-foreground">กรุณารอสักครู่...</p>
           </div>
         </div>
       </div>

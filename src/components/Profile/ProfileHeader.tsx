@@ -33,7 +33,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-4">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+        <h1 className="text-3xl font-bold text-foreground flex items-center">
           <User className="h-8 w-8 mr-3 text-blue-600" />
           โปรไฟล์พนักงาน
         </h1>

@@ -54,7 +54,7 @@ const TeamMemberIcon: React.FC<TeamMemberIconProps> = ({
   const getPersonColor = () => {
     if (isLeader) return 'text-amber-600';
     if (isReporter) return 'text-pink-600';
-    return 'text-gray-500';
+    return 'text-muted-foreground';
   };
 
   const getBackgroundColor = () => {

@@ -81,9 +81,9 @@ const Accordion: React.FC<AccordionProps> = ({
             {attachmentTitle ? `สิ่งที่ส่งมาด้วย ${attachmentTitle}` : title}
           </CardTitle>
           {isOpen ? (
-            <ChevronUp className="h-4 w-4 text-gray-500 flex-shrink-0" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           )}
         </div>
       </CardHeader>

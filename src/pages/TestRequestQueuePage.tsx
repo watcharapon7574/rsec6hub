@@ -760,7 +760,7 @@ const TestRequestQueuePage: React.FC = () => {
                       : 'text-gray-300'
                   }`}
                 >
-                  <span className="text-gray-500">[{log.time}]</span> {log.message}
+                  <span className="text-muted-foreground">[{log.time}]</span> {log.message}
                 </div>
               ))}
             </div>

@@ -390,7 +390,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-blue-500'}`} />
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-gray-700' : 'text-foreground group-hover:text-blue-700'}`} title={memo.subject}>{memo.subject}</span>
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-blue-700'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {
@@ -602,7 +602,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5 
-                          ? 'text-gray-700' 
+                          ? 'text-foreground' 
                           : 'text-blue-400'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (

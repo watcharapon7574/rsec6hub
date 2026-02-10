@@ -380,8 +380,8 @@ const RailwayManagementPage = () => {
           {services.length === 0 ? (
             <Card className="border-2 border-dashed border-gray-300">
               <CardContent className="py-12 text-center">
-                <Layers className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                <p className="text-lg text-gray-500">
+                <Layers className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                <p className="text-lg text-muted-foreground">
                   {selectedProject
                     ? "ไม่พบ Services ใน Project นี้"
                     : "กรุณาเลือก Project ก่อน"}
@@ -423,7 +423,7 @@ const RailwayManagementPage = () => {
                             ) : isStopped ? (
                               <CircleX className="h-6 w-6 text-red-600" />
                             ) : (
-                              <Circle className="h-6 w-6 text-gray-400" />
+                              <Circle className="h-6 w-6 text-muted-foreground" />
                             )}
                             {service.name}
                           </CardTitle>

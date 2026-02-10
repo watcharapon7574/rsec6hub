@@ -40,7 +40,7 @@ const ProfileSelector: React.FC<ProfileSelectorProps> = ({
                 <div className="font-medium">
                   {selectedProfile.first_name} {selectedProfile.last_name}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   {selectedProfile.employee_id} • {getPositionDisplayName(selectedProfile.position)}
                 </div>
               </div>

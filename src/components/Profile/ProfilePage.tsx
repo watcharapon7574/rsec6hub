@@ -45,7 +45,7 @@ const ProfilePage = () => {
   if (!isAuthenticated || !authProfile) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
-        <div className="text-center text-gray-500">
+        <div className="text-center text-muted-foreground">
           กรุณาเข้าสู่ระบบเพื่อดูข้อมูลโปรไฟล์
         </div>
       </div>

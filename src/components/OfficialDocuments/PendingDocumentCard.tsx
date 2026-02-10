@@ -561,7 +561,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
                             memo.current_signer_order === 5 
-                              ? 'text-gray-700' 
+                              ? 'text-foreground' 
                               : 'text-amber-400'
                           }`}>เกษียนหนังสือแล้ว</span>
                           {memo.current_signer_order === 5 && (

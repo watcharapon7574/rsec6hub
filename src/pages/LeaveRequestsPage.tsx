@@ -186,7 +186,7 @@ const LeaveRequestsPage = () => {
                       </div>
 
                       {formData.start_date && formData.end_date && (
-                        <div className="text-sm text-gray-600 flex items-center gap-2">
+                        <div className="text-sm text-muted-foreground flex items-center gap-2">
                           <Clock className="h-4 w-4" />
                           จำนวนวันลา: {calculateDays(formData.start_date, formData.end_date)} วัน
                         </div>

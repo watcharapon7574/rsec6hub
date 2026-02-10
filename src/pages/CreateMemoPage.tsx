@@ -587,7 +587,7 @@ const CreateMemoPage = () => {
           {/* Grammar Correction Modal */}
           <Dialog open={showGrammarModal} onOpenChange={setShowGrammarModal}>
             <DialogContent className="bg-card p-6 rounded-lg shadow-lg max-w-2xl">
-              <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+              <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
                 <Sparkles className="h-5 w-5 text-green-600" />
                 ตรวจสอบไวยากรณ์
               </DialogTitle>
@@ -1022,7 +1022,7 @@ const CreateMemoPage = () => {
                     type="button" 
                     variant="outline"
                     onClick={() => navigate('/documents')}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-2 rounded-lg transition-all duration-200"
+                    className="border-gray-300 text-foreground hover:bg-gray-50 font-semibold px-8 py-2 rounded-lg transition-all duration-200"
                     disabled={loading || loadingMemo || grammarLoading}
                   >
                     ยกเลิก
@@ -1053,7 +1053,7 @@ const CreateMemoPage = () => {
                         setPreviewUrl(null);
                       }
                     }}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     ปิดตัวอย่าง
                   </Button>
@@ -1067,7 +1067,7 @@ const CreateMemoPage = () => {
                     title="PDF Preview"
                   />
                 </div>
-                <p className="text-sm text-gray-500 mt-3 text-center">
+                <p className="text-sm text-muted-foreground mt-3 text-center">
                   💡 ตรวจสอบการตัดบรรทัดและแก้ไขในฟอร์มด้านบน แล้วกด "ดูตัวอย่าง" อีกครั้งเพื่อดูผลลัพธ์
                 </p>
               </CardContent>

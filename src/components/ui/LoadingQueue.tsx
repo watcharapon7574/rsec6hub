@@ -34,10 +34,10 @@ export const LoadingQueue: React.FC<LoadingQueueProps> = ({ className }) => {
     >
       <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
       <div className="flex flex-col">
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+        <span className="text-sm font-medium text-foreground dark:text-gray-100">
           กำลังประมวลผล...
         </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-muted-foreground dark:text-muted-foreground">
           {queueLength > 0
             ? `รอ ${queueLength} รายการ • กำลังทำ ${activeCount} รายการ`
             : `กำลังทำ ${activeCount} รายการ`}

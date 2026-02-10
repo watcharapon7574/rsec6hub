@@ -45,8 +45,8 @@ const TelegramLinking: React.FC<TelegramLinkingProps> = ({ phone, onLinked, onBa
       
       <CardContent className="space-y-6 px-6">
         <div className="text-center space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">เชื่อมต่อ Telegram</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-lg font-semibold text-foreground">เชื่อมต่อ Telegram</h3>
+          <p className="text-sm text-muted-foreground">
             เพื่อรับรหัส OTP สำหรับเบอร์ {phone}
           </p>
         </div>

@@ -187,7 +187,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => onDeleteGroup(group.id)}
-                  className="h-6 w-6 p-0 ml-1 hover:bg-red-100 text-red-400 hover:text-red-600 rounded-full"
+                  className="h-6 w-6 p-0 ml-1 hover:bg-red-100 dark:hover:bg-red-900 text-red-400 hover:text-red-600 rounded-full"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

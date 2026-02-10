@@ -578,7 +578,7 @@ const AssignedTasksList = () => {
                       size="sm"
                       variant="ghost"
                       onClick={handleRemoveFile}
-                      className="h-6 w-6 p-0 hover:bg-red-100"
+                      className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900"
                     >
                       <X className="h-4 w-4 text-red-600" />
                     </Button>

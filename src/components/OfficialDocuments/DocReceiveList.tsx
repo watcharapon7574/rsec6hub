@@ -952,7 +952,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 onClick={() => {
                                   navigate(`/task-assignment?documentId=${memo.id}&documentType=doc_receive`);
                                 }}
-                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 hover:bg-green-100"
+                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 hover:bg-green-100 dark:hover:bg-green-900"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">มอบหมายงาน</span>
@@ -967,7 +967,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleViewAssignees(memo)}
-                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 hover:bg-blue-100"
+                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900"
                               >
                                 <ClipboardList className="h-4 w-4" />
                                 <span className="text-xs font-medium">ดูรายชื่อ</span>

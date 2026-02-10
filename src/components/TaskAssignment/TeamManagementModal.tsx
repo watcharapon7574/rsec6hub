@@ -378,7 +378,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveNewMember(member.user_id)}
-                          className="h-6 w-6 p-0 hover:bg-red-100 text-muted-foreground hover:text-red-500"
+                          className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-muted-foreground hover:text-red-500"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -390,7 +390,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveExistingMember(member as TeamMember)}
-                          className="h-6 w-6 p-0 hover:bg-red-100 text-muted-foreground hover:text-red-500"
+                          className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-muted-foreground hover:text-red-500"
                           title="ลบสมาชิก"
                         >
                           <Trash2 className="h-4 w-4" />

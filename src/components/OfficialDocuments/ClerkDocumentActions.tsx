@@ -139,7 +139,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
           onClick={() => {
             navigate(`/task-assignment?documentId=${documentId}&documentType=${documentType}`);
           }}
-          className="bg-green-50 dark:bg-green-950 border-green-500 text-foreground hover:bg-green-100"
+          className="bg-green-50 dark:bg-green-950 border-green-500 text-foreground hover:bg-green-100 dark:hover:bg-green-900"
         >
           <ClipboardList className="h-4 w-4 mr-1" />
           มอบหมายงาน

@@ -277,7 +277,7 @@ const AdminProfileManagementPage: React.FC = () => {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="h-5 w-5" />
               รายการโปรไฟล์ทั้งหมด
-              <Badge variant="secondary" className="ml-auto bg-white text-blue-600 font-semibold px-3 py-1">
+              <Badge variant="secondary" className="ml-auto bg-card text-blue-600 font-semibold px-3 py-1">
                 {filteredProfiles.length} รายการ
               </Badge>
             </CardTitle>

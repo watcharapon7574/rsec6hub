@@ -165,7 +165,7 @@ const QueueRealtimePage: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                        <Badge variant="outline" className="bg-white">
+                        <Badge variant="outline" className="bg-card">
                           #{item.id.slice(-6)}
                         </Badge>
                       </div>
@@ -194,7 +194,7 @@ const QueueRealtimePage: React.FC = () => {
                             <div className="text-xs opacity-75">Queued</div>
                           </div>
                         </div>
-                        <Badge variant="outline" className="bg-white">
+                        <Badge variant="outline" className="bg-card">
                           #{item.id.slice(-6)}
                         </Badge>
                       </div>

@@ -586,7 +586,7 @@ const CreateMemoPage = () => {
 
           {/* Grammar Correction Modal */}
           <Dialog open={showGrammarModal} onOpenChange={setShowGrammarModal}>
-            <DialogContent className="bg-white p-6 rounded-lg shadow-lg max-w-2xl">
+            <DialogContent className="bg-card p-6 rounded-lg shadow-lg max-w-2xl">
               <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-800">
                 <Sparkles className="h-5 w-5 text-green-600" />
                 ตรวจสอบไวยากรณ์

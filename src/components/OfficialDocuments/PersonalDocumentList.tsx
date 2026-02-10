@@ -384,7 +384,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               const baseClasses = "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border rounded-lg px-2 sm:px-3 py-2 shadow-sm transition group min-w-0";
               const completedClasses = isCompleted 
                 ? "bg-gray-50 border-gray-200 hover:bg-gray-100" 
-                : "bg-white border-blue-100 hover:bg-blue-50";
+                : "bg-card border-border hover:bg-muted/50";
               
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>

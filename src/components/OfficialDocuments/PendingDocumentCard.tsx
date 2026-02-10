@@ -391,7 +391,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
               return (
                 <div
                   key={memo.id}
-                  className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-white border border-amber-100 rounded-lg px-3 py-2 shadow-sm hover:bg-amber-50 transition group"
+                  className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-card border border-border rounded-lg px-3 py-2 shadow-sm hover:bg-muted/50 transition group"
                 >
                   <FileText className="h-4 w-4 text-amber-500 flex-shrink-0" />
                   <span className="font-medium text-gray-900 truncate max-w-[120px] sm:max-w-[160px] group-hover:text-amber-700 sm:text-base text-sm" title={memo.subject}>{memo.subject}</span>

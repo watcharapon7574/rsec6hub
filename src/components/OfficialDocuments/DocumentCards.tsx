@@ -115,17 +115,17 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
       {/* Create Document Button - Compact Version */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">รายการเอกสาร</h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <h2 className="text-xl font-bold text-foreground">รายการเอกสาร</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             บทบาท: {permissions.displayName}
             {permissions.isAdmin && " (ผู้ดูแลระบบ)"}
           </p>
         </div>
         <Button 
           onClick={handleCreateDocument}
-          className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600"
+          className="flex items-center gap-2"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           สร้างเอกสารราชการ
         </Button>
       </div>

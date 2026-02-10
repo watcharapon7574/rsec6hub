@@ -260,13 +260,15 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
   };
 
   return (
-    <Card className="bg-amber-50 border-amber-200 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-t-lg py-3 px-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Clock className="h-5 w-5" />
+    <Card>
+      <CardHeader className="py-3 px-4">
+        <CardTitle className="flex items-center gap-2 text-base text-foreground">
+          <div className="p-1.5 rounded-lg bg-amber-100">
+            <Clock className="h-4 w-4 text-amber-600" />
+          </div>
           เอกสารรอพิจารณา
           <span
-            className="ml-auto font-semibold px-2 py-1 rounded-full text-xs inline-flex bg-amber-500 text-white"
+            className="ml-auto font-semibold px-2 py-1 rounded-full text-xs inline-flex bg-amber-100 text-amber-700"
           >
             {filteredAndSortedMemos.length > 0 ? `${filteredAndSortedMemos.length} รายการ` : 'ไม่มีเอกสาร'}
           </span>
@@ -275,7 +277,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
             size="sm"
             onClick={onRefresh}
             disabled={!onRefresh}
-            className="ml-2 p-1 h-8 w-8 text-white hover:bg-amber-700/50 disabled:opacity-50"
+            className="ml-2 p-1 h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>

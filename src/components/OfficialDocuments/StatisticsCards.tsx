@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import { useMemo } from 'react';
@@ -43,12 +44,12 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
 
   // ฟังก์ชันช่วยสร้างข้อความบรรทัดล่างสุด (responsive)
   const renderMonthSummary = (count: number) => (
-    <p className="text-sm text-gray-600 sm:block hidden">
+    <p className="text-sm text-muted-foreground sm:block hidden">
       เดือน<span className="font-bold">{thaiMonth}</span>
     </p>
   );
   const renderMonthSummaryMobile = (count: number) => (
-    <p className="text-xs text-gray-500 sm:hidden block mt-1">
+    <p className="text-xs text-muted-foreground sm:hidden block mt-1">
       <span className="font-bold">{thaiMonth}</span> {count} ฉบับ
     </p>
   );
@@ -82,78 +83,78 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   };
 
   return (
-    <div className="flex gap-4 items-stretch mb-8 sm:flex-row flex-col">
-      <div className="flex-[2.5] min-w-[300px] bg-white rounded-2xl shadow-2xl border border-blue-100/40 overflow-hidden flex flex-col relative w-full mb-3 sm:mb-0" style={{minHeight: 240}}>
-        {/* Gradient Bar */}
-        <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-t-2xl" />
-        {/* กราฟเส้นเล็ก ยาวจากใต้ 'ด' ถึงเลข 4 */}
-        <div className="absolute left-[80px] right-[140px] top-[80px] z-0 pointer-events-none flex justify-end">{renderLineChart()}</div>
-        <div className="p-8 flex-1 flex flex-col justify-between relative z-10">
+    <div className="flex gap-4 items-stretch mb-6 sm:flex-row flex-col">
+      {/* การ์ดใหญ่ - เอกสารทั้งหมด */}
+      <Card className="flex-[2.5] min-w-[300px] overflow-hidden flex flex-col relative w-full mb-3 sm:mb-0" style={{minHeight: 200}}>
+        <div className="absolute left-[80px] right-[140px] top-[60px] z-0 pointer-events-none flex justify-end">{renderLineChart()}</div>
+        <CardContent className="pt-6 flex-1 flex flex-col justify-between relative z-10">
           <div className="flex items-start justify-between">
-            {/* Icon with bg circle */}
-            <div className="flex items-center justify-center bg-blue-50 rounded-full h-16 w-16 shadow-inner">
-              <FileText className="h-10 w-10 text-blue-500" />
+            <div className="p-3 rounded-xl bg-blue-100">
+              <FileText className="h-8 w-8 text-blue-600" />
             </div>
-            {/* Big number */}
-            <span className="text-[5rem] font-extrabold text-blue-600 leading-none tracking-tight">{totalCount}</span>
+            <span className="text-6xl font-extrabold text-blue-600 leading-none tracking-tight">{totalCount}</span>
           </div>
-          <div className="mt-6">
-            <h3 className="font-extrabold text-2xl text-gray-900 tracking-wide mb-1">เอกสารทั้งหมด</h3>
+          <div className="mt-4">
+            <h3 className="font-bold text-xl text-foreground mb-1">เอกสารทั้งหมด</h3>
             {renderMonthSummary(totalCount)}
             {renderMonthSummaryMobile(totalCount)}
           </div>
-        </div>
-      </div>
-      {/* กลุ่มการ์ดเล็ก (desktop: flex-row, mobile: scroll ได้) */}
-      <div className="flex-[1.5] flex flex-row gap-4 w-full overflow-x-auto sm:overflow-visible sm:mb-0 mb-3 scrollbar-hide">
-        <div className="flex-1 min-w-[220px] bg-white rounded-2xl shadow-xl shadow-purple-500/5 border border-purple-100/30 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 group flex flex-col w-full">
-          <div className="bg-gradient-to-r from-purple-400 to-purple-600 h-3 w-full"></div>
-          <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between pb-2">
+        </CardContent>
+      </Card>
+
+      {/* กลุ่มการ์ดเล็ก */}
+      <div className="flex-[1.5] flex flex-row gap-3 w-full overflow-x-auto sm:overflow-visible sm:mb-0 mb-3 scrollbar-hide">
+        <Card className="flex-1 min-w-[160px] flex flex-col w-full">
+          <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <AlertCircle className="h-7 w-7 sm:h-8 sm:w-8 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-4xl sm:text-7xl font-bold text-purple-600">{inProgressCount}</span>
+                <div className="p-2 rounded-lg bg-purple-100">
+                  <AlertCircle className="h-4 w-4 text-purple-600" />
+                </div>
+                <span className="text-3xl sm:text-5xl font-bold text-purple-600">{inProgressCount}</span>
               </div>
               <div className="mt-2">
-                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">รอตรวจทาน</h3>
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">รอตรวจทาน</h3>
                 {renderMonthSummary(inProgressCount)}
                 {renderMonthSummaryMobile(inProgressCount)}
               </div>
             </div>
-          </div>
-        </div>
-        <div className="flex-1 min-w-[220px] bg-white rounded-2xl shadow-xl shadow-orange-500/5 border border-orange-100/30 overflow-hidden hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300 group flex flex-col w-full">
-          <div className="bg-gradient-to-r from-orange-400 to-orange-600 h-3 w-full"></div>
-          <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between pb-2">
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px] flex flex-col w-full">
+          <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Clock className="h-7 w-7 sm:h-8 sm:w-8 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-4xl sm:text-7xl font-bold text-orange-600">{pendingCount}</span>
+                <div className="p-2 rounded-lg bg-amber-100">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                </div>
+                <span className="text-3xl sm:text-5xl font-bold text-amber-600">{pendingCount}</span>
               </div>
               <div className="mt-2">
-                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">รอลงนาม</h3>
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">รอลงนาม</h3>
                 {renderMonthSummary(pendingCount)}
                 {renderMonthSummaryMobile(pendingCount)}
               </div>
             </div>
-          </div>
-        </div>
-        <div className="flex-1 min-w-[220px] bg-white rounded-2xl shadow-xl shadow-green-500/5 border border-green-100/30 overflow-hidden hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-300 group flex flex-col w-full">
-          <div className="bg-gradient-to-r from-green-400 to-green-600 h-3 w-full"></div>
-          <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between pb-2">
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px] flex flex-col w-full">
+          <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <CheckCircle className="h-7 w-7 sm:h-8 sm:w-8 text-green-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="text-4xl sm:text-7xl font-bold text-green-600">{approvedCount}</span>
+                <div className="p-2 rounded-lg bg-green-100">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+                <span className="text-3xl sm:text-5xl font-bold text-green-600">{approvedCount}</span>
               </div>
               <div className="mt-2">
-                <h3 className="font-bold text-gray-800 mb-1 text-base sm:text-lg">เสร็จสิ้น</h3>
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">เสร็จสิ้น</h3>
                 {renderMonthSummary(approvedCount)}
                 {renderMonthSummaryMobile(approvedCount)}
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

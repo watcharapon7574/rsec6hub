@@ -230,8 +230,8 @@ const MemoApprovalPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">การอนุมัติเอกสาร</h1>
-            <p className="text-gray-600 mt-1">เลขที่เอกสาร: {workflow.document_number}</p>
+            <h1 className="text-3xl font-bold text-foreground">การอนุมัติเอกสาร</h1>
+            <p className="text-muted-foreground mt-1">เลขที่เอกสาร: {workflow.document_number}</p>
           </div>
           {getStatusBadge(workflow.status)}
         </div>
@@ -246,23 +246,23 @@ const MemoApprovalPage = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-sm font-medium text-gray-500">เรื่อง</Label>
+              <Label className="text-sm font-medium text-muted-foreground">เรื่อง</Label>
               <p className="text-lg font-medium">{workflow.subject}</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium text-gray-500">วันที่เอกสาร</Label>
+                <Label className="text-sm font-medium text-muted-foreground">วันที่เอกสาร</Label>
                 <p>{new Date(workflow.document_date).toLocaleDateString('th-TH')}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-500">วันที่สร้าง</Label>
+                <Label className="text-sm font-medium text-muted-foreground">วันที่สร้าง</Label>
                 <p>{new Date(workflow.created_at).toLocaleDateString('th-TH')}</p>
               </div>
             </div>
 
             <div>
-              <Label className="text-sm font-medium text-gray-500">เนื้อหา</Label>
+              <Label className="text-sm font-medium text-muted-foreground">เนื้อหา</Label>
               <div className="bg-gray-50 p-4 rounded-lg mt-2">
                 {workflow.content && typeof workflow.content === 'object' ? (
                   <div dangerouslySetInnerHTML={{ __html: workflow.content.html || 'ไม่มีเนื้อหา' }} />
@@ -294,7 +294,7 @@ const MemoApprovalPage = () => {
                     ) : step.step_order === workflow.current_step ? (
                       <Clock className="h-6 w-6 text-yellow-600 animate-pulse" />
                     ) : (
-                      <Clock className="h-6 w-6 text-gray-400" />
+                      <Clock className="h-6 w-6 text-muted-foreground" />
                     )}
                   </div>
                   
@@ -302,13 +302,13 @@ const MemoApprovalPage = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">{step.approver_name}</h4>
-                        <p className="text-sm text-gray-500">{step.approver_position}</p>
+                        <p className="text-sm text-muted-foreground">{step.approver_position}</p>
                       </div>
                       {getStatusBadge(step.status)}
                     </div>
                     
                     {step.approved_at && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         <Calendar className="h-3 w-3 inline mr-1" />
                         {new Date(step.approved_at).toLocaleString('th-TH')}
                       </p>

@@ -602,7 +602,7 @@ const PDFSignaturePage = () => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
               </svg>
-              <p className="text-lg font-medium text-gray-600">กำลังโหลดข้อมูลเอกสาร...</p>
+              <p className="text-lg font-medium text-muted-foreground">กำลังโหลดข้อมูลเอกสาร...</p>
             </Card>
           ) : (
           <form onSubmit={handleSubmit}>
@@ -618,16 +618,16 @@ const PDFSignaturePage = () => {
               <CardContent className="p-8">
                 {/* PDF Upload Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     อัพโหลดไฟล์ PDF
                   </h3>
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="pdf_file" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="pdf_file" className="text-sm font-medium text-foreground">
                         เลือกไฟล์ PDF *
                       </Label>
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
-                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <Input
                           id="pdf_file"
                           type="file"
@@ -641,7 +641,7 @@ const PDFSignaturePage = () => {
                         >
                           เลือกไฟล์ PDF
                         </Label>
-                        <p className="text-sm text-gray-500 mt-2">
+                        <p className="text-sm text-muted-foreground mt-2">
                           รองรับไฟล์ PDF เท่านั้น (ขนาดไม่เกิน 10MB)
                         </p>
                       </div>
@@ -664,12 +664,12 @@ const PDFSignaturePage = () => {
 
                 {/* Document Information Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     ข้อมูลพื้นฐาน
                   </h3>
                   <div className="grid grid-cols-1 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="date" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="date" className="text-sm font-medium text-foreground">
                         วันที่ *
                       </Label>
                       <Input
@@ -682,7 +682,7 @@ const PDFSignaturePage = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="docNumber" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="docNumber" className="text-sm font-medium text-foreground">
                         เลขรับ *
                       </Label>
                       <div className="flex items-center gap-2">
@@ -709,7 +709,7 @@ const PDFSignaturePage = () => {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="subject" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="subject" className="text-sm font-medium text-foreground">
                         เรื่อง *
                       </Label>
                       <Input
@@ -726,30 +726,30 @@ const PDFSignaturePage = () => {
 
                 {/* Author Information Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     ข้อมูลผู้อัพโหลด
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="author_name" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="author_name" className="text-sm font-medium text-foreground">
                         ชื่อผู้อัพโหลด *
                       </Label>
                       <Input
                         id="author_name"
                         value={profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : ''}
                         disabled
-                        className="bg-gray-50 text-gray-600 cursor-not-allowed border-gray-200"
+                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="author_position" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="author_position" className="text-sm font-medium text-foreground">
                         ตำแหน่งผู้อัพโหลด *
                       </Label>
                       <Input
                         id="author_position"
                         value={profile?.current_position || profile?.job_position || profile?.position || ''}
                         disabled
-                        className="bg-gray-50 text-gray-600 cursor-not-allowed border-gray-200"
+                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
                       />
                     </div>
                   </div>
@@ -786,7 +786,7 @@ const PDFSignaturePage = () => {
                     type="button"
                     variant="outline"
                     onClick={() => navigate('/documents')}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-2 rounded-lg transition-all duration-200"
+                    className="border-border text-foreground hover:bg-muted font-semibold px-8 py-2 rounded-lg transition-all duration-200"
                     disabled={loading}
                   >
                     ยกเลิก

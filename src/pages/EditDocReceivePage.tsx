@@ -220,12 +220,12 @@ const EditDocReceivePage = () => {
               <CardContent className="p-8">
                 {/* Document Information Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     ข้อมูลพื้นฐาน
                   </h3>
                   <div className="grid grid-cols-1 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="date" className="text-sm font-medium text-gray-500">
+                      <Label htmlFor="date" className="text-sm font-medium text-muted-foreground">
                         วันที่ (ไม่สามารถแก้ไขได้)
                       </Label>
                       <Input
@@ -233,28 +233,28 @@ const EditDocReceivePage = () => {
                         type="date"
                         value={formData.date}
                         disabled
-                        className="bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed"
+                        className="bg-muted text-muted-foreground border-border cursor-not-allowed"
                       />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         ℹ️ วันที่ถูกบันทึกบนตราประทับ PDF แล้ว ไม่สามารถแก้ไขได้
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="docNumber" className="text-sm font-medium text-gray-500">
+                      <Label htmlFor="docNumber" className="text-sm font-medium text-muted-foreground">
                         เลขรับ (ไม่สามารถแก้ไขได้)
                       </Label>
                       <Input
                         id="docNumber"
                         value={formData.docNumber}
                         disabled
-                        className="bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed"
+                        className="bg-muted text-muted-foreground border-border cursor-not-allowed"
                       />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         ℹ️ เลขรับถูกบันทึกบนตราประทับ PDF แล้ว ไม่สามารถแก้ไขได้
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="subject" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="subject" className="text-sm font-medium text-foreground">
                         เรื่อง *
                       </Label>
                       <Input
@@ -286,7 +286,7 @@ const EditDocReceivePage = () => {
                     type="button"
                     variant="outline"
                     onClick={() => navigate('/documents')}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-8 py-2 rounded-lg transition-all duration-200"
+                    className="border-border text-foreground hover:bg-muted font-semibold px-8 py-2 rounded-lg transition-all duration-200"
                     disabled={loading}
                   >
                     ยกเลิก

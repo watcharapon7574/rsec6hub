@@ -84,7 +84,7 @@ const AssignedTasksList = () => {
       },
       cancelled: {
         label: 'ยกเลิก',
-        color: 'bg-gray-100 text-gray-700 border-gray-200',
+        color: 'bg-gray-100 text-foreground border-gray-200',
         icon: XCircle,
       },
     };
@@ -284,7 +284,7 @@ const AssignedTasksList = () => {
           <div className="flex gap-2 items-center">
             {/* ช่องค้นหา */}
             <div className="relative flex-1">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="ค้นหางาน..."
                 value={searchTerm}
@@ -364,7 +364,7 @@ const AssignedTasksList = () => {
 
           {/* แสดงจำนวนผลลัพธ์ */}
           {(searchTerm || statusFilter !== 'all') && (
-            <div className="text-xs text-gray-500 mt-2 text-center">
+            <div className="text-xs text-muted-foreground mt-2 text-center">
               แสดง {filteredAndSortedTasks.length} จาก {tasks.length} รายการ
             </div>
           )}
@@ -501,7 +501,7 @@ const AssignedTasksList = () => {
         <Card className="bg-card border border-border">
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedTasks.length)} จาก {filteredAndSortedTasks.length} รายการ
               </div>
               <div className="flex items-center gap-2">
@@ -514,7 +514,7 @@ const AssignedTasksList = () => {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-gray-600 px-2">
+                <span className="text-sm text-muted-foreground px-2">
                   {currentPage} / {totalPages}
                 </span>
                 <Button
@@ -596,12 +596,12 @@ const AssignedTasksList = () => {
                       htmlFor="report-file"
                       className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors"
                     >
-                      <Upload className="h-5 w-5 text-gray-400" />
-                      <span className="text-sm text-gray-600">
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
                         คลิกเพื่อเลือกไฟล์ (สูงสุด 10MB)
                       </span>
                     </label>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-muted-foreground mt-2">
                       รองรับ: PDF, Word, Excel, รูปภาพ
                     </p>
                   </div>

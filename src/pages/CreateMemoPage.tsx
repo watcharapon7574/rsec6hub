@@ -591,7 +591,7 @@ const CreateMemoPage = () => {
                 <Sparkles className="h-5 w-5 text-green-600" />
                 ตรวจสอบไวยากรณ์
               </DialogTitle>
-              <DialogDescription className="text-gray-600 mb-4">
+              <DialogDescription className="text-muted-foreground mb-4">
                 พบข้อเสนอแนะการแก้ไข {grammarSuggestions.length} รายการ (รายการที่ {currentSuggestionIndex + 1}/{grammarSuggestions.length})
               </DialogDescription>
               
@@ -616,7 +616,7 @@ const CreateMemoPage = () => {
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-gray-600 mb-3">
+                    <div className="text-sm text-muted-foreground mb-3">
                       บริบท: "{grammarSuggestions[currentSuggestionIndex].context}"
                     </div>
                   </div>
@@ -671,7 +671,7 @@ const CreateMemoPage = () => {
                     </Button>
                   </div>
                   
-                  <div className="text-center text-xs text-gray-500 mt-2">
+                  <div className="text-center text-xs text-muted-foreground mt-2">
                     กด "ใช้การแก้ไข" เพื่อแก้คำนี้ หรือ "ข้ามไป" เพื่อไม่แก้ไข • "ย้อน" เพื่อกลับไปรายการก่อนหน้า
                   </div>
                 </div>
@@ -744,12 +744,12 @@ const CreateMemoPage = () => {
               <CardContent className="p-8">
                 {/* Basic Information Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     ข้อมูลพื้นฐาน
                   </h3>
                   <div className="grid grid-cols-1 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="date" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="date" className="text-sm font-medium text-foreground">
                         วันที่ *
                       </Label>
                       <Input
@@ -766,7 +766,7 @@ const CreateMemoPage = () => {
 
                 {/* Subject Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     เรื่อง
                   </h3>
                   <div className="space-y-2">
@@ -784,13 +784,13 @@ const CreateMemoPage = () => {
 
                 {/* Additional Information Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     ข้อมูลเพิ่มเติม
                   </h3>
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="attachment_title" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="attachment_title" className="text-sm font-medium text-foreground">
                           สิ่งที่ส่งมาด้วย
                         </Label>
                         <Input
@@ -803,7 +803,7 @@ const CreateMemoPage = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="attached_files" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="attached_files" className="text-sm font-medium text-foreground">
                           อัปโหลดไฟล์แนบ
                         </Label>
                         <Input
@@ -822,7 +822,7 @@ const CreateMemoPage = () => {
                           }}
                           className="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           รองรับไฟล์: PDF, Word, รูปภาพ (JPG, PNG) ขนาดไม่เกิน 10MB ต่อไฟล์
                         </p>
                       </div>
@@ -830,9 +830,9 @@ const CreateMemoPage = () => {
 
                     {formData.attached_files && formData.attached_files.length > 0 && (
                       <div className="mt-2 space-y-1">
-                        <p className="text-sm font-medium text-gray-700">ไฟล์ที่เลือก:</p>
+                        <p className="text-sm font-medium text-foreground">ไฟล์ที่เลือก:</p>
                         {formData.attached_files.map((fileName, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-md">
+                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
                             <span className="flex-1">{fileName}</span>
                             <button
                               type="button"
@@ -854,7 +854,7 @@ const CreateMemoPage = () => {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="introduction" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="introduction" className="text-sm font-medium text-foreground">
                         ต้นเรื่อง
                       </Label>
                       <Textarea
@@ -871,30 +871,30 @@ const CreateMemoPage = () => {
 
                 {/* Author Information Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     ข้อมูลผู้เขียน
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="author_name" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="author_name" className="text-sm font-medium text-foreground">
                         ชื่อผู้เขียน *
                       </Label>
                       <Input
                         id="author_name"
                         value={formData.author_name}
                         disabled
-                        className="bg-gray-50 text-gray-600 cursor-not-allowed border-gray-200"
+                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="author_position" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="author_position" className="text-sm font-medium text-foreground">
                         ตำแหน่งผู้เขียน *
                       </Label>
                       <Input
                         id="author_position"
                         value={formData.author_position}
                         disabled
-                        className="bg-gray-50 text-gray-600 cursor-not-allowed border-gray-200"
+                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
                       />
                     </div>
                   </div>
@@ -902,12 +902,12 @@ const CreateMemoPage = () => {
 
                 {/* Content Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
                     เนื้อหา
                   </h3>
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="fact" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="fact" className="text-sm font-medium text-foreground">
                         ข้อเท็จจริง
                       </Label>
                       <Textarea
@@ -921,7 +921,7 @@ const CreateMemoPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="proposal" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="proposal" className="text-sm font-medium text-foreground">
                         ข้อเสนอและพิจารณา
                       </Label>
                       <Textarea

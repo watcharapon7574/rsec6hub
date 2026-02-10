@@ -49,7 +49,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
               </SelectTrigger>
               <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
                 <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
-                  <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
+                  <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                 </SelectItem>
                 {assistantDirectors.map((profile) => (
                   <SelectItem
@@ -62,7 +62,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <span className="font-semibold">
                         {profile.prefix || ''}{profile.first_name} {profile.last_name}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {profile.org_structure_role || ''}
                       </span>
                     </div>
@@ -80,7 +80,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
               </SelectTrigger>
               <SelectContent className="bg-card border border-blue-200 z-50 shadow-lg">
                 <SelectItem value="skip" className="hover:bg-gray-50 focus:bg-gray-50 cursor-pointer">
-                  <span className="font-medium text-gray-600">ไม่ระบุ (ข้าม)</span>
+                  <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                 </SelectItem>
                 {deputyDirectors.map((profile) => (
                   <SelectItem
@@ -93,7 +93,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <span className="font-semibold">
                         {profile.prefix || ''}{profile.first_name} {profile.last_name}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {profile.org_structure_role || ''}
                       </span>
                     </div>
@@ -105,7 +105,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
         </div>
 
         {/* คำอธิบายการข้าม */}
-        <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+        <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded-lg border border-yellow-200">
           <p className="font-medium mb-1">หมายเหตุ:</p>
           <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามหัวหน้าฝ่ายหรือรองผู้อำนวยการได้</p>
           <p>• หมายเลขลำดับจะปรับให้ต่อเนื่องตามคนที่เลือกจริง</p>
@@ -122,7 +122,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                 <div className="flex-1">
                   <p className="font-semibold">{signer.name}</p>
                   {/* บรรทัดที่ 1 - job_position (เล็กสุด) */}
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                     {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                     {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
@@ -130,7 +130,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                   </p>
                   {/* บรรทัดที่ 2 - org_structure_role (เด่นรอง) */}
                   {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {signer.org_structure_role}
                     </p>
                   )}

@@ -348,7 +348,7 @@ const RailwayManagementPage = () => {
         <TabsContent value="control" className="space-y-6">
           {/* Project Selector */}
           <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
               <CardTitle className="flex items-center text-xl gap-2">
                 <Train className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 เลือก Railway Project

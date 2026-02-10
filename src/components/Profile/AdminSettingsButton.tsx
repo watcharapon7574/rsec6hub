@@ -113,7 +113,7 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
         align="end"
         className="w-80 bg-card shadow-lg border border-border"
       >
-        <DropdownMenuLabel className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-border py-3">
+        <DropdownMenuLabel className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-b border-border py-3">
           <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <span className="font-semibold text-foreground">เมนูตั้งค่าแอดมิน</span>
         </DropdownMenuLabel>

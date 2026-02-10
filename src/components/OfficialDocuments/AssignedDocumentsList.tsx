@@ -687,7 +687,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {/* รายละเอียดงาน (task_description) - แสดง 40 ตัวอักษร */}
                   {task.task_description && (
-                    <div className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 dark:border-purple-800 rounded-md px-2.5 py-1">
+                    <div className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950 border border-purple-200 dark:border-purple-800 rounded-md px-2.5 py-1">
                       <ClipboardList className="h-3 w-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
                       <span className="text-xs text-purple-700 dark:text-purple-300 truncate max-w-[150px] font-medium">
                         {truncateText(task.task_description, 40)}
@@ -697,7 +697,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {/* รายงานผล (completion_note) */}
                   {task.completion_note && (
-                    <div className="hidden lg:flex items-center gap-1.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 dark:border-green-700 rounded-md px-2.5 py-1">
+                    <div className="hidden lg:flex items-center gap-1.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border border-green-300 dark:border-green-700 rounded-md px-2.5 py-1">
                       <span className="text-[10px] font-medium text-foreground">✓</span>
                       <span className="text-xs text-green-800 dark:text-green-200 truncate max-w-[100px] font-medium">
                         {truncateText(task.completion_note, 25)}

@@ -259,7 +259,7 @@ const AssignedTasksList = () => {
     <div className="space-y-4">
       {/* Summary */}
       {pendingCount > 0 && (
-        <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200 dark:border-orange-800">
+        <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950 dark:to-yellow-950 border-orange-200 dark:border-orange-800">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">

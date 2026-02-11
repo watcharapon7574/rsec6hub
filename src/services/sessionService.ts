@@ -32,13 +32,16 @@ export const createSession = async (userId: string): Promise<{ sessionToken: str
   try {
     const sessionToken = generateSessionToken();
     const deviceFingerprint = generateDeviceFingerprint();
-    
-    // First, invalidate all other sessions for this user
+
+    // Invalidate old sessions
+    // For admin: only invalidate sessions from the SAME device (allow multi-device)
+    // For non-admin: invalidate ALL other sessions
     const { error: invalidateError } = await supabase.rpc('invalidate_old_sessions', {
       _user_id: userId,
-      _current_session_token: sessionToken
+      _current_session_token: sessionToken,
+      _device_fingerprint: deviceFingerprint
     });
-    
+
     if (invalidateError) {
       console.error('Error invalidating old sessions:', invalidateError);
     }

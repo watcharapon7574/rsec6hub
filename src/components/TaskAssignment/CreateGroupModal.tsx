@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Save, User, Briefcase, Crown } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Users, Save, User, Briefcase, Crown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +34,8 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<Profile[]>([]);
   const [leaderUserId, setLeaderUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [leaderPage, setLeaderPage] = useState(0);
+  const MEMBERS_PER_PAGE = 5;
 
   // Auto-select leader when only one member
   useEffect(() => {
@@ -47,6 +49,22 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       setLeaderUserId(selectedMembers.length > 0 ? selectedMembers[0].user_id : null);
     }
   }, [selectedMembers, groupType, leaderUserId]);
+
+  // Reset leader page when members change
+  useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(selectedMembers.length / MEMBERS_PER_PAGE) - 1);
+    if (leaderPage > maxPage) {
+      setLeaderPage(maxPage);
+    }
+  }, [selectedMembers.length, leaderPage]);
+
+  // Paginated members for leader selection
+  const paginatedMembers = useMemo(() => {
+    const start = leaderPage * MEMBERS_PER_PAGE;
+    return selectedMembers.slice(start, start + MEMBERS_PER_PAGE);
+  }, [selectedMembers, leaderPage]);
+
+  const totalLeaderPages = Math.ceil(selectedMembers.length / MEMBERS_PER_PAGE);
 
   // Validation based on type
   const isValidMemberCount = groupType === 'position'
@@ -75,6 +93,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       setGroupName('');
       setSelectedMembers([]);
       setLeaderUserId(null);
+      setLeaderPage(0);
       onClose();
     } finally {
       setSaving(false);
@@ -86,6 +105,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     setGroupName('');
     setSelectedMembers([]);
     setLeaderUserId(null);
+    setLeaderPage(0);
     onClose();
   };
 
@@ -201,12 +221,41 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           {/* Leader Selection - Only for groups with members */}
           {groupType === 'group' && selectedMembers.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <Crown className="h-4 w-4 text-yellow-500" />
-                หัวหน้ากลุ่ม <span className="text-muted-foreground">*</span>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Crown className="h-4 w-4 text-yellow-500" />
+                  หัวหน้ากลุ่ม <span className="text-muted-foreground">*</span>
+                </Label>
+                {totalLeaderPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setLeaderPage(p => Math.max(0, p - 1))}
+                      disabled={leaderPage === 0}
+                      className="h-6 w-6 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground min-w-[40px] text-center">
+                      {leaderPage + 1}/{totalLeaderPages}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setLeaderPage(p => Math.min(totalLeaderPages - 1, p + 1))}
+                      disabled={leaderPage >= totalLeaderPages - 1}
+                      className="h-6 w-6 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="border-2 border-purple-200 dark:border-purple-800 rounded-lg p-2 space-y-1 bg-purple-50/50 dark:bg-purple-950/50">
-                {selectedMembers.map((member) => (
+                {paginatedMembers.map((member) => (
                   <button
                     key={member.user_id}
                     type="button"

@@ -288,6 +288,20 @@ class TaskAssignmentService {
       } else if (isNameBased && assignedToUserIds.length > 1) {
         // For name-based only (no groups): first person added is the team leader
         teamLeaderUserId = assignedToUserIds[0];
+      } else if (!options?.selectionInfo?.source && assignedToUserIds.length > 1) {
+        // Source is null/undefined with multiple users: use RSEC seniority
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, employee_id')
+          .in('user_id', assignedToUserIds);
+
+        if (profiles && profiles.length > 0) {
+          const usersWithEmployeeId = profiles.map(p => ({
+            userId: p.user_id,
+            employeeId: p.employee_id
+          }));
+          teamLeaderUserId = this.getMostSeniorUser(usersWithEmployeeId);
+        }
       }
 
       // Final fallback: if no leader was determined, use first user

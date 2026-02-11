@@ -305,8 +305,8 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
           isNameOrGroupMode={isNameOrGroupMode}
         />
 
-        {/* Divider if there are saved groups */}
-        {savedGroups.length > 0 && (
+        {/* Divider if there are saved groups and NOT in position mode */}
+        {savedGroups.length > 0 && !isPositionMode && (
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border" />
@@ -317,41 +317,60 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
           </div>
         )}
 
-        {/* User Search with combined search */}
-        <UserSearchInput
-          selectedUsers={selectedUsers}
-          onUsersChange={(users) => {
-            // Reset selectionInfo when all users are removed (via X button)
-            if (onSelectionInfoChange && users.length === 0 && selectedUsers.length > 0) {
-              onSelectionInfoChange({ source: null });
-            }
-            // Track source as 'name' when adding via search (only if source is null/undefined)
-            else if (onSelectionInfoChange && users.length > selectedUsers.length) {
-              // Only set to 'name' if source wasn't already set by group/position selection
-              if (selectionInfo?.source === null || selectionInfo?.source === undefined) {
-                onSelectionInfoChange({ source: 'name' });
+        {/* User Search - hidden in position mode (can only view selected, not add more) */}
+        {!isPositionMode && (
+          <UserSearchInput
+            selectedUsers={selectedUsers}
+            onUsersChange={(users) => {
+              // Reset selectionInfo when all users are removed (via X button)
+              if (onSelectionInfoChange && users.length === 0 && selectedUsers.length > 0) {
+                onSelectionInfoChange({ source: null });
               }
-            }
-            onUsersChange(users);
-          }}
-          enableCombinedSearch={!isPositionMode}
-          onGroupSelect={isPositionMode ? undefined : handleSearchGroupSelect}
-          onPositionSelect={(isPositionMode || isNameOrGroupMode) ? undefined : handleSearchPositionSelect}
-          hidePositions={isNameOrGroupMode}
-          onClearAll={handleClear}
-          leaderUserIds={getDisplayLeaderIds()}
-        />
+              // Track source as 'name' when adding via search (only if source is null/undefined)
+              else if (onSelectionInfoChange && users.length > selectedUsers.length) {
+                // Only set to 'name' if source wasn't already set by group/position selection
+                if (selectionInfo?.source === null || selectionInfo?.source === undefined) {
+                  onSelectionInfoChange({ source: 'name' });
+                }
+              }
+              onUsersChange(users);
+            }}
+            enableCombinedSearch={true}
+            onGroupSelect={handleSearchGroupSelect}
+            onPositionSelect={isNameOrGroupMode ? undefined : handleSearchPositionSelect}
+            hidePositions={isNameOrGroupMode}
+            onClearAll={handleClear}
+            leaderUserIds={getDisplayLeaderIds()}
+          />
+        )}
 
-        {/* Position mode warning */}
+        {/* Position mode: show selected user with clear option */}
         {isPositionMode && (
-          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-3 text-sm text-orange-800 dark:text-orange-200">
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-orange-500" />
-              <span className="font-medium">โหมดหน้าที่:</span>
-              {selectionInfo?.positionName}
+          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-orange-500" />
+                <div>
+                  <span className="font-medium text-orange-800 dark:text-orange-200">
+                    {selectionInfo?.positionName}
+                  </span>
+                  <p className="text-sm text-orange-600 dark:text-orange-400">
+                    ผู้รับผิดชอบ: {selectedUsers[0]?.first_name} {selectedUsers[0]?.last_name}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClear}
+                className="text-orange-600 hover:text-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                ล้าง
+              </Button>
             </div>
-            <p className="text-xs mt-1 text-orange-600 dark:text-orange-400">
-              เพิ่มสมาชิกทีมได้เฉพาะรายคน (ค้นหาชื่อ) • ไม่สามารถเพิ่มกลุ่มหรือหน้าที่อื่นได้
+            <p className="text-xs mt-2 text-orange-500 dark:text-orange-400">
+              ไม่สามารถเพิ่มคนอื่นได้ในโหมดหน้าที่ • กดล้างเพื่อเลือกใหม่
             </p>
           </div>
         )}

@@ -227,11 +227,12 @@ class TaskAssignmentService {
       let teamLeaderUserId: string | null = null;
 
       // ===== Team Leader Determination Rules =====
-      // Case 1: Position (ส้ม) - ผู้รับผิดชอบตำแหน่งเป็นหัวหน้าเสมอ (เพิ่มคนอื่นได้แต่หัวไม่เปลี่ยน)
+      // Case 1: Position (ส้ม) - ผู้รับผิดชอบตำแหน่งเป็นหัวหน้า (เพิ่มคนอื่นไม่ได้)
       // Case 2: Group 1 กลุ่ม (ม่วง) - ใช้ leader_user_id ที่บันทึกตอนสร้างกลุ่ม
       // Case 3: Name only (น้ำเงิน) - คนแรกที่เพิ่มเป็นหัวหน้า
       // Case 4: Group + เพิ่มรายคน - หัวหน้ากลุ่มเป็นหัวหน้าเสมอ
       // Case 5: หลายกลุ่ม - เปรียบเทียบ RSEC ของหัวหน้าทุกกลุ่ม (น้อยสุดเป็นหัว)
+      // Case 6: หลายกลุ่ม + รายคน - ใช้ logic เดียวกับ Case 5
 
       if (assignedToUserIds.length === 1) {
         // Single user: they are the team leader

@@ -77,13 +77,8 @@ export const validateSession = async (sessionToken: string): Promise<{ valid: bo
   try {
     const deviceFingerprint = generateDeviceFingerprint();
     const storedFingerprint = localStorage.getItem('device_fingerprint');
-    
-    // Check if device fingerprint matches
-    if (storedFingerprint && storedFingerprint !== deviceFingerprint) {
-      console.warn('Device fingerprint mismatch');
-      return { valid: false };
-    }
-    
+
+    // First, check if session exists and is active
     const { data, error } = await supabase
       .from('user_sessions')
       .select('user_id, expires_at, is_active, device_fingerprint')
@@ -91,17 +86,38 @@ export const validateSession = async (sessionToken: string): Promise<{ valid: bo
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
       .single();
-    
+
     if (error || !data) {
       return { valid: false };
     }
-    
-    // Check device fingerprint from database
-    if (data.device_fingerprint && data.device_fingerprint !== deviceFingerprint) {
-      console.warn('Device fingerprint mismatch from database');
+
+    // Check if user is admin (admins can use multiple devices)
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('user_id', data.user_id)
+      .single();
+
+    const isAdmin = profileData?.is_admin === true;
+
+    // For admins: skip fingerprint validation (allow multi-device)
+    if (isAdmin) {
+      return { valid: true, userId: data.user_id };
+    }
+
+    // For non-admins: validate device fingerprint
+    // Check local stored fingerprint vs generated fingerprint
+    if (storedFingerprint && storedFingerprint !== deviceFingerprint) {
+      console.warn('Device fingerprint mismatch (local)');
       return { valid: false };
     }
-    
+
+    // Check database fingerprint vs generated fingerprint
+    if (data.device_fingerprint && data.device_fingerprint !== deviceFingerprint) {
+      console.warn('Device fingerprint mismatch (database)');
+      return { valid: false };
+    }
+
     return { valid: true, userId: data.user_id };
   } catch (error) {
     console.error('Error validating session:', error);

@@ -122,6 +122,14 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
   };
 
   const handleSelectGroup = async (group: UserGroup) => {
+    console.log('🔍 handleSelectGroup called:', {
+      groupId: group.id,
+      groupName: group.name,
+      groupType: group.group_type,
+      leaderUserId: group.leader_user_id,
+      members: group.members.map(m => ({ userId: m.user_id, name: `${m.first_name} ${m.last_name}` }))
+    });
+
     const isPosition = group.group_type === 'position';
     const typeLabel = isPosition ? 'หน้าที่' : 'กลุ่ม';
 
@@ -178,15 +186,19 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
 
     // Update selection info
     if (onSelectionInfoChange) {
+      console.log('📋 Updating selectionInfo - current:', selectionInfo);
+
       if (isPosition) {
         // For positions, the single member is the "leader" (responsible person)
         const positionMemberId = group.members[0]?.user_id;
-        onSelectionInfoChange({
-          source: 'position',
+        const newInfo = {
+          source: 'position' as const,
           positionId: group.id,
           positionName: group.name,
           groupLeaderIds: positionMemberId ? [positionMemberId] : []
-        });
+        };
+        console.log('📋 Setting position selectionInfo:', newInfo);
+        onSelectionInfoChange(newInfo);
       } else {
         // Track group selection and leader info
         const existingLeaderIds = selectionInfo?.groupLeaderIds || [];
@@ -194,31 +206,46 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
           ? [...existingLeaderIds, group.leader_user_id]
           : existingLeaderIds;
 
+        console.log('📋 Group leader calculation:', {
+          groupLeaderUserId: group.leader_user_id,
+          existingLeaderIds,
+          newLeaderIds,
+          currentSource: selectionInfo?.source
+        });
+
         if (!selectionInfo?.source) {
           // First group selection
-          onSelectionInfoChange({
-            source: 'group',
+          const newInfo = {
+            source: 'group' as const,
             groupId: group.id,
             groupName: group.name,
             groupLeaderIds: newLeaderIds
-          });
+          };
+          console.log('📋 Setting FIRST group selectionInfo:', newInfo);
+          onSelectionInfoChange(newInfo);
         } else if (selectionInfo.source === 'group') {
           // Additional group selection
-          onSelectionInfoChange({
+          const newInfo = {
             ...selectionInfo,
             groupLeaderIds: newLeaderIds
-          });
+          };
+          console.log('📋 Setting ADDITIONAL group selectionInfo:', newInfo);
+          onSelectionInfoChange(newInfo);
         }
         // If source is 'name', don't change source but add leader
         else if (selectionInfo.source === 'name' && group.leader_user_id) {
-          onSelectionInfoChange({
-            source: 'group', // Switch to group mode since we now have a group
+          const newInfo = {
+            source: 'group' as const, // Switch to group mode since we now have a group
             groupId: group.id,
             groupName: group.name,
             groupLeaderIds: newLeaderIds
-          });
+          };
+          console.log('📋 Switching from name to group selectionInfo:', newInfo);
+          onSelectionInfoChange(newInfo);
         }
       }
+    } else {
+      console.warn('⚠️ onSelectionInfoChange is not defined!');
     }
 
     onUsersChange([...selectedUsers, ...newMembers]);

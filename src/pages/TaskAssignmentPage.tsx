@@ -177,6 +177,16 @@ const TaskAssignmentPage = () => {
         return;
       }
 
+      console.log('🚀 Calling createMultipleTaskAssignments with selectionInfo:', {
+        source: selectionInfo.source,
+        groupId: selectionInfo.groupId,
+        groupName: selectionInfo.groupName,
+        positionId: selectionInfo.positionId,
+        positionName: selectionInfo.positionName,
+        groupLeaderIds: selectionInfo.groupLeaderIds,
+        userIds
+      });
+
       await taskAssignmentService.createMultipleTaskAssignments(
         documentId,
         documentType,

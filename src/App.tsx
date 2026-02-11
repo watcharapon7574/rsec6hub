@@ -4,7 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Particles } from "@/components/ui/particles";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useLayoutEffect } from "react";
 import { useEmployeeAuth } from "@/hooks/useEmployeeAuth";
 import TopBar from "@/components/Layout/TopBar";
 import FloatingNavbar from "@/components/Layout/FloatingNavbar";
@@ -17,6 +18,8 @@ import DailyReportsPage from "@/pages/DailyReportsPage";
 import OfficialDocumentsPage from "@/pages/OfficialDocumentsPage";
 import CreateDocumentPage from "@/pages/CreateDocumentPage";
 import CreateMemoPage from "@/pages/CreateMemoPage";
+import CreateReportMemoPage from "@/pages/CreateReportMemoPage";
+import ManageReportMemoPage from "@/pages/ManageReportMemoPage";
 import PDFSignaturePage from "@/pages/PDFSignaturePage";
 import DocumentManagePage from "@/pages/DocumentManagePage";
 import PDFDocumentManagePage from "@/pages/PDFDocumentManagePage";
@@ -38,6 +41,20 @@ import DarkModeToggle from "@/components/Layout/DarkModeToggle";
 
 
 const queryClient = new QueryClient();
+
+// ScrollToTop - scroll to top เมื่อเปลี่ยน route
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useLayoutEffect(() => {
+    // ใช้ทั้ง scrollTo และ documentElement.scrollTop เพื่อให้แน่ใจว่าทำงาน
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname]);
+
+  return null;
+};
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useEmployeeAuth();
@@ -84,11 +101,13 @@ const AppContent = () => {
   }
 
   return (
-    <Routes>
-      <Route 
-        path="/auth" 
-        element={<AuthPage />} 
-      />
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route
+          path="/auth"
+          element={<AuthPage />}
+        />
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />
@@ -122,6 +141,16 @@ const AppContent = () => {
       <Route path="/create-memo" element={
         <ProtectedRoute>
           <CreateMemoPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/report-memo/:taskId" element={
+        <ProtectedRoute>
+          <CreateReportMemoPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/manage-report-memo/:memoId" element={
+        <ProtectedRoute>
+          <ManageReportMemoPage />
         </ProtectedRoute>
       } />
       <Route path="/pdf-signature" element={
@@ -207,7 +236,8 @@ const AppContent = () => {
       <Route path="/" element={
         isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth" replace />
       } />
-    </Routes>
+      </Routes>
+    </>
   );
 };
 

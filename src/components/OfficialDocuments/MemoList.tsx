@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp } from 'lucide-react';
+import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp, ClipboardCheck } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useSmartRealtime } from '@/hooks/useSmartRealtime';
@@ -60,10 +60,63 @@ const MemoList: React.FC<MemoListProps> = ({
   // State สำหรับ realtime updates
   const [localMemos, setLocalMemos] = useState(memoList);
 
+  // State สำหรับติดตาม memo ที่มี draft report memo
+  const [draftReportMemos, setDraftReportMemos] = useState<Record<string, string>>({});
+
   // อัพเดท localMemos เมื่อ memoList เปลี่ยน
   useEffect(() => {
     setLocalMemos(memoList);
   }, [memoList]);
+
+  // Fetch draft report memos for the current memo list
+  useEffect(() => {
+    const fetchDraftReportMemos = async () => {
+      if (!localMemos.length || (!permissions.isAdmin && !permissions.isClerk)) return;
+
+      try {
+        const memoIds = localMemos.map(m => m.id);
+
+        // Find task_assignments with report_memo_id for these memos
+        const { data: assignments, error: assignmentsError } = await supabase
+          .from('task_assignments')
+          .select('memo_id, report_memo_id')
+          .in('memo_id', memoIds)
+          .not('report_memo_id', 'is', null);
+
+        if (assignmentsError || !assignments?.length) return;
+
+        // Get report memo IDs
+        const reportMemoIds = assignments.map(a => a.report_memo_id).filter(Boolean);
+
+        // Check which report memos are in draft status
+        const { data: reportMemos, error: reportMemosError } = await supabase
+          .from('memos')
+          .select('id, status')
+          .in('id', reportMemoIds)
+          .eq('status', 'draft');
+
+        if (reportMemosError || !reportMemos?.length) {
+          setDraftReportMemos({});
+          return;
+        }
+
+        // Build mapping: original memo_id -> draft report_memo_id
+        const draftReportMap: Record<string, string> = {};
+        for (const assignment of assignments) {
+          const reportMemo = reportMemos.find(rm => rm.id === assignment.report_memo_id);
+          if (reportMemo && assignment.memo_id) {
+            draftReportMap[assignment.memo_id] = assignment.report_memo_id;
+          }
+        }
+
+        setDraftReportMemos(draftReportMap);
+      } catch (error) {
+        console.error('Error fetching draft report memos:', error);
+      }
+    };
+
+    fetchDraftReportMemos();
+  }, [localMemos, permissions.isAdmin, permissions.isClerk]);
 
   // Setup realtime listeners
   useEffect(() => {
@@ -282,7 +335,7 @@ const MemoList: React.FC<MemoListProps> = ({
               placeholder="ค้นหาเอกสาร..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 pr-3 py-1 text-xs h-8 border-border focus:border-amber-400 focus:ring-amber-400 focus:ring-1"
+              className="pl-7 pr-3 py-1 text-xs h-8 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-amber-400 focus:ring-amber-400 focus:ring-1"
             />
           </div>
 
@@ -634,6 +687,23 @@ const MemoList: React.FC<MemoListProps> = ({
                           {memo.current_signer_order > 1 && memo.current_signer_order < 5 && (
                             <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">เสนอแล้ว</span>
                           )}
+                        </div>
+                      )}
+
+                      {/* จัดการรายงาน button - แสดงเมื่อมี report memo ที่ status = draft */}
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && draftReportMemos[memo.id] && (
+                        <div className="relative">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 flex items-center gap-1 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400"
+                            onClick={() => navigate(`/manage-report-memo/${draftReportMemos[memo.id]}`)}
+                            title="จัดการรายงานที่ส่งมา"
+                          >
+                            <ClipboardCheck className="h-4 w-4" />
+                            <span className="text-xs font-medium">จัดการรายงาน</span>
+                          </Button>
+                          <span className="absolute -top-2 -right-2 bg-teal-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
                         </div>
                       )}
                     </>

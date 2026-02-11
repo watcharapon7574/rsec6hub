@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, FileInput, ClipboardList, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, FileInput, ClipboardList, ClipboardCheck, User, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import ClerkDocumentActions from './ClerkDocumentActions';
@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDocumentManageRoute, isPDFUploadMemo } from '@/utils/memoUtils';
 import Accordion from './Accordion';
+import TeamMemberIcon from '@/components/TaskAssignment/TeamMemberIcon';
 
 // ประเภทเอกสารหนังสือรับ (PDF อัปโหลด)
 interface DocReceiveDocument {
@@ -87,6 +88,59 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   useEffect(() => {
     setLocalDocReceive(docReceiveList);
   }, [docReceiveList]);
+
+  // State สำหรับติดตาม doc_receive ที่มี draft report memo
+  const [draftReportMemos, setDraftReportMemos] = useState<Record<string, string>>({});
+
+  // Fetch draft report memos for the current doc_receive list
+  useEffect(() => {
+    const fetchDraftReportMemos = async () => {
+      if (!localDocReceive.length || (!permissions.isAdmin && !permissions.isClerk)) return;
+
+      try {
+        const docReceiveIds = localDocReceive.map(d => d.id);
+
+        // Find task_assignments with report_memo_id for these doc_receives
+        const { data: assignments, error: assignmentsError } = await supabase
+          .from('task_assignments')
+          .select('doc_receive_id, report_memo_id')
+          .in('doc_receive_id', docReceiveIds)
+          .not('report_memo_id', 'is', null);
+
+        if (assignmentsError || !assignments?.length) return;
+
+        // Get report memo IDs
+        const reportMemoIds = assignments.map(a => a.report_memo_id).filter(Boolean);
+
+        // Check which report memos are in draft status
+        const { data: reportMemos, error: reportMemosError } = await supabase
+          .from('memos')
+          .select('id, status')
+          .in('id', reportMemoIds)
+          .eq('status', 'draft');
+
+        if (reportMemosError || !reportMemos?.length) {
+          setDraftReportMemos({});
+          return;
+        }
+
+        // Build mapping: original doc_receive_id -> draft report_memo_id
+        const draftReportMap: Record<string, string> = {};
+        for (const assignment of assignments) {
+          const reportMemo = reportMemos.find(rm => rm.id === assignment.report_memo_id);
+          if (reportMemo && assignment.doc_receive_id) {
+            draftReportMap[assignment.doc_receive_id] = assignment.report_memo_id;
+          }
+        }
+
+        setDraftReportMemos(draftReportMap);
+      } catch (error) {
+        console.error('Error fetching draft report memos:', error);
+      }
+    };
+
+    fetchDraftReportMemos();
+  }, [localDocReceive, permissions.isAdmin, permissions.isClerk]);
 
   // Setup realtime listeners สำหรับผู้ช่วยผอและรองผอ
   useEffect(() => {
@@ -199,12 +253,16 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           status,
           completion_note,
           assigned_at,
-          completed_at
+          completed_at,
+          is_team_leader,
+          is_reporter
         `)
         .eq('doc_receive_id', doc.id)
         .eq('document_type', 'doc_receive')
         .is('deleted_at', null)
-        .order('assigned_at', { ascending: false });
+        .order('is_team_leader', { ascending: false })
+        .order('is_reporter', { ascending: false })
+        .order('assigned_at', { ascending: true });
 
       if (assignmentError) {
         console.error('Error fetching assignees:', assignmentError);
@@ -559,7 +617,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               placeholder="ค้นหาเอกสาร..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 pr-3 py-1 text-xs h-8 border-border focus:border-green-400 focus:ring-green-400 focus:ring-1"
+              className="pl-7 pr-3 py-1 text-xs h-8 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-green-400 focus:ring-green-400 focus:ring-1"
             />
           </div>
 
@@ -1066,6 +1124,23 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                           )}
                         </div>
                       )}
+
+                      {/* จัดการรายงาน button - แสดงเมื่อมี report memo ที่ status = draft */}
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && draftReportMemos[memo.id] && (
+                        <div className="relative">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 flex items-center gap-1 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400"
+                            onClick={() => navigate(`/manage-report-memo/${draftReportMemos[memo.id]}`)}
+                            title="จัดการรายงานที่ส่งมา"
+                          >
+                            <ClipboardCheck className="h-4 w-4" />
+                            <span className="text-xs font-medium">จัดการรายงาน</span>
+                          </Button>
+                          <span className="absolute -top-2 -right-2 bg-teal-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -1147,64 +1222,69 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
 
       {/* Modal ดูรายชื่อผู้รับมอบหมาย */}
       <Dialog open={showAssigneesModal} onOpenChange={setShowAssigneesModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
-              รายชื่อผู้ได้รับมอบหมาย
+              <Users className="h-5 w-5 text-teal-600" />
+              รายชื่อผู้รับมอบหมาย
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-2">
+          <div className="py-4 flex-1 overflow-y-auto min-h-0">
             {isLoadingAssignees ? (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+              <div className="flex items-center justify-center py-8">
+                <svg className="animate-spin h-8 w-8 text-teal-500" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
               </div>
             ) : assigneesList.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground text-sm">
-                ไม่พบรายชื่อผู้รับมอบหมาย
-              </div>
+              <p className="text-center text-muted-foreground py-4">ไม่พบข้อมูลผู้รับมอบหมาย</p>
             ) : (
-              <div>
-                {/* Table */}
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted">
-                      <th className="py-2 px-2 text-left font-medium text-muted-foreground w-12">#</th>
-                      <th className="py-2 px-2 text-left font-medium text-muted-foreground">ชื่อ</th>
-                      <th className="py-2 px-2 text-center font-medium text-muted-foreground w-24">สถานะ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {assigneesList
-                      .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
-                      .map((assignee, index) => (
-                        <tr key={assignee.id} className="border-b hover:bg-muted">
-                          <td className="py-2 px-2 text-muted-foreground">
-                            {(assigneesPage - 1) * assigneesPerPage + index + 1}
-                          </td>
-                          <td className="py-2 px-2 text-foreground">{assignee.assignee_name}</td>
-                          <td className="py-2 px-2 text-center">
-                            <Badge
-                              className={`text-[10px] px-1.5 py-0.5 ${
-                                assignee.status === 'completed'
-                                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700'
-                                  : assignee.status === 'in_progress'
-                                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
-                                  : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
-                              }`}
-                            >
-                              {assignee.status === 'completed'
-                                ? 'เสร็จสิ้น'
-                                : assignee.status === 'in_progress'
-                                ? 'ทราบแล้ว'
-                                : 'รอดำเนินการ'}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2">
+                {assigneesList
+                  .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
+                  .map((assignee) => (
+                    <div
+                      key={assignee.id}
+                      className="flex items-center justify-between p-3 bg-muted dark:bg-card/60 rounded-lg border gap-2"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {/* Role Icon */}
+                        <TeamMemberIcon
+                          isLeader={assignee.is_team_leader}
+                          isReporter={assignee.is_reporter}
+                          size="sm"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-foreground text-sm truncate">{assignee.assignee_name}</span>
+                          {/* Role badges */}
+                          <div className="flex gap-1">
+                            {assignee.is_team_leader && (
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">หัวหน้า</span>
+                            )}
+                            {assignee.is_reporter && (
+                              <span className="text-[10px] text-pink-600 dark:text-pink-400 font-medium">
+                                {assignee.is_team_leader && '• '}ผู้รายงาน
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={`flex-shrink-0 text-xs ${
+                          assignee.status === 'completed'
+                            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                            : assignee.status === 'in_progress'
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                            : 'bg-muted text-foreground'
+                        }`}
+                      >
+                        {assignee.status === 'completed' ? 'เสร็จ' : assignee.status === 'in_progress' ? 'กำลังทำ' : 'รอ'}
+                      </Badge>
+                    </div>
+                  ))}
 
                 {/* Pagination */}
                 {assigneesList.length > assigneesPerPage && (
@@ -1242,8 +1322,8 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowAssigneesModal(false)}>
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <Button variant="outline" onClick={() => setShowAssigneesModal(false)} className="w-full sm:w-auto">
               ปิด
             </Button>
           </DialogFooter>

@@ -1,23 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Users, Trash2, Plus, Briefcase, X } from 'lucide-react';
+import { Users, Trash2, Plus, Briefcase, X, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { GroupType } from '@/services/userGroupService';
-
-interface Profile {
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  position: string;
-}
-
-interface UserGroup {
-  id: string;
-  name: string;
-  members: Profile[];
-  usage_count?: number;
-  group_type?: GroupType;
-}
+import { UserGroup } from '@/services/userGroupService';
 
 interface SavedGroupsListProps {
   groups: UserGroup[];
@@ -159,13 +144,18 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             : isPosition ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300' : 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300';
           const Icon = isPosition ? Briefcase : Users;
 
+          // Find leader name for groups
+          const leaderMember = !isPosition && group.leader_user_id
+            ? group.members.find(m => m.user_id === group.leader_user_id)
+            : null;
+
           return (
             <div
               key={group.id}
               className={`flex items-center gap-1 bg-card border ${borderColor} rounded-lg px-3 py-1.5 shadow-sm ${isDisabled ? 'opacity-50' : 'hover:shadow-md'} transition-shadow`}
               title={isPosition
                 ? `${group.name} • ผู้รับผิดชอบ: ${group.members[0]?.first_name || ''} ${group.members[0]?.last_name || ''}`
-                : `${group.name} (${group.members.length} คน)`}
+                : `${group.name} (${group.members.length} คน)${leaderMember ? ` • หัวหน้า: ${leaderMember.first_name}` : ''}`}
             >
               <Button
                 variant="ghost"
@@ -176,10 +166,12 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
               >
                 <Icon className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                 <span className="font-medium max-w-[120px] truncate">{group.name}</span>
-                <Badge variant="secondary" className={`ml-2 ${badgeBg} text-xs`}>
+                <Badge variant="secondary" className={`ml-2 ${badgeBg} text-xs flex items-center gap-0.5`}>
                   {isPosition
                     ? group.members[0]?.first_name || ''
-                    : `${group.members.length} คน`}
+                    : leaderMember
+                      ? (<><Crown className="h-3 w-3 text-amber-500" />{leaderMember.first_name}</>)
+                      : `${group.members.length} คน`}
                 </Badge>
               </Button>
               {isDeleteMode && (

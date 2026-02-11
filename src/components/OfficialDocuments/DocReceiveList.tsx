@@ -742,10 +742,11 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                   })()}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span
                     style={{
                       background: memo.current_signer_order === 1 ? '#2563eb' : // ฉบับร่าง - น้ำเงิน
-                                  memo.current_signer_order >= 2 && memo.current_signer_order <= 4 ? '#f59e42' : // รอลงนาม - ส้ม  
+                                  memo.current_signer_order >= 2 && memo.current_signer_order <= 4 ? '#f59e42' : // รอลงนาม - ส้ม
                                   memo.current_signer_order === 5 ? '#16a34a' : // เสร็จสิ้น - เขียว
                                   memo.current_signer_order === 0 ? '#ef4444' : '#6b7280', // ตีกลับ - แดง
                       color: '#fff',

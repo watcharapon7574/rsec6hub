@@ -271,8 +271,27 @@ class TaskAssignmentService {
             teamLeaderUserId = this.getMostSeniorUser(usersWithEmployeeId);
           }
         }
+      } else if (isGroupBased) {
+        // Group-based but no leaders defined: fallback to RSEC seniority
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, employee_id')
+          .in('user_id', assignedToUserIds);
+
+        if (profiles && profiles.length > 0) {
+          const usersWithEmployeeId = profiles.map(p => ({
+            userId: p.user_id,
+            employeeId: p.employee_id
+          }));
+          teamLeaderUserId = this.getMostSeniorUser(usersWithEmployeeId);
+        }
       } else if (isNameBased && assignedToUserIds.length > 1) {
         // For name-based only (no groups): first person added is the team leader
+        teamLeaderUserId = assignedToUserIds[0];
+      }
+
+      // Final fallback: if no leader was determined, use first user
+      if (!teamLeaderUserId && assignedToUserIds.length > 0) {
         teamLeaderUserId = assignedToUserIds[0];
       }
 

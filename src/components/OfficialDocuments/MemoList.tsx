@@ -434,6 +434,7 @@ const MemoList: React.FC<MemoListProps> = ({
                   <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'}`} title={memo.subject}>{memo.subject}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span
                     style={{
                       background: memo.current_signer_order === 1 ? '#2563eb' :

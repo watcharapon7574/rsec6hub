@@ -11,14 +11,12 @@ import {
   CheckCircle,
   AlertCircle,
   FileText,
-  MapPin,
   Eye,
   ClipboardCheck,
   XCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAllMemos } from '@/hooks/useAllMemos';
-import { submitPDFSignature } from '@/services/pdfSignatureService';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -27,6 +25,8 @@ import { extractPdfUrl } from '@/utils/fileUpload';
 import { railwayPDFQueue } from '@/utils/requestQueue';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import Accordion from '@/components/OfficialDocuments/Accordion';
+import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
+import Step4Review from '@/components/DocumentManage/Step4Review';
 
 interface SignerInfo {
   order: number;
@@ -864,211 +864,37 @@ const ManageReportMemoPage: React.FC = () => {
           </div>
         )}
 
-        {/* Step 2: กำหนดตำแหน่งลายเซ็น */}
+        {/* Step 2: กำหนดตำแหน่งลายเซ็น - ใช้ Step3SignaturePositions component */}
         {currentStep === 2 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                กำหนดตำแหน่งลายเซ็น
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Signers from original document */}
-              <div>
-                <Label className="text-base font-medium">
-                  ผู้ลงนาม (จากเอกสารต้นเรื่อง - {signers.length} คน)
-                </Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                  {signers.map((signer, index) => {
-                    const positionsCount = signaturePositions.filter(
-                      pos => pos.signer.order === signer.order
-                    ).length;
-                    const isSelected = selectedSignerIndex === index;
-
-                    return (
-                      <div
-                        key={signer.order}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 shadow-md'
-                            : positionsCount > 0
-                              ? 'border-green-500 bg-green-50 dark:bg-green-950'
-                              : 'border-border hover:border-border hover:bg-muted'
-                        }`}
-                        onClick={() => setSelectedSignerIndex(index)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <p className="font-semibold">{signer.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {signer.job_position || signer.position}
-                            </p>
-                            {signer.org_structure_role && (
-                              <p className="text-sm text-muted-foreground">
-                                {signer.org_structure_role}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            {positionsCount > 0 && (
-                              <Badge variant="default" className="bg-green-600 text-white">
-                                ✓ {positionsCount} ตำแหน่ง
-                              </Badge>
-                            )}
-                            {isSelected && (
-                              <Badge variant="outline" className="border-blue-500 text-blue-600">
-                                เลือกอยู่
-                              </Badge>
-                            )}
-                            <Badge variant="secondary" className="text-xs">
-                              ลำดับ {signer.order}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Document Summary */}
-              <div>
-                <Label className="text-base font-medium">ความหมายโดยสรุปของเอกสาร</Label>
-                <Textarea
-                  placeholder="อธิบายเนื้อหาเอกสารโดยสรุป..."
-                  value={documentSummary}
-                  onChange={(e) => setDocumentSummary(e.target.value)}
-                  rows={3}
-                  className="mt-2"
-                />
-              </div>
-
-              {/* Instructions */}
-              <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                <p className="font-medium mb-1">วิธีการใช้งาน:</p>
-                <p>1. เลือกผู้ลงนามจากรายการข้างต้น</p>
-                <p>2. คลิกบน PDF เพื่อวางตำแหน่งลายเซ็น</p>
-                <p>3. สามารถวางได้หลายตำแหน่งต่อคน</p>
-                <p>4. ผู้ลงนามที่เลือก: <strong>{signers[selectedSignerIndex]?.name || 'ไม่มี'}</strong></p>
-              </div>
-
-              {/* PDF Viewer */}
-              {reportMemo?.pdf_draft_path ? (
-                <PDFViewer
-                  fileUrl={extractPdfUrl(reportMemo.pdf_draft_path) || reportMemo.pdf_draft_path}
-                  fileName="เอกสารรายงาน"
-                  memo={reportMemo}
-                  onPositionClick={handlePositionClick}
-                  onPositionRemove={handlePositionRemove}
-                  signaturePositions={signaturePositions}
-                  signers={signers}
-                  showSignatureMode={true}
-                />
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  ไม่มีไฟล์ PDF
-                </div>
-              )}
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                  ก่อนหน้า
-                </Button>
-                <Button
-                  onClick={() => setCurrentStep(3)}
-                  disabled={!isStepComplete(2)}
-                >
-                  ตรวจสอบ
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <Step3SignaturePositions
+            signers={signers}
+            signaturePositions={signaturePositions}
+            comment={comment}
+            documentSummary={documentSummary}
+            selectedSignerIndex={selectedSignerIndex}
+            memo={reportMemo}
+            onCommentChange={setComment}
+            onDocumentSummaryChange={setDocumentSummary}
+            onSelectedSignerIndexChange={setSelectedSignerIndex}
+            onPositionClick={handlePositionClick}
+            onPositionRemove={handlePositionRemove}
+            onPrevious={() => setCurrentStep(1)}
+            onNext={() => setCurrentStep(3)}
+            isStepComplete={isStepComplete(2)}
+          />
         )}
 
-        {/* Step 3: ยืนยัน */}
+        {/* Step 3: ยืนยัน - ใช้ Step4Review component */}
         {currentStep === 3 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                ตรวจสอบและยืนยัน
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Summary */}
-              <div className="space-y-4">
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-3">สรุปข้อมูล</h3>
-                  <div className="grid gap-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">เลขหนังสือรายงาน:</span>
-                      <span className="font-medium">{reportMemo?.doc_number || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">จำนวนผู้ลงนาม:</span>
-                      <span className="font-medium">{signers.length} คน</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">จำนวนตำแหน่งลายเซ็น:</span>
-                      <span className="font-medium">{signaturePositions.length} ตำแหน่ง</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Signers List */}
-                <div>
-                  <h3 className="font-semibold mb-2">ผู้ลงนาม</h3>
-                  <div className="space-y-2">
-                    {signers.map((signer) => {
-                      const positions = signaturePositions.filter(
-                        pos => pos.signer.order === signer.order
-                      );
-                      return (
-                        <div key={signer.order} className="flex items-center justify-between p-2 border rounded">
-                          <div>
-                            <p className="font-medium">{signer.name}</p>
-                            <p className="text-sm text-muted-foreground">{signer.org_structure_role || signer.position}</p>
-                          </div>
-                          <Badge variant={positions.length > 0 ? 'default' : 'secondary'}>
-                            {positions.length > 0 ? `${positions.length} ตำแหน่ง` : 'ยังไม่มีตำแหน่ง'}
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Warning */}
-              <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">หมายเหตุ</p>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                      เมื่อกด "เสนอรายงาน" ระบบจะส่งเอกสารไปยังผู้ลงนามตามลำดับ
-                      และไม่สามารถแก้ไขได้จนกว่าจะมีการตีกลับ
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setCurrentStep(2)}>
-                  ก่อนหน้า
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  className="bg-teal-600 hover:bg-teal-700"
-                >
-                  เสนอรายงาน
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <Step4Review
+            memo={reportMemo}
+            documentNumber={reportMemo?.doc_number || '-'}
+            signers={signers}
+            signaturePositions={signaturePositions}
+            onPositionRemove={handlePositionRemove}
+            onPrevious={() => setCurrentStep(2)}
+            onSubmit={handleSubmit}
+          />
         )}
       </div>
     </div>

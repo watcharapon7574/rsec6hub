@@ -214,7 +214,7 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
       )}
 
       {/* Footer Spacer for FloatingNavbar */}
-      <div className="w-full h-16" />
+      <div className="w-full h-32" />
     </div>
   );
 };

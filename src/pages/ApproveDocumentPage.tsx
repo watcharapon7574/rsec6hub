@@ -22,7 +22,7 @@ import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import { submitPDFSignature } from '@/services/pdfSignatureService';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
+import { AnimatedProgress } from '@/components/ui/progress';
 import { railwayPDFQueue } from '@/utils/requestQueue';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from '@/components/OfficialDocuments/Accordion';
@@ -45,6 +45,11 @@ const ApproveDocumentPage: React.FC = () => {
   const [hasShownPermissionToast, setHasShownPermissionToast] = useState(false); // ป้องกัน toast ซ้ำ
   const [docReceive, setDocReceive] = useState<any>(null); // สำหรับเอกสาร doc_receive
   const [isDocReceive, setIsDocReceive] = useState(false); // flag ว่าเป็น doc_receive หรือไม่
+
+  // Scroll to top on mount - ทำทันทีเมื่อเปิดหน้า
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [memoId]);
 
   // Try to get memo from memos table first
   let memoFromMemosTable = memoId ? getMemoById(memoId) : null;
@@ -1015,11 +1020,12 @@ const ApproveDocumentPage: React.FC = () => {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
             <div className="text-lg font-medium">กำลังบันทึกไฟล์...</div>
-            <Progress value={100} />
+            <AnimatedProgress />
           </div>
         </DialogContent>
       </Dialog>
-      <div className="h-10" />
+      {/* Spacer for FloatingNavbar */}
+      <div className="h-32" />
     </div>
   );
 };

@@ -878,6 +878,142 @@ class TaskAssignmentService {
 
     return sorted[0].userId;
   }
+
+  /**
+   * เสร็จสิ้นงานด้วยการสร้างบันทึกข้อความรายงาน
+   * - Link memo ID กับ task assignment
+   * - เปลี่ยนสถานะเป็น completed
+   * - ส่งแจ้งเตือนให้ผู้เกี่ยวข้อง
+   */
+  async completeTaskWithReportMemo(assignmentId: string, memoId: string): Promise<boolean> {
+    try {
+      const now = new Date().toISOString();
+
+      // Update task assignment with report memo and completed status
+      const { error: updateError } = await (supabase as any)
+        .from('task_assignments')
+        .update({
+          report_memo_id: memoId,
+          status: 'completed',
+          completed_at: now,
+          completion_note: 'รายงานผลผ่านบันทึกข้อความ'
+        })
+        .eq('id', assignmentId);
+
+      if (updateError) {
+        console.error('Error updating task assignment:', updateError);
+        throw new Error('ไม่สามารถอัปเดตสถานะงานได้');
+      }
+
+      // Get task details for notification
+      const { data: task, error: taskError } = await (supabase as any)
+        .from('task_assignments')
+        .select(`
+          id,
+          assigned_to,
+          assigned_by,
+          document_type,
+          memo_id,
+          doc_receive_id,
+          is_team_leader
+        `)
+        .eq('id', assignmentId)
+        .single();
+
+      if (taskError) {
+        console.warn('Could not fetch task for notifications:', taskError);
+        return true; // Still return success since main update worked
+      }
+
+      // Get document subject for notification
+      let documentSubject = '';
+      if (task.document_type === 'memo' && task.memo_id) {
+        const { data: memo } = await supabase
+          .from('memos')
+          .select('subject')
+          .eq('id', task.memo_id)
+          .single();
+        documentSubject = memo?.subject || '';
+      } else if (task.document_type === 'doc_receive' && task.doc_receive_id) {
+        const { data: docReceive } = await supabase
+          .from('doc_receives')
+          .select('subject')
+          .eq('id', task.doc_receive_id)
+          .single();
+        documentSubject = docReceive?.subject || '';
+      }
+
+      // Get team leader for this document (to notify)
+      const docColumn = task.document_type === 'memo' ? 'memo_id' : 'doc_receive_id';
+      const docId = task.document_type === 'memo' ? task.memo_id : task.doc_receive_id;
+
+      const { data: teamLeader } = await (supabase as any)
+        .from('task_assignments')
+        .select('assigned_to')
+        .eq(docColumn, docId)
+        .eq('is_team_leader', true)
+        .is('deleted_at', null)
+        .single();
+
+      // Collect users to notify
+      const usersToNotify = new Set<string>();
+
+      // Add assigned_by (ธุรการ)
+      if (task.assigned_by) {
+        usersToNotify.add(task.assigned_by);
+      }
+
+      // Add team leader
+      if (teamLeader?.assigned_to) {
+        usersToNotify.add(teamLeader.assigned_to);
+      }
+
+      // Get memo signers (ผู้ลงนาม)
+      if (memoId) {
+        const { data: signers } = await supabase
+          .from('memo_signers')
+          .select('signer_user_id')
+          .eq('memo_id', memoId);
+
+        if (signers) {
+          signers.forEach(s => {
+            if (s.signer_user_id) {
+              usersToNotify.add(s.signer_user_id);
+            }
+          });
+        }
+      }
+
+      // Create notifications
+      const notifications = Array.from(usersToNotify).map(userId => ({
+        user_id: userId,
+        type: 'task_report_submitted',
+        title: 'มีการรายงานผลงาน',
+        message: `มีการรายงานผลสำหรับ: ${documentSubject}`,
+        data: {
+          assignment_id: assignmentId,
+          report_memo_id: memoId,
+          document_type: task.document_type
+        },
+        is_read: false
+      }));
+
+      if (notifications.length > 0) {
+        const { error: notifyError } = await supabase
+          .from('notifications')
+          .insert(notifications);
+
+        if (notifyError) {
+          console.warn('Could not create notifications:', notifyError);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to complete task with report memo:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

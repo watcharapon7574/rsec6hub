@@ -275,7 +275,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                   placeholder="ค้นหาชื่อ..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-pink-400"
                 />
 
                 {/* Search results dropdown */}
@@ -361,14 +361,23 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
                     <div className="flex items-center gap-2">
                       {/* Reporter selection - only ONE can be selected */}
-                      <label className={`flex items-center gap-2 ${canEditReporter ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+                      <label
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
+                          isReporter || member.is_reporter
+                            ? 'bg-pink-50 dark:bg-pink-950 border-pink-300 dark:border-pink-700'
+                            : 'bg-muted/50 border-transparent hover:border-border'
+                        } ${canEditReporter ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                        title="เลือกเป็นผู้รายงานไฟล์"
+                      >
                         <Checkbox
                           checked={canEditReporter ? isReporter : member.is_reporter}
                           onCheckedChange={() => toggleReporter(member.user_id, member.status, isLeader)}
                           disabled={!canEditReporter}
-                          className="border-pink-400 data-[state=checked]:bg-pink-500 rounded-full"
+                          className="border-pink-400 data-[state=checked]:bg-pink-500 rounded-full h-4 w-4"
                         />
-                        <span className="text-xs text-muted-foreground">📄</span>
+                        <span className={`text-xs ${isReporter || member.is_reporter ? 'text-pink-600 dark:text-pink-400 font-medium' : 'text-muted-foreground'}`}>
+                          ผู้รายงาน
+                        </span>
                       </label>
 
                       {/* Remove button for new members */}

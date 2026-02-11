@@ -243,7 +243,7 @@ const AdminProfileManagementPage: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1); // Reset to first page when searching
                 }}
-                className="flex-1 border-border focus:border-blue-400 focus:ring-blue-400"
+                className="flex-1 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-400 focus:ring-blue-400"
               />
               {searchTerm && (
                 <Button
@@ -388,7 +388,8 @@ const AdminProfileManagementPage: React.FC = () => {
           />
         )}
       </div>
-      <div className="h-10" />
+      {/* Spacer for FloatingNavbar */}
+      <div className="h-32" />
     </div>
   );
 };

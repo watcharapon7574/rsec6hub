@@ -48,7 +48,7 @@ export const useAllMemos = () => {
       const startDate = thirtyDaysAgo.toISOString();
 
       // Query with task_assignments to check for in_progress tasks
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('memos')
         .select(`
           *,
@@ -156,7 +156,7 @@ export const useAllMemos = () => {
       // If there's a rejection reason, store it in form_data and rejected_name_comment
       if (rejectionReason && status === 'rejected' && profile) {
         // Get current memo to preserve existing form_data and get files for deletion
-        const { data: currentMemo } = await supabase
+        const { data: currentMemo } = await (supabase as any)
           .from('memos')
           .select('form_data, revision_count, pdf_draft_path, attached_files')
           .eq('id', memoId)
@@ -287,7 +287,7 @@ export const useAllMemos = () => {
   const updateMemoSigners = async (memoId: string, signers: any[], signaturePositions: any[]) => {
     try {
       // ตรวจสอบว่า memo มีอยู่จริงก่อน
-      const { data: existingMemo, error: checkError } = await supabase
+      const { data: existingMemo, error: checkError } = await (supabase as any)
         .from('memos')
         .select('id, status, doc_del')
         .eq('id', memoId)

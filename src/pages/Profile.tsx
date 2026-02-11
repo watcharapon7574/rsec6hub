@@ -6,7 +6,8 @@ const Profile = () => {
   return (
     <>
       <ProfilePage />
-      <div className="h-10" />
+      {/* Spacer for FloatingNavbar */}
+      <div className="h-32" />
     </>
   );
 };

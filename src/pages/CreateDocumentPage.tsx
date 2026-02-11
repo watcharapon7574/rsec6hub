@@ -80,7 +80,8 @@ const CreateDocumentPage = () => {
             })}
           </div>
 
-          <div className="h-10" />
+          {/* Spacer for FloatingNavbar */}
+          <div className="h-32" />
         </div>
       </div>
     </div>

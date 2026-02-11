@@ -11,7 +11,7 @@ import { useMemoErrorHandler } from '@/hooks/useMemoErrorHandler';
 import { MemoFormData } from '@/types/memo';
 import { FileText, ArrowLeft, AlertCircle, Sparkles, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
+import { AnimatedProgress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAllMemos } from '@/hooks/useAllMemos';
 import { useToast } from '@/hooks/use-toast';
@@ -511,7 +511,7 @@ const CreateMemoPage = () => {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
             <div className="text-lg font-medium">ระบบกำลังบันทึกไฟล์...</div>
-            <Progress value={100} />
+            <AnimatedProgress />
           </div>
         </DialogContent>
       </Dialog>
@@ -1075,7 +1075,8 @@ const CreateMemoPage = () => {
           )}
         </div>
       </div>
-      <div className="h-10" />
+      {/* Spacer for FloatingNavbar */}
+      <div className="h-32" />
         </>
       )}
     </div>

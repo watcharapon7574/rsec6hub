@@ -295,13 +295,20 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
       return;
     }
 
-    // For non-leaders, just update status
+    // For non-leaders:
+    // - If reporter: status = 'in_progress' (need to submit report later)
+    // - If not reporter: status = 'completed' (done immediately)
     try {
-      await updateTaskStatus(task.assignment_id, 'in_progress');
+      const isReporter = task.is_reporter || false;
+      const newStatus = isReporter ? 'in_progress' : 'completed';
+
+      await updateTaskStatus(task.assignment_id, newStatus);
 
       toast({
         title: 'รับทราบงานสำเร็จ',
-        description: 'งานถูกเปลี่ยนสถานะเป็น "กำลังดำเนินการ"',
+        description: isReporter
+          ? 'งานถูกเปลี่ยนสถานะเป็น "กำลังดำเนินการ" - กรุณารายงานผลเมื่อเสร็จสิ้น'
+          : 'รับทราบงานเรียบร้อย',
       });
 
       await fetchTasks();
@@ -517,7 +524,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
               placeholder="ค้นหางาน..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 pr-3 py-1 text-xs h-8 border-border focus:border-teal-400 focus:ring-teal-400 focus:ring-1"
+              className="pl-7 pr-3 py-1 text-xs h-8 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-teal-400 focus:ring-teal-400 focus:ring-1"
             />
           </div>
 
@@ -732,14 +739,42 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {/* ปุ่มตามสถานะ */}
                   {task.status === 'pending' && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleAcknowledge(task)}
-                      className="h-7 text-xs px-2.5 bg-blue-600 hover:bg-blue-700"
-                    >
-                      <PlayCircle className="h-3.5 w-3.5 mr-1" />
-                      ทราบ
-                    </Button>
+                    <div className="relative">
+                      {/* Crown icon for team leader */}
+                      {task.is_team_leader && (
+                        <svg
+                          className="absolute -top-3 -right-[0.625rem] h-5 w-5 z-10"
+                          style={{ transform: 'rotate(40deg)', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          {/* Crown body - gold gradient effect */}
+                          <path
+                            d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"
+                            fill="#F59E0B"
+                            stroke="#D97706"
+                            strokeWidth="0.5"
+                          />
+                          {/* Crown base */}
+                          <path
+                            d="M5 16h14v2c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-2z"
+                            fill="#D97706"
+                          />
+                          {/* Gems on crown */}
+                          <circle cx="12" cy="9" r="1.2" fill="#FEF3C7" />
+                          <circle cx="8" cy="11" r="0.8" fill="#FEF3C7" />
+                          <circle cx="16" cy="11" r="0.8" fill="#FEF3C7" />
+                        </svg>
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={() => handleAcknowledge(task)}
+                        className="h-7 text-xs px-2.5 bg-blue-600 hover:bg-blue-700"
+                      >
+                        <PlayCircle className="h-3.5 w-3.5 mr-1" />
+                        ทราบ
+                      </Button>
+                    </div>
                   )}
 
                   {task.status === 'in_progress' && (
@@ -756,14 +791,17 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                           จัดการทีม
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        onClick={() => handleCompleteClick(task.assignment_id, task.is_reporter || false)}
-                        className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                        รายงาน
-                      </Button>
+                      {/* ปุ่มรายงาน - แสดงเฉพาะ reporter หรือ team_leader */}
+                      {(task.is_reporter || task.is_team_leader) && (
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/report-memo/${task.assignment_id}`)}
+                          className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                          รายงาน
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
@@ -838,44 +876,59 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
               </p>
             </div>
 
-            {/* แสดงส่วนแนบไฟล์เฉพาะผู้รายงาน */}
-            {selectedTaskIsReporter && (
-              <div className="space-y-2 border-t pt-4">
-                <Label htmlFor="report-file" className="text-sm font-medium flex items-center gap-2">
-                  📎 แนบไฟล์เอกสาร <span className="text-red-500">*</span>
-                </Label>
-                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 p-2 rounded">
-                  💡 คุณเป็นผู้รายงาน ต้องแนบไฟล์รายงาน
+            {/* ส่วนแนบไฟล์ - แสดงทุกคน แต่บังคับเฉพาะผู้รายงาน */}
+            <div className={`space-y-2 border-t pt-4 ${selectedTaskIsReporter ? '' : 'opacity-80'}`}>
+              <Label htmlFor="report-file" className={`text-sm font-medium flex items-center gap-2 ${selectedTaskIsReporter ? 'text-foreground' : 'text-muted-foreground'}`}>
+                📎 แนบไฟล์เอกสาร
+                {selectedTaskIsReporter ? (
+                  <span className="text-red-500">*</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground font-normal">(ไม่บังคับ)</span>
+                )}
+              </Label>
+              {selectedTaskIsReporter ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 p-2 rounded border border-amber-200 dark:border-amber-800">
+                  💡 คุณเป็นผู้รายงาน <span className="font-semibold">ต้องแนบไฟล์รายงาน</span>
                 </p>
-                <div className="border-2 border-dashed border-border rounded-lg p-4 hover:border-blue-400 transition-colors">
-                  <input
-                    id="report-file"
-                    type="file"
-                    accept="application/pdf"
-                    onChange={handleFileChange}
-                    className="block w-full text-sm text-muted-foreground
-                      file:mr-4 file:py-2.5 file:px-4
-                      file:rounded-lg file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-blue-600 file:text-white
-                      hover:file:bg-blue-700
-                      file:cursor-pointer
-                      cursor-pointer"
-                  />
-                  {reportFile && (
-                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-                      <p className="text-sm text-foreground flex items-center gap-2 font-medium">
-                        <CheckCircle className="h-4 w-4" />
-                        ไฟล์ที่เลือก: {reportFile.name}
-                      </p>
-                      <p className="text-xs text-green-600 dark:text-green-400 dark:text-green-600 mt-1">
-                        ขนาด: {(reportFile.size / 1024).toFixed(2)} KB
-                      </p>
-                    </div>
-                  )}
-                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  สามารถแนบไฟล์เพิ่มเติมได้ หากมีเอกสารประกอบ
+                </p>
+              )}
+              <div className={`rounded-lg p-4 transition-colors ${
+                selectedTaskIsReporter
+                  ? 'border-2 border-dashed border-amber-300 dark:border-amber-700 hover:border-amber-400 bg-amber-50/50 dark:bg-amber-950/30'
+                  : 'border border-dashed border-border hover:border-muted-foreground/50'
+              }`}>
+                <input
+                  id="report-file"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleFileChange}
+                  className={`block w-full text-sm text-muted-foreground
+                    file:mr-4 file:py-2 file:px-3
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:cursor-pointer
+                    cursor-pointer
+                    ${selectedTaskIsReporter
+                      ? 'file:bg-amber-500 file:text-white hover:file:bg-amber-600'
+                      : 'file:bg-muted file:text-muted-foreground hover:file:bg-accent'
+                    }`}
+                />
+                {reportFile && (
+                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                    <p className="text-sm text-foreground flex items-center gap-2 font-medium">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      ไฟล์ที่เลือก: {reportFile.name}
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      ขนาด: {(reportFile.size / 1024).toFixed(2)} KB
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           <DialogFooter>
@@ -892,7 +945,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
             </Button>
             <Button
               onClick={handleConfirmComplete}
-              disabled={!completionNote.trim() || isUploading}
+              disabled={!completionNote.trim() || isUploading || (selectedTaskIsReporter && !reportFile)}
               className="bg-green-600 hover:bg-green-700"
             >
               {isUploading ? (

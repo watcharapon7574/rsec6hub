@@ -71,7 +71,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
               placeholder="ค้นหาพนักงาน..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-purple-400"
             />
           </div>
         </div>

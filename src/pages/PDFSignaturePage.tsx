@@ -8,7 +8,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { FileText, ArrowLeft, Upload, AlertCircle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
+import { AnimatedProgress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { railwayPDFQueue } from '@/utils/requestQueue';
@@ -493,7 +493,7 @@ const PDFSignaturePage = () => {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
             <div className="text-lg font-medium">ระบบกำลังอัพโหลดไฟล์...</div>
-            <Progress value={100} />
+            <AnimatedProgress />
           </div>
         </DialogContent>
       </Dialog>
@@ -798,7 +798,8 @@ const PDFSignaturePage = () => {
           )}
         </div>
       </div>
-      <div className="h-10" />
+      {/* Spacer for FloatingNavbar */}
+      <div className="h-32" />
 
     </div>
   );

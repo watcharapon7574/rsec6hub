@@ -15,7 +15,7 @@ import { mergeMemoWithAttachments } from '@/services/memoManageAPIcall';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
+import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { SignerProgress } from '@/types/memo';
 import { railwayPDFQueue } from '@/utils/requestQueue';
@@ -63,6 +63,11 @@ const DocumentManagePage: React.FC = () => {
 
   // Get memo data
   const memo = memoId ? getMemoById(memoId) : null;
+
+  // Scroll to top on mount - ทำทันทีเมื่อเปิดหน้า
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [memoId]);
 
   // Debug log for memo
   React.useEffect(() => {
@@ -1299,11 +1304,12 @@ const DocumentManagePage: React.FC = () => {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
             <div className="text-lg font-medium">กำลังบันทึกไฟล์...</div>
-            <Progress value={100} />
+            <AnimatedProgress />
           </div>
         </DialogContent>
       </Dialog>
-      <div className="h-10" />
+      {/* Spacer for FloatingNavbar */}
+      <div className="h-32" />
     </div>
   );
 };

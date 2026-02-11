@@ -289,7 +289,7 @@ const AssignedTasksList = () => {
                 placeholder="ค้นหางาน..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 h-9"
+                className="pl-8 h-9 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-pink-400"
               />
             </div>
 

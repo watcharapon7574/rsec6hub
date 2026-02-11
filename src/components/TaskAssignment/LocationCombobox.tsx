@@ -115,7 +115,7 @@ const LocationCombobox: React.FC<LocationComboboxProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:border-pink-700"
+          className="w-full justify-between text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
         >
           <div className="flex items-center gap-2 truncate">
             <MapPin className="h-4 w-4 text-pink-500 flex-shrink-0" />
@@ -165,7 +165,7 @@ const LocationCombobox: React.FC<LocationComboboxProps> = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-900 hover:text-red-600 dark:text-red-400 dark:text-red-600"
+                          className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600 dark:text-red-300"
                           onClick={(e) => handleDelete(e, location.id)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

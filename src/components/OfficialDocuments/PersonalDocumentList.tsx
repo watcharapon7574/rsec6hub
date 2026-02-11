@@ -288,7 +288,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               placeholder="ค้นหาเอกสารของฉัน..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 pr-3 py-1 text-xs h-8 border-border focus:border-blue-400 focus:ring-blue-400 focus:ring-1"
+              className="pl-7 pr-3 py-1 text-xs h-8 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-400 focus:ring-blue-400 focus:ring-1"
             />
           </div>
 

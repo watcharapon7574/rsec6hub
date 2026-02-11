@@ -28,7 +28,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
                   className={`
                     w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm
                     ${isCompleted ? 'bg-pink-500 text-white' : ''}
-                    ${isCurrent ? 'bg-pink-500 text-white ring-4 ring-pink-200' : ''}
+                    ${isCurrent ? 'bg-pink-500 text-white ring-4 ring-pink-200 dark:ring-pink-800' : ''}
                     ${!isCompleted && !isCurrent ? 'bg-muted dark:bg-background/80 text-muted-foreground' : ''}
                   `}
                 >

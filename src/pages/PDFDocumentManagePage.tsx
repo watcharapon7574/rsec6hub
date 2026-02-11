@@ -9,7 +9,7 @@ import { useAllMemos } from '@/hooks/useAllMemos';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
+import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { SignerProgress } from '@/types/memo';
 import { railwayPDFQueue } from '@/utils/requestQueue';
@@ -43,6 +43,11 @@ const PDFDocumentManagePage: React.FC = () => {
 
   // Get user profile for API calls
   const { profile } = useEmployeeAuth();
+
+  // Scroll to top on mount - ทำทันทีเมื่อเปิดหน้า
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [memoId]);
 
   // Doc receive data
   const [docReceive, setDocReceive] = useState<any>(null);
@@ -779,7 +784,7 @@ const PDFDocumentManagePage: React.FC = () => {
               กำลังดึงข้อมูลเอกสารจากฐานข้อมูล<br />
               โปรดรอสักครู่
             </div>
-            <Progress value={100} className="w-full" />
+            <AnimatedProgress className="w-full" />
           </div>
         </DialogContent>
       </Dialog>
@@ -796,11 +801,12 @@ const PDFDocumentManagePage: React.FC = () => {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
             <div className="text-lg font-medium">กำลังบันทึกไฟล์...</div>
-            <Progress value={100} />
+            <AnimatedProgress />
           </div>
         </DialogContent>
       </Dialog>
-      <div className="h-10" />
+      {/* Spacer for FloatingNavbar */}
+      <div className="h-32" />
     </div>
   );
 };

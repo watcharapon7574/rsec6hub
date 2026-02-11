@@ -161,7 +161,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:border-pink-700"
+                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
                 >
                   <Calendar className="mr-2 h-4 w-4 text-pink-500" />
                   {eventDate ? formatDisplayDate(eventDate) : (
@@ -184,7 +184,7 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:border-pink-700"
+                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
                 >
                   <Clock className="mr-2 h-4 w-4 text-pink-500" />
                   {eventTime ? (
@@ -204,9 +204,9 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
                         onEventTimeChange(option.value);
                         setTimePopoverOpen(false);
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 dark:hover:bg-pink-950 dark:bg-pink-950 transition-colors ${
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 dark:hover:bg-pink-900 transition-colors ${
                         eventTime === option.value
-                          ? 'bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300 font-medium'
+                          ? 'bg-pink-100 dark:bg-pink-800 text-pink-700 dark:text-pink-200 font-medium'
                           : 'text-foreground'
                       }`}
                     >

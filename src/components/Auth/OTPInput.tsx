@@ -193,7 +193,7 @@ const OTPInput: React.FC<OTPInputProps> = ({
             onFocus={(e) => e.target.select()}
             ref={(ref) => (inputRefs.current[index] = ref)}
             disabled={disabled || isSubmitting}
-            className="w-12 h-12 text-center text-lg font-semibold border-2 border-blue-200 dark:border-blue-800 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-12 h-12 text-center text-lg font-semibold border-2 border-blue-200 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         ))}
       </div>

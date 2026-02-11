@@ -27,28 +27,28 @@ const typeStyles = {
   user: {
     icon: User,
     bgColor: 'bg-blue-100 dark:bg-blue-900',
-    textColor: 'text-blue-600 dark:text-blue-400 dark:text-blue-600',
-    hoverBg: 'hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950',
+    textColor: 'text-blue-600 dark:text-blue-300',
+    hoverBg: 'hover:bg-blue-50 dark:hover:bg-blue-950',
     borderColor: 'border-blue-100 dark:border-blue-900',
-    badgeBg: 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 dark:text-blue-600',
+    badgeBg: 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300',
     label: 'ชื่อ'
   },
   group: {
     icon: Users,
     bgColor: 'bg-purple-100 dark:bg-purple-900',
-    textColor: 'text-purple-600 dark:text-purple-400 dark:text-purple-600',
-    hoverBg: 'hover:bg-purple-50 dark:hover:bg-purple-950 dark:bg-purple-950',
+    textColor: 'text-purple-600 dark:text-purple-300',
+    hoverBg: 'hover:bg-purple-50 dark:hover:bg-purple-950',
     borderColor: 'border-purple-100 dark:border-purple-900',
-    badgeBg: 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 dark:text-purple-600',
+    badgeBg: 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300',
     label: 'กลุ่ม'
   },
   position: {
     icon: Briefcase,
     bgColor: 'bg-orange-100 dark:bg-orange-900',
-    textColor: 'text-orange-600 dark:text-orange-400',
-    hoverBg: 'hover:bg-orange-50 dark:hover:bg-orange-950 dark:bg-orange-950',
+    textColor: 'text-orange-600 dark:text-orange-300',
+    hoverBg: 'hover:bg-orange-50 dark:hover:bg-orange-950',
     borderColor: 'border-orange-100 dark:border-orange-900',
-    badgeBg: 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400',
+    badgeBg: 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300',
     label: 'หน้าที่'
   }
 };
@@ -104,7 +104,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
             </div>
           </div>
           {item.type === 'group' && item.memberCount && (
-            <Badge variant="secondary" className="bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 dark:text-purple-600 text-xs">
+            <Badge variant="secondary" className="bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-300 text-xs">
               {item.memberCount} คน
             </Badge>
           )}

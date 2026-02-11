@@ -226,22 +226,32 @@ class TaskAssignmentService {
       // Determine team leader BEFORE creating assignments
       let teamLeaderUserId: string | null = null;
 
+      // ===== Team Leader Determination Rules =====
+      // Case 1: Position (ส้ม) - ผู้รับผิดชอบตำแหน่งเป็นหัวหน้าเสมอ (เพิ่มคนอื่นได้แต่หัวไม่เปลี่ยน)
+      // Case 2: Group 1 กลุ่ม (ม่วง) - ใช้ leader_user_id ที่บันทึกตอนสร้างกลุ่ม
+      // Case 3: Name only (น้ำเงิน) - คนแรกที่เพิ่มเป็นหัวหน้า
+      // Case 4: Group + เพิ่มรายคน - หัวหน้ากลุ่มเป็นหัวหน้าเสมอ
+      // Case 5: หลายกลุ่ม - เปรียบเทียบ RSEC ของหัวหน้าทุกกลุ่ม (น้อยสุดเป็นหัว)
+
       if (assignedToUserIds.length === 1) {
         // Single user: they are the team leader
         teamLeaderUserId = assignedToUserIds[0];
+      } else if (isPositionBased && groupLeaderIds.length > 0) {
+        // Case 1: Position - use the position member (stored in groupLeaderIds)
+        teamLeaderUserId = groupLeaderIds[0];
       } else if (isPositionBased) {
-        // For position-based: first user is team leader
+        // Position fallback (shouldn't happen)
         teamLeaderUserId = assignedToUserIds[0];
-      } else if (isGroupBased && groupLeaderIds.length > 0) {
-        // For group-based with leaders: use group leaders only
+      } else if ((isGroupBased || (isPositionBased && groupLeaderIds.length > 0)) && groupLeaderIds.length > 0) {
+        // Case 2, 4, 5: Group-based with leaders
         // Filter to only include leaders that are in the assigned users
         const validLeaderIds = groupLeaderIds.filter(id => assignedToUserIds.includes(id));
 
         if (validLeaderIds.length === 1) {
-          // Single group leader
+          // Case 2 & 4: Single group leader (even with additional name-based users)
           teamLeaderUserId = validLeaderIds[0];
         } else if (validLeaderIds.length > 1) {
-          // Multiple group leaders: find most senior (lowest RSEC)
+          // Case 5: Multiple groups - compare RSEC of group leaders only
           const { data: profiles } = await supabase
             .from('profiles')
             .select('user_id, employee_id')
@@ -256,8 +266,9 @@ class TaskAssignmentService {
           }
         }
 
-        // If no valid leaders found, fall back to RSEC among all users
+        // If no valid leaders found (shouldn't happen for properly created groups)
         if (!teamLeaderUserId) {
+          console.warn('⚠️ Group-based but no valid leaders found in assigned users');
           const { data: profiles } = await supabase
             .from('profiles')
             .select('user_id, employee_id')
@@ -272,7 +283,8 @@ class TaskAssignmentService {
           }
         }
       } else if (isGroupBased) {
-        // Group-based but no leaders defined: fallback to RSEC seniority
+        // Group-based but groupLeaderIds is empty (old groups without leader_user_id)
+        console.warn('⚠️ Group-based but groupLeaderIds is empty - using RSEC seniority');
         const { data: profiles } = await supabase
           .from('profiles')
           .select('user_id, employee_id')
@@ -285,11 +297,12 @@ class TaskAssignmentService {
           }));
           teamLeaderUserId = this.getMostSeniorUser(usersWithEmployeeId);
         }
-      } else if (isNameBased && assignedToUserIds.length > 1) {
-        // For name-based only (no groups): first person added is the team leader
+      } else if (isNameBased) {
+        // Case 3: Name-based only - first person added is the team leader
         teamLeaderUserId = assignedToUserIds[0];
       } else if (!options?.selectionInfo?.source && assignedToUserIds.length > 1) {
         // Source is null/undefined with multiple users: use RSEC seniority
+        console.warn('⚠️ Source is null but has multiple users - using RSEC seniority');
         const { data: profiles } = await supabase
           .from('profiles')
           .select('user_id, employee_id')

@@ -982,7 +982,7 @@ class TaskAssignmentService {
           .single();
         documentSubject = memo?.subject || '';
       } else if (task.document_type === 'doc_receive' && task.doc_receive_id) {
-        const { data: docReceive } = await supabase
+        const { data: docReceive } = await (supabase as any)
           .from('doc_receives')
           .select('subject')
           .eq('id', task.doc_receive_id)
@@ -1017,7 +1017,7 @@ class TaskAssignmentService {
 
       // Get memo signers (ผู้ลงนาม)
       if (memoId) {
-        const { data: signers } = await supabase
+        const { data: signers } = await (supabase as any)
           .from('memo_signers')
           .select('signer_user_id')
           .eq('memo_id', memoId);

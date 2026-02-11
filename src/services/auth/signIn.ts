@@ -94,12 +94,25 @@ export const signIn = async (phone: string, otp: string): Promise<AuthResult> =>
     // Store authentication data (for backward compatibility only)
     storeAuthData(profile);
 
+    // Create session record in user_sessions table for device tracking
+    // This enables single-device restriction for non-admins
+    // Admins can have multiple devices (handled in createSession)
+    if (sessionData.user?.id) {
+      console.log('📝 Creating session record for user:', sessionData.user.id);
+      const { error: sessionError } = await createSession(sessionData.user.id);
+      if (sessionError) {
+        console.warn('⚠️ Failed to create session record (non-blocking):', sessionError);
+      } else {
+        console.log('✅ Session record created successfully');
+      }
+    }
+
     console.log('✅ Authentication completed successfully with profile:', profile.user_id);
-    
+
     // Return both user (from Supabase Auth) and profile data
-    return { 
-      user: sessionData.user, 
-      profile 
+    return {
+      user: sessionData.user,
+      profile
     };
   } catch (err) {
     console.error('Sign in error:', err);

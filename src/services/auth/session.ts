@@ -39,38 +39,48 @@ export const isAuthenticated = (): boolean => {
   const authStatus = localStorage.getItem('isAuthenticated') || sessionStorage.getItem('isAuthenticated');
   const authData = getStoredAuthData();
   const sessionToken = getCurrentSessionToken();
-  
-  if (authStatus !== 'true' || !authData || !sessionToken) {
+
+  // Basic auth check - don't require sessionToken for backward compatibility
+  if (authStatus !== 'true' || !authData) {
     return false;
   }
-  
+
   try {
     const currentTime = new Date().getTime();
-    
+
     // Check if session has expired
     if (currentTime > authData.expirationTime) {
       console.log('Authentication expired');
       clearAuthStorage(); // Clear expired session
       return false;
     }
-    
-    // Validate session in background (don't block authentication check)
-    validateSession(sessionToken).then(({ valid }) => {
-      if (!valid) {
-        console.log('Session invalid due to single device restriction');
-        clearAuthStorage();
-        // Force page reload to redirect to login
-        setTimeout(() => window.location.reload(), 100);
-      }
-    }).catch(err => {
-      console.error('Error validating session:', err);
-    });
-    
-    // Cleanup expired sessions in background
-    cleanupExpiredSessions().catch(err => {
-      console.error('Error cleaning up sessions:', err);
-    });
-    
+
+    // Only validate session if sessionToken exists (new login system)
+    // Skip validation for users who logged in before session tracking was implemented
+    if (sessionToken) {
+      // Validate session in background (don't block authentication check)
+      validateSession(sessionToken).then(({ valid, reason }) => {
+        if (!valid) {
+          console.log('Session validation failed, reason:', reason);
+          // Only kick out if session was explicitly invalidated (another login from different device)
+          // Don't kick out for: no_record (old login), expired (natural), fingerprint mismatch, error
+          if (reason === 'invalidated') {
+            console.log('Session was invalidated by another login, logging out...');
+            clearAuthStorage();
+            setTimeout(() => window.location.reload(), 100);
+          }
+        }
+      }).catch(err => {
+        // Don't kick out users on validation errors (network issues, etc.)
+        console.error('Error validating session (ignored):', err);
+      });
+
+      // Cleanup expired sessions in background
+      cleanupExpiredSessions().catch(err => {
+        console.error('Error cleaning up sessions:', err);
+      });
+    }
+
     return true;
   } catch (err) {
     console.error('Error checking authentication:', err);

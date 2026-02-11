@@ -73,55 +73,70 @@ export const createSession = async (userId: string): Promise<{ sessionToken: str
 };
 
 // Validate session
-export const validateSession = async (sessionToken: string): Promise<{ valid: boolean; userId?: string }> => {
+// Returns: { valid: true } - session is valid OR no session tracking needed (backward compat)
+//          { valid: false, reason: 'invalidated' } - session was explicitly invalidated (kicked)
+export const validateSession = async (sessionToken: string): Promise<{ valid: boolean; userId?: string; reason?: string }> => {
   try {
     const deviceFingerprint = generateDeviceFingerprint();
     const storedFingerprint = localStorage.getItem('device_fingerprint');
 
-    // First, check if session exists and is active
-    const { data, error } = await supabase
+    // Check if session exists (regardless of is_active status)
+    const { data: anySession, error: anyError } = await supabase
       .from('user_sessions')
       .select('user_id, expires_at, is_active, device_fingerprint')
       .eq('session_token', sessionToken)
-      .eq('is_active', true)
-      .gt('expires_at', new Date().toISOString())
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
-      return { valid: false };
+    // No session record found - might be old login before session tracking
+    // Allow through for backward compatibility
+    if (anyError || !anySession) {
+      console.log('No session record found (backward compatibility mode)');
+      return { valid: true, reason: 'no_record' };
+    }
+
+    // Session was explicitly invalidated (single device restriction triggered)
+    // This is the ONLY case where we should kick the user out
+    if (!anySession.is_active) {
+      console.log('Session was invalidated by another login');
+      return { valid: false, reason: 'invalidated', userId: anySession.user_id };
+    }
+
+    // Session expired
+    if (new Date(anySession.expires_at) < new Date()) {
+      console.log('Session expired');
+      return { valid: false, reason: 'expired', userId: anySession.user_id };
     }
 
     // Check if user is admin (admins can use multiple devices)
     const { data: profileData } = await supabase
       .from('profiles')
       .select('is_admin')
-      .eq('user_id', data.user_id)
+      .eq('user_id', anySession.user_id)
       .single();
 
     const isAdmin = profileData?.is_admin === true;
 
     // For admins: skip fingerprint validation (allow multi-device)
     if (isAdmin) {
-      return { valid: true, userId: data.user_id };
+      return { valid: true, userId: anySession.user_id };
     }
 
     // For non-admins: validate device fingerprint
-    // Check local stored fingerprint vs generated fingerprint
     if (storedFingerprint && storedFingerprint !== deviceFingerprint) {
       console.warn('Device fingerprint mismatch (local)');
-      return { valid: false };
+      return { valid: false, reason: 'fingerprint', userId: anySession.user_id };
     }
 
-    // Check database fingerprint vs generated fingerprint
-    if (data.device_fingerprint && data.device_fingerprint !== deviceFingerprint) {
+    if (anySession.device_fingerprint && anySession.device_fingerprint !== deviceFingerprint) {
       console.warn('Device fingerprint mismatch (database)');
-      return { valid: false };
+      return { valid: false, reason: 'fingerprint', userId: anySession.user_id };
     }
 
-    return { valid: true, userId: data.user_id };
+    return { valid: true, userId: anySession.user_id };
   } catch (error) {
     console.error('Error validating session:', error);
-    return { valid: false };
+    // On error, allow through to prevent locking users out due to network issues
+    return { valid: true, reason: 'error' };
   }
 };
 

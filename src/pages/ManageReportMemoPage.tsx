@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { railwayPDFQueue } from '@/utils/requestQueue';
+import { mergeMemoWithAttachments } from '@/services/memoManageAPIcall';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
@@ -491,7 +492,14 @@ const ManageReportMemoPage: React.FC = () => {
 
   // Handle signature position click
   const handlePositionClick = (x: number, y: number, page: number) => {
-    if (selectedSignerIndex >= signers.length) return;
+    if (selectedSignerIndex >= signers.length) {
+      toast({
+        title: 'ไม่มีผู้ลงนามให้เลือก',
+        description: 'กรุณาเลือกผู้ลงนามก่อน',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     const signer = signers[selectedSignerIndex];
     const existingPositionsCount = signaturePositions.filter(
@@ -511,11 +519,156 @@ const ManageReportMemoPage: React.FC = () => {
 
     setSignaturePositions(prev => [...prev, newPosition]);
     setComment('');
+
+    toast({
+      title: 'วางตำแหน่งลายเซ็นสำเร็จ',
+      description: `วางลายเซ็น ${signer.name} ตำแหน่งที่ ${existingPositionsCount + 1} ที่หน้า ${page + 1}`
+    });
   };
 
   // Handle position remove
   const handlePositionRemove = (index: number) => {
+    const removedPosition = signaturePositions[index];
     setSignaturePositions(prev => prev.filter((_, i) => i !== index));
+
+    // Set selected signer back to the removed one
+    const removedSignerIndex = signers.findIndex(s => s.order === removedPosition.signer.order);
+    if (removedSignerIndex !== -1) {
+      setSelectedSignerIndex(removedSignerIndex);
+    }
+  };
+
+  // Handle step navigation with PDF merge and signer_list_progress
+  const handleNext = async () => {
+    // If moving from step 1 to step 2, call PDFmerge API if there are attachments
+    if (currentStep === 1 && reportMemo) {
+      const attachedFiles = getAttachedFiles(reportMemo);
+
+      if (attachedFiles.length > 0) {
+        setLoadingMessage({
+          title: 'กำลังประมวลผลไฟล์เอกสาร',
+          description: 'ระบบกำลังรวมไฟล์เอกสารหลักกับไฟล์แนบ กรุณารอสักครู่...'
+        });
+        setShowLoadingModal(true);
+
+        try {
+          console.log('🔄 Starting PDF merge with attached files:', attachedFiles);
+
+          const mergeResult = await mergeMemoWithAttachments({
+            memoId: reportMemo.id,
+            mainPdfPath: reportMemo.pdf_draft_path,
+            attachedFiles: attachedFiles
+          });
+
+          if (mergeResult.success && mergeResult.mergedPdfUrl) {
+            // Update the memo in database to remove attached files and update PDF path
+            const { error: updateError } = await supabase
+              .from('memos')
+              .update({
+                pdf_draft_path: mergeResult.mergedPdfUrl,
+                attached_files: null,
+                attachment_title: null
+              })
+              .eq('id', reportMemo.id);
+
+            if (updateError) {
+              console.error('Error updating memo after merge:', updateError);
+              toast({
+                title: 'เกิดข้อผิดพลาด',
+                description: 'ไม่สามารถอัพเดตข้อมูลหลังจากรวมไฟล์ได้',
+                variant: 'destructive'
+              });
+              setShowLoadingModal(false);
+              return;
+            }
+
+            toast({
+              title: 'รวมไฟล์สำเร็จ',
+              description: 'รวมไฟล์เอกสารหลักกับไฟล์แนบเรียบร้อยแล้ว'
+            });
+
+            // Update local state
+            setReportMemo((prev: any) => ({
+              ...prev,
+              pdf_draft_path: mergeResult.mergedPdfUrl,
+              attached_files: null,
+              attachment_title: null
+            }));
+
+            await refetch();
+          } else {
+            toast({
+              title: 'เกิดข้อผิดพลาดในการรวมไฟล์',
+              description: mergeResult.error || 'ไม่สามารถรวมไฟล์ได้',
+              variant: 'destructive'
+            });
+            setShowLoadingModal(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Error calling PDFmerge:', error);
+          toast({
+            title: 'เกิดข้อผิดพลาด',
+            description: 'ไม่สามารถเรียกใช้งาน API รวมไฟล์ได้',
+            variant: 'destructive'
+          });
+          setShowLoadingModal(false);
+          return;
+        } finally {
+          setShowLoadingModal(false);
+        }
+      }
+    }
+
+    // If moving from step 2 to step 3, save signer_list_progress
+    if (currentStep === 2 && memoId) {
+      try {
+        const signerListProgress = signers.map(signer => ({
+          order: signer.order,
+          position: signer.position || signer.role,
+          name: signer.name,
+          role: signer.role,
+          user_id: signer.user_id,
+          org_structure_role: signer.org_structure_role
+        }));
+
+        console.log('📊 Saving signer_list_progress:', signerListProgress);
+
+        const { error: updateError } = await supabase
+          .from('memos')
+          .update({
+            signer_list_progress: signerListProgress
+          } as any)
+          .eq('id', memoId);
+
+        if (updateError) {
+          console.error('Error updating signer_list_progress:', updateError);
+          toast({
+            title: 'เกิดข้อผิดพลาด',
+            description: 'ไม่สามารถบันทึกข้อมูลผู้ลงนามได้',
+            variant: 'destructive'
+          });
+          return;
+        }
+
+        console.log('✅ Signer list progress saved successfully');
+        toast({
+          title: 'บันทึกข้อมูลผู้ลงนามสำเร็จ',
+          description: `บันทึกรายชื่อผู้ลงนาม ${signers.length} คน เรียบร้อยแล้ว`
+        });
+      } catch (error) {
+        console.error('Error saving signer_list_progress:', error);
+        toast({
+          title: 'เกิดข้อผิดพลาด',
+          description: 'ไม่สามารถบันทึกข้อมูลผู้ลงนามได้',
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
+
+    // Proceed to next step
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
   };
 
   // Check if step is complete
@@ -558,25 +711,48 @@ const ManageReportMemoPage: React.FC = () => {
         }
       }
 
-      // 2. Update signature_positions with renumbered orders
-      const updatedSignaturePositions = signaturePositions.map(pos => ({
-        ...pos,
-        signer: {
-          ...pos.signer,
-          order: signers.findIndex(s => s.user_id === pos.signer.user_id) + 1
+      // 2. Update signature_positions with prefix in name
+      const updatedSignaturePositions = signaturePositions.map(pos => {
+        const signer = signers.find(s => s.user_id === pos.signer.user_id);
+        if (signer && signer.prefix) {
+          const nameWithoutPrefix = pos.signer.name.replace(new RegExp(`^${signer.prefix}`), '').trim();
+          const nameWithPrefix = `${signer.prefix}${nameWithoutPrefix}`;
+
+          return {
+            ...pos,
+            signer: {
+              ...pos.signer,
+              name: nameWithPrefix,
+              order: signers.findIndex(s => s.user_id === pos.signer.user_id) + 1
+            }
+          };
         }
-      }));
+        return {
+          ...pos,
+          signer: {
+            ...pos.signer,
+            order: signers.findIndex(s => s.user_id === pos.signer.user_id) + 1
+          }
+        };
+      });
 
       // 3. Get first signer order
       const firstOrder = Math.min(...updatedSignaturePositions.map(p => p.signer.order));
 
-      // 4. Update report memo with signature positions and pending_sign status
+      // 4. Update signers via updateMemoSigners
+      await updateMemoSigners(memoId, signers, updatedSignaturePositions);
+
+      // 5. Update report memo with signature positions and pending_sign status (including clerk_id)
+      const clerkId = profile?.user_id;
+      console.log('📝 Recording clerk_id:', clerkId, 'for memo:', memoId);
+
       const { error: updateError } = await supabase
         .from('memos')
         .update({
           signature_positions: updatedSignaturePositions,
           status: 'pending_sign',
           current_signer_order: firstOrder,
+          clerk_id: clerkId,
           updated_at: new Date().toISOString()
         })
         .eq('id', memoId);
@@ -958,7 +1134,7 @@ const ManageReportMemoPage: React.FC = () => {
                       )}
                     </Button>
                     <Button
-                      onClick={() => setCurrentStep(2)}
+                      onClick={handleNext}
                       disabled={!isStepComplete(1)}
                       className="bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -992,7 +1168,7 @@ const ManageReportMemoPage: React.FC = () => {
             onPositionClick={handlePositionClick}
             onPositionRemove={handlePositionRemove}
             onPrevious={() => setCurrentStep(1)}
-            onNext={() => setCurrentStep(3)}
+            onNext={handleNext}
             isStepComplete={isStepComplete(2)}
           />
         )}

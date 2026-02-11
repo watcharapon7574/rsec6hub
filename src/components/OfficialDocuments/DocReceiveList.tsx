@@ -101,7 +101,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         const docReceiveIds = localDocReceive.map(d => d.id);
 
         // Find task_assignments with report_memo_id for these doc_receives
-        const { data: assignments, error: assignmentsError } = await supabase
+        const { data: assignments, error: assignmentsError } = await (supabase as any)
           .from('task_assignments')
           .select('doc_receive_id, report_memo_id')
           .in('doc_receive_id', docReceiveIds)

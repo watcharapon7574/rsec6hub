@@ -298,9 +298,12 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
             if (onSelectionInfoChange && users.length === 0 && selectedUsers.length > 0) {
               onSelectionInfoChange({ source: null });
             }
-            // Track source as 'name' when adding via search
-            else if (onSelectionInfoChange && !selectionInfo?.source && users.length > selectedUsers.length) {
-              onSelectionInfoChange({ source: 'name' });
+            // Track source as 'name' when adding via search (only if source is null/undefined)
+            else if (onSelectionInfoChange && users.length > selectedUsers.length) {
+              // Only set to 'name' if source wasn't already set by group/position selection
+              if (selectionInfo?.source === null || selectionInfo?.source === undefined) {
+                onSelectionInfoChange({ source: 'name' });
+              }
             }
             onUsersChange(users);
           }}

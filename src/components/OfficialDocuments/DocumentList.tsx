@@ -757,12 +757,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  {/* Checkmark indicator for report memo - leftmost position */}
-                  {memo.subject?.startsWith('รายงานผล') && (
-                    <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${isCompleted ? 'bg-muted' : 'bg-teal-100 dark:bg-teal-900'}`}>
-                      <CheckCircle className={`h-3.5 w-3.5 ${isCompleted ? 'text-muted-foreground' : 'text-teal-600 dark:text-teal-400'}`} />
-                    </div>
-                  )}
                   {memo.__source_table === 'doc_receive' ? (
                     <FileInput className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-green-500'}`} />
                   ) : memo.subject?.startsWith('รายงานผล') ? (
@@ -771,10 +765,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-purple-500'}`} />
                   )}
                   <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : memo.subject?.startsWith('รายงานผล') ? 'text-foreground group-hover:text-teal-700 dark:text-teal-300' : 'text-foreground group-hover:text-purple-700 dark:text-purple-300'}`} title={memo.subject}>{memo.subject}</span>
-                  {/* Badge for report memo */}
-                  {memo.subject?.startsWith('รายงานผล') && (
-                    <span className="bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap">รายงาน</span>
-                  )}
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {

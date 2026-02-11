@@ -4,27 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
   ArrowLeft,
   CheckCircle,
-  AlertCircle,
   FileText,
   Eye,
-  ClipboardCheck,
-  XCircle
+  ClipboardCheck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAllMemos } from '@/hooks/useAllMemos';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { railwayPDFQueue } from '@/utils/requestQueue';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import Accordion from '@/components/OfficialDocuments/Accordion';
+import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
 import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
 import Step4Review from '@/components/DocumentManage/Step4Review';
 
@@ -74,9 +71,7 @@ const ManageReportMemoPage: React.FC = () => {
   const [isAssigningNumber, setIsAssigningNumber] = useState(false);
   const [suggestedDocNumber, setSuggestedDocNumber] = useState('');
 
-  // Reject modal state
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+  // Reject state (ใช้กับ RejectionCard)
   const [isRejecting, setIsRejecting] = useState(false);
 
   // Loading modal state
@@ -314,9 +309,9 @@ const ManageReportMemoPage: React.FC = () => {
     }
   };
 
-  // Handle reject report
-  const handleReject = async () => {
-    if (!rejectReason.trim() || !memoId || !taskAssignment) return;
+  // Handle reject report - รับ reason จาก RejectionCard component
+  const handleRejectFromCard = async (reason: string) => {
+    if (!reason.trim() || !memoId || !taskAssignment) return;
 
     setIsRejecting(true);
     try {
@@ -325,7 +320,7 @@ const ManageReportMemoPage: React.FC = () => {
         .from('memos')
         .update({
           status: 'rejected',
-          rejection_reason: rejectReason.trim(),
+          rejection_reason: reason.trim(),
           updated_at: new Date().toISOString()
         })
         .eq('id', memoId);
@@ -344,7 +339,6 @@ const ManageReportMemoPage: React.FC = () => {
 
       if (taskError) throw taskError;
 
-      setShowRejectModal(false);
       toast({
         title: 'ตีกลับรายงานสำเร็จ',
         description: 'ผู้รายงานจะได้รับแจ้งให้แก้ไขรายงาน'
@@ -651,44 +645,6 @@ const ManageReportMemoPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Reject Modal */}
-      <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
-        <DialogContent className="bg-card">
-          <DialogTitle className="flex items-center gap-2 text-destructive">
-            <XCircle className="h-5 w-5" />
-            ตีกลับรายงาน
-          </DialogTitle>
-          <DialogDescription>
-            กรุณาระบุเหตุผลในการตีกลับเพื่อให้ผู้รายงานทราบและแก้ไข
-          </DialogDescription>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="reject-reason">เหตุผลในการตีกลับ *</Label>
-              <Textarea
-                id="reject-reason"
-                placeholder="ระบุเหตุผล เช่น ข้อมูลไม่ครบถ้วน, ต้องการรายละเอียดเพิ่มเติม..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                rows={4}
-                className="mt-2"
-              />
-            </div>
-          </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setShowRejectModal(false)} disabled={isRejecting}>
-              ยกเลิก
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={!rejectReason.trim() || isRejecting}
-            >
-              {isRejecting ? 'กำลังดำเนินการ...' : 'ยืนยันตีกลับ'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -804,63 +760,87 @@ const ManageReportMemoPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Document Number Card */}
+            {/* Document Number Card - ใช้ UI เดียวกับ Step1DocumentNumber */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-lg px-3 py-1">🔢</Badge>
-                  ลงเลขหนังสือ
+                  <FileText className="h-5 w-5" />
+                  กำหนดเลขหนังสือราชการ
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground whitespace-nowrap">ศธ ๐๔๐๐๗.๖๐๐/</span>
-                  <Input
-                    placeholder={suggestedDocNumber || 'xxxx/xx'}
-                    value={docNumberSuffix}
-                    onChange={(e) => setDocNumberSuffix(e.target.value)}
-                    disabled={isNumberAssigned}
-                    className="max-w-[200px]"
-                  />
-                  {!isNumberAssigned && (
-                    <Button
-                      onClick={handleAssignNumber}
-                      disabled={!docNumberSuffix.trim() || isAssigningNumber}
-                    >
-                      {isAssigningNumber ? 'กำลังลงเลข...' : 'ลงเลข'}
-                    </Button>
-                  )}
+                <div>
+                  <Label htmlFor="doc-number">เลขหนังสือราชการ</Label>
+                  <div className="flex items-stretch">
+                    <div className="text-lg font-medium text-muted-foreground bg-muted px-4 rounded-l-md border border-r-0 border-border flex items-center">
+                      ศธ ๐๔๐๐๗.๖๐๐/
+                    </div>
+                    <Input
+                      id="doc-number"
+                      placeholder={suggestedDocNumber || 'xxxx/xx'}
+                      value={docNumberSuffix}
+                      onChange={(e) => setDocNumberSuffix(e.target.value)}
+                      className={`text-lg rounded-l-none flex-1 ${isNumberAssigned
+                        ? 'bg-muted dark:bg-card text-muted-foreground cursor-not-allowed border-border'
+                        : 'bg-card text-foreground border-border'
+                      }`}
+                      disabled={isNumberAssigned}
+                      readOnly={isNumberAssigned}
+                    />
+                  </div>
+
                   {isNumberAssigned && (
-                    <Badge variant="default" className="bg-green-600">
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      ลงเลขแล้ว
-                    </Badge>
+                    <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center gap-1">
+                      <CheckCircle className="h-4 w-4" />
+                      เลขหนังสือถูกลงแล้ว: ศธ ๐๔๐๐๗.๖๐๐/{docNumberSuffix}
+                    </p>
                   )}
                 </div>
-                {suggestedDocNumber && !isNumberAssigned && (
-                  <p className="text-sm text-muted-foreground">
-                    แนะนำ: {suggestedDocNumber}
-                  </p>
-                )}
+                <div className="flex justify-between">
+                  <div /> {/* Empty div for spacing */}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleAssignNumber}
+                      disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || isNumberAssigned || isAssigningNumber}
+                      className={isNumberAssigned
+                        ? "bg-muted dark:bg-card text-muted-foreground border-border cursor-not-allowed"
+                        : "bg-green-600 text-white hover:bg-green-700 transition-colors"
+                      }
+                    >
+                      {isAssigningNumber ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                          </svg>
+                          กำลังลงเลข...
+                        </>
+                      ) : isNumberAssigned ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          ลงเลขแล้ว
+                        </>
+                      ) : (
+                        "ลงเลข"
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => setCurrentStep(2)}
+                      disabled={!isStepComplete(1)}
+                      className="bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ถัดไป
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Action Buttons */}
-            <div className="flex justify-between">
-              <Button
-                variant="destructive"
-                onClick={() => setShowRejectModal(true)}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                ตีกลับ
-              </Button>
-              <Button
-                onClick={() => setCurrentStep(2)}
-                disabled={!isStepComplete(1)}
-              >
-                ถัดไป
-              </Button>
-            </div>
+            {/* Rejection Card - ใช้ RejectionCard component เหมือน Step1DocumentNumber */}
+            <RejectionCard
+              onReject={handleRejectFromCard}
+              isLoading={isRejecting}
+            />
           </div>
         )}
 

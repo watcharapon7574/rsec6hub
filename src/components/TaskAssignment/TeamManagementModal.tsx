@@ -168,7 +168,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
     }
   };
 
-  // Toggle reporter status
+  // Toggle reporter status - only ONE reporter allowed
   const toggleReporter = (userId: string, memberStatus: string, isLeader: boolean) => {
     // Team leader can always change their own reporter status
     // But cannot change reporter status of other members who already acknowledged
@@ -182,13 +182,12 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
     }
 
     setReporterIds(prev => {
-      const next = new Set(prev);
-      if (next.has(userId)) {
-        next.delete(userId);
-      } else {
-        next.add(userId);
+      // If clicking the same user who is already reporter → deselect (no reporter)
+      if (prev.has(userId)) {
+        return new Set();
       }
-      return next;
+      // Otherwise → select only this user (replace previous)
+      return new Set([userId]);
     });
   };
 
@@ -361,15 +360,15 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Reporter checkbox - leader can always edit their own, others only if pending */}
+                      {/* Reporter selection - only ONE can be selected */}
                       <label className={`flex items-center gap-2 ${canEditReporter ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
                         <Checkbox
                           checked={canEditReporter ? isReporter : member.is_reporter}
                           onCheckedChange={() => toggleReporter(member.user_id, member.status, isLeader)}
                           disabled={!canEditReporter}
-                          className="border-pink-400 data-[state=checked]:bg-pink-500"
+                          className="border-pink-400 data-[state=checked]:bg-pink-500 rounded-full"
                         />
-                        <span className="text-xs text-muted-foreground">ผู้รายงาน</span>
+                        <span className="text-xs text-muted-foreground">📄</span>
                       </label>
 
                       {/* Remove button for new members */}
@@ -414,9 +413,9 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
             <div className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-pink-500 mt-0.5" />
               <div className="text-sm text-pink-800 dark:text-pink-200">
-                <p className="font-medium">ผู้รายงานไฟล์ต้องแนบไฟล์เมื่อรายงานผล</p>
+                <p className="font-medium">ผู้รายงานไฟล์ (เลือกได้ 1 คน หรือไม่เลือกก็ได้)</p>
                 <p className="text-xs mt-1 text-pink-600 dark:text-pink-400">
-                  สมาชิกที่ไม่ใช่ผู้รายงานจะรายงานแค่ข้อความ (ไม่บังคับเลือก)
+                  ผู้รายงานต้องแนบไฟล์เมื่อรายงานผล • สมาชิกอื่นรายงานแค่ข้อความ
                 </p>
                 <p className="text-xs mt-1 text-muted-foreground">
                   💡 สมาชิกที่รับทราบงานแล้วไม่สามารถแก้ไขหรือลบได้

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp, ClipboardCheck } from 'lucide-react';
+import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp, ClipboardCheck, FileCheck } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useSmartRealtime } from '@/hooks/useSmartRealtime';
@@ -77,7 +77,7 @@ const MemoList: React.FC<MemoListProps> = ({
         const memoIds = localMemos.map(m => m.id);
 
         // Find task_assignments with report_memo_id for these memos
-        const { data: assignments, error: assignmentsError } = await supabase
+        const { data: assignments, error: assignmentsError } = await (supabase as any)
           .from('task_assignments')
           .select('memo_id, report_memo_id')
           .in('memo_id', memoIds)
@@ -430,8 +430,23 @@ const MemoList: React.FC<MemoListProps> = ({
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-amber-500'}`} />
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'}`} title={memo.subject}>{memo.subject}</span>
+                  {/* Checkmark indicator for report memo - leftmost position */}
+                  {memo.subject?.startsWith('รายงานผล') && (
+                    <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${isCompleted ? 'bg-muted' : 'bg-teal-100 dark:bg-teal-900'}`}>
+                      <CheckCircle className={`h-3.5 w-3.5 ${isCompleted ? 'text-muted-foreground' : 'text-teal-600 dark:text-teal-400'}`} />
+                    </div>
+                  )}
+                  {/* Icon: FileCheck (teal) for report memo, FileText (amber) for regular memo */}
+                  {memo.subject?.startsWith('รายงานผล') ? (
+                    <FileCheck className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-teal-500'}`} />
+                  ) : (
+                    <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-amber-500'}`} />
+                  )}
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : memo.subject?.startsWith('รายงานผล') ? 'text-teal-700 dark:text-teal-300 group-hover:text-teal-800' : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'}`} title={memo.subject}>{memo.subject}</span>
+                  {/* Badge for report memo */}
+                  {memo.subject?.startsWith('รายงานผล') && (
+                    <span className="bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap">รายงาน</span>
+                  )}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
                   {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
@@ -657,31 +672,42 @@ const MemoList: React.FC<MemoListProps> = ({
                         </div>
                       )}
 
-                      {/* จัดการเอกสาร button - only for clerk_teacher and not yet proposed */}
+                      {/* จัดการเอกสาร/จัดการรายงาน button - only for clerk_teacher and not yet proposed */}
                       {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                         <div className="relative">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`h-7 px-2 flex items-center gap-1 ${
-                              memo.current_signer_order > 1
-                                ? 'border-border text-muted-foreground cursor-not-allowed'
-                                : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 dark:text-amber-600'
-                            }`}
-                            onClick={() => {
-                              if (memo.current_signer_order <= 1) {
-                                const manageRoute = getDocumentManageRoute(memo, memo.id);
-                                navigate(manageRoute);
-                              }
-                            }}
-                            disabled={memo.status === 'rejected' || memo.current_signer_order > 1}
-                            title={memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : 'จัดการเอกสาร'}
-                          >
-                            <FileText className="h-4 w-4" />
-                            <span className="text-xs font-medium">
-                              {memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : 'จัดการเอกสาร'}
-                            </span>
-                          </Button>
+                          {(() => {
+                            const isReportMemo = memo.subject?.startsWith('รายงานผล');
+                            const buttonColor = isReportMemo
+                              ? (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400')
+                              : (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 dark:text-amber-600');
+                            const buttonText = memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : (isReportMemo ? 'จัดการรายงาน' : 'จัดการเอกสาร');
+                            const buttonTitle = memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : (isReportMemo ? 'จัดการรายงาน' : 'จัดการเอกสาร');
+                            const IconComponent = isReportMemo ? ClipboardCheck : FileText;
+
+                            return (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={`h-7 px-2 flex items-center gap-1 ${buttonColor}`}
+                                onClick={() => {
+                                  if (memo.current_signer_order <= 1) {
+                                    if (isReportMemo) {
+                                      // Navigate to manage report memo page
+                                      navigate(`/manage-report-memo/${memo.id}`);
+                                    } else {
+                                      const manageRoute = getDocumentManageRoute(memo, memo.id);
+                                      navigate(manageRoute);
+                                    }
+                                  }
+                                }}
+                                disabled={memo.status === 'rejected' || memo.current_signer_order > 1}
+                                title={buttonTitle}
+                              >
+                                <IconComponent className="h-4 w-4" />
+                                <span className="text-xs font-medium">{buttonText}</span>
+                              </Button>
+                            );
+                          })()}
                           {memo.status === 'draft' && memo.current_signer_order <= 1 && (
                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
                           )}

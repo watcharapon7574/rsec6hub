@@ -9,7 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useMemoErrorHandler } from '@/hooks/useMemoErrorHandler';
 import { MemoFormData } from '@/types/memo';
-import { FileText, ArrowLeft, AlertCircle, Sparkles, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, FileCheck, ArrowLeft, AlertCircle, Sparkles, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AnimatedProgress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -681,7 +681,11 @@ const CreateMemoPage = () => {
 
           {/* Header Card */}
           <Card className="mb-8 overflow-hidden shadow-xl border-0">
-            <CardHeader className="relative bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white py-12">
+            <CardHeader className={`relative text-white py-12 ${
+              isEditMode && originalMemo?.subject?.startsWith('รายงานผล')
+                ? 'bg-gradient-to-br from-teal-400 via-teal-500 to-teal-600'
+                : 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600'
+            }`}>
               {/* Background Pattern */}
               <div className="absolute inset-0 opacity-10">
                 <div className="absolute inset-0" style={{
@@ -693,18 +697,26 @@ const CreateMemoPage = () => {
               <div className="relative z-10 text-center">
                 {/* Icon Container */}
                 <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 border border-white/20 shadow-lg">
-                  <FileText className="w-10 h-10 text-white" />
+                  {isEditMode && originalMemo?.subject?.startsWith('รายงานผล') ? (
+                    <FileCheck className="w-10 h-10 text-white" />
+                  ) : (
+                    <FileText className="w-10 h-10 text-white" />
+                  )}
                 </div>
                 
                 {/* Title */}
                 <h1 className="text-3xl font-bold mb-3 tracking-tight">
-                  {isEditMode ? 'แก้ไขบันทึกข้อความ' : 'สร้างบันทึกข้อความ'}
+                  {isEditMode
+                    ? (originalMemo?.subject?.startsWith('รายงานผล') ? 'แก้ไขบันทึกข้อความรายงานผล' : 'แก้ไขบันทึกข้อความ')
+                    : 'สร้างบันทึกข้อความ'}
                 </h1>
-                
+
                 {/* Subtitle */}
                 <p className="text-blue-100 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-                  {isEditMode 
-                    ? 'แก้ไขและปรับปรุงบันทึกข้อความตามข้อเสนอแนะที่ได้รับ' 
+                  {isEditMode
+                    ? (originalMemo?.subject?.startsWith('รายงานผล')
+                        ? 'แก้ไขบันทึกข้อความรายงานผลตามข้อเสนอแนะที่ได้รับ'
+                        : 'แก้ไขและปรับปรุงบันทึกข้อความตามข้อเสนอแนะที่ได้รับ')
                     : 'สร้างบันทึกข้อความใหม่สำหรับส่งให้ผู้เกี่ยวข้องพิจารณาและลงนาม'
                   }
                 </p>
@@ -712,11 +724,15 @@ const CreateMemoPage = () => {
                 {/* Status Badge for Edit Mode */}
                 {isEditMode && (
                   <div className="mt-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-500/20 text-yellow-100 border border-yellow-500/30">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      originalMemo?.subject?.startsWith('รายงานผล')
+                        ? 'bg-teal-500/20 text-teal-100 border border-teal-500/30'
+                        : 'bg-yellow-500/20 text-yellow-100 border border-yellow-500/30'
+                    }`}>
                       <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
-                      โหมดแก้ไข
+                      {originalMemo?.subject?.startsWith('รายงานผล') ? 'โหมดแก้ไขรายงาน' : 'โหมดแก้ไข'}
                     </span>
                   </div>
                 )}

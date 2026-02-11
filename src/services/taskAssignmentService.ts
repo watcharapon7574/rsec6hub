@@ -1015,33 +1015,34 @@ class TaskAssignmentService {
         usersToNotify.add(teamLeader.assigned_to);
       }
 
-      // Get memo signers (ผู้ลงนาม)
+      // Get memo signers from signature_positions (ผู้ลงนาม)
+      // NOTE: signers are stored in memos.signature_positions JSONB, not in a separate table
       if (memoId) {
-        const { data: signers } = await (supabase as any)
-          .from('memo_signers')
-          .select('signer_user_id')
-          .eq('memo_id', memoId);
+        const { data: memoWithSigners } = await supabase
+          .from('memos')
+          .select('signature_positions')
+          .eq('id', memoId)
+          .single();
 
-        if (signers) {
-          signers.forEach(s => {
-            if (s.signer_user_id) {
-              usersToNotify.add(s.signer_user_id);
+        if (memoWithSigners?.signature_positions) {
+          const signaturePositions = memoWithSigners.signature_positions as Array<{ userId?: string; user_id?: string }>;
+          signaturePositions.forEach(signer => {
+            const signerUserId = signer.userId || signer.user_id;
+            if (signerUserId) {
+              usersToNotify.add(signerUserId);
             }
           });
         }
       }
 
       // Create notifications
+      // NOTE: notifications table has reference_id (uuid) instead of data (jsonb)
       const notifications = Array.from(usersToNotify).map(userId => ({
         user_id: userId,
         type: 'task_report_submitted',
         title: 'มีการรายงานผลงาน',
         message: `มีการรายงานผลสำหรับ: ${documentSubject}`,
-        data: {
-          assignment_id: assignmentId,
-          report_memo_id: memoId,
-          document_type: task.document_type
-        },
+        reference_id: memoId, // Reference to the report memo
         is_read: false
       }));
 

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, FileCheck, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw, Trash2, FileInput, ClipboardList, Users } from 'lucide-react';
+import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, XCircle, FileText, FileCheck, Settings, Building, Paperclip, Search, Filter, ChevronLeft, ChevronRight, RotateCcw, Trash2, FileInput, ClipboardList, ClipboardCheck, Users } from 'lucide-react';
 import ClerkDocumentActions from './ClerkDocumentActions';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -1097,29 +1097,39 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       })()}
                       {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                         <div className="relative">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className={`h-7 px-2 flex items-center gap-1 ${
-                              memo.current_signer_order > 1 
-                                ? 'border-border text-muted-foreground cursor-not-allowed' 
-                                : 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 dark:text-purple-600'
-                            }`}
-                            onClick={() => {
-                              if (memo.current_signer_order <= 1) {
-                                const manageRoute = getDocumentManageRoute(memo, memo.id);
-                                console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
-                                navigate(manageRoute);
-                              }
-                            }}
-                            disabled={memo.status === 'rejected' || memo.current_signer_order > 1}
-                            title={memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : 'จัดการเอกสาร'}
-                          >
-                            <FileText className="h-4 w-4" />
-                            <span className="text-xs font-medium">
-                              {memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : 'จัดการเอกสาร'}
-                            </span>
-                          </Button>
+                          {(() => {
+                            const isReportMemo = memo.subject?.startsWith('รายงานผล');
+                            const buttonColor = isReportMemo
+                              ? (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400')
+                              : (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400');
+                            const buttonText = memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : (isReportMemo ? 'จัดการรายงาน' : 'จัดการเอกสาร');
+                            const buttonTitle = memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : (isReportMemo ? 'จัดการรายงาน' : 'จัดการเอกสาร');
+                            const IconComponent = isReportMemo ? ClipboardCheck : FileText;
+
+                            return (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={`h-7 px-2 flex items-center gap-1 ${buttonColor}`}
+                                onClick={() => {
+                                  if (memo.current_signer_order <= 1) {
+                                    if (isReportMemo) {
+                                      navigate(`/manage-report-memo/${memo.id}`);
+                                    } else {
+                                      const manageRoute = getDocumentManageRoute(memo, memo.id);
+                                      console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
+                                      navigate(manageRoute);
+                                    }
+                                  }
+                                }}
+                                disabled={memo.status === 'rejected' || memo.current_signer_order > 1}
+                                title={buttonTitle}
+                              >
+                                <IconComponent className="h-4 w-4" />
+                                <span className="text-xs font-medium">{buttonText}</span>
+                              </Button>
+                            );
+                          })()}
                           {memo.status === 'draft' && memo.current_signer_order <= 1 && (
                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
                               ใหม่{memo.revision_count ? `(${memo.revision_count})` : ''}

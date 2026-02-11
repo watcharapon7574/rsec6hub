@@ -62,6 +62,7 @@ export interface TaskDetailsOptions {
   location?: string;
   // Team management
   selectionInfo?: SelectionInfo;
+  isTeamLeader?: boolean;
 }
 
 export interface TaskAssignmentWithDetails {
@@ -175,16 +176,25 @@ class TaskAssignmentService {
         }
       }
 
+      // Set team leader flag
+      if (options?.isTeamLeader) {
+        updateData.is_team_leader = true;
+      }
+
       // Update if we have any data
       if (Object.keys(updateData).length > 0) {
+        console.log('📝 Updating task assignment:', { assignmentId, updateData });
+
         const { error: updateError } = await (supabase as any)
           .from('task_assignments')
           .update(updateData)
           .eq('id', assignmentId);
 
         if (updateError) {
-          console.error('Error updating task details:', updateError);
+          console.error('❌ Error updating task details:', updateError);
           // Don't throw - assignment was created successfully
+        } else {
+          console.log('✅ Task assignment updated successfully');
         }
       }
 
@@ -209,10 +219,17 @@ class TaskAssignmentService {
       const isPositionBased = options?.selectionInfo?.source === 'position';
       const isNameOrGroupBased = options?.selectionInfo?.source === 'name' || options?.selectionInfo?.source === 'group';
 
-      // For name/group based: find the most senior user (lowest RSECxxx)
+      // Determine team leader BEFORE creating assignments
       let teamLeaderUserId: string | null = null;
-      if (isNameOrGroupBased && assignedToUserIds.length > 1) {
-        // Fetch employee_id for all users
+
+      if (assignedToUserIds.length === 1) {
+        // Single user: they are the team leader
+        teamLeaderUserId = assignedToUserIds[0];
+      } else if (isPositionBased) {
+        // For position-based: first user is team leader
+        teamLeaderUserId = assignedToUserIds[0];
+      } else if (isNameOrGroupBased && assignedToUserIds.length > 1) {
+        // For name/group based: find the most senior user (lowest RSECxxx)
         const { data: profiles } = await supabase
           .from('profiles')
           .select('user_id, employee_id')
@@ -227,42 +244,31 @@ class TaskAssignmentService {
         }
       }
 
-      // Create assignment for each user
-      const assignmentMap = new Map<string, string>(); // userId -> assignmentId
+      console.log('📋 createMultipleTaskAssignments:', {
+        isPositionBased,
+        isNameOrGroupBased,
+        teamLeaderUserId,
+        assignedToUserIds,
+        source: options?.selectionInfo?.source
+      });
+
+      // Create assignment for each user with isTeamLeader flag
       for (let i = 0; i < assignedToUserIds.length; i++) {
         const userId = assignedToUserIds[i];
+        const isLeader = userId === teamLeaderUserId;
+
         const assignmentId = await this.createTaskAssignment(
           documentId,
           documentType,
           userId,
-          options
+          {
+            ...options,
+            isTeamLeader: isLeader
+          }
         );
         assignmentIds.push(assignmentId);
-        assignmentMap.set(userId, assignmentId);
-      }
 
-      // Set team leader
-      if (isPositionBased) {
-        // For position-based: first user is team leader
-        await (supabase as any)
-          .from('task_assignments')
-          .update({ is_team_leader: true })
-          .eq('id', assignmentIds[0]);
-      } else if (isNameOrGroupBased && teamLeaderUserId) {
-        // For name/group-based: most senior user is team leader
-        const leaderAssignmentId = assignmentMap.get(teamLeaderUserId);
-        if (leaderAssignmentId) {
-          await (supabase as any)
-            .from('task_assignments')
-            .update({ is_team_leader: true })
-            .eq('id', leaderAssignmentId);
-        }
-      } else if (assignedToUserIds.length === 1) {
-        // Single user: they are the team leader
-        await (supabase as any)
-          .from('task_assignments')
-          .update({ is_team_leader: true })
-          .eq('id', assignmentIds[0]);
+        console.log(`  ✅ Created assignment for ${userId}, isTeamLeader: ${isLeader}`);
       }
 
       return assignmentIds;

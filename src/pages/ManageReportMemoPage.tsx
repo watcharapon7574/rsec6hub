@@ -262,40 +262,173 @@ const ManageReportMemoPage: React.FC = () => {
     }
   };
 
+  // Function to convert date to Thai format
+  const formatThaiDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const thaiMonths = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+
+    const day = date.getDate();
+    const month = thaiMonths[date.getMonth()];
+    const year = date.getFullYear() + 543; // Convert to Buddhist Era
+
+    return `${day} ${month} ${year}`;
+  };
+
+  // Function to regenerate PDF with document number
+  const regeneratePdfWithDocNumber = async (docSuffix: string) => {
+    if (!reportMemo || !profile?.user_id) return null;
+
+    try {
+      console.log('📄 Regenerating PDF with document suffix:', docSuffix);
+
+      // Prepare form data for API call
+      const formData = {
+        doc_number: docSuffix, // ส่งแค่ส่วน 4568/68 เพราะใน template มี ศธ ๐๔๐๐๗.๖๐๐/ อยู่แล้ว
+        date: formatThaiDate(reportMemo.date || new Date().toISOString().split('T')[0]),
+        subject: reportMemo.subject || '',
+        attachment_title: reportMemo.attachment_title || '',
+        introduction: reportMemo.introduction || '',
+        author_name: reportMemo.author_name || '',
+        author_position: reportMemo.author_position || '',
+        fact: reportMemo.fact || '',
+        proposal: reportMemo.proposal || '',
+        attached_files: reportMemo.attached_files || []
+      };
+
+      // Call Railway PDF API with queue + retry logic
+      const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/pdf',
+            },
+            mode: 'cors',
+            credentials: 'omit',
+            body: JSON.stringify(formData),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error: ${response.status} - ${errorText}`);
+          }
+
+          const blob = await response.blob();
+          if (blob.size === 0) {
+            throw new Error('Received empty PDF response');
+          }
+
+          return blob;
+        },
+        'PDF Generation (Document Number)',
+        3,
+        1000
+      );
+
+      // Upload new PDF to Supabase Storage (overwrite existing)
+      const fileName = `memo_${Date.now()}_${docSuffix.replace(/[^\w]/g, '_')}.pdf`;
+      const filePath = `memos/${profile.user_id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error regenerating PDF:', error);
+      throw error;
+    }
+  };
+
   // Handle assign document number
   const handleAssignNumber = async () => {
-    if (!docNumberSuffix.trim() || !memoId) return;
+    // ใช้ค่าจาก input หรือใช้ค่า suggested ถ้าไม่ได้กรอกอะไร
+    let finalDocSuffix = docNumberSuffix.trim() || suggestedDocNumber;
+
+    // ตรวจสอบและแยกเอาเฉพาะ suffix ออกมา ถ้ามี prefix อยู่
+    const match = finalDocSuffix.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+    if (match) {
+      finalDocSuffix = match[1];
+      console.log('Extracted suffix from full number:', finalDocSuffix);
+    }
+
+    if (!finalDocSuffix) {
+      toast({
+        title: 'กรุณากรอกเลขหนังสือ',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!memoId) return;
+
+    const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${finalDocSuffix}`;
+    setDocNumberSuffix(finalDocSuffix); // อัปเดตให้แสดงในช่องกรอก
 
     setIsAssigningNumber(true);
     try {
-      const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${docNumberSuffix.trim()}`;
+      const now = new Date().toISOString();
       const docNumberStatus = {
         status: 'ลงเลขหนังสือแล้ว',
-        assigned_at: new Date().toISOString(),
+        assigned_at: now,
         clerk_id: profile?.user_id || null
       };
 
+      // Regenerate PDF with document number
+      const newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
+
+      // Update memo with document number, status, clerk_id, and new PDF URL
+      const updateData: any = {
+        doc_number: finalDocSuffix, // บันทึกแค่ส่วน suffix เช่น 4571/68
+        doc_number_status: docNumberStatus,
+        clerk_id: profile?.user_id,
+        updated_at: now
+      };
+
+      console.log('📝 Step 1 - Recording clerk_id:', profile?.user_id, 'for memo:', memoId);
+
+      // Update PDF path if regeneration was successful
+      if (newPdfUrl) {
+        updateData.pdf_draft_path = newPdfUrl;
+      }
+
       const { error } = await supabase
         .from('memos')
-        .update({
-          doc_number: fullDocNumber,
-          doc_number_status: docNumberStatus,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', memoId);
 
       if (error) throw error;
 
+      // Refetch เพื่ออัปเดต memo state ให้เป็นค่าล่าสุดจาก database
+      await refetch();
+
       setIsNumberAssigned(true);
       setReportMemo((prev: any) => ({
         ...prev,
-        doc_number: fullDocNumber,
-        doc_number_status: docNumberStatus
+        doc_number: finalDocSuffix,
+        doc_number_status: docNumberStatus,
+        pdf_draft_path: newPdfUrl || prev.pdf_draft_path
       }));
 
       toast({
         title: 'ลงเลขหนังสือสำเร็จ',
-        description: `เลขหนังสือ: ${fullDocNumber}`
+        description: `เลขหนังสือ ${fullDocNumber} ถูกบันทึกและสร้าง PDF ใหม่แล้ว`
       });
     } catch (error: any) {
       console.error('Error assigning number:', error);
@@ -868,7 +1001,7 @@ const ManageReportMemoPage: React.FC = () => {
         {currentStep === 3 && (
           <Step4Review
             memo={reportMemo}
-            documentNumber={reportMemo?.doc_number || '-'}
+            documentNumber={reportMemo?.doc_number ? `ศธ ๐๔๐๐๗.๖๐๐/${reportMemo.doc_number}` : '-'}
             signers={signers}
             signaturePositions={signaturePositions}
             onPositionRemove={handlePositionRemove}

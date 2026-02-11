@@ -1093,8 +1093,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               <FileText className="h-4 w-4" />
                               <span className="text-xs font-medium">แก้ไข</span>
                             </Button>
-                          ) : (
-                            {(() => {
+                          ) : (() => {
                               const isReportMemo = memo.subject?.startsWith('รายงานผล');
                               const buttonColor = isReportMemo
                                 ? (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400')
@@ -1127,7 +1126,6 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                 </Button>
                               );
                             })()}
-                          )}
                           {memo.status === 'draft' && memo.current_signer_order <= 1 && (
                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">ใหม่</span>
                           )}

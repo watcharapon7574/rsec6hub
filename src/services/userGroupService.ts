@@ -19,6 +19,7 @@ export interface UserGroup {
   updated_at: string;
   usage_count: number;
   group_type: GroupType; // 'group' = กลุ่มหลายคน, 'position' = หน้าที่ 1 คน
+  leader_user_id?: string | null; // หัวหน้ากลุ่ม (สำหรับ group_type = 'group')
 }
 
 export const userGroupService = {
@@ -45,7 +46,8 @@ export const userGroupService = {
       ...group,
       members: Array.isArray(group.members) ? group.members : [],
       usage_count: group.usage_count || 0,
-      group_type: group.group_type || 'group'
+      group_type: group.group_type || 'group',
+      leader_user_id: group.leader_user_id || null
     }));
   },
 
@@ -73,7 +75,8 @@ export const userGroupService = {
       ...group,
       members: Array.isArray(group.members) ? group.members : [],
       usage_count: group.usage_count || 0,
-      group_type: group.group_type || 'group'
+      group_type: group.group_type || 'group',
+      leader_user_id: group.leader_user_id || null
     }));
   },
 
@@ -83,7 +86,7 @@ export const userGroupService = {
   },
 
   // Create a new group or position
-  async createGroup(name: string, members: Profile[], groupType: GroupType = 'group'): Promise<UserGroup> {
+  async createGroup(name: string, members: Profile[], groupType: GroupType = 'group', leaderUserId?: string): Promise<UserGroup> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new Error('ไม่พบข้อมูลผู้ใช้');
@@ -94,13 +97,24 @@ export const userGroupService = {
       throw new Error('หน้าที่ต้องมีผู้รับผิดชอบ 1 คน');
     }
 
+    // Validate: group must have a leader
+    if (groupType === 'group' && !leaderUserId) {
+      throw new Error('กลุ่มต้องมีหัวหน้ากลุ่ม');
+    }
+
+    // Validate: leader must be a member of the group
+    if (groupType === 'group' && leaderUserId && !members.some(m => m.user_id === leaderUserId)) {
+      throw new Error('หัวหน้ากลุ่มต้องเป็นสมาชิกในกลุ่ม');
+    }
+
     const { data, error } = await supabase
       .from('user_groups')
       .insert({
         name,
         members: members,
         created_by: user.id,
-        group_type: groupType
+        group_type: groupType,
+        leader_user_id: groupType === 'group' ? leaderUserId : null
       })
       .select()
       .single();
@@ -113,7 +127,8 @@ export const userGroupService = {
     return {
       ...data,
       members: Array.isArray(data.members) ? data.members : [],
-      group_type: data.group_type || 'group'
+      group_type: data.group_type || 'group',
+      leader_user_id: data.leader_user_id || null
     };
   },
 
@@ -123,13 +138,20 @@ export const userGroupService = {
   },
 
   // Update a group
-  async updateGroup(groupId: string, name: string, members: Profile[]): Promise<UserGroup> {
+  async updateGroup(groupId: string, name: string, members: Profile[], leaderUserId?: string): Promise<UserGroup> {
+    const updateData: Record<string, any> = {
+      name,
+      members: members
+    };
+
+    // Only update leader_user_id if provided
+    if (leaderUserId !== undefined) {
+      updateData.leader_user_id = leaderUserId;
+    }
+
     const { data, error } = await supabase
       .from('user_groups')
-      .update({
-        name,
-        members: members
-      })
+      .update(updateData)
       .eq('id', groupId)
       .select()
       .single();
@@ -142,7 +164,8 @@ export const userGroupService = {
     return {
       ...data,
       members: Array.isArray(data.members) ? data.members : [],
-      group_type: data.group_type || 'group'
+      group_type: data.group_type || 'group',
+      leader_user_id: data.leader_user_id || null
     };
   },
 
@@ -204,7 +227,8 @@ export const userGroupService = {
       ...group,
       members: Array.isArray(group.members) ? group.members : [],
       usage_count: group.usage_count || 0,
-      group_type: group.group_type || 'group'
+      group_type: group.group_type || 'group',
+      leader_user_id: group.leader_user_id || null
     }));
   }
 };

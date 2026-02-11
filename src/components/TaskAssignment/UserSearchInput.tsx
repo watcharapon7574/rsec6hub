@@ -29,6 +29,8 @@ interface UserSearchInputProps {
   hidePositions?: boolean;
   /** Callback to clear all selected users */
   onClearAll?: () => void;
+  /** User IDs who are group leaders (will show crown icon) */
+  leaderUserIds?: string[];
 }
 
 const UserSearchInput: React.FC<UserSearchInputProps> = ({
@@ -40,7 +42,8 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
   onGroupSelect,
   onPositionSelect,
   hidePositions = false,
-  onClearAll
+  onClearAll,
+  leaderUserIds = []
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
@@ -213,7 +216,7 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => searchTerm && setShowSuggestions(true)}
-          className="pl-9 pr-4"
+          className="pl-9 pr-4 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-pink-400"
         />
 
         {/* Dropdown - separate component */}
@@ -233,6 +236,7 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
         selectedUsers={selectedUsers}
         onRemoveUser={handleRemoveUser}
         onClearAll={onClearAll}
+        leaderUserIds={leaderUserIds}
       />
 
       {/* Helper text */}

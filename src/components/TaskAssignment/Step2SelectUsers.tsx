@@ -13,6 +13,7 @@ interface Profile {
   first_name: string;
   last_name: string;
   position: string;
+  employee_id?: string;
 }
 
 export type SelectionSource = 'name' | 'group' | 'position' | null;
@@ -23,6 +24,8 @@ export interface SelectionInfo {
   positionName?: string;
   groupId?: string;
   groupName?: string;
+  // For group assignments: track leader user IDs from each selected group
+  groupLeaderIds?: string[];
 }
 
 interface Step2SelectUsersProps {
@@ -47,6 +50,19 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
   const isPositionMode = selectionInfo?.source === 'position';
   // Check if name or group is selected (locks out position selection)
   const isNameOrGroupMode = selectionInfo?.source === 'name' || selectionInfo?.source === 'group';
+
+  // Calculate leader IDs for display
+  const getDisplayLeaderIds = (): string[] => {
+    // If we have groupLeaderIds from positions or groups, use them
+    if (selectionInfo?.groupLeaderIds && selectionInfo.groupLeaderIds.length > 0) {
+      return selectionInfo.groupLeaderIds;
+    }
+    // For name-based selections, use the first person added as leader
+    if (selectionInfo?.source === 'name' && selectedUsers.length > 0) {
+      return [selectedUsers[0].user_id];
+    }
+    return [];
+  };
 
   // Clear all selections
   const handleClear = () => {
@@ -77,13 +93,18 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
     }
   };
 
-  const handleCreateGroup = async (groupName: string, members: Profile[], groupType: GroupType) => {
+  const handleCreateGroup = async (groupName: string, members: Profile[], groupType: GroupType, leaderUserId?: string) => {
     try {
-      await userGroupService.createGroup(groupName, members, groupType);
+      await userGroupService.createGroup(groupName, members, groupType, leaderUserId);
       const typeLabel = groupType === 'position' ? 'หน้าที่' : 'กลุ่ม';
+      const leader = groupType === 'group' && leaderUserId
+        ? members.find(m => m.user_id === leaderUserId)
+        : null;
       const memberLabel = groupType === 'position'
         ? `ผู้รับผิดชอบ: ${members[0]?.first_name} ${members[0]?.last_name}`
-        : `${members.length} คน`;
+        : leader
+          ? `${members.length} คน • หัวหน้า: ${leader.first_name}`
+          : `${members.length} คน`;
       toast({
         title: `สร้าง${typeLabel}สำเร็จ`,
         description: `${typeLabel} "${groupName}" ถูกสร้างแล้ว (${memberLabel})`,
@@ -158,18 +179,45 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
     // Update selection info
     if (onSelectionInfoChange) {
       if (isPosition) {
+        // For positions, the single member is the "leader" (responsible person)
+        const positionMemberId = group.members[0]?.user_id;
         onSelectionInfoChange({
           source: 'position',
           positionId: group.id,
-          positionName: group.name
+          positionName: group.name,
+          groupLeaderIds: positionMemberId ? [positionMemberId] : []
         });
-      } else if (!selectionInfo?.source) {
-        // Only set group source if no source is set yet
-        onSelectionInfoChange({
-          source: 'group',
-          groupId: group.id,
-          groupName: group.name
-        });
+      } else {
+        // Track group selection and leader info
+        const existingLeaderIds = selectionInfo?.groupLeaderIds || [];
+        const newLeaderIds = group.leader_user_id
+          ? [...existingLeaderIds, group.leader_user_id]
+          : existingLeaderIds;
+
+        if (!selectionInfo?.source) {
+          // First group selection
+          onSelectionInfoChange({
+            source: 'group',
+            groupId: group.id,
+            groupName: group.name,
+            groupLeaderIds: newLeaderIds
+          });
+        } else if (selectionInfo.source === 'group') {
+          // Additional group selection
+          onSelectionInfoChange({
+            ...selectionInfo,
+            groupLeaderIds: newLeaderIds
+          });
+        }
+        // If source is 'name', don't change source but add leader
+        else if (selectionInfo.source === 'name' && group.leader_user_id) {
+          onSelectionInfoChange({
+            source: 'group', // Switch to group mode since we now have a group
+            groupId: group.id,
+            groupName: group.name,
+            groupLeaderIds: newLeaderIds
+          });
+        }
       }
     }
 
@@ -261,6 +309,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
           onPositionSelect={(isPositionMode || isNameOrGroupMode) ? undefined : handleSearchPositionSelect}
           hidePositions={isNameOrGroupMode}
           onClearAll={handleClear}
+          leaderUserIds={getDisplayLeaderIds()}
         />
 
         {/* Position mode warning */}
@@ -287,7 +336,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
               </span>
               {selectionInfo?.groupName || `${selectedUsers.length} คน`}
             </div>
-            <p className="text-xs mt-1 text-blue-600 dark:text-blue-400 dark:text-blue-600">
+            <p className="text-xs mt-1 text-blue-600 dark:text-blue-400">
               สามารถเพิ่มได้เฉพาะรายคนหรือกลุ่ม • ไม่สามารถเพิ่มหน้าที่ได้
             </p>
           </div>

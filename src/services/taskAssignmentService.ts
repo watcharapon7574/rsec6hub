@@ -52,6 +52,8 @@ export interface SelectionInfo {
   positionName?: string;
   groupId?: string;
   groupName?: string;
+  // For group assignments: track leader user IDs from each selected group
+  groupLeaderIds?: string[];
 }
 
 export interface TaskDetailsOptions {
@@ -217,7 +219,9 @@ class TaskAssignmentService {
     try {
       const assignmentIds: string[] = [];
       const isPositionBased = options?.selectionInfo?.source === 'position';
-      const isNameOrGroupBased = options?.selectionInfo?.source === 'name' || options?.selectionInfo?.source === 'group';
+      const isGroupBased = options?.selectionInfo?.source === 'group';
+      const isNameBased = options?.selectionInfo?.source === 'name';
+      const groupLeaderIds = options?.selectionInfo?.groupLeaderIds || [];
 
       // Determine team leader BEFORE creating assignments
       let teamLeaderUserId: string | null = null;
@@ -228,25 +232,55 @@ class TaskAssignmentService {
       } else if (isPositionBased) {
         // For position-based: first user is team leader
         teamLeaderUserId = assignedToUserIds[0];
-      } else if (isNameOrGroupBased && assignedToUserIds.length > 1) {
-        // For name/group based: find the most senior user (lowest RSECxxx)
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, employee_id')
-          .in('user_id', assignedToUserIds);
+      } else if (isGroupBased && groupLeaderIds.length > 0) {
+        // For group-based with leaders: use group leaders only
+        // Filter to only include leaders that are in the assigned users
+        const validLeaderIds = groupLeaderIds.filter(id => assignedToUserIds.includes(id));
 
-        if (profiles && profiles.length > 0) {
-          const usersWithEmployeeId = profiles.map(p => ({
-            userId: p.user_id,
-            employeeId: p.employee_id
-          }));
-          teamLeaderUserId = this.getMostSeniorUser(usersWithEmployeeId);
+        if (validLeaderIds.length === 1) {
+          // Single group leader
+          teamLeaderUserId = validLeaderIds[0];
+        } else if (validLeaderIds.length > 1) {
+          // Multiple group leaders: find most senior (lowest RSEC)
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, employee_id')
+            .in('user_id', validLeaderIds);
+
+          if (profiles && profiles.length > 0) {
+            const leadersWithEmployeeId = profiles.map(p => ({
+              userId: p.user_id,
+              employeeId: p.employee_id
+            }));
+            teamLeaderUserId = this.getMostSeniorUser(leadersWithEmployeeId);
+          }
         }
+
+        // If no valid leaders found, fall back to RSEC among all users
+        if (!teamLeaderUserId) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, employee_id')
+            .in('user_id', assignedToUserIds);
+
+          if (profiles && profiles.length > 0) {
+            const usersWithEmployeeId = profiles.map(p => ({
+              userId: p.user_id,
+              employeeId: p.employee_id
+            }));
+            teamLeaderUserId = this.getMostSeniorUser(usersWithEmployeeId);
+          }
+        }
+      } else if (isNameBased && assignedToUserIds.length > 1) {
+        // For name-based only (no groups): first person added is the team leader
+        teamLeaderUserId = assignedToUserIds[0];
       }
 
       console.log('📋 createMultipleTaskAssignments:', {
         isPositionBased,
-        isNameOrGroupBased,
+        isGroupBased,
+        isNameBased,
+        groupLeaderIds,
         teamLeaderUserId,
         assignedToUserIds,
         source: options?.selectionInfo?.source
@@ -504,12 +538,18 @@ class TaskAssignmentService {
         throw new Error('ไม่พบงานมอบหมาย');
       }
 
-      // Update the main assignment to in_progress
+      // Determine status based on whether this person is a reporter
+      // Reporter: in_progress (need to submit report)
+      // Non-reporter: completed (done after acknowledging)
+      const isThisPersonReporter = reporterIds.includes(assignment.assigned_to);
+      const newStatus = isThisPersonReporter ? 'in_progress' : 'completed';
+
+      // Update the main assignment
       const { error: updateError } = await (supabase as any)
         .from('task_assignments')
         .update({
-          status: 'in_progress',
-          is_reporter: reporterIds.includes(assignment.assigned_to)
+          status: newStatus,
+          is_reporter: isThisPersonReporter
         })
         .eq('id', assignmentId);
 

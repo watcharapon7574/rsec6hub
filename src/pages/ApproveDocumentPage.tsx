@@ -6,14 +6,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  ArrowLeft, 
-  FileText, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  FileText,
+  CheckCircle,
   XCircle,
   MessageSquare,
   User,
-  Clock
+  Clock,
+  Eye,
+  ClipboardCheck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAllMemos } from '@/hooks/useAllMemos';
@@ -45,6 +47,8 @@ const ApproveDocumentPage: React.FC = () => {
   const [hasShownPermissionToast, setHasShownPermissionToast] = useState(false); // ป้องกัน toast ซ้ำ
   const [docReceive, setDocReceive] = useState<any>(null); // สำหรับเอกสาร doc_receive
   const [isDocReceive, setIsDocReceive] = useState(false); // flag ว่าเป็น doc_receive หรือไม่
+  const [originalDocument, setOriginalDocument] = useState<any>(null); // เอกสารต้นเรื่องสำหรับ report memo
+  const [isReportMemo, setIsReportMemo] = useState(false); // flag ว่าเป็น report memo หรือไม่
 
   // Scroll to top on mount - ทำทันทีเมื่อเปิดหน้า
   useEffect(() => {
@@ -81,6 +85,69 @@ const ApproveDocumentPage: React.FC = () => {
     };
 
     fetchDocReceive();
+  }, [memoId, memoFromMemosTable]);
+
+  // Check if this is a report memo and fetch original document
+  useEffect(() => {
+    const fetchOriginalDocument = async () => {
+      if (!memoId || !memoFromMemosTable) return;
+
+      // Check if it's a report memo (subject starts with "รายงานผล")
+      const isReport = memoFromMemosTable.subject?.startsWith('รายงานผล');
+      setIsReportMemo(isReport);
+
+      if (!isReport) {
+        setOriginalDocument(null);
+        return;
+      }
+
+      try {
+        // Find task_assignment with this report_memo_id
+        const { data: assignment, error: assignmentError } = await supabase
+          .from('task_assignments')
+          .select('*')
+          .eq('report_memo_id', memoId)
+          .single();
+
+        if (assignmentError || !assignment) {
+          console.log('No task_assignment found for report memo:', memoId);
+          return;
+        }
+
+        // Get original document based on document_type
+        let originalDoc = null;
+        if (assignment.document_type === 'memo' && assignment.memo_id) {
+          const { data: origMemo, error: origError } = await supabase
+            .from('memos')
+            .select('*')
+            .eq('id', assignment.memo_id)
+            .single();
+
+          if (!origError && origMemo) {
+            originalDoc = { ...origMemo, type: 'memo' };
+          }
+        } else if (assignment.document_type === 'doc_receive' && assignment.doc_receive_id) {
+          const { data: origDocReceive, error: origError } = await supabase
+            .from('doc_receives')
+            .select('*')
+            .eq('id', assignment.doc_receive_id)
+            .single();
+
+          if (!origError && origDocReceive) {
+            originalDoc = { ...origDocReceive, type: 'doc_receive' };
+          }
+        }
+
+        if (originalDoc) {
+          console.log('📋 Original document found for report memo:', originalDoc.subject);
+          setOriginalDocument(originalDoc);
+        }
+      } catch (error) {
+        console.error('Error fetching original document:', error);
+      }
+    };
+
+    fetchOriginalDocument();
   }, [memoId, memoFromMemosTable]);
 
   // Use either memo or docReceive
@@ -884,6 +951,51 @@ const ApproveDocumentPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Original Document Card - Only for report memos */}
+            {isReportMemo && originalDocument && (
+              <Card className="border-blue-200 dark:border-blue-800">
+                <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-blue-200 dark:border-blue-800">
+                  <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                    <ClipboardCheck className="h-5 w-5" />
+                    เอกสารต้นเรื่อง (อ้างอิง)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-3">
+                  <div className="grid grid-cols-1 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">เรื่อง:</span>
+                      <p className="font-semibold">{originalDocument.subject}</p>
+                    </div>
+                    {originalDocument.doc_number && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">เลขที่หนังสือ:</span>
+                        <p className="font-semibold">{originalDocument.doc_number}</p>
+                      </div>
+                    )}
+                    {originalDocument.sender_name && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">จาก:</span>
+                        <p>{originalDocument.sender_name}</p>
+                      </div>
+                    )}
+                  </div>
+                  {originalDocument.pdf_draft_path && (
+                    <div className="pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
+                        onClick={() => window.open(extractPdfUrl(originalDocument.pdf_draft_path) || originalDocument.pdf_draft_path, '_blank')}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        ดูเอกสารต้นเรื่อง
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* PDF Viewer */}
             <Card>

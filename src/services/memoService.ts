@@ -120,7 +120,8 @@ export class MemoService {
           });
 
           // If only attached files changed and we have new files, skip PDF regeneration
-          if (!hasContentChanges && attachedFileUrls.length > 0) {
+          // BUT only if existing PDF still exists (not deleted, e.g., after rejection)
+          if (!hasContentChanges && attachedFileUrls.length > 0 && existingMemo.pdf_draft_path) {
             console.log('📎 Only attached files changed - skipping PDF regeneration');
             shouldGenerateNewPdf = false;
             publicUrl = existingMemo.pdf_draft_path; // Keep existing PDF

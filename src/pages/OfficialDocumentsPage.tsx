@@ -20,7 +20,7 @@ const OfficialDocumentsPage = () => {
   const { toast } = useToast();
   const { profile, getPermissions, isAuthenticated } = useEmployeeAuth();
   const { userMemos, loadUserMemos } = useMemo();
-  const { memos: allMemos, loading: memosLoading, refetch: refetchMemos } = useAllMemos();
+  const { memos: allMemos, completedReportMemos, loading: memosLoading, refetch: refetchMemos } = useAllMemos();
   const { 
     documents: officialDocuments, 
     memos,
@@ -459,6 +459,7 @@ const OfficialDocumentsPage = () => {
           documents={allDocuments}
           realMemos={allMemosWithDocReceive} // รวม memos ปกติ + doc_receive
           docReceiveList={markedDocReceiveList} // รายการหนังสือรับ (marked with __source_table for routing)
+          completedReportMemos={completedReportMemos} // เอกสารรายงานผลที่เสร็จสิ้น
           onDocumentSubmit={handleDocumentSubmit}
           permissions={permissions}
           onReject={rejectDocument}

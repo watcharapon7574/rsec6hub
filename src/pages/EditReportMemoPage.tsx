@@ -251,20 +251,27 @@ const EditReportMemoPage = () => {
         return;
       }
 
-      // Prepare form_data
+      // Prepare form_data (include all fields + type for consistency with CreateMemoPage)
       const updatedFormData = {
+        ...formData,
+        type: 'create_memo',
         introduction: formData.introduction,
         fact: formData.fact,
         proposal: formData.proposal
       };
 
-      // Update memo in database
+      // Update memo in database (include all content columns to keep them in sync)
       const { error: updateError } = await supabase
         .from('memos')
         .update({
           subject: formData.subject,
           date: formData.date,
           attachment_title: formData.attachment_title,
+          introduction: formData.introduction,
+          author_name: formData.author_name,
+          author_position: formData.author_position,
+          fact: formData.fact,
+          proposal: formData.proposal,
           form_data: updatedFormData,
           pdf_draft_path: newPdfUrl,
           status: 'draft',

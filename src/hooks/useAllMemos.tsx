@@ -35,6 +35,7 @@ export interface MemoRecord {
 
 export const useAllMemos = () => {
   const [memos, setMemos] = useState<MemoRecord[]>([]);
+  const [completedReportMemos, setCompletedReportMemos] = useState<MemoRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { profile } = useEmployeeAuth();
@@ -130,6 +131,44 @@ export const useAllMemos = () => {
       });
 
       setMemos(transformedData as MemoRecord[]);
+
+      // Fetch completed report memos (เอกสารรายงานผลที่เสร็จสิ้น)
+      try {
+        // 1. ดึง task_assignments ที่มี report_memo_id
+        const { data: assignments, error: assignmentsError } = await (supabase as any)
+          .from('task_assignments')
+          .select('report_memo_id')
+          .not('report_memo_id', 'is', null)
+          .is('deleted_at', null);
+
+        if (!assignmentsError && assignments?.length) {
+          const reportMemoIds = [...new Set(assignments.map((a: any) => a.report_memo_id))].filter(Boolean);
+
+          if (reportMemoIds.length) {
+            // 2. ดึง report memos ที่เสร็จสิ้นแล้ว (current_signer_order = 5)
+            const { data: reportMemos } = await supabase
+              .from('memos')
+              .select('*')
+              .in('id', reportMemoIds as string[])
+              .eq('current_signer_order', 5)
+              .is('doc_del', null)
+              .order('updated_at', { ascending: false });
+
+            if (reportMemos?.length) {
+              setCompletedReportMemos(reportMemos as MemoRecord[]);
+            } else {
+              setCompletedReportMemos([]);
+            }
+          } else {
+            setCompletedReportMemos([]);
+          }
+        } else {
+          setCompletedReportMemos([]);
+        }
+      } catch (reportError) {
+        console.error('Error fetching report memos:', reportError);
+        setCompletedReportMemos([]);
+      }
     } catch (error) {
       console.error('Error fetching memos:', error);
       toast({
@@ -627,6 +666,7 @@ export const useAllMemos = () => {
 
   return {
     memos,
+    completedReportMemos,
     loading,
     getMemoById,
     updateMemoStatus,

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentList from './DocumentList';
 import DocReceiveList from './DocReceiveList';
@@ -29,7 +29,6 @@ import {
 } from 'lucide-react';
 import { isExecutive, isClerk, isTeacher, getPositionDisplayName } from '@/types/database';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Document {
   id: number;
@@ -57,6 +56,7 @@ interface DocumentCardsProps {
   documents: Document[];
   realMemos?: any[];
   docReceiveList?: any[];
+  completedReportMemos?: any[];
   onDocumentSubmit: (data: any) => void;
   permissions: Permissions;
   onReject?: (documentId: string, reason: string) => void;
@@ -65,11 +65,12 @@ interface DocumentCardsProps {
   onRefresh?: () => void;
 }
 
-const DocumentCards: React.FC<DocumentCardsProps> = ({ 
-  documents, 
+const DocumentCards: React.FC<DocumentCardsProps> = ({
+  documents,
   realMemos = [],
   docReceiveList = [],
-  onDocumentSubmit, 
+  completedReportMemos = [],
+  onDocumentSubmit,
   permissions,
   onReject,
   onAssignNumber,
@@ -79,79 +80,28 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
   const navigate = useNavigate();
   const { profile } = useEmployeeAuth();
 
-  // State สำหรับ report memos (รายงานที่เสร็จสิ้น)
-  const [completedReportMemos, setCompletedReportMemos] = useState<any[]>([]);
-
   // Helper: ตรวจสอบว่า user เป็นผู้ลงนามใน memo
   const isSignerInMemo = (memo: any, userId: string): boolean => {
     const sigPositions = memo.signature_positions || [];
     return sigPositions.some((pos: any) => pos.signer?.user_id === userId);
   };
 
-  // Fetch completed report memos
-  useEffect(() => {
-    const fetchCompletedReportMemos = async () => {
-      if (!profile?.user_id) return;
+  // Filter completed report memos ตาม role (ใช้ prop แทนการ fetch)
+  const filteredReportMemos = React.useMemo(() => {
+    if (!completedReportMemos.length) return [];
 
-      try {
-        // 1. ดึง task_assignments ที่มี report_memo_id
-        const { data: assignments, error: assignmentsError } = await (supabase as any)
-          .from('task_assignments')
-          .select('report_memo_id, memo_id, doc_receive_id')
-          .not('report_memo_id', 'is', null)
-          .is('deleted_at', null);
-
-        if (assignmentsError || !assignments?.length) {
-          setCompletedReportMemos([]);
-          return;
-        }
-
-        // 2. ดึง report memos ที่เสร็จสิ้นแล้ว (current_signer_order = 5)
-        const reportMemoIds = [...new Set(assignments.map((a: any) => a.report_memo_id))].filter(Boolean);
-
-        if (!reportMemoIds.length) {
-          setCompletedReportMemos([]);
-          return;
-        }
-
-        const { data: reportMemos, error: memosError } = await supabase
-          .from('memos')
-          .select('*')
-          .in('id', reportMemoIds as string[])
-          .eq('current_signer_order', 5)
-          .is('doc_del', null)
-          .order('updated_at', { ascending: false });
-
-        if (memosError || !reportMemos?.length) {
-          setCompletedReportMemos([]);
-          return;
-        }
-
-        // 3. Filter ตาม role
-        let filteredMemos = reportMemos;
-
-        if (permissions.isAdmin || permissions.isClerk) {
-          // Admin/Clerk เห็นทั้งหมด
-          filteredMemos = reportMemos;
-        } else if (permissions.isManagement) {
-          // Management เห็นเฉพาะที่ตัวเองเป็นผู้ลงนาม
-          filteredMemos = reportMemos.filter((memo: any) =>
-            isSignerInMemo(memo, profile.user_id)
-          );
-        } else {
-          // อื่นๆ ไม่เห็น
-          filteredMemos = [];
-        }
-
-        setCompletedReportMemos(filteredMemos);
-      } catch (error) {
-        console.error('Error fetching completed report memos:', error);
-        setCompletedReportMemos([]);
-      }
-    };
-
-    fetchCompletedReportMemos();
-  }, [profile?.user_id, permissions.isAdmin, permissions.isClerk, permissions.isManagement]);
+    if (permissions.isAdmin || permissions.isClerk) {
+      // Admin/Clerk เห็นทั้งหมด
+      return completedReportMemos;
+    } else if (permissions.isManagement && profile?.user_id) {
+      // Management เห็นเฉพาะที่ตัวเองเป็นผู้ลงนาม
+      return completedReportMemos.filter((memo: any) =>
+        isSignerInMemo(memo, profile.user_id)
+      );
+    }
+    // อื่นๆ ไม่เห็น
+    return [];
+  }, [completedReportMemos, permissions.isAdmin, permissions.isClerk, permissions.isManagement, profile?.user_id]);
 
   const handleCreateDocument = () => {
     navigate('/create-document');
@@ -212,8 +162,8 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
       )}
 
       {/* Report Memo List - เอกสารรายงานผลที่เสร็จสิ้น */}
-      {completedReportMemos.length > 0 && (
-        <ReportMemoList reportMemos={completedReportMemos} onRefresh={onRefresh} />
+      {filteredReportMemos.length > 0 && (
+        <ReportMemoList reportMemos={filteredReportMemos} onRefresh={onRefresh} defaultCollapsed={true} />
       )}
 
       {/* สำหรับ Admin หรือธุรการ: สลับลำดับ - งานที่ได้รับมอบหมายก่อน แล้วเอกสารภายในสถานศึกษา แล้วหนังสือรับ แล้วรายการบันทึกข้อความ แล้วเอกสารส่วนตัว */}

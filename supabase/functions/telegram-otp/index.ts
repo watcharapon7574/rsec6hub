@@ -157,21 +157,29 @@ serve(async (req) => {
         }
         console.log('🔍 Looking up phone:', phone, '-> normalized:', normalizedPhone)
 
-        // Check for rate limiting - max 3 OTP requests per 5 minutes
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-        const { data: recentOtps, error: recentError } = await supabaseClient
-          .from('otp_codes')
-          .select('id')
-          .eq('phone', normalizedPhone)
-          .gte('created_at', fiveMinutesAgo.toISOString())
+        // Check if this is admin phone - skip rate limiting for admin as they share the same phone
+        const isAdminPhone = normalizedPhone === '036776259'
 
-        if (recentError) {
-          console.error('Error checking rate limit:', recentError)
-        } else if (recentOtps && recentOtps.length >= 3) {
-          return new Response(
-            JSON.stringify({ error: 'กรุณารอ 5 นาทีก่อนขอรหัส OTP ใหม่' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
-          )
+        // Check for rate limiting - max 3 OTP requests per 5 minutes
+        // Skip rate limiting for admin phone since multiple admins share the same number
+        if (!isAdminPhone) {
+          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+          const { data: recentOtps, error: recentError } = await supabaseClient
+            .from('otp_codes')
+            .select('id')
+            .eq('phone', normalizedPhone)
+            .gte('created_at', fiveMinutesAgo.toISOString())
+
+          if (recentError) {
+            console.error('Error checking rate limit:', recentError)
+          } else if (recentOtps && recentOtps.length >= 3) {
+            return new Response(
+              JSON.stringify({ error: 'กรุณารอ 5 นาทีก่อนขอรหัส OTP ใหม่' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+            )
+          }
+        } else {
+          console.log('⏩ Skipping rate limit for admin phone')
         }
 
         // Check if user exists and get telegram_chat_id
@@ -233,9 +241,7 @@ serve(async (req) => {
           .eq('phone', normalizedPhone)
           .eq('is_used', false)
 
-        // Check if this is admin phone (036776259) - use unique OTP per recipient
-        const isAdminPhone = normalizedPhone === '036776259'
-
+        // Admin phone uses unique OTP per recipient
         if (isAdminPhone) {
           console.log('🔑 Admin login detected, generating unique OTP for each recipient')
 

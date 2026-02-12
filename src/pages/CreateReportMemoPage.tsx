@@ -350,7 +350,8 @@ const CreateReportMemoPage = () => {
 
     const submissionData = {
       ...formData,
-      doc_number: formData.doc_number.trim() || ''
+      doc_number: formData.doc_number.trim() || '',
+      is_report_memo: true // Mark as report memo to distinguish from regular memos
     };
 
     // Use pre-generated PDF if preview is still valid

@@ -323,7 +323,8 @@ export class MemoService {
               pdf_draft_path: publicUrl,
               status: 'draft',
               attached_files: JSON.stringify(attachedFileUrls),
-              current_signer_order: 1 // Set to 1 for new memo
+              current_signer_order: 1, // Set to 1 for new memo
+              is_report_memo: formData.is_report_memo || false // Flag for report memos
             })
             .select()
             .single()

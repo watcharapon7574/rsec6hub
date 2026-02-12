@@ -90,59 +90,22 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const [isLoadingAssignees, setIsLoadingAssignees] = useState(false);
   const assigneesPerPage = 5;
 
-  // State สำหรับติดตาม memo ที่เป็น report memo (linked via task_assignments.report_memo_id)
+  // State สำหรับติดตาม memo ที่เป็น report memo (ใช้ is_report_memo column โดยตรง)
   const [reportMemoIds, setReportMemoIds] = useState<Set<string>>(new Set());
 
   // อัพเดท localMemos เมื่อ realMemos เปลี่ยน
   useEffect(() => {
     setLocalMemos(realMemos);
-  }, [realMemos]);
 
-  // Fetch report memo info to identify which memos ARE report memos
-  useEffect(() => {
-    const fetchReportMemoInfo = async () => {
-      if (!localMemos.length) return;
-
-      try {
-        const memoIds = localMemos.map(m => m.id);
-
-        // Query 1: Find task_assignments where memo_id is in our list
-        const { data: assignmentsByMemoId, error: error1 } = await (supabase as any)
-          .from('task_assignments')
-          .select('memo_id, report_memo_id')
-          .in('memo_id', memoIds)
-          .is('deleted_at', null);
-
-        // Query 2: Find task_assignments where report_memo_id is in our list
-        const { data: assignmentsByReportId, error: error2 } = await (supabase as any)
-          .from('task_assignments')
-          .select('memo_id, report_memo_id')
-          .in('report_memo_id', memoIds)
-          .is('deleted_at', null);
-
-        if (error1) console.error('Error fetching by memo_id:', error1);
-        if (error2) console.error('Error fetching by report_memo_id:', error2);
-
-        // Combine both results
-        const assignments = [...(assignmentsByMemoId || []), ...(assignmentsByReportId || [])];
-
-        // Track which memos in our list ARE report memos
-        const reportMemoIdsSet = new Set<string>();
-        if (assignments?.length) {
-          for (const assignment of assignments) {
-            if (assignment.report_memo_id && memoIds.includes(assignment.report_memo_id)) {
-              reportMemoIdsSet.add(assignment.report_memo_id);
-            }
-          }
-        }
-        setReportMemoIds(reportMemoIdsSet);
-      } catch (error) {
-        console.error('Error fetching report memo info:', error);
+    // อัปเดต reportMemoIds จาก is_report_memo column โดยตรง (ไม่ต้อง query task_assignments)
+    const reportIds = new Set<string>();
+    for (const memo of realMemos) {
+      if (memo.is_report_memo === true) {
+        reportIds.add(memo.id);
       }
-    };
-
-    fetchReportMemoInfo();
-  }, [localMemos]);
+    }
+    setReportMemoIds(reportIds);
+  }, [realMemos]);
 
   // อัพเดท localDocReceive เมื่อ docReceiveList เปลี่ยน
   useEffect(() => {

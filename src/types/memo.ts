@@ -9,6 +9,7 @@ export interface MemoFormData {
   fact?: string;
   proposal?: string;
   attached_files?: string[];
+  is_report_memo?: boolean; // Flag บอกว่าเป็น report memo (สร้างจาก CreateReportMemoPage)
 }
 
 export interface SignerProgress {
@@ -76,6 +77,7 @@ export interface Memo {
   attached_files?: string[];
   signer_list_progress?: SignerProgress[]; // รายการผู้ลงนาม progress
   clerk_id?: string; // user_id ของธุรการที่จัดการเอกสาร
+  is_report_memo?: boolean; // Flag บอกว่าเป็น report memo
 }
 
 export interface MemoNotification {

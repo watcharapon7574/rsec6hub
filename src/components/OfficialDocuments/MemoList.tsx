@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp, ClipboardCheck, FileCheck } from 'lucide-react';
+import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp, ClipboardCheck, FileCheck, Trash2 } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useSmartRealtime } from '@/hooks/useSmartRealtime';
@@ -644,22 +644,58 @@ const MemoList: React.FC<MemoListProps> = ({
                 </div>
 
                 <div className="flex gap-1 ml-auto">
-                  {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
+                  {/* เมื่อ current_signer_order = 5 (เสร็จสิ้น) */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
-                      onClick={() => {
-                        const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
-                        navigate('/pdf-just-preview', {
-                          state: {
-                            fileUrl,
-                            fileName: memo.subject || 'ไฟล์ PDF',
-                            memoId: memo.id
-                          }
-                        });
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <>
+                      {/* Report memo ที่เสร็จสิ้น - แสดง "ดูรายงาน" + ถังขยะ */}
+                      {reportMemoIds.has(memo.id) ? (
+                        <>
+                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400"
+                            onClick={() => {
+                              const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
+                              navigate('/pdf-just-preview', {
+                                state: {
+                                  fileUrl,
+                                  fileName: memo.subject || 'ไฟล์ PDF',
+                                  memoId: memo.id
+                                }
+                              });
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span className="text-xs font-medium">ดูรายงาน</span>
+                          </Button>
+                          {/* ปุ่มลบ - เฉพาะ admin และ clerk */}
+                          {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
+                            <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
+                              onClick={() => {
+                                // TODO: Implement delete functionality
+                                console.log('Delete report memo:', memo.id);
+                              }}
+                              title="ลบรายงาน"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        /* Memo ปกติที่เสร็จสิ้น - แสดงเฉพาะปุ่มดู */
+                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                          onClick={() => {
+                            const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
+                            navigate('/pdf-just-preview', {
+                              state: {
+                                fileUrl,
+                                fileName: memo.subject || 'ไฟล์ PDF',
+                                memoId: memo.id
+                              }
+                            });
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </>
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}

@@ -590,11 +590,11 @@ const CreateReportMemoPage = () => {
                 </div>
 
                 <h1 className="text-3xl font-bold mb-3 tracking-tight">
-                  รายงานผลผ่านบันทึกข้อความ
+                  บันทึกข้อความรายงานผล
                 </h1>
 
                 <p className="text-teal-100 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-                  สร้างบันทึกข้อความเพื่อรายงานผลการปฏิบัติงานอย่างเป็นทางการ
+                  สร้างบันทึกข้อความรายงานผลการปฏิบัติงานอย่างเป็นทางการ
                 </p>
               </div>
 

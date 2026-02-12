@@ -106,17 +106,25 @@ const DocumentList: React.FC<DocumentListProps> = ({
       try {
         const memoIds = localMemos.map(m => m.id);
 
-        // Find task_assignments with report_memo_id for these memos
-        const { data: assignments, error: assignmentsError } = await (supabase as any)
+        // Query 1: Find task_assignments where memo_id is in our list
+        const { data: assignmentsByMemoId, error: error1 } = await (supabase as any)
           .from('task_assignments')
           .select('memo_id, report_memo_id')
-          .or(`memo_id.in.(${memoIds.join(',')}),report_memo_id.in.(${memoIds.join(',')})`)
+          .in('memo_id', memoIds)
           .is('deleted_at', null);
 
-        if (assignmentsError) {
-          console.error('Error fetching task assignments for report memo detection:', assignmentsError);
-          return;
-        }
+        // Query 2: Find task_assignments where report_memo_id is in our list
+        const { data: assignmentsByReportId, error: error2 } = await (supabase as any)
+          .from('task_assignments')
+          .select('memo_id, report_memo_id')
+          .in('report_memo_id', memoIds)
+          .is('deleted_at', null);
+
+        if (error1) console.error('Error fetching by memo_id:', error1);
+        if (error2) console.error('Error fetching by report_memo_id:', error2);
+
+        // Combine both results
+        const assignments = [...(assignmentsByMemoId || []), ...(assignmentsByReportId || [])];
 
         // Track which memos in our list ARE report memos
         const reportMemoIdsSet = new Set<string>();
@@ -1053,8 +1061,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <Eye className="h-4 w-4" />
                         {memo.is_assigned && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
-                      {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
+                      {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ และไม่ใช่ report memo */}
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && !reportMemoIds.has(memo.id) && (
                         <>
                           {!memo.is_assigned ? (
                             <div className="relative">

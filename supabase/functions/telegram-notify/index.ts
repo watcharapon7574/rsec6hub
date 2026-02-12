@@ -36,6 +36,7 @@ interface NotificationPayload {
   location?: string // สถานที่
   assignee_names?: string[] // รายชื่อผู้รับมอบหมาย
   callback_data?: string // Data for inline button callback
+  is_position_based?: boolean // Flag for position-based assignment (ส้ม)
 }
 
 async function sendTelegramMessage(botToken: string, chatId: string, message: string, replyMarkup?: any) {
@@ -215,24 +216,36 @@ function formatMessage(payload: NotificationPayload): string {
         message += `💬 <b>หมายเหตุ:</b> ${payload.note}\n`
       }
       message += `\n👤 <b>มอบหมายโดย:</b> ${payload.assigned_by || 'ไม่ระบุ'}\n`
-      message += `👥 <b>ผู้รับมอบหมาย:</b> ${payload.assignee_names?.length || 0} คน\n`
 
-      // Show assignee names (collapsed format for many names)
-      if (payload.assignee_names && payload.assignee_names.length > 0) {
-        const names = payload.assignee_names
-        if (names.length <= 5) {
-          // Show all names if 5 or fewer
-          message += `\n<b>รายชื่อ:</b>\n`
-          names.forEach((name, i) => {
-            message += `  ${i + 1}. ${name}\n`
-          })
-        } else {
-          // Show first 3 and indicate more
-          message += `\n<b>รายชื่อ:</b>\n`
-          names.slice(0, 3).forEach((name, i) => {
-            message += `  ${i + 1}. ${name}\n`
-          })
-          message += `  ... และอีก ${names.length - 3} คน\n`
+      // Show assignee info
+      if (payload.is_position_based) {
+        // Position-based: show 1 person (position holder/team leader)
+        message += `👥 <b>ผู้รับผิดชอบ:</b>\n`
+        if (payload.assignee_names && payload.assignee_names.length > 0) {
+          message += `  🏷️ ${payload.assignee_names[0]} (หัวหน้าทีม)\n`
+        }
+        message += `\n<i>💡 หัวหน้าทีมจะจัดการเพิ่มสมาชิกในระบบ</i>\n`
+      } else {
+        // Name/Group-based: show all assignees
+        message += `👥 <b>ผู้รับมอบหมาย:</b> ${payload.assignee_names?.length || 0} คน\n`
+
+        // Show assignee names (collapsed format for many names)
+        if (payload.assignee_names && payload.assignee_names.length > 0) {
+          const names = payload.assignee_names
+          if (names.length <= 5) {
+            // Show all names if 5 or fewer
+            message += `\n<b>รายชื่อ:</b>\n`
+            names.forEach((name, i) => {
+              message += `  ${i + 1}. ${name}\n`
+            })
+          } else {
+            // Show first 3 and indicate more
+            message += `\n<b>รายชื่อ:</b>\n`
+            names.slice(0, 3).forEach((name, i) => {
+              message += `  ${i + 1}. ${name}\n`
+            })
+            message += `  ... และอีก ${names.length - 3} คน\n`
+          }
         }
       }
 

@@ -239,11 +239,16 @@ class TaskAssignmentService {
         docNumber = docReceive?.doc_number || '';
       }
 
+      // For position-based assignments (ส้ม), only show the first person (position holder)
+      // Team leader will manage and add team members later
+      const isPositionBased = options?.selectionInfo?.source === 'position';
+      const userIdsToShow = isPositionBased ? [assigneeUserIds[0]] : assigneeUserIds;
+
       // Get assignee names
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name')
-        .in('user_id', assigneeUserIds);
+        .in('user_id', userIdsToShow);
 
       const assigneeNames = (profiles || []).map(p => `${p.first_name} ${p.last_name}`);
 
@@ -288,6 +293,7 @@ class TaskAssignmentService {
           location: options?.location || '',
           note: options?.note || '',
           assignee_names: assigneeNames,
+          is_position_based: isPositionBased, // Flag for position-based assignment
         }
       });
 

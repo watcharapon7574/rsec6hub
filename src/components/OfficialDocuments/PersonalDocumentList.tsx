@@ -692,13 +692,15 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 
                       {/* Edit button - แสดงเสมอเนื่องจากเป็นเอกสารของตนเอง */}
                       <div className="relative">
-                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
+                        <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 ${memo.status === 'rejected' ? 'border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950' : 'border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'}`}
                           onClick={() => {
                             // Navigate to edit memo page with memo id
                             navigate(`/create-memo?edit=${memo.id}`);
                           }}
+                          title={memo.status === 'rejected' ? 'แก้ไขเอกสารที่ถูกตีกลับ' : 'แก้ไขเอกสาร'}
                         >
                           <Edit className="h-4 w-4" />
+                          {memo.status === 'rejected' && <span className="text-xs">แก้ไข</span>}
                         </Button>
                         {/* Show "ตีกลับ" badge for rejected memos on top-right corner */}
                         {memo.status === 'rejected' && (

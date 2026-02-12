@@ -93,7 +93,8 @@ const CreateReportMemoPage = () => {
   // Load memo for edit mode (same pattern as CreateMemoPage)
   useEffect(() => {
     const loadMemoForEdit = async () => {
-      if (!editMemoId) return;
+      // Skip if no editMemoId or already loaded
+      if (!editMemoId || originalMemo) return;
 
       setIsEditMode(true);
       setLoadingMemo(true);
@@ -183,7 +184,7 @@ const CreateReportMemoPage = () => {
     };
 
     loadMemoForEdit();
-  }, [editMemoId, getMemoById, navigate, toast, profile]);
+  }, [editMemoId, getMemoById, originalMemo, navigate, toast, profile]);
 
   // Load task info (only in create mode)
   useEffect(() => {

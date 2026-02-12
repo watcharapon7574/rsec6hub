@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Clock, AlertCircle, PenTool, Eye, Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, ArrowUpDown, RotateCcw } from 'lucide-react';
+import { FileText, Clock, AlertCircle, PenTool, Eye, Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, ArrowUpDown, RotateCcw, FileCheck, FileInput } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { formatThaiDateShort } from '@/utils/dateUtils';
@@ -26,10 +27,37 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
   const [typeFilter, setTypeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
+
   // State สำหรับ pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // State สำหรับติดตาม memo ที่เป็น report memo
+  const [reportMemoIds, setReportMemoIds] = useState<Set<string>>(new Set());
+
+  // Fetch report memo ids from task_assignments
+  React.useEffect(() => {
+    const fetchReportMemoIds = async () => {
+      if (!pendingMemos.length) return;
+
+      const memoIds = pendingMemos.map(m => m.id);
+      const { data: assignments } = await supabase
+        .from('task_assignments')
+        .select('report_memo_id')
+        .not('report_memo_id', 'is', null)
+        .in('report_memo_id', memoIds)
+        .is('deleted_at', null);
+
+      if (assignments?.length) {
+        const reportIds = new Set<string>(
+          assignments.map(a => a.report_memo_id).filter(Boolean)
+        );
+        setReportMemoIds(reportIds);
+      }
+    };
+
+    fetchReportMemoIds();
+  }, [pendingMemos]);
 
   // ฟังก์ชันสำหรับข้อความสถานะตาม current_signer_order
   const getStatusTextBySignerOrder = (signerOrder: number): string => {
@@ -394,8 +422,21 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   key={memo.id}
                   className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 bg-card border border-border rounded-lg px-3 py-2 shadow-sm hover:bg-muted/50 transition group"
                 >
-                  <FileText className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                  <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-[160px] group-hover:text-amber-700 dark:text-amber-300 sm:text-base text-sm" title={memo.subject}>{memo.subject}</span>
+                  {/* Icon ตามประเภทเอกสาร */}
+                  {reportMemoIds.has(memo.id) ? (
+                    <FileCheck className="h-4 w-4 text-teal-500 flex-shrink-0" />
+                  ) : memo.__source_table === 'doc_receive' ? (
+                    <FileInput className="h-4 w-4 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <FileText className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                  )}
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${
+                    reportMemoIds.has(memo.id)
+                      ? 'text-teal-700 dark:text-teal-300 group-hover:text-teal-800'
+                      : memo.__source_table === 'doc_receive'
+                        ? 'text-green-700 dark:text-green-300 group-hover:text-green-800'
+                        : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'
+                  }`} title={memo.subject}>{memo.subject}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{formatThaiDateShort(memo.date || memo.created_at)}</span>
                   <span

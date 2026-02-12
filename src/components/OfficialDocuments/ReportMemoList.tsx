@@ -1,12 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
-import { Eye, FileCheck, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, RotateCcw, CheckCircle } from 'lucide-react';
+import { Eye, FileCheck, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, RotateCcw, CheckCircle, Users } from 'lucide-react';
 import { formatThaiDateShort } from '@/utils/dateUtils';
+import { supabase } from '@/integrations/supabase/client';
+import TeamMemberIcon from '@/components/TaskAssignment/TeamMemberIcon';
+
+interface ReportAssignee {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  is_team_leader: boolean;
+  is_reporter: boolean;
+  status: string;
+}
 
 interface ReportMemoListProps {
   reportMemos: any[];
@@ -32,6 +43,103 @@ const ReportMemoList: React.FC<ReportMemoListProps> = ({
   // State สำหรับ pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // State สำหรับ assignees ของแต่ละ report memo
+  const [assigneesMap, setAssigneesMap] = useState<Map<string, ReportAssignee[]>>(new Map());
+
+  // Fetch assignees for report memos
+  const fetchAssignees = useCallback(async () => {
+    if (reportMemos.length === 0) return;
+
+    const memoIds = reportMemos.map(m => m.id);
+
+    // Step 1: Find task_assignments linked to these report memos
+    const { data: reportLinks, error: linkError } = await (supabase as any)
+      .from('task_assignments')
+      .select('report_memo_id, memo_id, doc_receive_id')
+      .in('report_memo_id', memoIds)
+      .is('deleted_at', null);
+
+    if (linkError || !reportLinks || reportLinks.length === 0) return;
+
+    // Step 2: Collect original document IDs
+    const memoDocIds = [...new Set(reportLinks.filter((r: any) => r.memo_id).map((r: any) => r.memo_id))] as string[];
+    const docReceiveIds = [...new Set(reportLinks.filter((r: any) => r.doc_receive_id).map((r: any) => r.doc_receive_id))] as string[];
+
+    // Build a map: report_memo_id → original doc info
+    const reportToDocMap = new Map<string, { memo_id?: string; doc_receive_id?: string }>();
+    for (const r of reportLinks) {
+      reportToDocMap.set(r.report_memo_id, { memo_id: r.memo_id, doc_receive_id: r.doc_receive_id });
+    }
+
+    // Step 3: Get all team members for those original documents
+    let allAssignments: any[] = [];
+    if (memoDocIds.length > 0) {
+      const { data } = await (supabase as any)
+        .from('task_assignments')
+        .select('memo_id, doc_receive_id, assigned_to, is_team_leader, is_reporter, status')
+        .in('memo_id', memoDocIds)
+        .is('deleted_at', null);
+      if (data) allAssignments.push(...data);
+    }
+    if (docReceiveIds.length > 0) {
+      const { data } = await (supabase as any)
+        .from('task_assignments')
+        .select('memo_id, doc_receive_id, assigned_to, is_team_leader, is_reporter, status')
+        .in('doc_receive_id', docReceiveIds)
+        .is('deleted_at', null);
+      if (data) allAssignments.push(...data);
+    }
+
+    if (allAssignments.length === 0) return;
+
+    // Step 4: Fetch profiles
+    const userIds = [...new Set(allAssignments.map((a: any) => a.assigned_to).filter(Boolean))] as string[];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, first_name, last_name')
+      .in('user_id', userIds);
+
+    const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+
+    // Step 5: Build assignees map per report_memo_id
+    const newMap = new Map<string, ReportAssignee[]>();
+
+    for (const [reportMemoId, docInfo] of reportToDocMap) {
+      const teamAssignments = allAssignments.filter((a: any) =>
+        (docInfo.memo_id && a.memo_id === docInfo.memo_id) ||
+        (docInfo.doc_receive_id && a.doc_receive_id === docInfo.doc_receive_id)
+      );
+
+      const assignees = teamAssignments
+        .map((a: any) => {
+          const profile = profileMap.get(a.assigned_to);
+          return {
+            user_id: a.assigned_to,
+            first_name: profile?.first_name || '',
+            last_name: profile?.last_name || '',
+            is_team_leader: a.is_team_leader || false,
+            is_reporter: a.is_reporter || false,
+            status: a.status || 'pending',
+          };
+        })
+        .sort((a: ReportAssignee, b: ReportAssignee) => {
+          if (a.is_team_leader && !b.is_team_leader) return -1;
+          if (!a.is_team_leader && b.is_team_leader) return 1;
+          if (a.is_reporter && !b.is_reporter) return -1;
+          if (!a.is_reporter && b.is_reporter) return 1;
+          return 0;
+        });
+
+      newMap.set(reportMemoId, assignees);
+    }
+
+    setAssigneesMap(newMap);
+  }, [reportMemos]);
+
+  useEffect(() => {
+    fetchAssignees();
+  }, [fetchAssignees]);
 
   // Filter and sort memos
   const filteredAndSortedMemos = useMemo(() => {
@@ -245,6 +353,28 @@ const ReportMemoList: React.FC<ReportMemoListProps> = ({
                         <CheckCircle className="h-3 w-3" />
                         เสร็จสิ้น
                       </span>
+
+                      {/* Assignees - แสดงผู้เกี่ยวข้อง */}
+                      {assigneesMap.has(memo.id) && (
+                        <div className="hidden sm:flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-md px-2 py-0.5">
+                          <Users className="h-3 w-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                          <div className="flex items-center gap-1">
+                            {assigneesMap.get(memo.id)!.map((assignee, idx) => (
+                              <div key={assignee.user_id} className="flex items-center gap-0.5">
+                                {idx > 0 && <span className="text-emerald-300 dark:text-emerald-700 text-[9px]">·</span>}
+                                <TeamMemberIcon isLeader={assignee.is_team_leader} isReporter={assignee.is_reporter} size="sm" />
+                                <span className={`text-[10px] font-medium whitespace-nowrap ${
+                                  assignee.is_team_leader ? 'text-amber-700 dark:text-amber-400' :
+                                  assignee.is_reporter ? 'text-pink-700 dark:text-pink-400' :
+                                  'text-emerald-700 dark:text-emerald-400'
+                                }`}>
+                                  {assignee.first_name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Action Button */}

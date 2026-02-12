@@ -89,8 +89,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppContent = () => {
   const { isAuthenticated, loading } = useEmployeeAuth();
+  const location = useLocation();
 
-  if (loading) {
+  // Check if current path is a public route (no auth required)
+  const isPublicRoute = location.pathname.startsWith('/telegram-assignees') || location.pathname === '/auth';
+
+  // For public routes, don't wait for auth loading - render immediately
+  if (loading && !isPublicRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background w-full">
         <div className="p-8 rounded-lg animate-pulse">

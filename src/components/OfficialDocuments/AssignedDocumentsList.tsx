@@ -695,6 +695,11 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                     {task.document_subject}
                   </span>
 
+                  {/* เลขหนังสือ */}
+                  {task.document_number && (
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">#{task.document_number.split('/')[0]}</span>
+                  )}
+
                   {/* ผู้เขียนหนังสือ (ชื่อแรก) */}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {getFirstName(task.assigned_by_name)}
@@ -851,6 +856,31 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                   )}
                 </div>
               </div>
+
+              {/* Progress Stepper - แสดงเฉพาะเมื่อยังไม่เสร็จสิ้น */}
+              {task.status !== 'completed' && task.status !== 'cancelled' && (
+                <div className="flex items-center gap-1 sm:gap-2 mt-1.5 ml-8 overflow-x-auto">
+                  {/* ขั้น 1: มอบหมาย - สำเร็จเสมอ */}
+                  <div className="flex flex-col items-center min-w-[44px] sm:min-w-[56px]">
+                    <span className="font-semibold sm:text-[10px] text-[9px] text-pink-600 dark:text-pink-400">มอบหมาย</span>
+                    <div className="w-2 h-2 rounded-full mt-0.5 bg-pink-500"></div>
+                  </div>
+                  <div className={`w-4 sm:w-5 h-0.5 mx-0.5 ${task.status !== 'pending' ? 'bg-pink-400' : 'bg-pink-200 dark:bg-pink-800'}`} />
+
+                  {/* ขั้น 2: ทราบแล้ว */}
+                  <div className="flex flex-col items-center min-w-[44px] sm:min-w-[56px]">
+                    <span className={`font-semibold sm:text-[10px] text-[9px] ${task.status !== 'pending' ? 'text-pink-600 dark:text-pink-400' : 'text-pink-300 dark:text-pink-700'}`}>ทราบแล้ว</span>
+                    <div className={`w-2 h-2 rounded-full mt-0.5 ${task.status !== 'pending' ? 'bg-pink-500' : 'bg-pink-200 dark:bg-pink-800'}`}></div>
+                  </div>
+                  <div className={`w-4 sm:w-5 h-0.5 mx-0.5 ${task.reporter_has_reported ? 'bg-pink-400' : 'bg-pink-200 dark:bg-pink-800'}`} />
+
+                  {/* ขั้น 3: รายงานแล้ว */}
+                  <div className="flex flex-col items-center min-w-[44px] sm:min-w-[56px]">
+                    <span className={`font-semibold sm:text-[10px] text-[9px] ${task.reporter_has_reported ? 'text-pink-600 dark:text-pink-400' : 'text-pink-300 dark:text-pink-700'}`}>รายงานแล้ว</span>
+                    <div className={`w-2 h-2 rounded-full mt-0.5 ${task.reporter_has_reported ? 'bg-pink-500' : 'bg-pink-200 dark:bg-pink-800'}`}></div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         );

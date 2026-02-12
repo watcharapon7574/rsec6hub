@@ -985,15 +985,15 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         )
                       )}
                       
-                      {/* Connector to final step - ไม่แสดงสำหรับ report memo */}
-                      {!reportMemoIds.has(memo.id) && ((memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0) ||
+                      {/* Connector to final step */}
+                      {((memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0) ||
                         (memo.signature_positions && memo.signature_positions.length > 0)) && (
                         <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                       )}
                     </>
                   )}
-                  {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ หรือเป็น report memo */}
-                  {memo.status !== 'draft' && memo.status !== 'rejected' && !reportMemoIds.has(memo.id) && (
+                  {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ */}
+                  {memo.status !== 'draft' && memo.status !== 'rejected' && (
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5

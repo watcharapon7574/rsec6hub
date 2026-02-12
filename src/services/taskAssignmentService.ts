@@ -715,6 +715,16 @@ class TaskAssignmentService {
       // Even if not a reporter, they need to be able to add members or assign reporter later
       const newStatus = isPositionBased ? 'in_progress' : (isThisPersonReporter ? 'in_progress' : 'completed');
 
+      console.log('🔍 acknowledgeTask debug:', {
+        assignmentId,
+        isPositionBased,
+        assignmentSource: assignment.assignment_source,
+        isThisPersonReporter,
+        reporterIds,
+        assignedTo: assignment.assigned_to,
+        newStatus
+      });
+
       // Update the main assignment
       const { error: updateError } = await (supabase as any)
         .from('task_assignments')

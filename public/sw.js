@@ -1,5 +1,5 @@
 // เพิ่มเวอร์ชันทุกครั้งที่ deploy ใหม่ เพื่อบังคับให้ล้างแคชเก่า
-const CACHE_NAME = 'fastdoc-v1.4.12';
+const CACHE_NAME = 'fastdoc-v1.4.13';
 const urlsToCache = [
   '/',
   '/fastdocIcon.png',

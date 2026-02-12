@@ -229,7 +229,8 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
     return `${day}/${month}`;
   };
 
-  const getFirstName = (fullName: string) => {
+  const getFirstName = (fullName: string | null | undefined) => {
+    if (!fullName) return '-';
     return fullName.split(' ')[0];
   };
 
@@ -382,8 +383,8 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
       setTeamMembers([{
         assignment_id: task.assignment_id,
         user_id: task.assigned_to_id,
-        first_name: task.assigned_to_name.split(' ')[0] || '',
-        last_name: task.assigned_to_name.split(' ').slice(1).join(' ') || '',
+        first_name: (task.assigned_to_name || '').split(' ')[0] || '',
+        last_name: (task.assigned_to_name || '').split(' ').slice(1).join(' ') || '',
         position: '',
         is_team_leader: true,
         is_reporter: false,

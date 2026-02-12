@@ -120,6 +120,21 @@ const CreateReportMemoPage = () => {
 
         setOriginalMemo(memo);
 
+        // Parse attached_files (may be JSON string or array)
+        let parsedAttachedFiles: string[] = [];
+        if (memo.attached_files) {
+          if (Array.isArray(memo.attached_files)) {
+            parsedAttachedFiles = memo.attached_files;
+          } else if (typeof memo.attached_files === 'string') {
+            try {
+              const parsed = JSON.parse(memo.attached_files);
+              parsedAttachedFiles = Array.isArray(parsed) ? parsed : [];
+            } catch {
+              parsedAttachedFiles = [];
+            }
+          }
+        }
+
         // Set form data from memo (same pattern as CreateMemoPage)
         setFormData({
           doc_number: memo.doc_number || '',
@@ -131,7 +146,7 @@ const CreateReportMemoPage = () => {
           author_position: memo.author_position || profile?.current_position || profile?.job_position || profile?.position || '',
           fact: memo.fact || '',
           proposal: memo.proposal || '',
-          attached_files: memo.attached_files || []
+          attached_files: parsedAttachedFiles
         });
 
         // Load rejection info if any
@@ -864,7 +879,7 @@ const CreateReportMemoPage = () => {
                       </div>
                     </div>
 
-                    {formData.attached_files && formData.attached_files.length > 0 && (
+                    {Array.isArray(formData.attached_files) && formData.attached_files.length > 0 && (
                       <div className="space-y-1">
                         <p className="text-sm font-medium">ไฟล์ที่เลือก:</p>
                         {formData.attached_files.map((fileName, index) => (

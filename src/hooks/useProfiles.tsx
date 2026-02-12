@@ -3,7 +3,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/database';
 
-export const useProfiles = () => {
+interface UseProfilesOptions {
+  includeAdmins?: boolean; // Default: false - exclude admin accounts from results
+}
+
+export const useProfiles = (options: UseProfilesOptions = {}) => {
+  const { includeAdmins = false } = options;
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -11,7 +16,7 @@ export const useProfiles = () => {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
@@ -22,13 +27,18 @@ export const useProfiles = () => {
         throw fetchError;
       }
 
-      
+
       // Cast the data to Profile type with proper type casting
-      const castedProfiles = data?.map(profile => ({
+      let castedProfiles = data?.map(profile => ({
         ...profile,
         marital_status: profile.marital_status as Profile['marital_status'],
         position: profile.position as Profile['position']
       })) || [];
+
+      // Exclude admin accounts unless explicitly requested
+      if (!includeAdmins) {
+        castedProfiles = castedProfiles.filter(profile => profile.is_admin !== true);
+      }
 
       setProfiles(castedProfiles);
       setError(null);
@@ -42,27 +52,10 @@ export const useProfiles = () => {
 
   useEffect(() => {
     fetchProfiles();
-    
-    // Real-time subscription disabled to prevent WebSocket errors
-    // const subscription = supabase
-    //   .channel('profiles_changes')
-    //   .on('postgres_changes', 
-    //     { 
-    //       event: '*', 
-    //       schema: 'public', 
-    //       table: 'profiles' 
-    //     }, 
-    //     (payload) => {
-    //       console.log('Profile change detected:', payload);
-    //       fetchProfiles(); // Refetch all profiles when any change occurs
-    //     }
-    //   )
-    //   .subscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includeAdmins]);
 
-    // return () => {
-    //   subscription.unsubscribe();
-    // };
-  }, []);
+  // Note: Real-time subscription disabled to prevent WebSocket errors
 
   const getProfileByEmployeeId = (employeeId: string): Profile | null => {
     return profiles.find(profile => 

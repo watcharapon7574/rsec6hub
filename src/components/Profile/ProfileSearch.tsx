@@ -17,7 +17,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
   onSelectProfile, 
   showSelectionMode = false 
 }) => {
-  const { profiles, loading, error } = useProfiles();
+  const { profiles, loading, error } = useProfiles({ includeAdmins: true }); // Include admins for admin management
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPosition, setFilterPosition] = useState<Position | 'all'>('all');
 

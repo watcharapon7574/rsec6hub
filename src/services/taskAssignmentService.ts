@@ -1197,55 +1197,7 @@ class TaskAssignmentService {
     }
   }
 
-  /**
-   * 🧪 ทดสอบส่ง Telegram Group Notification
-   * เรียกจาก browser console:
-   *   import { taskAssignmentService } from '@/services/taskAssignmentService';
-   *   taskAssignmentService.testGroupNotification();
-   */
-  async testGroupNotification(): Promise<void> {
-    console.log('🧪 Testing Group Notification...');
-
-    const testPayload = {
-      type: 'task_assigned_group',
-      document_id: 'test-' + Date.now(),
-      document_type: 'memo',
-      subject: '🧪 ทดสอบระบบแจ้งเตือน',
-      doc_number: 'TEST-001',
-      assigned_by: 'ระบบทดสอบ',
-      task_description: 'นี่คือข้อความทดสอบจากระบบ FastDoc',
-      event_date: '15 ก.พ. 2569',
-      event_time: '09:00',
-      location: 'ห้องประชุม 1',
-      note: 'ทดสอบการส่งแจ้งเตือน',
-      assignee_names: ['นายทดสอบ หนึ่ง', 'นางทดสอบ สอง', 'นายทดสอบ สาม'],
-      is_position_based: false,
-    };
-
-    console.log('📤 Sending test payload:', testPayload);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('telegram-notify', {
-        body: testPayload
-      });
-
-      console.log('📥 Response:', { data, error });
-
-      if (error) {
-        console.error('❌ Test failed:', error);
-      } else {
-        console.log('✅ Test notification sent successfully!');
-      }
-    } catch (err) {
-      console.error('❌ Test error:', err);
-    }
-  }
 }
 
 // Export singleton instance
 export const taskAssignmentService = new TaskAssignmentService();
-
-// 🧪 Expose to window for console testing
-if (typeof window !== 'undefined') {
-  (window as any).testTelegramNotification = () => taskAssignmentService.testGroupNotification();
-}

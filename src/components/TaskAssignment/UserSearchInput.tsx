@@ -64,20 +64,22 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
     try {
       const results: SearchResultItem[] = [];
 
-      // 1. Search users (profiles)
+      // 1. Search users (profiles) - exclude admin accounts
       const { data: userData, error: userError } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, position, employee_id')
+        .select('user_id, first_name, last_name, position, employee_id, is_admin')
         .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
         .order('first_name', { ascending: true })
-        .limit(5);
+        .limit(10); // Fetch more to account for filtered admins
 
       if (!userError && userData) {
         const selectedUserIds = selectedUsers.map(u => u.user_id);
         const allExcludedIds = [...selectedUserIds, ...excludeUserIds];
 
         userData
-          .filter(user => user.user_id && !allExcludedIds.includes(user.user_id))
+          // Exclude admin accounts and already selected users
+          .filter(user => user.user_id && !allExcludedIds.includes(user.user_id) && user.is_admin !== true)
+          .slice(0, 5) // Limit to 5 results after filtering
           .forEach(user => {
             results.push({
               type: 'user',

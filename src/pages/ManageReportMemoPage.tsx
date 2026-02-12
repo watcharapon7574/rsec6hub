@@ -445,7 +445,25 @@ const ManageReportMemoPage: React.FC = () => {
 
   // Handle reject report - รับ reason จาก RejectionCard component
   const handleRejectFromCard = async (reason: string) => {
-    if (!reason.trim() || !memoId || !taskAssignment || !profile) return;
+    // Debug: ตรวจสอบค่าที่จำเป็น
+    console.log('🔴 handleRejectFromCard called:', { reason: reason?.trim(), memoId, taskAssignment: !!taskAssignment, profile: !!profile });
+
+    if (!reason.trim()) {
+      toast({ title: 'กรุณาระบุเหตุผล', description: 'กรุณาระบุเหตุผลการตีกลับ', variant: 'destructive' });
+      return;
+    }
+    if (!memoId) {
+      toast({ title: 'ไม่พบรหัสเอกสาร', description: 'กรุณาลองใหม่อีกครั้ง', variant: 'destructive' });
+      return;
+    }
+    if (!taskAssignment) {
+      toast({ title: 'ไม่พบข้อมูลการมอบหมายงาน', description: 'กรุณา refresh หน้าและลองใหม่', variant: 'destructive' });
+      return;
+    }
+    if (!profile) {
+      toast({ title: 'ไม่พบข้อมูลผู้ใช้', description: 'กรุณาเข้าสู่ระบบใหม่', variant: 'destructive' });
+      return;
+    }
 
     setIsRejecting(true);
     try {

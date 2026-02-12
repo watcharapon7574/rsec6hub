@@ -780,8 +780,9 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {task.status === 'in_progress' && (
                     <>
-                      {/* ปุ่มจัดการทีม - เฉพาะ is_team_leader และ assignment_source = 'position' */}
-                      {task.is_team_leader && task.assignment_source === 'position' && (
+                      {/* ปุ่มจัดการทีม - เฉพาะ is_team_leader, assignment_source = 'position', และยังไม่มีผู้รายงาน */}
+                      {/* ถ้ามีผู้รายงานแล้ว จะต้องรอผู้รายงานส่งรายงานก่อน จึงไม่สามารถจัดการทีมได้ */}
+                      {task.is_team_leader && task.assignment_source === 'position' && !task.has_reporter_assigned && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -792,8 +793,11 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                           จัดการทีม
                         </Button>
                       )}
-                      {/* ปุ่มรายงาน - แสดงเฉพาะ reporter หรือ team_leader */}
-                      {(task.is_reporter || task.is_team_leader) && (
+                      {/* ปุ่มรายงาน - แสดงเมื่อ:
+                          1. เป็นผู้รายงาน (is_reporter = true)
+                          2. หรือ เป็นหัวหน้าทีมที่ยังไม่มีการมอบหมายผู้รายงาน (สามารถรายงานเองได้)
+                          ถ้ามีผู้รายงานแล้วและตัวเองไม่ใช่ผู้รายงาน ต้องรอผู้รายงานส่งรายงาน */}
+                      {(task.is_reporter || (task.is_team_leader && !task.has_reporter_assigned)) && (
                         <Button
                           size="sm"
                           onClick={() => navigate(`/report-memo/${task.assignment_id}`)}

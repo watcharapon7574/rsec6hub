@@ -7,7 +7,6 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { User, FileText, Loader2, Users } from 'lucide-react';
 
 interface Assignee {
@@ -61,6 +60,9 @@ const MemberIcon: React.FC<{ isLeader: boolean; isReporter: boolean }> = ({
   );
 };
 
+// Edge Function URL for fetching assignees (bypasses RLS)
+const EDGE_FUNCTION_URL = 'https://ikfioqvjrhquiyeylmsv.supabase.co/functions/v1/get-task-assignees';
+
 const TelegramAssigneesPage = () => {
   const { documentId: routeDocumentId } = useParams<{ documentId: string }>();
   const [assignees, setAssignees] = useState<Assignee[]>([]);
@@ -92,69 +94,24 @@ const TelegramAssigneesPage = () => {
       }
 
       try {
-        // Fetch task assignments for this document
-        const { data: assignments, error: assignError } = await (supabase as any)
-          .from('task_assignments')
-          .select(`
-            assigned_to,
-            is_team_leader,
-            is_reporter,
-            memo_id,
-            doc_receive_id,
-            profiles!task_assignments_assigned_to_fkey (
-              first_name,
-              last_name
-            )
-          `)
-          .or(`memo_id.eq.${documentId},doc_receive_id.eq.${documentId}`)
-          .is('deleted_at', null);
+        // Fetch from Edge Function (bypasses RLS, no auth needed)
+        const response = await fetch(`${EDGE_FUNCTION_URL}?document_id=${documentId}`);
+        const data = await response.json();
 
-        if (assignError) throw assignError;
+        if (data.error && !data.assignees) {
+          setError(data.error);
+          setLoading(false);
+          return;
+        }
 
-        if (!assignments || assignments.length === 0) {
+        if (!data.assignees || data.assignees.length === 0) {
           setError('ไม่พบรายการมอบหมายงาน');
           setLoading(false);
           return;
         }
 
-        // Get document subject
-        const firstAssignment = assignments[0];
-        if (firstAssignment.memo_id) {
-          const { data: memo } = await supabase
-            .from('memos')
-            .select('subject')
-            .eq('id', firstAssignment.memo_id)
-            .single();
-          setDocumentSubject(memo?.subject || 'ไม่ระบุเรื่อง');
-        } else if (firstAssignment.doc_receive_id) {
-          const { data: doc } = await (supabase as any)
-            .from('doc_receive')
-            .select('subject')
-            .eq('id', firstAssignment.doc_receive_id)
-            .single();
-          setDocumentSubject(doc?.subject || 'ไม่ระบุเรื่อง');
-        }
-
-        // Map to assignee format - sort: leaders first, then reporters
-        const mappedAssignees: Assignee[] = assignments
-          .map((a: any) => ({
-            user_id: a.assigned_to,
-            first_name: a.profiles?.first_name || '',
-            last_name: a.profiles?.last_name || '',
-            is_team_leader: a.is_team_leader || false,
-            is_reporter: a.is_reporter || false,
-          }))
-          .sort((a, b) => {
-            // Leaders first
-            if (a.is_team_leader && !b.is_team_leader) return -1;
-            if (!a.is_team_leader && b.is_team_leader) return 1;
-            // Then reporters
-            if (a.is_reporter && !b.is_reporter) return -1;
-            if (!a.is_reporter && b.is_reporter) return 1;
-            return 0;
-          });
-
-        setAssignees(mappedAssignees);
+        setAssignees(data.assignees);
+        setDocumentSubject(data.subject || 'ไม่ระบุเรื่อง');
       } catch (err: any) {
         console.error('Error fetching assignees:', err);
         setError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
@@ -191,9 +148,9 @@ const TelegramAssigneesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 shadow-lg">
+    <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 shadow-lg">
         <div className="flex items-center gap-3">
           <Users className="h-6 w-6" />
           <div className="flex-1 min-w-0">
@@ -206,48 +163,53 @@ const TelegramAssigneesPage = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="p-4">
-        <table className="w-full bg-white rounded-xl shadow-sm overflow-hidden">
-          <thead>
-            <tr className="bg-slate-100 text-slate-600 text-sm">
-              <th className="py-3 px-2 text-center w-12">#</th>
-              <th className="py-3 px-2 text-center w-12"></th>
-              <th className="py-3 px-3 text-left">ชื่อ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {assignees.map((assignee, index) => (
-              <tr
-                key={assignee.user_id}
-                className="border-t border-slate-100 hover:bg-slate-50"
-              >
-                {/* ลำดับ */}
-                <td className="py-3 px-2 text-center text-sm text-slate-500">
-                  {index + 1}
-                </td>
-                {/* SVG Icon */}
-                <td className="py-3 px-2">
-                  <div className="flex justify-center">
-                    <MemberIcon
-                      isLeader={assignee.is_team_leader}
-                      isReporter={assignee.is_reporter}
-                    />
-                  </div>
-                </td>
-                {/* ชื่อ */}
-                <td className="py-3 px-3">
-                  <span className="text-slate-800 font-medium">
-                    {assignee.first_name} {assignee.last_name}
-                  </span>
-                </td>
+      {/* Scrollable Table Container */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full">
+            <thead className="sticky top-0 bg-slate-100 z-10">
+              <tr className="text-slate-600 text-sm">
+                <th className="py-3 px-2 text-center w-12">#</th>
+                <th className="py-3 px-2 text-center w-12"></th>
+                <th className="py-3 px-3 text-left">ชื่อ</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {assignees.map((assignee, index) => (
+                <tr
+                  key={assignee.user_id}
+                  className="border-t border-slate-100 hover:bg-slate-50"
+                >
+                  {/* ลำดับ */}
+                  <td className="py-3 px-2 text-center text-sm text-slate-500">
+                    {index + 1}
+                  </td>
+                  {/* SVG Icon */}
+                  <td className="py-3 px-2">
+                    <div className="flex justify-center">
+                      <MemberIcon
+                        isLeader={assignee.is_team_leader}
+                        isReporter={assignee.is_reporter}
+                      />
+                    </div>
+                  </td>
+                  {/* ชื่อ */}
+                  <td className="py-3 px-3">
+                    <span className="text-slate-800 font-medium">
+                      {assignee.first_name} {assignee.last_name}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
+      {/* Footer - Fixed */}
+      <div className="flex-shrink-0 bg-white border-t border-slate-200 p-3">
         {/* Legend */}
-        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500 justify-center">
+        <div className="flex flex-wrap gap-4 text-xs text-slate-500 justify-center mb-2">
           <div className="flex items-center gap-1.5">
             <MemberIcon isLeader={true} isReporter={false} />
             <span>หัวหน้าทีม</span>
@@ -261,11 +223,9 @@ const TelegramAssigneesPage = () => {
             <span>สมาชิก</span>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="p-4 text-center text-xs text-slate-400">
-        FastDoc - ระบบเอกสารอิเล็กทรอนิกส์
+        <div className="text-center text-xs text-slate-400">
+          FastDoc - ระบบเอกสารอิเล็กทรอนิกส์
+        </div>
       </div>
     </div>
   );

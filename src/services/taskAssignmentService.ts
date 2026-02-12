@@ -98,6 +98,8 @@ export interface TaskAssignmentWithDetails {
   is_reporter: boolean;
   is_team_leader: boolean;
   parent_assignment_id: string | null;
+  // Flag to check if any reporter has been assigned for this document
+  has_reporter_assigned: boolean;
 }
 
 export interface AcknowledgeOptions {

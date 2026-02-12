@@ -1,8 +1,8 @@
+// @ts-nocheck - This is a Deno Edge Function, not Node.js
 // Telegram Notification Edge Function
 // This function sends notifications to Telegram when documents are created, approved, or rejected
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -255,7 +255,7 @@ function formatMessage(payload: NotificationPayload): string {
   return message
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -324,8 +324,8 @@ serve(async (req) => {
 
     // Prepare inline keyboard for group notifications
     let replyMarkup = undefined
-    if (payload.type === 'task_assigned_group' && payload.assignee_names && payload.assignee_names.length > 5) {
-      // Only show button if there are more than 5 people (names are truncated in message)
+    if (payload.type === 'task_assigned_group') {
+      // Always show button for group notifications to open Mini App
       // Use Direct Link Mini App format: t.me/botusername?startapp=param
       // This opens the Mini App natively in Telegram (works in group chats)
       const miniAppUrl = `https://t.me/i_am_noti_bot?startapp=${payload.document_id}`

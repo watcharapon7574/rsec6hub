@@ -552,7 +552,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
     });
 
     return filtered;
-  }, [localDocReceive, searchTerm, statusFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
+  }, [localDocReceive, searchTerm, statusFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position, permissions.isAdmin, permissions.isClerk]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedDocReceive.length / itemsPerPage);

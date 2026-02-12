@@ -306,7 +306,7 @@ const MemoList: React.FC<MemoListProps> = ({
     });
 
     return filtered;
-  }, [localMemos, searchTerm, statusFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
+  }, [localMemos, searchTerm, statusFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position, permissions.isAdmin, permissions.isClerk]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedMemos.length / itemsPerPage);
@@ -652,12 +652,10 @@ const MemoList: React.FC<MemoListProps> = ({
                         <>
                           <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400"
                             onClick={() => {
-                              const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
-                              navigate('/pdf-just-preview', {
+                              navigate('/document-detail', {
                                 state: {
-                                  fileUrl,
-                                  fileName: memo.subject || 'ไฟล์ PDF',
-                                  memoId: memo.id
+                                  documentId: memo.id,
+                                  documentType: 'memo'
                                 }
                               });
                             }}

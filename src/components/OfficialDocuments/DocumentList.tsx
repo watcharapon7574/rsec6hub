@@ -578,7 +578,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
     });
 
     return filtered;
-  }, [localMemos, searchTerm, statusFilter, typeFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position]);
+  }, [localMemos, searchTerm, statusFilter, typeFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position, permissions.isAdmin, permissions.isClerk]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedMemos.length / itemsPerPage);

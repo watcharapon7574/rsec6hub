@@ -36,6 +36,7 @@ import QueueRealtimePage from "@/pages/QueueRealtimePage";
 import AdminProfileManagementPage from "@/pages/AdminProfileManagementPage";
 import AdminOtpManagementPage from "@/pages/AdminOtpManagementPage";
 import RailwayManagementPage from "@/pages/RailwayManagementPage";
+import TelegramAssigneesPage from "@/pages/TelegramAssigneesPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
 import DarkModeToggle from "@/components/Layout/DarkModeToggle";
 
@@ -107,6 +108,11 @@ const AppContent = () => {
         <Route
           path="/auth"
           element={<AuthPage />}
+        />
+        {/* Telegram Mini App - Public route (no auth required) */}
+        <Route
+          path="/telegram-assignees/:documentId"
+          element={<TelegramAssigneesPage />}
         />
       <Route path="/dashboard" element={
         <ProtectedRoute>

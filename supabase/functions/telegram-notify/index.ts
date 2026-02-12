@@ -326,14 +326,15 @@ serve(async (req) => {
     let replyMarkup = undefined
     if (payload.type === 'task_assigned_group' && payload.assignee_names && payload.assignee_names.length > 5) {
       // Only show button if there are more than 5 people (names are truncated in message)
-      // URL button links to the web app's assigned tasks page
-      const webAppUrl = 'https://rsec6hub.lovable.app/official-documents'
+      // Use Direct Link Mini App format: t.me/botusername?startapp=param
+      // This opens the Mini App natively in Telegram (works in group chats)
+      const miniAppUrl = `https://t.me/i_am_noti_bot?startapp=${payload.document_id}`
 
       replyMarkup = {
         inline_keyboard: [[
           {
-            text: `📋 ดูรายละเอียดในระบบ`,
-            url: webAppUrl
+            text: `👥 ดูรายชื่อทั้งหมด`,
+            url: miniAppUrl
           }
         ]]
       }

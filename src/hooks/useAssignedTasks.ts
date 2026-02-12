@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { taskAssignmentService, TaskStatus } from '@/services/taskAssignmentService';
 import type { TaskAssignmentWithDetails } from '@/services/taskAssignmentService';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Hook สำหรับจัดการงานที่ได้รับมอบหมาย (ฝั่งผู้รับมอบหมาย)
@@ -98,45 +97,29 @@ export const useAssignedTasks = (
     fetchTasks();
   }, [fetchTasks]);
 
-  // Realtime subscription
+  // Realtime subscription - ฟังทุกการเปลี่ยนแปลงบน task_assignments
   useEffect(() => {
     if (!enableRealtime) return;
 
-    let channel: any;
+    const channel = taskAssignmentService.subscribeToTaskAssignments(
+      (payload) => {
+        console.log('Task assignment change detected:', payload);
 
-    const setupRealtimeSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        console.warn('User not authenticated, skipping realtime subscription');
-        return;
-      }
-
-      channel = taskAssignmentService.subscribeToTaskAssignments(
-        user.id,
-        (payload) => {
-          console.log('Task assignment change detected:', payload);
-
-          // Show toast notification for new assignments
-          if (payload.eventType === 'INSERT') {
-            toast({
-              title: '📋 มีงานใหม่มอบหมายให้คุณ',
-              description: 'คุณได้รับงานมอบหมายใหม่ กรุณาตรวจสอบ',
-            });
-          }
-
-          // Refresh task list
-          fetchTasks();
+        // Show toast notification for new assignments
+        if (payload.eventType === 'INSERT') {
+          toast({
+            title: '📋 มีงานใหม่มอบหมายให้คุณ',
+            description: 'คุณได้รับงานมอบหมายใหม่ กรุณาตรวจสอบ',
+          });
         }
-      );
-    };
 
-    setupRealtimeSubscription();
+        // Refresh task list
+        fetchTasks();
+      }
+    );
 
     return () => {
-      if (channel) {
-        taskAssignmentService.unsubscribeFromTaskAssignments(channel);
-      }
+      taskAssignmentService.unsubscribeFromTaskAssignments(channel);
     };
   }, [enableRealtime, fetchTasks]);
 

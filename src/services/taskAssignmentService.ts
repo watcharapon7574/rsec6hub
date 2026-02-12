@@ -652,7 +652,6 @@ class TaskAssignmentService {
    * Subscribe to task assignment changes (Realtime)
    */
   subscribeToTaskAssignments(
-    userId: string,
     callback: (payload: any) => void
   ) {
     const channel = supabase
@@ -663,7 +662,6 @@ class TaskAssignmentService {
           event: '*',
           schema: 'public',
           table: 'task_assignments',
-          filter: `assigned_to=eq.${userId}`
         },
         callback
       )

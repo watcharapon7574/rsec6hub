@@ -216,16 +216,17 @@ function formatMessage(payload: NotificationPayload): string {
 
     case 'task_assigned_group':
       // Group announcement format
-      message = `📢 <b>ประกาศมอบหมายงาน</b>\n`
-      message += `━━━━━━━━━━━━━━━━━━━━\n\n`
-      message += `📄 <b>เรื่อง:</b> ${payload.subject}\n`
+      message = `📄 <b>เรื่อง:</b> ${payload.subject}\n`
       if (payload.task_description) {
         message += `📝 <b>รายละเอียด:</b> ${payload.task_description}\n`
       }
       if (payload.event_date) {
-        message += `📅 <b>วันที่:</b> ${payload.event_date}\n`
-      }
-      if (payload.event_time) {
+        let dateLine = `📅 <b>วันที่:</b> ${payload.event_date}`
+        if (payload.event_time) {
+          dateLine += ` เวลา ${payload.event_time} น.`
+        }
+        message += dateLine + `\n`
+      } else if (payload.event_time) {
         message += `⏰ <b>เวลา:</b> ${payload.event_time} น.\n`
       }
       if (payload.location) {
@@ -234,7 +235,9 @@ function formatMessage(payload: NotificationPayload): string {
       if (payload.note) {
         message += `💬 <b>หมายเหตุ:</b> ${payload.note}\n`
       }
-      message += `\n👤 <b>มอบหมายโดย:</b> ${payload.assigned_by || 'ไม่ระบุ'}\n`
+      // แจ้งโดย: ชื่อต้น
+      const assignerFirstName = (payload.assigned_by || 'ไม่ระบุ').split(' ')[0]
+      message += `\n<b>แจ้งโดย:</b> ${assignerFirstName}\n`
 
       // Show assignee info
       if (payload.is_position_based) {
@@ -246,18 +249,16 @@ function formatMessage(payload: NotificationPayload): string {
         // Name/Group-based: show all assignees
         message += `👥 <b>ผู้รับมอบหมาย:</b> ${payload.assignee_names?.length || 0} คน\n`
 
-        // Show assignee names (collapsed format for many names)
+        // Show assignee names
         if (payload.assignee_names && payload.assignee_names.length > 0) {
           const names = payload.assignee_names
           if (names.length <= 5) {
-            // Show all names if 5 or fewer
-            message += `\n<b>รายชื่อ:</b>\n`
+            message += `<b>รายชื่อ:</b>\n`
             names.forEach((name, i) => {
               message += `  ${i + 1}. ${name}\n`
             })
           } else {
-            // Show first 3 and indicate more
-            message += `\n<b>รายชื่อ:</b>\n`
+            message += `<b>รายชื่อ:</b>\n`
             names.slice(0, 3).forEach((name, i) => {
               message += `  ${i + 1}. ${name}\n`
             })

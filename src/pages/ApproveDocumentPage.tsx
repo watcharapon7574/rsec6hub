@@ -31,51 +31,6 @@ import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
 import { calculateNextSignerOrder } from '@/services/approvalWorkflowService';
 
-// =====================================================
-// Thai visible character utilities (ไม่นับสระบน/ล่าง วรรณยุกต์)
-// =====================================================
-const THAI_COMBINING_MARKS = new Set([
-  '\u0E31', // ั
-  '\u0E34', // ิ
-  '\u0E35', // ี
-  '\u0E36', // ึ
-  '\u0E37', // ื
-  '\u0E38', // ุ
-  '\u0E39', // ู
-  '\u0E3A', // ฺ
-  '\u0E47', // ็
-  '\u0E48', // ่
-  '\u0E49', // ้
-  '\u0E4A', // ๊
-  '\u0E4B', // ๋
-  '\u0E4C', // ์
-  '\u0E4D', // ํ
-  '\u0E4E', // ฎ (rare combining)
-]);
-
-function countVisibleChars(s: string): number {
-  return [...s].filter(c => !THAI_COMBINING_MARKS.has(c)).length;
-}
-
-function wrapByVisibleChars(text: string, maxChars: number = 30): string[] {
-  if (countVisibleChars(text) <= maxChars) {
-    return [text];
-  }
-  const lines: string[] = [];
-  let current = '';
-  for (const char of text) {
-    const test = current + char;
-    if (countVisibleChars(test) <= maxChars) {
-      current = test;
-    } else {
-      if (current) lines.push(current);
-      current = char;
-    }
-  }
-  if (current) lines.push(current);
-  return lines;
-}
-
 const ApproveDocumentPage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
   const navigate = useNavigate();
@@ -557,16 +512,11 @@ const ApproveDocumentPage: React.FC = () => {
           // สร้างชื่อเต็มพร้อม prefix ของผู้ลงนามจริง
           const fullName = `${signerProfile.prefix || ''}${signerProfile.first_name} ${signerProfile.last_name}`.trim();
 
-          // Strip manual newlines from comment for API wrapping
-          const cleanComment = comment.replace(/\n/g, '').trim();
-
           if (signingPosition === 'assistant_director') {
-            // ถ้ามี comment ให้แสดง comment ในตำแหน่งแรก (wrap ที่ 30 visible chars)
-            if (cleanComment) {
-              const wrappedLines = wrapByVisibleChars(`- ${commentPrefix}${cleanComment}`, 30);
-              const commentLines = wrappedLines.map(line => ({ type: "comment", value: line }));
+            // ถ้ามี comment ให้แสดง comment ในตำแหน่งแรก
+            if (comment && comment.trim()) {
               linesWithComment = [
-                ...commentLines,
+                { type: "comment", value: `- ${commentPrefix}${comment.trim()}` },
                 { type: "image", file_key: "sig1" },
                 { type: "name", value: fullName },
                 { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
@@ -604,11 +554,9 @@ const ApproveDocumentPage: React.FC = () => {
               ];
             }
           } else if (signingPosition === 'deputy_director') {
-            const commentValue = cleanComment ? `${commentPrefix}${cleanComment}` : (isAdminSigning ? `${commentPrefix.trim()}` : "เห็นชอบ");
-            const wrappedCommentLines = wrapByVisibleChars(`- ${commentValue}`, 30);
-            const commentEntries = wrappedCommentLines.map(line => ({ type: "comment", value: line }));
+            const commentValue = comment ? `${commentPrefix}${comment}` : (isAdminSigning ? `${commentPrefix.trim()}` : "เห็นชอบ");
             linesWithComment = [
-              ...commentEntries,
+              { type: "comment", value: `- ${commentValue}` },
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
               { type: "position_rank", value: `ตำแหน่ง ${signerProfile.job_position || ""} วิทยฐานะ ${signerProfile.academic_rank || ""}` },
@@ -623,11 +571,9 @@ const ApproveDocumentPage: React.FC = () => {
               { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
             ];
           } else if (signingPosition === 'director') {
-            const commentValue = cleanComment ? `${commentPrefix}${cleanComment}` : (isAdminSigning ? `${commentPrefix.trim()}` : "เห็นชอบ");
-            const wrappedDirLines = wrapByVisibleChars(`- ${commentValue}`, 30);
-            const dirCommentEntries = wrappedDirLines.map(line => ({ type: "comment", value: line }));
+            const commentValue = comment ? `${commentPrefix}${comment}` : (isAdminSigning ? `${commentPrefix.trim()}` : "เห็นชอบ");
             linesWithComment = [
-              ...dirCommentEntries,
+              { type: "comment", value: `- ${commentValue}` },
               { type: "image", file_key: "sig1" },
               { type: "name", value: fullName },
               { type: "job_position", value: signerProfile.job_position || signerProfile.position || "" },
@@ -875,22 +821,18 @@ const ApproveDocumentPage: React.FC = () => {
         }
       }
       // ... กรณี approve แบบไม่มีลายเซ็น ...
-      // Strip manual newlines and wrap at 30 visible chars
-      const cleanedComment = comment.replace(/\n/g, '').trim();
-      const wrappedComment = cleanedComment ? wrapByVisibleChars(cleanedComment, 30).join('\n') : '';
-
       console.log('🔄 ApproveDocumentPage: Calling updateDocumentApproval for approval', {
         memoId,
         approvalAction,
         isDocReceive,
-        comment: wrappedComment,
+        comment: comment.trim(),
         profile: profile ? { name: `${profile.first_name} ${profile.last_name}`, position: profile.position } : null
       });
 
       const result = await updateDocumentApproval(
         memoId,
         approvalAction,
-        wrappedComment || undefined
+        comment.trim() || undefined
       );
       if (result.success) {
         toast({
@@ -1166,19 +1108,7 @@ const ApproveDocumentPage: React.FC = () => {
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       rows={4}
-                      cols={30}
-                      style={{
-                        fontFamily: 'monospace',
-                        maxWidth: '32ch',
-                        whiteSpace: 'pre-wrap',
-                        overflowWrap: 'break-word',
-                        wordBreak: 'break-all',
-                        lineHeight: '1.6',
-                      }}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      ตัวอักษรที่มองเห็น: {countVisibleChars(comment)}/30 ต่อบรรทัด
-                    </p>
                   </div>
                 </CardContent>
               </Card>

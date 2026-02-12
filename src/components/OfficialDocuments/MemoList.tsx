@@ -723,14 +723,14 @@ const MemoList: React.FC<MemoListProps> = ({
                         <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-amber-400 dark:text-amber-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                       )}
 
-                      {/* Connector to final step */}
-                      {memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author' && s.role !== 'clerk').length > 0 && (
+                      {/* Connector to final step - ไม่แสดงสำหรับ report memo */}
+                      {!reportMemoIds.has(memo.id) && memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author' && s.role !== 'clerk').length > 0 && (
                         <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
                       )}
                     </>
                   )}
-                  {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ */}
-                  {memo.status !== 'draft' && memo.status !== 'rejected' && (
+                  {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ หรือเป็น report memo */}
+                  {memo.status !== 'draft' && memo.status !== 'rejected' && !reportMemoIds.has(memo.id) && (
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
                         memo.current_signer_order === 5
@@ -760,7 +760,7 @@ const MemoList: React.FC<MemoListProps> = ({
                         }}
                       >
                         <Eye className="h-4 w-4" />
-                        {memo.is_assigned && <span className="text-xs font-medium">ดูรายงาน</span>}
+                        {(reportMemoIds.has(memo.id) || memo.is_assigned) && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
                       {/* ปุ่มมอบหมายงาน/ดูรายชื่อ - แสดงเฉพาะธุรการ และไม่ใช่ report memo */}
                       {(profile?.is_admin || profile?.position === 'clerk_teacher') && !reportMemoIds.has(memo.id) && (

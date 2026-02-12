@@ -1022,19 +1022,19 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         )
                       )}
                       
-                      {/* Connector to final step */}
-                      {((memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0) || 
+                      {/* Connector to final step - ไม่แสดงสำหรับ report memo */}
+                      {!reportMemoIds.has(memo.id) && ((memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0) ||
                         (memo.signature_positions && memo.signature_positions.length > 0)) && (
                         <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                       )}
                     </>
                   )}
-                  {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ */}
-                  {memo.status !== 'draft' && memo.status !== 'rejected' && (
+                  {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ หรือเป็น report memo */}
+                  {memo.status !== 'draft' && memo.status !== 'rejected' && !reportMemoIds.has(memo.id) && (
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                        memo.current_signer_order === 5 
-                          ? 'text-foreground' 
+                        memo.current_signer_order === 5
+                          ? 'text-foreground'
                           : 'text-purple-400 dark:text-purple-600'
                       }`}>เกษียนหนังสือแล้ว</span>
                       {memo.current_signer_order === 5 && (
@@ -1047,7 +1047,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600 ${memo.is_assigned ? '' : ''}`}
+                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 ${reportMemoIds.has(memo.id) ? 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400' : 'border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'}`}
                         onClick={() => {
                           const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
                           navigate('/document-detail', {
@@ -1059,7 +1059,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         }}
                       >
                         <Eye className="h-4 w-4" />
-                        {memo.is_assigned && <span className="text-xs font-medium">ดูรายงาน</span>}
+                        {(reportMemoIds.has(memo.id) || memo.is_assigned) && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
                       {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ และไม่ใช่ report memo */}
                       {(profile?.is_admin || profile?.position === 'clerk_teacher') && !reportMemoIds.has(memo.id) && (

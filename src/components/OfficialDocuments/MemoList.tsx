@@ -826,7 +826,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       {profile?.user_id === memo.user_id &&
                         (memo.current_signer_order <= 1 || memo.status === 'rejected') && (
                         <div className="relative">
-                          <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center ${reportMemoIds.has(memo.id) ? 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400' : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400'}`}
+                          <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 ${memo.status === 'rejected' ? 'border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950' : (reportMemoIds.has(memo.id) ? 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400' : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400')}`}
                             onClick={() => {
                               if (reportMemoIds.has(memo.id)) {
                                 // Navigate to create report memo page with edit mode
@@ -836,12 +836,14 @@ const MemoList: React.FC<MemoListProps> = ({
                                 navigate(editRoute);
                               }
                             }}
+                            title={memo.status === 'rejected' ? 'แก้ไขเอกสารที่ถูกตีกลับ' : 'แก้ไขเอกสาร'}
                           >
                             <Edit className="h-4 w-4" />
+                            {memo.status === 'rejected' && <span className="text-xs">แก้ไข</span>}
                           </Button>
                           {/* Show "ตีกลับ" badge for rejected memos on top-right corner */}
                           {memo.status === 'rejected' && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white z-10">ใหม่</span>
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-white z-10">ตีกลับ</span>
                           )}
                         </div>
                       )}

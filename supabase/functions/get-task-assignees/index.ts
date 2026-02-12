@@ -32,27 +32,17 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get task assignments for this document
+    // Get task assignments for this document (simple query without joins)
     const { data: assignments, error: assignError } = await supabase
       .from('task_assignments')
-      .select(`
-        assigned_to,
-        is_team_leader,
-        is_reporter,
-        memo_id,
-        doc_receive_id,
-        profiles!task_assignments_assigned_to_fkey (
-          first_name,
-          last_name
-        )
-      `)
+      .select('assigned_to, is_team_leader, is_reporter, memo_id, doc_receive_id')
       .or(`memo_id.eq.${documentId},doc_receive_id.eq.${documentId}`)
       .is('deleted_at', null)
 
     if (assignError) {
       console.error('Error fetching assignments:', assignError)
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch assignments' }),
+        JSON.stringify({ error: 'Failed to fetch assignments', detail: assignError.message }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
@@ -63,6 +53,20 @@ Deno.serve(async (req: Request) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
+
+    // Get user IDs and fetch profiles separately
+    const userIds = assignments.map((a: any) => a.assigned_to).filter(Boolean)
+    const { data: profiles, error: profileError } = await supabase
+      .from('profiles')
+      .select('user_id, first_name, last_name')
+      .in('user_id', userIds)
+
+    if (profileError) {
+      console.error('Error fetching profiles:', profileError)
+    }
+
+    // Create profile lookup map
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]))
 
     // Get document subject
     let subject = ''
@@ -86,13 +90,16 @@ Deno.serve(async (req: Request) => {
 
     // Map and sort assignees
     const assignees = assignments
-      .map((a: any) => ({
-        user_id: a.assigned_to,
-        first_name: a.profiles?.first_name || '',
-        last_name: a.profiles?.last_name || '',
-        is_team_leader: a.is_team_leader || false,
-        is_reporter: a.is_reporter || false,
-      }))
+      .map((a: any) => {
+        const profile = profileMap.get(a.assigned_to)
+        return {
+          user_id: a.assigned_to,
+          first_name: profile?.first_name || '',
+          last_name: profile?.last_name || '',
+          is_team_leader: a.is_team_leader || false,
+          is_reporter: a.is_reporter || false,
+        }
+      })
       .sort((a: any, b: any) => {
         // Leaders first
         if (a.is_team_leader && !b.is_team_leader) return -1

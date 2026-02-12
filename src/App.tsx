@@ -109,9 +109,15 @@ const AppContent = () => {
           path="/auth"
           element={<AuthPage />}
         />
-        {/* Telegram Mini App - Public route (no auth required) */}
+        {/* Telegram Mini App - Public routes (no auth required) */}
+        {/* Route with documentId in URL (for direct links) */}
         <Route
           path="/telegram-assignees/:documentId"
+          element={<TelegramAssigneesPage />}
+        />
+        {/* Route without documentId (for Telegram startapp parameter) */}
+        <Route
+          path="/telegram-assignees"
           element={<TelegramAssigneesPage />}
         />
       <Route path="/dashboard" element={

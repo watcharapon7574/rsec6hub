@@ -55,19 +55,41 @@ const ApproveDocumentPage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [memoId]);
 
-  // Try to get memo from memos table first
+  // Try to get memo from memos table first (from cache)
   let memoFromMemosTable = memoId ? getMemoById(memoId) : null;
+  const [memoFromDatabase, setMemoFromDatabase] = useState<any>(null);
 
-  // If not found in memos table, try doc_receive table
+  // If not found in cache, try fetching from memos table first, then doc_receive
   useEffect(() => {
-    const fetchDocReceive = async () => {
+    const fetchDocument = async () => {
       if (!memoId) return;
+
+      // If found in cache, use it
       if (memoFromMemosTable) {
-        // Found in memos table, not doc_receive
         setIsDocReceive(false);
+        setMemoFromDatabase(null);
         return;
       }
 
+      // Try memos table first
+      try {
+        const { data: memoData, error: memoError } = await supabase
+          .from('memos')
+          .select('*')
+          .eq('id', memoId)
+          .single();
+
+        if (!memoError && memoData) {
+          console.log('Found memo in memos table:', memoId);
+          setMemoFromDatabase(memoData);
+          setIsDocReceive(false);
+          return;
+        }
+      } catch (err) {
+        // Not found in memos table, continue to try doc_receive
+      }
+
+      // Try doc_receive table
       try {
         const { data, error } = await (supabase as any)
           .from('doc_receive')
@@ -76,22 +98,24 @@ const ApproveDocumentPage: React.FC = () => {
           .single();
 
         if (!error && data) {
+          console.log('Found document in doc_receive table:', memoId);
           setDocReceive(data);
           setIsDocReceive(true);
         }
       } catch (err) {
-        console.error('Error fetching doc_receive:', err);
+        console.error('Error fetching document:', err);
       }
     };
 
-    fetchDocReceive();
+    fetchDocument();
   }, [memoId, memoFromMemosTable]);
 
   // Check if this is a report memo and fetch original document
   // Report memo is identified by checking if this memo is linked as report_memo_id in task_assignments
   useEffect(() => {
     const fetchOriginalDocument = async () => {
-      if (!memoId || !memoFromMemosTable) return;
+      // Wait until we have memo data (from cache or database fetch)
+      if (!memoId || (!memoFromMemosTable && !memoFromDatabase)) return;
 
       try {
         // Check if this memo is a report memo by finding task_assignment with this report_memo_id
@@ -150,10 +174,10 @@ const ApproveDocumentPage: React.FC = () => {
     };
 
     fetchOriginalDocument();
-  }, [memoId, memoFromMemosTable]);
+  }, [memoId, memoFromMemosTable, memoFromDatabase]);
 
-  // Use either memo or docReceive
-  const memo = isDocReceive ? docReceive : memoFromMemosTable;
+  // Use either memo or docReceive (prioritize cache, then database fetch, then doc_receive)
+  const memo = isDocReceive ? docReceive : (memoFromMemosTable || memoFromDatabase);
 
   // Wrapper functions for updating either memos or doc_receive
   const updateDocumentStatus = async (docId: string, status: string, docNumber?: string, rejectionReason?: string, currentSignerOrder?: number, newPdfDraftPath?: string, clerkId?: string) => {

@@ -100,7 +100,7 @@ const ApproveDocumentPage: React.FC = () => {
           .select('*')
           .eq('report_memo_id', memoId)
           .is('deleted_at', null)
-          .single() as any);
+          .maybeSingle() as any);
 
         // If no assignment found with this report_memo_id, it's not a report memo
         if (assignmentError || !assignment) {

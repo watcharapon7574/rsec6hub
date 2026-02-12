@@ -93,14 +93,14 @@ const MemoList: React.FC<MemoListProps> = ({
         const memoIds = localMemos.map(m => m.id);
 
         // Query 1: Find task_assignments where memo_id is in our list (to find linked report memos)
-        const { data: assignmentsByMemoId, error: error1 } = await supabase
+        const { data: assignmentsByMemoId, error: error1 } = await (supabase as any)
           .from('task_assignments')
           .select('memo_id, report_memo_id')
           .in('memo_id', memoIds)
           .is('deleted_at', null);
 
         // Query 2: Find task_assignments where report_memo_id is in our list (to identify report memos)
-        const { data: assignmentsByReportId, error: error2 } = await supabase
+        const { data: assignmentsByReportId, error: error2 } = await (supabase as any)
           .from('task_assignments')
           .select('memo_id, report_memo_id')
           .in('report_memo_id', memoIds)

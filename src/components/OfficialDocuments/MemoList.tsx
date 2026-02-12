@@ -822,9 +822,9 @@ const MemoList: React.FC<MemoListProps> = ({
                         <Eye className="h-4 w-4" />
                       </Button>
 
-                      {/* Edit button - show for memo author (draft or rejected) OR rejected report memos */}
-                      {((profile?.user_id === memo.user_id && memo.current_signer_order <= 1) ||
-                        (memo.status === 'rejected' && reportMemoIds.has(memo.id))) && (
+                      {/* Edit button - show for memo author (draft or rejected) */}
+                      {profile?.user_id === memo.user_id &&
+                        (memo.current_signer_order <= 1 || memo.status === 'rejected') && (
                         <div className="relative">
                           <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center ${reportMemoIds.has(memo.id) ? 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400' : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400'}`}
                             onClick={() => {

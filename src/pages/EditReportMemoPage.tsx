@@ -156,24 +156,32 @@ const EditReportMemoPage = () => {
   // Regenerate PDF with updated content
   const regeneratePdf = async (): Promise<string | null> => {
     try {
-      const pdfFormData = new FormData();
-      pdfFormData.append('doc_number', ''); // Will be assigned by clerk
-      pdfFormData.append('date', formatThaiDate(formData.date));
-      pdfFormData.append('subject', formData.subject || '');
-      pdfFormData.append('attachment_title', formData.attachment_title || '');
-      pdfFormData.append('introduction', formData.introduction || '');
-      pdfFormData.append('fact', formData.fact || '');
-      pdfFormData.append('proposal', formData.proposal || '');
-      pdfFormData.append('author_name', formData.author_name || '');
-      pdfFormData.append('author_position', formData.author_position || '');
+      // Prepare JSON data matching the /pdf endpoint format
+      const pdfData = {
+        doc_number: '', // Will be assigned by clerk
+        date: formatThaiDate(formData.date),
+        subject: formData.subject || '',
+        attachment_title: formData.attachment_title || '',
+        introduction: formData.introduction || '',
+        fact: formData.fact || '',
+        proposal: formData.proposal || '',
+        author_name: formData.author_name || '',
+        author_position: formData.author_position || ''
+      };
 
-      console.log('📄 Regenerating PDF for report memo...');
+      console.log('📄 Regenerating PDF for report memo...', pdfData);
 
       const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/memo_to_pdf', {
+          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
             method: 'POST',
-            body: pdfFormData
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/pdf',
+            },
+            mode: 'cors',
+            credentials: 'omit',
+            body: JSON.stringify(pdfData)
           });
           if (!response.ok) {
             const errorText = await response.text();
@@ -306,22 +314,30 @@ const EditReportMemoPage = () => {
   const generatePreview = async () => {
     setPreviewLoading(true);
     try {
-      const pdfFormData = new FormData();
-      pdfFormData.append('doc_number', '');
-      pdfFormData.append('date', formatThaiDate(formData.date));
-      pdfFormData.append('subject', formData.subject || '');
-      pdfFormData.append('attachment_title', formData.attachment_title || '');
-      pdfFormData.append('introduction', formData.introduction || '');
-      pdfFormData.append('fact', formData.fact || '');
-      pdfFormData.append('proposal', formData.proposal || '');
-      pdfFormData.append('author_name', formData.author_name || '');
-      pdfFormData.append('author_position', formData.author_position || '');
+      // Prepare JSON data matching the /pdf endpoint format
+      const pdfData = {
+        doc_number: '',
+        date: formatThaiDate(formData.date),
+        subject: formData.subject || '',
+        attachment_title: formData.attachment_title || '',
+        introduction: formData.introduction || '',
+        fact: formData.fact || '',
+        proposal: formData.proposal || '',
+        author_name: formData.author_name || '',
+        author_position: formData.author_position || ''
+      };
 
       const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/memo_to_pdf', {
+          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
             method: 'POST',
-            body: pdfFormData
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/pdf',
+            },
+            mode: 'cors',
+            credentials: 'omit',
+            body: JSON.stringify(pdfData)
           });
           if (!response.ok) {
             throw new Error('Preview generation failed');
@@ -410,7 +426,7 @@ const EditReportMemoPage = () => {
 
         {/* Header Card */}
         <Card className="mb-8 overflow-hidden shadow-xl border-0">
-          <CardHeader className="relative bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-white py-12">
+          <CardHeader className="relative bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white py-12">
             <div className="absolute inset-0 opacity-10">
               <div className="absolute inset-0" style={{
                 backgroundImage: `radial-gradient(circle at 20px 20px, rgba(255,255,255,0.15) 1px, transparent 1px)`,
@@ -427,7 +443,7 @@ const EditReportMemoPage = () => {
                 แก้ไขบันทึกข้อความรายงานผล
               </h1>
 
-              <p className="text-amber-100 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
+              <p className="text-blue-100 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
                 แก้ไขเอกสารตามข้อเสนอแนะและส่งใหม่
               </p>
             </div>
@@ -444,8 +460,8 @@ const EditReportMemoPage = () => {
           <Card className="shadow-lg border-0 bg-card">
             <CardHeader className="bg-muted/50 dark:bg-background/50 border-b border-border rounded-t-lg">
               <CardTitle className="text-xl text-foreground font-semibold flex items-center gap-2">
-                <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-amber-600" />
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-blue-600" />
                 </div>
                 ข้อมูลรายงาน
               </CardTitle>
@@ -465,7 +481,7 @@ const EditReportMemoPage = () => {
                       value={formData.date}
                       onChange={(e) => handleInputChange('date', e.target.value)}
                       required
-                      className="border-border focus:border-amber-500"
+                      className="border-border focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -480,7 +496,7 @@ const EditReportMemoPage = () => {
                   onChange={(e) => handleInputChange('subject', e.target.value)}
                   required
                   placeholder="ระบุเรื่องที่รายงาน"
-                  className="border-border focus:border-amber-500"
+                  className="border-border focus:border-blue-500"
                 />
               </div>
 
@@ -495,7 +511,7 @@ const EditReportMemoPage = () => {
                       value={formData.attachment_title}
                       onChange={(e) => handleInputChange('attachment_title', e.target.value)}
                       placeholder="ระบุเอกสารแนบ (ถ้ามี)"
-                      className="border-border focus:border-amber-500"
+                      className="border-border focus:border-blue-500"
                     />
                   </div>
 
@@ -507,7 +523,7 @@ const EditReportMemoPage = () => {
                       onChange={(e) => handleInputChange('introduction', e.target.value)}
                       rows={3}
                       placeholder="ข้อความเปิดหรือบริบทของรายงาน"
-                      className="border-border focus:border-amber-500 resize-none"
+                      className="border-border focus:border-blue-500 resize-none"
                     />
                   </div>
                 </div>
@@ -540,7 +556,7 @@ const EditReportMemoPage = () => {
                       onChange={(e) => handleInputChange('fact', e.target.value)}
                       rows={6}
                       placeholder="รายงานผลการปฏิบัติงาน สิ่งที่ดำเนินการแล้ว ผลลัพธ์ที่ได้..."
-                      className="border-border focus:border-amber-500 resize-none"
+                      className="border-border focus:border-blue-500 resize-none"
                     />
                   </div>
 
@@ -552,26 +568,26 @@ const EditReportMemoPage = () => {
                       onChange={(e) => handleInputChange('proposal', e.target.value)}
                       rows={4}
                       placeholder="ข้อเสนอแนะ สรุปผล หรือแนวทางต่อไป..."
-                      className="border-border focus:border-amber-500 resize-none"
+                      className="border-border focus:border-blue-500 resize-none"
                     />
                   </div>
 
                   {/* Special Character Help */}
-                  <div className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950 rounded-md p-3 border border-amber-200 dark:border-amber-800">
+                  <div className="text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 rounded-md p-3 border border-blue-200 dark:border-blue-800">
                     <div
                       className="flex items-center justify-between cursor-pointer"
                       onClick={() => setShowSpecialCharHelp(!showSpecialCharHelp)}
                     >
                       <span>
                         <span className="font-semibold">เครื่องหมายพิเศษ:</span>{' '}
-                        พิมพ์ <code className="bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่
+                        พิมพ์ <code className="bg-blue-200 dark:bg-blue-800 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่
                       </span>
                       {showSpecialCharHelp ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </div>
                     {showSpecialCharHelp && (
-                      <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-800 space-y-1">
-                        <p><code className="bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ 2 ครั้ง</p>
-                        <p><code className="bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ 3 ครั้ง</p>
+                      <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800 space-y-1">
+                        <p><code className="bg-blue-200 dark:bg-blue-800 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ 2 ครั้ง</p>
+                        <p><code className="bg-blue-200 dark:bg-blue-800 px-1.5 py-0.5 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ 3 ครั้ง</p>
                       </div>
                     )}
                   </div>
@@ -583,7 +599,7 @@ const EditReportMemoPage = () => {
                 <Button
                   type="submit"
                   disabled={isSubmitting || previewLoading}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-8 py-2 rounded-lg shadow-md"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-2 rounded-lg shadow-md"
                 >
                   {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
                 </Button>
@@ -592,7 +608,7 @@ const EditReportMemoPage = () => {
                   variant="outline"
                   onClick={generatePreview}
                   disabled={isSubmitting || previewLoading}
-                  className="border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950"
+                  className="border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
                 >
                   {previewLoading ? (
                     <><svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>กำลังสร้าง...</>
@@ -618,11 +634,11 @@ const EditReportMemoPage = () => {
         {/* PDF Preview */}
         {previewUrl && (
           <Card className="mt-8 shadow-lg border-0 bg-card">
-            <CardHeader className="bg-amber-50 dark:bg-amber-950 border-b border-amber-100 dark:border-amber-900 rounded-t-lg">
+            <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-blue-100 dark:border-blue-900 rounded-t-lg">
               <CardTitle className="text-xl font-semibold flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center">
-                    <Eye className="w-4 h-4 text-amber-600" />
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-blue-600" />
                   </div>
                   ตัวอย่าง PDF
                 </div>
@@ -660,7 +676,7 @@ const EditReportMemoPage = () => {
             ระบบกำลังสร้าง PDF และบันทึกข้อมูล กรุณารอสักครู่...
           </DialogDescription>
           <div className="flex flex-col items-center gap-4 mt-4">
-            <svg className="animate-spin h-8 w-8 text-amber-600" viewBox="0 0 24 24">
+            <svg className="animate-spin h-8 w-8 text-blue-600" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>

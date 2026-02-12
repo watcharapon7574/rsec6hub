@@ -82,7 +82,7 @@ const EditReportMemoPage = () => {
             .single();
 
           if (error) throw error;
-          memo = data;
+          memo = data as any;
         }
 
         if (!memo) {

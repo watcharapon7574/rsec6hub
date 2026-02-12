@@ -30,6 +30,7 @@ export interface MemoRecord {
   attached_files?: string[];
   has_in_progress_task?: boolean;
   revision_count?: number; // จำนวนครั้งที่เอกสารถูกตีกลับ/แก้ไข
+  rejected_name_comment?: any; // ข้อมูลผู้ตีกลับ (name, comment, rejected_at, position)
   doc_del?: any; // soft delete field (JSON with deleted_by, deleted_at, deleted_name)
 }
 
@@ -155,7 +156,7 @@ export const useAllMemos = () => {
               .order('updated_at', { ascending: false });
 
             if (reportMemos?.length) {
-              setCompletedReportMemos(reportMemos as MemoRecord[]);
+              setCompletedReportMemos(reportMemos as unknown as MemoRecord[]);
             } else {
               setCompletedReportMemos([]);
             }

@@ -151,10 +151,10 @@ const CreateReportMemoPage = () => {
           location: task.location
         });
 
-        // Pre-fill subject with reference to original document
+        // Pre-fill subject with the original document subject (no prefix, icon indicates report memo)
         setFormData(prev => ({
           ...prev,
-          subject: `รายงานผล: ${documentSubject}`,
+          subject: documentSubject,
           introduction: task.task_description || ''
         }));
 

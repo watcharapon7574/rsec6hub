@@ -63,36 +63,70 @@ const MemoList: React.FC<MemoListProps> = ({
   // State สำหรับติดตาม memo ที่มี draft report memo
   const [draftReportMemos, setDraftReportMemos] = useState<Record<string, string>>({});
 
+  // State สำหรับติดตาม memo ที่เป็น report memo (linked via task_assignments.report_memo_id)
+  const [reportMemoIds, setReportMemoIds] = useState<Set<string>>(new Set());
+
   // อัพเดท localMemos เมื่อ memoList เปลี่ยน
   useEffect(() => {
     setLocalMemos(memoList);
   }, [memoList]);
 
-  // Fetch draft report memos for the current memo list
+  // Fetch draft report memos and identify which memos ARE report memos
   useEffect(() => {
-    const fetchDraftReportMemos = async () => {
-      if (!localMemos.length || (!permissions.isAdmin && !permissions.isClerk)) return;
+    const fetchReportMemoInfo = async () => {
+      if (!localMemos.length) return;
 
       try {
         const memoIds = localMemos.map(m => m.id);
 
         // Find task_assignments with report_memo_id for these memos
+        // This fetches: 1) which memos have report memos linked, 2) which memos ARE report memos
         const { data: assignments, error: assignmentsError } = await (supabase as any)
           .from('task_assignments')
           .select('memo_id, report_memo_id')
-          .in('memo_id', memoIds)
-          .not('report_memo_id', 'is', null);
+          .or(`memo_id.in.(${memoIds.join(',')}),report_memo_id.in.(${memoIds.join(',')})`)
+          .is('deleted_at', null);
 
-        if (assignmentsError || !assignments?.length) return;
+        if (assignmentsError) {
+          console.error('Error fetching task assignments:', assignmentsError);
+          return;
+        }
 
-        // Get report memo IDs
-        const reportMemoIds = assignments.map(a => a.report_memo_id).filter(Boolean);
+        // Track which memos in our list ARE report memos
+        const reportMemoIdsSet = new Set<string>();
+        if (assignments?.length) {
+          for (const assignment of assignments) {
+            if (assignment.report_memo_id && memoIds.includes(assignment.report_memo_id)) {
+              reportMemoIdsSet.add(assignment.report_memo_id);
+            }
+          }
+        }
+        setReportMemoIds(reportMemoIdsSet);
+
+        // Only continue with draft report memo tracking for admin/clerk
+        if (!permissions.isAdmin && !permissions.isClerk) return;
+
+        if (!assignments?.length) {
+          setDraftReportMemos({});
+          return;
+        }
+
+        // Get report memo IDs that are linked to memos in our list
+        const linkedReportMemoIds = assignments
+          .filter(a => a.report_memo_id && memoIds.includes(a.memo_id))
+          .map(a => a.report_memo_id)
+          .filter(Boolean);
+
+        if (!linkedReportMemoIds.length) {
+          setDraftReportMemos({});
+          return;
+        }
 
         // Check which report memos are in draft status
         const { data: reportMemos, error: reportMemosError } = await supabase
           .from('memos')
           .select('id, status')
-          .in('id', reportMemoIds)
+          .in('id', linkedReportMemoIds)
           .eq('status', 'draft');
 
         if (reportMemosError || !reportMemos?.length) {
@@ -111,11 +145,11 @@ const MemoList: React.FC<MemoListProps> = ({
 
         setDraftReportMemos(draftReportMap);
       } catch (error) {
-        console.error('Error fetching draft report memos:', error);
+        console.error('Error fetching report memo info:', error);
       }
     };
 
-    fetchDraftReportMemos();
+    fetchReportMemoInfo();
   }, [localMemos, permissions.isAdmin, permissions.isClerk]);
 
   // Setup realtime listeners
@@ -431,12 +465,12 @@ const MemoList: React.FC<MemoListProps> = ({
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   {/* Icon: FileCheck (teal) for report memo, FileText (amber) for regular memo */}
-                  {memo.subject?.startsWith('รายงานผล') ? (
+                  {reportMemoIds.has(memo.id) ? (
                     <FileCheck className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-teal-500'}`} />
                   ) : (
                     <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-amber-500'}`} />
                   )}
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : memo.subject?.startsWith('รายงานผล') ? 'text-teal-700 dark:text-teal-300 group-hover:text-teal-800' : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'}`} title={memo.subject}>{memo.subject}</span>
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : reportMemoIds.has(memo.id) ? 'text-teal-700 dark:text-teal-300 group-hover:text-teal-800' : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'}`} title={memo.subject}>{memo.subject}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
                   {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
@@ -666,7 +700,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                         <div className="relative">
                           {(() => {
-                            const isReportMemo = memo.subject?.startsWith('รายงานผล');
+                            const isReportMemo = reportMemoIds.has(memo.id);
                             const buttonColor = isReportMemo
                               ? (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400')
                               : (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 dark:text-amber-600');

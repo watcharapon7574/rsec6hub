@@ -88,31 +88,31 @@ const ApproveDocumentPage: React.FC = () => {
   }, [memoId, memoFromMemosTable]);
 
   // Check if this is a report memo and fetch original document
+  // Report memo is identified by checking if this memo is linked as report_memo_id in task_assignments
   useEffect(() => {
     const fetchOriginalDocument = async () => {
       if (!memoId || !memoFromMemosTable) return;
 
-      // Check if it's a report memo (subject starts with "รายงานผล")
-      const isReport = memoFromMemosTable.subject?.startsWith('รายงานผล');
-      setIsReportMemo(isReport);
-
-      if (!isReport) {
-        setOriginalDocument(null);
-        return;
-      }
-
       try {
-        // Find task_assignment with this report_memo_id
+        // Check if this memo is a report memo by finding task_assignment with this report_memo_id
         const { data: assignment, error: assignmentError } = await supabase
           .from('task_assignments')
           .select('*')
           .eq('report_memo_id', memoId)
+          .is('deleted_at', null)
           .single();
 
+        // If no assignment found with this report_memo_id, it's not a report memo
         if (assignmentError || !assignment) {
-          console.log('No task_assignment found for report memo:', memoId);
+          console.log('Not a report memo (no task_assignment found):', memoId);
+          setIsReportMemo(false);
+          setOriginalDocument(null);
           return;
         }
+
+        // This IS a report memo
+        setIsReportMemo(true);
+        console.log('📋 This is a report memo:', memoId);
 
         // Get original document based on document_type
         let originalDoc = null;
@@ -144,6 +144,8 @@ const ApproveDocumentPage: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching original document:', error);
+        setIsReportMemo(false);
+        setOriginalDocument(null);
       }
     };
 

@@ -130,13 +130,14 @@ const DocumentManagePage: React.FC = () => {
             }
           }
           
-          // แยกเลขจากรูปแบบ เช่น "4567/68"
+          // แยกเลขจากรูปแบบ เช่น "4567/68" หรือ "0001/69"
           const match = docToProcess.match(/(\d+)\/(\d+)$/);
           if (match) {
             const lastNumber = parseInt(match[1]);
             const nextNumber = lastNumber + 1;
-            // ใช้ปีปัจจุบันแทนปีจากเอกสารเก่า
-            setSuggestedDocNumber(`${nextNumber}/${yearShort}`);
+            // ใช้ปีปัจจุบันแทนปีจากเอกสารเก่า และ zero-pad เป็น 4 หลัก
+            const paddedNumber = nextNumber.toString().padStart(4, '0');
+            setSuggestedDocNumber(`${paddedNumber}/${yearShort}`);
           }
         }
       }

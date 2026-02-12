@@ -20,7 +20,7 @@ interface PDFFormData {
   pdfFile: File | null;
 }
 
-const PDFSignaturePage = () => {
+const CreateDocReceivePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editDocId = searchParams.get('edit');
@@ -73,7 +73,7 @@ const PDFSignaturePage = () => {
         }
 
         const nextNumber = maxNumber + 1;
-        const suggested = `${currentYear}/${nextNumber.toString().padStart(3, '0')}`;
+        const suggested = `${currentYear}/${nextNumber.toString().padStart(4, '0')}`;
         setSuggestedDocNumber(suggested);
       } catch (error) {
         console.error('Error fetching suggested doc number:', error);
@@ -805,4 +805,4 @@ const PDFSignaturePage = () => {
   );
 };
 
-export default PDFSignaturePage;
+export default CreateDocReceivePage;

@@ -20,7 +20,7 @@ import CreateDocumentPage from "@/pages/CreateDocumentPage";
 import CreateMemoPage from "@/pages/CreateMemoPage";
 import CreateReportMemoPage from "@/pages/CreateReportMemoPage";
 import ManageReportMemoPage from "@/pages/ManageReportMemoPage";
-import PDFSignaturePage from "@/pages/PDFSignaturePage";
+import CreateDocReceivePage from "@/pages/CreateDocReceivePage";
 import DocumentManagePage from "@/pages/DocumentManagePage";
 import PDFDocumentManagePage from "@/pages/PDFDocumentManagePage";
 import PDFReceiveManagePage from "@/pages/PDFReceiveManagePage";
@@ -158,9 +158,9 @@ const AppContent = () => {
           <ManageReportMemoPage />
         </ProtectedRoute>
       } />
-      <Route path="/pdf-signature" element={
+      <Route path="/create-doc-receive" element={
         <ProtectedRoute>
-          <PDFSignaturePage />
+          <CreateDocReceivePage />
         </ProtectedRoute>
       } />
       <Route path="/document-manage/:memoId" element={

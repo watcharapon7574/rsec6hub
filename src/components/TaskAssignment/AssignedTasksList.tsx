@@ -227,9 +227,9 @@ const AssignedTasksList = () => {
   // Navigate to document view
   const handleViewDocument = (documentId: string, documentType: string) => {
     if (documentType === 'memo') {
-      navigate(`/pdf-signature?memoId=${documentId}`);
+      navigate(`/create-doc-receive?memoId=${documentId}`);
     } else {
-      navigate(`/pdf-signature?docReceiveId=${documentId}`);
+      navigate(`/create-doc-receive?docReceiveId=${documentId}`);
     }
   };
 

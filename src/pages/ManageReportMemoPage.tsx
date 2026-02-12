@@ -255,7 +255,9 @@ const ManageReportMemoPage: React.FC = () => {
         if (match) {
           const lastNumber = parseInt(match[1]);
           const nextNumber = lastNumber + 1;
-          setSuggestedDocNumber(`${nextNumber}/${yearShort}`);
+          // Zero-pad เป็น 4 หลัก
+          const paddedNumber = nextNumber.toString().padStart(4, '0');
+          setSuggestedDocNumber(`${paddedNumber}/${yearShort}`);
         }
       }
     } catch (error) {

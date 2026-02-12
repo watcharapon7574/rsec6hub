@@ -1082,7 +1082,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               variant="outline"
                               size="sm"
                               className="h-7 px-2 flex items-center gap-1 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
-                              onClick={() => navigate(`/pdf-signature?edit=${memo.id}`)}
+                              onClick={() => navigate(`/create-doc-receive?edit=${memo.id}`)}
                               title="แก้ไขเอกสารที่ถูกตีกลับ"
                             >
                               <FileText className="h-4 w-4" />

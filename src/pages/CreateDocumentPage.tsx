@@ -25,7 +25,7 @@ const CreateDocumentPage = () => {
       description: 'หนังสือรับมาเป็น PDF เพื่อเกษียนหนังสือภายในสถานศึกษา',
       icon: Signature,
       color: 'bg-green-500 hover:bg-green-600',
-      path: '/pdf-signature'
+      path: '/create-doc-receive'
     }] : [])
   ];
 

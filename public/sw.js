@@ -1,5 +1,5 @@
 // เพิ่มเวอร์ชันทุกครั้งที่ deploy ใหม่ เพื่อบังคับให้ล้างแคชเก่า
-const CACHE_NAME = 'fastdoc-v1.4.16';
+const CACHE_NAME = 'fastdoc-v1.4.17';
 const urlsToCache = [
   '/',
   '/fastdocIcon.png',
@@ -72,23 +72,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ตรวจสอบว่าเป็น navigation request ไปยัง root (index.html)
-  // ต้องโหลดจาก network เสมอเพื่อให้ได้ JS bundle ล่าสุด
+  // ทุก navigation request (เปิดหน้าเว็บ) ต้องโหลดจาก network เสมอ
+  // เพื่อให้ได้ HTML ที่อ้างอิง JS bundle ล่าสุด (ป้องกันหน้าดำหลัง deploy ใหม่)
   const url = new URL(event.request.url);
-  const isRootNavigation = event.request.mode === 'navigate' && url.pathname === '/';
-  
-  if (isRootNavigation) {
-    // Network Only Strategy - ไม่ใช้ cache เลยสำหรับ root
+  const isNavigation = event.request.mode === 'navigate';
+
+  if (isNavigation) {
+    // Network First Strategy สำหรับทุกหน้า
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          console.log('Fetched fresh index.html from network');
+          console.log('Fetched fresh page from network:', url.pathname);
           return response;
         })
         .catch(() => {
-          // Offline fallback
-          console.log('Network failed for root, serving offline page');
-          return caches.match('/offline.html') || caches.match('/');
+          // Offline fallback - ใช้ cached root index.html
+          console.log('Network failed for navigation, serving offline fallback');
+          return caches.match('/') || caches.match('/offline.html');
         })
     );
     return;

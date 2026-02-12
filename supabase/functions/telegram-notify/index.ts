@@ -219,12 +219,10 @@ function formatMessage(payload: NotificationPayload): string {
 
       // Show assignee info
       if (payload.is_position_based) {
-        // Position-based: show 1 person (position holder/team leader)
-        message += `👥 <b>ผู้รับผิดชอบ:</b>\n`
+        // Position-based: show "ชื่อ และทีมงาน"
         if (payload.assignee_names && payload.assignee_names.length > 0) {
-          message += `  🏷️ ${payload.assignee_names[0]} (หัวหน้าทีม)\n`
+          message += `👥 <b>ผู้รับผิดชอบ:</b> ${payload.assignee_names[0]} และทีมงาน\n`
         }
-        message += `\n<i>💡 หัวหน้าทีมจะจัดการเพิ่มสมาชิกในระบบ</i>\n`
       } else {
         // Name/Group-based: show all assignees
         message += `👥 <b>ผู้รับมอบหมาย:</b> ${payload.assignee_names?.length || 0} คน\n`

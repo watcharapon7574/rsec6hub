@@ -92,18 +92,29 @@ const MemoList: React.FC<MemoListProps> = ({
       try {
         const memoIds = localMemos.map(m => m.id);
 
-        // Find task_assignments with report_memo_id for these memos
-        // This fetches: 1) which memos have report memos linked, 2) which memos ARE report memos
-        const { data: assignments, error: assignmentsError } = await (supabase as any)
+        // Query 1: Find task_assignments where memo_id is in our list (to find linked report memos)
+        const { data: assignmentsByMemoId, error: error1 } = await supabase
           .from('task_assignments')
           .select('memo_id, report_memo_id')
-          .or(`memo_id.in.(${memoIds.join(',')}),report_memo_id.in.(${memoIds.join(',')})`)
+          .in('memo_id', memoIds)
           .is('deleted_at', null);
 
-        if (assignmentsError) {
-          console.error('Error fetching task assignments:', assignmentsError);
-          return;
+        // Query 2: Find task_assignments where report_memo_id is in our list (to identify report memos)
+        const { data: assignmentsByReportId, error: error2 } = await supabase
+          .from('task_assignments')
+          .select('memo_id, report_memo_id')
+          .in('report_memo_id', memoIds)
+          .is('deleted_at', null);
+
+        if (error1) {
+          console.error('Error fetching task assignments by memo_id:', error1);
         }
+        if (error2) {
+          console.error('Error fetching task assignments by report_memo_id:', error2);
+        }
+
+        // Combine both results
+        const assignments = [...(assignmentsByMemoId || []), ...(assignmentsByReportId || [])];
 
         // Track which memos in our list ARE report memos
         const reportMemoIdsSet = new Set<string>();
@@ -115,6 +126,7 @@ const MemoList: React.FC<MemoListProps> = ({
           }
         }
         setReportMemoIds(reportMemoIdsSet);
+        console.log('📋 Report memo IDs found:', Array.from(reportMemoIdsSet));
 
         // Only continue with draft report memo tracking for admin/clerk
         if (!permissions.isAdmin && !permissions.isClerk) return;

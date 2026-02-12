@@ -131,17 +131,17 @@ const ManageReportMemoPage: React.FC = () => {
           }
         }
 
-        // 2. Find task_assignment with this report_memo_id
-        const { data: assignment, error: assignmentError } = await supabase
-          .from('task_assignments')
-          .select('*')
-          .eq('report_memo_id', memoId)
-          .single();
+        // 2. Find task_assignment with this report_memo_id (use RPC to bypass RLS)
+        const { data: assignments, error: assignmentError } = await (supabase as any)
+          .rpc('get_task_assignment_by_report_memo', { p_report_memo_id: memoId });
 
-        if (assignmentError || !assignment) {
+        if (assignmentError || !assignments || assignments.length === 0) {
+          console.error('Error fetching task assignment:', assignmentError);
           throw new Error('ไม่พบข้อมูลการมอบหมายงาน');
         }
 
+        // RPC returns array, get first item
+        const assignment = assignments[0];
         setTaskAssignment(assignment);
 
         // 3. Get original document

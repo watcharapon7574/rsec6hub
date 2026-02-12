@@ -52,7 +52,10 @@
   <body>
     <script>
       // Apply dark mode class before React loads to prevent flash
+      // Skip dark mode for Telegram Mini App (always use light mode)
       (function() {
+        var isTelegramMiniApp = window.location.pathname.indexOf('/telegram-assignees') === 0;
+        if (isTelegramMiniApp) return;
         var theme = localStorage.getItem('rsec6hub-theme');
         if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark');

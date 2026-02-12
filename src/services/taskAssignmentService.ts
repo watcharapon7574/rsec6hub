@@ -208,6 +208,101 @@ class TaskAssignmentService {
   }
 
   /**
+   * ส่งแจ้งเตือนกลุ่ม Telegram เมื่อมอบหมายงาน
+   */
+  async sendGroupNotification(
+    documentId: string,
+    documentType: DocumentType,
+    assigneeUserIds: string[],
+    options?: TaskDetailsOptions
+  ): Promise<void> {
+    try {
+      // Get document details
+      let subject = '';
+      let docNumber = '';
+
+      if (documentType === 'memo') {
+        const { data: memo } = await supabase
+          .from('memos')
+          .select('subject, doc_number')
+          .eq('id', documentId)
+          .single();
+        subject = memo?.subject || '';
+        docNumber = memo?.doc_number || '';
+      } else {
+        const { data: docReceive } = await (supabase as any)
+          .from('doc_receive')
+          .select('subject, doc_number')
+          .eq('id', documentId)
+          .single();
+        subject = docReceive?.subject || '';
+        docNumber = docReceive?.doc_number || '';
+      }
+
+      // Get assignee names
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', assigneeUserIds);
+
+      const assigneeNames = (profiles || []).map(p => `${p.first_name} ${p.last_name}`);
+
+      // Get assigner name (current user)
+      const { data: { user } } = await supabase.auth.getUser();
+      let assignerName = 'ไม่ระบุ';
+      if (user?.id) {
+        const { data: assignerProfile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', user.id)
+          .single();
+        if (assignerProfile) {
+          assignerName = `${assignerProfile.first_name} ${assignerProfile.last_name}`;
+        }
+      }
+
+      // Format event date for Thai display
+      let formattedDate = '';
+      if (options?.eventDate) {
+        const date = options.eventDate;
+        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+                           'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const day = date.getDate();
+        const month = thaiMonths[date.getMonth()];
+        const year = date.getFullYear() + 543;
+        formattedDate = `${day} ${month} ${year}`;
+      }
+
+      // Send notification to Edge Function
+      const { data, error } = await supabase.functions.invoke('telegram-notify', {
+        body: {
+          type: 'task_assigned_group',
+          document_id: documentId,
+          document_type: documentType,
+          subject: subject,
+          doc_number: docNumber,
+          assigned_by: assignerName,
+          task_description: options?.taskDescription || '',
+          event_date: formattedDate,
+          event_time: options?.eventTime || '',
+          location: options?.location || '',
+          note: options?.note || '',
+          assignee_names: assigneeNames,
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error sending group notification:', error);
+      } else {
+        console.log('✅ Group notification sent successfully');
+      }
+    } catch (error) {
+      console.error('❌ Failed to send group notification:', error);
+      // Don't throw - this is a non-critical operation
+    }
+  }
+
+  /**
    * สร้างงานมอบหมายหลายคน (batch create)
    */
   async createMultipleTaskAssignments(
@@ -351,6 +446,10 @@ class TaskAssignmentService {
 
         console.log(`  ✅ Created assignment for ${userId}, isTeamLeader: ${isLeader}`);
       }
+
+      // Send group notification to Telegram (fire and forget)
+      this.sendGroupNotification(documentId, documentType, assignedToUserIds, options)
+        .catch(err => console.error('Group notification failed:', err));
 
       return assignmentIds;
     } catch (error) {

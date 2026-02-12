@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 interface NotificationPayload {
-  type: 'document_pending' | 'document_approved' | 'document_rejected' | 'document_ready' | 'document_created' | 'document_completed_clerk' | 'task_assigned' | 'task_completed'
+  type: 'document_pending' | 'document_approved' | 'document_rejected' | 'document_ready' | 'document_created' | 'document_completed_clerk' | 'task_assigned' | 'task_completed' | 'task_assigned_group'
   document_id: string
   document_type: 'memo' | 'doc_receive'
   subject: string
@@ -29,21 +29,34 @@ interface NotificationPayload {
   reporter_name?: string // For task_completed: name of person who reported the task
   completion_note?: string // For task_completed: the completion note/report
   chat_id?: string // Optional: specific chat to send to
+  // For task_assigned_group: additional fields
+  task_description?: string // รายละเอียดงาน
+  event_date?: string // วันที่
+  event_time?: string // เวลา
+  location?: string // สถานที่
+  assignee_names?: string[] // รายชื่อผู้รับมอบหมาย
+  callback_data?: string // Data for inline button callback
 }
 
-async function sendTelegramMessage(botToken: string, chatId: string, message: string) {
+async function sendTelegramMessage(botToken: string, chatId: string, message: string, replyMarkup?: any) {
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`
+
+  const body: any = {
+    chat_id: chatId,
+    text: message,
+    parse_mode: 'HTML',
+  }
+
+  if (replyMarkup) {
+    body.reply_markup = replyMarkup
+  }
 
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: message,
-      parse_mode: 'HTML',
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
@@ -64,6 +77,7 @@ function formatMessage(payload: NotificationPayload): string {
     document_completed_clerk: '✅',
     task_assigned: '📋',
     task_completed: '✅',
+    task_assigned_group: '📢',
   }
 
   const icon = emoji[payload.type] || '📄'
@@ -179,6 +193,50 @@ function formatMessage(payload: NotificationPayload): string {
       }
       message += `\n✅ กรุณาเข้าระบบเพื่อตรวจสอบรายงานผลงาน`
       break
+
+    case 'task_assigned_group':
+      // Group announcement format
+      message = `📢 <b>ประกาศมอบหมายงาน</b>\n`
+      message += `━━━━━━━━━━━━━━━━━━━━\n\n`
+      message += `📄 <b>เรื่อง:</b> ${payload.subject}\n`
+      if (payload.task_description) {
+        message += `📝 <b>รายละเอียด:</b> ${payload.task_description}\n`
+      }
+      if (payload.event_date) {
+        message += `📅 <b>วันที่:</b> ${payload.event_date}\n`
+      }
+      if (payload.event_time) {
+        message += `⏰ <b>เวลา:</b> ${payload.event_time} น.\n`
+      }
+      if (payload.location) {
+        message += `📍 <b>สถานที่:</b> ${payload.location}\n`
+      }
+      if (payload.note) {
+        message += `💬 <b>หมายเหตุ:</b> ${payload.note}\n`
+      }
+      message += `\n👤 <b>มอบหมายโดย:</b> ${payload.assigned_by || 'ไม่ระบุ'}\n`
+      message += `👥 <b>ผู้รับมอบหมาย:</b> ${payload.assignee_names?.length || 0} คน\n`
+
+      // Show assignee names (collapsed format for many names)
+      if (payload.assignee_names && payload.assignee_names.length > 0) {
+        const names = payload.assignee_names
+        if (names.length <= 5) {
+          // Show all names if 5 or fewer
+          message += `\n<b>รายชื่อ:</b>\n`
+          names.forEach((name, i) => {
+            message += `  ${i + 1}. ${name}\n`
+          })
+        } else {
+          // Show first 3 and indicate more
+          message += `\n<b>รายชื่อ:</b>\n`
+          names.slice(0, 3).forEach((name, i) => {
+            message += `  ${i + 1}. ${name}\n`
+          })
+          message += `  ... และอีก ${names.length - 3} คน\n`
+        }
+      }
+
+      return message // Return early without document ID
   }
 
   message += `\n🔗 ID: ${payload.document_id}`
@@ -199,35 +257,41 @@ serve(async (req) => {
     const completedBotToken = '8085934203:AAEYJaJvHC-ohuvFaIoeHz8xZJZ7jVPVsUo'
     // Bot token for task completion reports (notify executives when tasks are done)
     const reportBotToken = '8255772208:AAFR4SKC_Yq1ObnaIzd5zT-xzguKMksV-vE'
+    // Bot token for group announcements (@i_am_noti_bot)
+    const groupBotToken = '8486119730:AAHL8Dg8Zh96GNuVfthTqkZdRqRqYBYF8_A'
+    // Group chat ID for task assignment announcements
+    const groupChatId = '-5186986253'
 
-    if (!botToken || !completedBotToken || !reportBotToken) {
+    if (!botToken || !completedBotToken || !reportBotToken || !groupBotToken) {
       throw new Error('TELEGRAM_BOT_TOKEN is not set')
     }
 
     const payload: NotificationPayload = await req.json()
 
-    // Validate payload - author_name is not required for task_completed (uses reporter_name instead)
+    // Validate payload - author_name is not required for task_completed and task_assigned_group
     if (!payload.type || !payload.document_id || !payload.subject) {
       throw new Error('Missing required fields in payload')
     }
-    // For non-task_completed types, author_name is required
-    if (payload.type !== 'task_completed' && !payload.author_name) {
+    // For non-task_completed and non-task_assigned_group types, author_name is required
+    if (payload.type !== 'task_completed' && payload.type !== 'task_assigned_group' && !payload.author_name) {
       throw new Error('Missing required field: author_name')
     }
 
-    // chat_id is required in payload (from database)
-    if (!payload.chat_id) {
+    // chat_id is required in payload (from database) EXCEPT for task_assigned_group (uses fixed group chat)
+    if (!payload.chat_id && payload.type !== 'task_assigned_group') {
       throw new Error('chat_id is required in payload')
     }
 
-    const chatId = payload.chat_id
+    const chatId = payload.chat_id || ''
 
     // Determine which bot to use based on notification type
     // 1. FastDoc_clerk_bot: document_created, document_completed_clerk
     // 2. FastDoc_report_bot: task_completed (notify executives when tasks are done)
-    // 3. Regular bot: document_approved, document_rejected, document_pending, task_assigned
+    // 3. Group bot: task_assigned_group (group announcements)
+    // 4. Regular bot: document_approved, document_rejected, document_pending, task_assigned
     let selectedBotToken: string
     let botUsed: string
+    let targetChatId = chatId
 
     if (payload.type === 'document_completed_clerk' || payload.type === 'document_created') {
       selectedBotToken = completedBotToken
@@ -235,14 +299,37 @@ serve(async (req) => {
     } else if (payload.type === 'task_completed') {
       selectedBotToken = reportBotToken
       botUsed = 'report_bot'
+    } else if (payload.type === 'task_assigned_group') {
+      selectedBotToken = groupBotToken
+      botUsed = 'group_bot'
+      targetChatId = groupChatId // Always send to the group
     } else {
       selectedBotToken = botToken
       botUsed = 'regular_bot'
     }
 
-    // Format and send message
+    // Format message
     const message = formatMessage(payload)
-    const result = await sendTelegramMessage(selectedBotToken, chatId, message)
+
+    // Prepare inline keyboard for group notifications
+    let replyMarkup = undefined
+    if (payload.type === 'task_assigned_group' && payload.assignee_names && payload.assignee_names.length > 5) {
+      // Only show button if there are more than 5 people (names are truncated in message)
+      // URL button links to the web app's assigned tasks page
+      const webAppUrl = 'https://rsec6hub.lovable.app/official-documents'
+
+      replyMarkup = {
+        inline_keyboard: [[
+          {
+            text: `📋 ดูรายละเอียดในระบบ`,
+            url: webAppUrl
+          }
+        ]]
+      }
+    }
+
+    // Send message
+    const result = await sendTelegramMessage(selectedBotToken, targetChatId, message, replyMarkup)
 
     console.log('✅ Telegram notification sent:', {
       type: payload.type,

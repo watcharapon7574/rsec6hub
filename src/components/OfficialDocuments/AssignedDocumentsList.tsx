@@ -141,6 +141,11 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // State for leader direct completion dialog
+  const [leaderCompleteDialogOpen, setLeaderCompleteDialogOpen] = useState(false);
+  const [leaderCompleteTaskId, setLeaderCompleteTaskId] = useState<string | null>(null);
+  const [isLeaderCompleting, setIsLeaderCompleting] = useState(false);
+
   // State for assignees dialog
   const [assigneesDialogOpen, setAssigneesDialogOpen] = useState(false);
   const [assigneesList, setAssigneesList] = useState<Assignee[]>([]);
@@ -392,6 +397,31 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
       }]);
       setTeamModalTask(task);
       setTeamModalOpen(true);
+    }
+  };
+
+  // Handle leader direct completion (no reporter assigned)
+  const handleLeaderDirectComplete = async () => {
+    if (!leaderCompleteTaskId) return;
+    setIsLeaderCompleting(true);
+    try {
+      await updateTaskStatus(leaderCompleteTaskId, 'completed', 'หัวหน้าทีมจบกระบวนการ (ไม่มีผู้รายงาน)');
+      toast({
+        title: 'จบกระบวนการสำเร็จ',
+        description: 'งานถูกเปลี่ยนสถานะเป็น "เสร็จสิ้น"',
+      });
+      setLeaderCompleteDialogOpen(false);
+      setLeaderCompleteTaskId(null);
+      await fetchTasks();
+    } catch (error: any) {
+      console.error('Error completing task:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: error.message || 'ไม่สามารถจบกระบวนการได้',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLeaderCompleting(false);
     }
   };
 
@@ -780,9 +810,8 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {task.status === 'in_progress' && (
                     <>
-                      {/* ปุ่มจัดการทีม - เฉพาะ is_team_leader และ assignment_source = 'position' */}
-                      {/* หัวหน้าทีมสามารถจัดการทีมได้ตลอดเวลา ไม่ว่าจะมีผู้รายงานแล้วหรือไม่ */}
-                      {task.is_team_leader && task.assignment_source === 'position' && (
+                      {/* ปุ่มจัดการทีม - แสดงสำหรับหัวหน้าทุกประเภท จนกว่าผู้รายงานจะรายงานแล้ว */}
+                      {task.is_team_leader && !task.reporter_has_reported && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -793,14 +822,25 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                           จัดการทีม
                         </Button>
                       )}
-                      {/* ปุ่มรายงาน - แสดงเมื่อ:
-                          1. เป็นผู้รายงาน (is_reporter = true)
-                          2. หรือ เป็นหัวหน้าทีมที่ยังไม่มีการมอบหมายผู้รายงาน (สามารถรายงานเองได้)
-                          ถ้ามีผู้รายงานแล้วและตัวเองไม่ใช่ผู้รายงาน ต้องรอผู้รายงานส่งรายงาน */}
-                      {(task.is_reporter || (task.is_team_leader && !task.has_reporter_assigned)) && (
+                      {/* ปุ่มรายงาน - เป็นผู้รายงาน → ไปหน้าเขียนรายงาน */}
+                      {task.is_reporter && (
                         <Button
                           size="sm"
                           onClick={() => navigate(`/report-memo/${task.assignment_id}`)}
+                          className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                          รายงาน
+                        </Button>
+                      )}
+                      {/* ปุ่มจบงาน - หัวหน้าทีมที่ไม่มีผู้รายงาน → จบกระบวนการทันที */}
+                      {task.is_team_leader && !task.has_reporter_assigned && !task.is_reporter && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setLeaderCompleteTaskId(task.assignment_id);
+                            setLeaderCompleteDialogOpen(true);
+                          }}
                           className="h-7 text-xs px-2.5 bg-green-600 hover:bg-green-700"
                         >
                           <CheckCircle className="h-3.5 w-3.5 mr-1" />
@@ -1045,6 +1085,37 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
           <DialogFooter className="flex-shrink-0 border-t pt-4">
             <Button variant="outline" onClick={() => setAssigneesDialogOpen(false)} className="w-full sm:w-auto">
               ปิด
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Leader Direct Completion Dialog */}
+      <Dialog open={leaderCompleteDialogOpen} onOpenChange={setLeaderCompleteDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>จบกระบวนการ</DialogTitle>
+            <DialogDescription>
+              ไม่มีผู้รายงานที่ได้รับมอบหมาย ต้องการจบกระบวนการงานนี้หรือไม่?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setLeaderCompleteDialogOpen(false);
+                setLeaderCompleteTaskId(null);
+              }}
+              disabled={isLeaderCompleting}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              onClick={handleLeaderDirectComplete}
+              disabled={isLeaderCompleting}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isLeaderCompleting ? 'กำลังดำเนินการ...' : 'ยืนยันจบงาน'}
             </Button>
           </DialogFooter>
         </DialogContent>

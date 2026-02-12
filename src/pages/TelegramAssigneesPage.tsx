@@ -7,7 +7,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { User, FileText, Loader2, Users } from 'lucide-react';
+import { User, FileText, Loader2, Users, ChevronRight } from 'lucide-react';
 
 interface Assignee {
   user_id: string;
@@ -15,6 +15,7 @@ interface Assignee {
   last_name: string;
   is_team_leader: boolean;
   is_reporter: boolean;
+  status: 'รอ' | 'ทราบแล้ว' | 'รายงานแล้ว';
 }
 
 // Custom Crown SVG (same as TeamMemberIcon)
@@ -24,6 +25,26 @@ const CrownIcon: React.FC<{ className?: string }> = ({ className }) => (
     <path d="M4 20H20V18H4V20Z" />
   </svg>
 );
+
+// Status Badge Component
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const getStyle = () => {
+    switch (status) {
+      case 'รายงานแล้ว':
+        return 'bg-green-100 text-green-700';
+      case 'ทราบแล้ว':
+        return 'bg-blue-100 text-blue-700';
+      default: // รอ
+        return 'bg-amber-100 text-amber-700';
+    }
+  };
+
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStyle()}`}>
+      {status}
+    </span>
+  );
+};
 
 // Team Member Icon Component for Mini App
 const MemberIcon: React.FC<{ isLeader: boolean; isReporter: boolean }> = ({
@@ -67,6 +88,7 @@ const TelegramAssigneesPage = () => {
   const { documentId: routeDocumentId } = useParams<{ documentId: string }>();
   const [assignees, setAssignees] = useState<Assignee[]>([]);
   const [documentSubject, setDocumentSubject] = useState<string>('');
+  const [documentType, setDocumentType] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +134,7 @@ const TelegramAssigneesPage = () => {
 
         setAssignees(data.assignees);
         setDocumentSubject(data.subject || 'ไม่ระบุเรื่อง');
+        setDocumentType(data.document_type || '');
       } catch (err: any) {
         console.error('Error fetching assignees:', err);
         setError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
@@ -122,6 +145,17 @@ const TelegramAssigneesPage = () => {
 
     fetchAssignees();
   }, [documentId]);
+
+  // Navigate to document detail page
+  const handleViewDocument = () => {
+    if (!documentId || !documentType) return;
+    const url = `${window.location.origin}/document-detail?id=${documentId}&type=${documentType}`;
+    if (tg) {
+      tg.openLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  };
 
   // Loading state
   if (loading) {
@@ -158,8 +192,20 @@ const TelegramAssigneesPage = () => {
             <p className="text-sm text-blue-100 truncate">{documentSubject}</p>
           </div>
         </div>
-        <div className="mt-2 text-sm text-blue-100">
-          ทั้งหมด {assignees.length} คน
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-sm text-blue-100">
+            ทั้งหมด {assignees.length} คน
+          </span>
+          {documentType && (
+            <button
+              onClick={handleViewDocument}
+              className="flex items-center gap-1 text-sm text-white bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              ดูเอกสาร
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -169,9 +215,10 @@ const TelegramAssigneesPage = () => {
           <table className="w-full">
             <thead className="sticky top-0 bg-slate-100 z-10">
               <tr className="text-slate-600 text-sm">
-                <th className="py-3 px-2 text-center w-12">#</th>
-                <th className="py-3 px-2 text-center w-12"></th>
+                <th className="py-3 px-2 text-center w-10">#</th>
+                <th className="py-3 px-2 text-center w-10"></th>
                 <th className="py-3 px-3 text-left">ชื่อ</th>
+                <th className="py-3 px-2 text-center">สถานะ</th>
               </tr>
             </thead>
             <tbody>
@@ -193,11 +240,27 @@ const TelegramAssigneesPage = () => {
                       />
                     </div>
                   </td>
-                  {/* ชื่อ */}
+                  {/* ชื่อ + บทบาท */}
                   <td className="py-3 px-3">
-                    <span className="text-slate-800 font-medium">
-                      {assignee.first_name} {assignee.last_name}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-slate-800 font-medium">
+                        {assignee.first_name} {assignee.last_name}
+                      </span>
+                      {(assignee.is_team_leader || assignee.is_reporter) && (
+                        <div className="flex gap-1 mt-0.5">
+                          {assignee.is_team_leader && (
+                            <span className="text-[10px] text-amber-600 font-medium">หัวหน้า</span>
+                          )}
+                          {assignee.is_reporter && (
+                            <span className="text-[10px] text-pink-600 font-medium">ผู้รายงาน</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  {/* สถานะ */}
+                  <td className="py-3 px-2 text-center">
+                    <StatusBadge status={assignee.status} />
                   </td>
                 </tr>
               ))}

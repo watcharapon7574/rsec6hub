@@ -100,6 +100,8 @@ export interface TaskAssignmentWithDetails {
   parent_assignment_id: string | null;
   // Flag to check if any reporter has been assigned for this document
   has_reporter_assigned: boolean;
+  // Flag to check if the reporter has submitted their report (has report_memo_id)
+  reporter_has_reported: boolean;
 }
 
 export interface AcknowledgeOptions {
@@ -711,9 +713,9 @@ class TaskAssignmentService {
       const isThisPersonReporter = reporterIds.includes(assignment.assigned_to);
       const isPositionBased = assignment.assignment_source === 'position';
 
-      // Team leader (position-based) stays in_progress to manage team
-      // Even if not a reporter, they need to be able to add members or assign reporter later
-      const newStatus = isPositionBased ? 'in_progress' : (isThisPersonReporter ? 'in_progress' : 'completed');
+      // Team leader always stays in_progress to manage team (regardless of assignment source)
+      // Even if not a reporter, they need to be able to edit reporter assignment
+      const newStatus = assignment.is_team_leader ? 'in_progress' : (isThisPersonReporter ? 'in_progress' : 'completed');
 
       console.log('🔍 acknowledgeTask debug:', {
         assignmentId,
@@ -1071,6 +1073,8 @@ class TaskAssignmentService {
       const now = new Date().toISOString();
 
       // Update task assignment with report memo and completed status
+      // NOTE: ไม่ส่งแจ้งเตือนตอนนี้ - แจ้งเตือนจะส่งเมื่อบันทึกข้อความรายงานถูกลงนามเสร็จสิ้นแทน
+      // (ผ่าน DB trigger notify_on_report_memo_completed บน memos table)
       const { error: updateError } = await (supabase as any)
         .from('task_assignments')
         .update({
@@ -1084,110 +1088,6 @@ class TaskAssignmentService {
       if (updateError) {
         console.error('Error updating task assignment:', updateError);
         throw new Error('ไม่สามารถอัปเดตสถานะงานได้');
-      }
-
-      // Get task details for notification
-      const { data: task, error: taskError } = await (supabase as any)
-        .from('task_assignments')
-        .select(`
-          id,
-          assigned_to,
-          assigned_by,
-          document_type,
-          memo_id,
-          doc_receive_id,
-          is_team_leader
-        `)
-        .eq('id', assignmentId)
-        .single();
-
-      if (taskError) {
-        console.warn('Could not fetch task for notifications:', taskError);
-        return true; // Still return success since main update worked
-      }
-
-      // Get document subject for notification
-      let documentSubject = '';
-      if (task.document_type === 'memo' && task.memo_id) {
-        const { data: memo } = await supabase
-          .from('memos')
-          .select('subject')
-          .eq('id', task.memo_id)
-          .single();
-        documentSubject = memo?.subject || '';
-      } else if (task.document_type === 'doc_receive' && task.doc_receive_id) {
-        const { data: docReceive } = await (supabase as any)
-          .from('doc_receives')
-          .select('subject')
-          .eq('id', task.doc_receive_id)
-          .single();
-        documentSubject = docReceive?.subject || '';
-      }
-
-      // Get team leader for this document (to notify)
-      const docColumn = task.document_type === 'memo' ? 'memo_id' : 'doc_receive_id';
-      const docId = task.document_type === 'memo' ? task.memo_id : task.doc_receive_id;
-
-      const { data: teamLeader } = await (supabase as any)
-        .from('task_assignments')
-        .select('assigned_to')
-        .eq(docColumn, docId)
-        .eq('is_team_leader', true)
-        .is('deleted_at', null)
-        .single();
-
-      // Collect users to notify
-      const usersToNotify = new Set<string>();
-
-      // Add assigned_by (ธุรการ)
-      if (task.assigned_by) {
-        usersToNotify.add(task.assigned_by);
-      }
-
-      // Add team leader
-      if (teamLeader?.assigned_to) {
-        usersToNotify.add(teamLeader.assigned_to);
-      }
-
-      // Get memo signers from signature_positions (ผู้ลงนาม)
-      // NOTE: signers are stored in memos.signature_positions JSONB, not in a separate table
-      if (memoId) {
-        const { data: memoWithSigners } = await supabase
-          .from('memos')
-          .select('signature_positions')
-          .eq('id', memoId)
-          .single();
-
-        if (memoWithSigners?.signature_positions) {
-          const signaturePositions = memoWithSigners.signature_positions as Array<{ userId?: string; user_id?: string }>;
-          signaturePositions.forEach(signer => {
-            const signerUserId = signer.userId || signer.user_id;
-            if (signerUserId) {
-              usersToNotify.add(signerUserId);
-            }
-          });
-        }
-      }
-
-      // Create notifications
-      // NOTE: notifications table has reference_id (uuid) instead of data (jsonb)
-      const notifications = Array.from(usersToNotify).map(userId => ({
-        user_id: userId,
-        type: 'task_report_submitted',
-        title: 'มีการรายงานผลงาน',
-        message: `มีการรายงานผลสำหรับ: ${documentSubject}`,
-        reference_id: memoId, // Reference to the report memo
-        is_read: false
-      }));
-
-      if (notifications.length > 0) {
-        const { error: notifyError } = await supabase
-          .from('notifications')
-          .insert(notifications);
-
-        if (notifyError) {
-          console.warn('Could not create notifications:', notifyError);
-        }
       }
 
       return true;

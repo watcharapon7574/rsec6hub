@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 interface NotificationPayload {
-  type: 'document_pending' | 'document_approved' | 'document_rejected' | 'document_ready' | 'document_created' | 'document_completed_clerk' | 'task_assigned' | 'task_completed' | 'task_assigned_group'
+  type: 'document_pending' | 'document_approved' | 'document_rejected' | 'document_ready' | 'document_created' | 'document_completed_clerk' | 'task_assigned' | 'task_completed' | 'task_assigned_group' | 'report_memo_completed_leader'
   document_id: string
   document_type: 'memo' | 'doc_receive'
   subject: string
@@ -79,6 +79,7 @@ function formatMessage(payload: NotificationPayload): string {
     task_assigned: '📋',
     task_completed: '✅',
     task_assigned_group: '📢',
+    report_memo_completed_leader: '📋',
   }
 
   const icon = emoji[payload.type] || '📄'
@@ -195,6 +196,24 @@ function formatMessage(payload: NotificationPayload): string {
       message += `\n✅ กรุณาเข้าระบบเพื่อตรวจสอบรายงานผลงาน`
       break
 
+    case 'report_memo_completed_leader':
+      message += `<b>บันทึกข้อความรายงานผลเสร็จสมบูรณ์</b>\n`
+      message += `เรื่อง: ${payload.subject}\n`
+      if (payload.doc_number) {
+        message += `เลขที่หนังสือ: ${payload.doc_number}\n`
+      }
+      if (payload.reporter_name) {
+        message += `รายงานโดย: ${payload.reporter_name}\n`
+      }
+      if (payload.completion_note) {
+        const note = payload.completion_note.length > 200
+          ? payload.completion_note.substring(0, 200) + '...'
+          : payload.completion_note
+        message += `\n📋 รายละเอียด:\n${note}\n`
+      }
+      message += `\n✅ บันทึกข้อความรายงานผลลงนามครบแล้ว`
+      break
+
     case 'task_assigned_group':
       // Group announcement format
       message = `📢 <b>ประกาศมอบหมายงาน</b>\n`
@@ -283,8 +302,8 @@ Deno.serve(async (req: Request) => {
     if (!payload.type || !payload.document_id || !payload.subject) {
       throw new Error('Missing required fields in payload')
     }
-    // For non-task_completed and non-task_assigned_group types, author_name is required
-    if (payload.type !== 'task_completed' && payload.type !== 'task_assigned_group' && !payload.author_name) {
+    // For non-task_completed, non-task_assigned_group, and non-report_memo_completed_leader types, author_name is required
+    if (payload.type !== 'task_completed' && payload.type !== 'task_assigned_group' && payload.type !== 'report_memo_completed_leader' && !payload.author_name) {
       throw new Error('Missing required field: author_name')
     }
 

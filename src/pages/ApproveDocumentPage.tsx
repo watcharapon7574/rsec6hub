@@ -71,13 +71,13 @@ const ApproveDocumentPage: React.FC = () => {
         return;
       }
 
-      // Try memos table first
+      // Try memos table first (use maybeSingle to avoid 406 error when not found)
       try {
         const { data: memoData, error: memoError } = await supabase
           .from('memos')
           .select('*')
           .eq('id', memoId)
-          .single();
+          .maybeSingle();
 
         if (!memoError && memoData) {
           console.log('Found memo in memos table:', memoId);
@@ -89,13 +89,13 @@ const ApproveDocumentPage: React.FC = () => {
         // Not found in memos table, continue to try doc_receive
       }
 
-      // Try doc_receive table
+      // Try doc_receive table (use maybeSingle to avoid 406 error when not found)
       try {
         const { data, error } = await (supabase as any)
           .from('doc_receive')
           .select('*')
           .eq('id', memoId)
-          .single();
+          .maybeSingle();
 
         if (!error && data) {
           console.log('Found document in doc_receive table:', memoId);

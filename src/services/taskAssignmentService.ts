@@ -216,6 +216,13 @@ class TaskAssignmentService {
     assigneeUserIds: string[],
     options?: TaskDetailsOptions
   ): Promise<void> {
+    console.log('📢 sendGroupNotification called with:', {
+      documentId,
+      documentType,
+      assigneeUserIds,
+      options
+    });
+
     try {
       // Get document details
       let subject = '';
@@ -279,28 +286,34 @@ class TaskAssignmentService {
       }
 
       // Send notification to Edge Function
+      const payload = {
+        type: 'task_assigned_group',
+        document_id: documentId,
+        document_type: documentType,
+        subject: subject,
+        doc_number: docNumber,
+        assigned_by: assignerName,
+        task_description: options?.taskDescription || '',
+        event_date: formattedDate,
+        event_time: options?.eventTime || '',
+        location: options?.location || '',
+        note: options?.note || '',
+        assignee_names: assigneeNames,
+        is_position_based: isPositionBased,
+      };
+
+      console.log('📤 Sending telegram-notify payload:', payload);
+
       const { data, error } = await supabase.functions.invoke('telegram-notify', {
-        body: {
-          type: 'task_assigned_group',
-          document_id: documentId,
-          document_type: documentType,
-          subject: subject,
-          doc_number: docNumber,
-          assigned_by: assignerName,
-          task_description: options?.taskDescription || '',
-          event_date: formattedDate,
-          event_time: options?.eventTime || '',
-          location: options?.location || '',
-          note: options?.note || '',
-          assignee_names: assigneeNames,
-          is_position_based: isPositionBased, // Flag for position-based assignment
-        }
+        body: payload
       });
+
+      console.log('📥 telegram-notify response:', { data, error });
 
       if (error) {
         console.error('❌ Error sending group notification:', error);
       } else {
-        console.log('✅ Group notification sent successfully');
+        console.log('✅ Group notification sent successfully:', data);
       }
     } catch (error) {
       console.error('❌ Failed to send group notification:', error);
@@ -690,11 +703,15 @@ class TaskAssignmentService {
         throw new Error('ไม่พบงานมอบหมาย');
       }
 
-      // Determine status based on whether this person is a reporter
-      // Reporter: in_progress (need to submit report)
-      // Non-reporter: completed (done after acknowledging)
+      // Determine status based on assignment type and reporter role
+      // For position-based (team leader): always 'in_progress' to allow team management
+      // For others: Reporter = 'in_progress', Non-reporter = 'completed'
       const isThisPersonReporter = reporterIds.includes(assignment.assigned_to);
-      const newStatus = isThisPersonReporter ? 'in_progress' : 'completed';
+      const isPositionBased = assignment.assignment_source === 'position';
+
+      // Team leader (position-based) stays in_progress to manage team
+      // Even if not a reporter, they need to be able to add members or assign reporter later
+      const newStatus = isPositionBased ? 'in_progress' : (isThisPersonReporter ? 'in_progress' : 'completed');
 
       // Update the main assignment
       const { error: updateError } = await (supabase as any)
@@ -1167,7 +1184,56 @@ class TaskAssignmentService {
       throw error;
     }
   }
+
+  /**
+   * 🧪 ทดสอบส่ง Telegram Group Notification
+   * เรียกจาก browser console:
+   *   import { taskAssignmentService } from '@/services/taskAssignmentService';
+   *   taskAssignmentService.testGroupNotification();
+   */
+  async testGroupNotification(): Promise<void> {
+    console.log('🧪 Testing Group Notification...');
+
+    const testPayload = {
+      type: 'task_assigned_group',
+      document_id: 'test-' + Date.now(),
+      document_type: 'memo',
+      subject: '🧪 ทดสอบระบบแจ้งเตือน',
+      doc_number: 'TEST-001',
+      assigned_by: 'ระบบทดสอบ',
+      task_description: 'นี่คือข้อความทดสอบจากระบบ FastDoc',
+      event_date: '15 ก.พ. 2569',
+      event_time: '09:00',
+      location: 'ห้องประชุม 1',
+      note: 'ทดสอบการส่งแจ้งเตือน',
+      assignee_names: ['นายทดสอบ หนึ่ง', 'นางทดสอบ สอง', 'นายทดสอบ สาม'],
+      is_position_based: false,
+    };
+
+    console.log('📤 Sending test payload:', testPayload);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('telegram-notify', {
+        body: testPayload
+      });
+
+      console.log('📥 Response:', { data, error });
+
+      if (error) {
+        console.error('❌ Test failed:', error);
+      } else {
+        console.log('✅ Test notification sent successfully!');
+      }
+    } catch (err) {
+      console.error('❌ Test error:', err);
+    }
+  }
 }
 
 // Export singleton instance
 export const taskAssignmentService = new TaskAssignmentService();
+
+// 🧪 Expose to window for console testing
+if (typeof window !== 'undefined') {
+  (window as any).testTelegramNotification = () => taskAssignmentService.testGroupNotification();
+}

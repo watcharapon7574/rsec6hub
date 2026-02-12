@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAllMemos } from '@/hooks/useAllMemos';
 import { useToast } from '@/hooks/use-toast';
 import { formatThaiDateFull } from '@/utils/dateUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 const CreateMemoPage = () => {
   const navigate = useNavigate();
@@ -73,56 +74,96 @@ const CreateMemoPage = () => {
   // Load memo data for editing
   useEffect(() => {
     const loadMemoForEdit = async () => {
-      if (editMemoId && getMemoById && !originalMemo) {
-        setLoadingMemo(true);
-        try {
-          const memo = getMemoById(editMemoId);
-          if (memo) {
-            setOriginalMemo(memo);
-            setFormData({
-              doc_number: memo.doc_number || '',
-              date: memo.date || new Date().toISOString().split('T')[0],
-              subject: memo.subject || '',
-              attachment_title: memo.attachment_title || '',
-              introduction: memo.introduction || '',
-              author_name: memo.author_name || (profile ? `${profile.first_name} ${profile.last_name}` : ''),
-              author_position: memo.author_position || profile?.current_position || profile?.job_position || profile?.position || '',
-              fact: memo.fact || '',
-              proposal: memo.proposal || '',
-              attached_files: memo.attached_files || []
+      if (!editMemoId || originalMemo) return;
+
+      setLoadingMemo(true);
+      try {
+        // Try to get from hook first
+        let memo = getMemoById ? getMemoById(editMemoId) : null;
+
+        // If not found in cache, fetch directly from database
+        if (!memo) {
+          console.log('📝 Memo not found in cache, fetching from database...');
+          const { data, error } = await supabase
+            .from('memos')
+            .select('*')
+            .eq('id', editMemoId)
+            .single();
+
+          if (error) {
+            console.error('Error fetching memo:', error);
+            toast({
+              title: 'เกิดข้อผิดพลาด',
+              description: 'ไม่สามารถโหลดข้อมูลเอกสารได้',
+              variant: 'destructive'
             });
-            
-            // Load rejection comments if any from rejected_name_comment
-            if ((memo as any).rejected_name_comment) {
-              try {
-                let rejectedData;
-                if (typeof (memo as any).rejected_name_comment === 'string') {
-                  rejectedData = JSON.parse((memo as any).rejected_name_comment);
-                } else {
-                  rejectedData = (memo as any).rejected_name_comment;
-                }
-                
-                setRejectionComments([{
-                  comment: rejectedData.comment || 'ไม่มีความคิดเห็น',
-                  rejected_by: rejectedData.name || 'ไม่ระบุ',
-                  rejected_at: rejectedData.rejected_at || new Date().toISOString(),
-                  position: rejectedData.position || '',
-                  type: 'rejection'
-                }]);
-              } catch (error) {
-                console.error('Error parsing rejected_name_comment:', error);
-                // Fallback to old rejection_reason if exists
-                if ((memo as any).rejection_reason) {
-                  setRejectionComments([{
-                    comment: (memo as any).rejection_reason,
-                    rejected_by: (memo as any).rejected_by_name || 'ระบบ',
-                    rejected_at: (memo as any).rejected_at || new Date().toISOString(),
-                    type: 'rejection'
-                  }]);
-                }
-              }
-            } else if ((memo as any).rejection_reason) {
-              // Fallback to old rejection_reason format
+            navigate('/documents');
+            return;
+          }
+          memo = data as any;
+        }
+
+        if (!memo) {
+          toast({
+            title: 'ไม่พบเอกสาร',
+            description: 'ไม่พบเอกสารที่ต้องการแก้ไข',
+            variant: 'destructive'
+          });
+          navigate('/documents');
+          return;
+        }
+
+        setOriginalMemo(memo);
+
+        // Parse attached_files (may be JSON string or array)
+        let parsedAttachedFiles: string[] = [];
+        if (memo.attached_files) {
+          if (Array.isArray(memo.attached_files)) {
+            parsedAttachedFiles = memo.attached_files;
+          } else if (typeof memo.attached_files === 'string') {
+            try {
+              const parsed = JSON.parse(memo.attached_files);
+              parsedAttachedFiles = Array.isArray(parsed) ? parsed : [];
+            } catch {
+              parsedAttachedFiles = [];
+            }
+          }
+        }
+
+        setFormData({
+          doc_number: memo.doc_number || '',
+          date: memo.date || new Date().toISOString().split('T')[0],
+          subject: memo.subject || '',
+          attachment_title: memo.attachment_title || '',
+          introduction: memo.introduction || '',
+          author_name: memo.author_name || (profile ? `${profile.first_name} ${profile.last_name}` : ''),
+          author_position: memo.author_position || profile?.current_position || profile?.job_position || profile?.position || '',
+          fact: memo.fact || '',
+          proposal: memo.proposal || '',
+          attached_files: parsedAttachedFiles
+        });
+
+        // Load rejection comments if any from rejected_name_comment
+        if ((memo as any).rejected_name_comment) {
+          try {
+            let rejectedData;
+            if (typeof (memo as any).rejected_name_comment === 'string') {
+              rejectedData = JSON.parse((memo as any).rejected_name_comment);
+            } else {
+              rejectedData = (memo as any).rejected_name_comment;
+            }
+
+            setRejectionComments([{
+              comment: rejectedData.comment || 'ไม่มีความคิดเห็น',
+              rejected_by: rejectedData.name || 'ไม่ระบุ',
+              rejected_at: rejectedData.rejected_at || new Date().toISOString(),
+              position: rejectedData.position || '',
+              type: 'rejection'
+            }]);
+          } catch (error) {
+            console.error('Error parsing rejected_name_comment:', error);
+            // Fallback to old rejection_reason if exists
+            if ((memo as any).rejection_reason) {
               setRejectionComments([{
                 comment: (memo as any).rejection_reason,
                 rejected_by: (memo as any).rejected_by_name || 'ระบบ',
@@ -131,15 +172,29 @@ const CreateMemoPage = () => {
               }]);
             }
           }
-        } catch (error) {
-          console.error('Error loading memo for edit:', error);
+        } else if ((memo as any).rejection_reason) {
+          // Fallback to old rejection_reason format
+          setRejectionComments([{
+            comment: (memo as any).rejection_reason,
+            rejected_by: (memo as any).rejected_by_name || 'ระบบ',
+            rejected_at: (memo as any).rejected_at || new Date().toISOString(),
+            type: 'rejection'
+          }]);
         }
+      } catch (error) {
+        console.error('Error loading memo for edit:', error);
+        toast({
+          title: 'เกิดข้อผิดพลาด',
+          description: 'ไม่สามารถโหลดข้อมูลเอกสารได้',
+          variant: 'destructive'
+        });
+      } finally {
         setLoadingMemo(false);
       }
     };
-    
+
     loadMemoForEdit();
-  }, [editMemoId, getMemoById, originalMemo, profile]);
+  }, [editMemoId, getMemoById, originalMemo, profile, navigate, toast]);
 
   // Update form data when profile is loaded
   useEffect(() => {

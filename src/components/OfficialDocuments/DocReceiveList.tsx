@@ -717,12 +717,8 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  {memo.subject?.startsWith('รายงานผล') ? (
-                    <FileCheck className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-teal-500'}`} />
-                  ) : (
-                    <FileInput className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-green-500'}`} />
-                  )}
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : memo.subject?.startsWith('รายงานผล') ? 'text-foreground group-hover:text-teal-700 dark:text-teal-300' : 'text-foreground group-hover:text-green-700 dark:text-green-300'}`} title={memo.subject}>{memo.subject}</span>
+                  <FileInput className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-green-500'}`} />
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : 'text-foreground group-hover:text-green-700 dark:text-green-300'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {
@@ -1094,13 +1090,11 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                               <span className="text-xs font-medium">แก้ไข</span>
                             </Button>
                           ) : (() => {
-                              const isReportMemo = memo.subject?.startsWith('รายงานผล');
-                              const buttonColor = isReportMemo
-                                ? (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400')
-                                : (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-green-200 dark:border-green-800 text-green-600 dark:text-green-400');
-                              const buttonText = memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : (isReportMemo ? 'จัดการรายงาน' : 'จัดการเอกสาร');
-                              const buttonTitle = memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : (isReportMemo ? 'จัดการรายงาน' : 'จัดการเอกสาร');
-                              const IconComponent = isReportMemo ? ClipboardCheck : FileText;
+                              const buttonColor = memo.current_signer_order > 1
+                                ? 'border-border text-muted-foreground cursor-not-allowed'
+                                : 'border-green-200 dark:border-green-800 text-green-600 dark:text-green-400';
+                              const buttonText = memo.current_signer_order > 1 ? 'ส่งเสนอแล้ว' : 'จัดการเอกสาร';
+                              const buttonTitle = memo.current_signer_order > 1 ? 'เอกสารถูกส่งเสนอแล้ว ไม่สามารถจัดการได้' : 'จัดการเอกสาร';
 
                               return (
                                 <Button
@@ -1109,19 +1103,15 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                   className={`h-7 px-2 flex items-center gap-1 ${buttonColor}`}
                                   onClick={() => {
                                     if (memo.current_signer_order <= 1) {
-                                      if (isReportMemo) {
-                                        navigate(`/manage-report-memo/${memo.id}`);
-                                      } else {
-                                        const manageRoute = getDocumentManageRoute(memo, memo.id);
-                                        console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
-                                        navigate(manageRoute);
-                                      }
+                                      const manageRoute = getDocumentManageRoute(memo, memo.id);
+                                      console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
+                                      navigate(manageRoute);
                                     }
                                   }}
                                   disabled={memo.current_signer_order > 1}
                                   title={buttonTitle}
                                 >
-                                  <IconComponent className="h-4 w-4" />
+                                  <FileText className="h-4 w-4" />
                                   <span className="text-xs font-medium">{buttonText}</span>
                                 </Button>
                               );

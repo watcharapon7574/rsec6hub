@@ -89,10 +89,51 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const [isLoadingAssignees, setIsLoadingAssignees] = useState(false);
   const assigneesPerPage = 5;
 
+  // State สำหรับติดตาม memo ที่เป็น report memo (linked via task_assignments.report_memo_id)
+  const [reportMemoIds, setReportMemoIds] = useState<Set<string>>(new Set());
+
   // อัพเดท localMemos เมื่อ realMemos เปลี่ยน
   useEffect(() => {
     setLocalMemos(realMemos);
   }, [realMemos]);
+
+  // Fetch report memo info to identify which memos ARE report memos
+  useEffect(() => {
+    const fetchReportMemoInfo = async () => {
+      if (!localMemos.length) return;
+
+      try {
+        const memoIds = localMemos.map(m => m.id);
+
+        // Find task_assignments with report_memo_id for these memos
+        const { data: assignments, error: assignmentsError } = await (supabase as any)
+          .from('task_assignments')
+          .select('memo_id, report_memo_id')
+          .or(`memo_id.in.(${memoIds.join(',')}),report_memo_id.in.(${memoIds.join(',')})`)
+          .is('deleted_at', null);
+
+        if (assignmentsError) {
+          console.error('Error fetching task assignments for report memo detection:', assignmentsError);
+          return;
+        }
+
+        // Track which memos in our list ARE report memos
+        const reportMemoIdsSet = new Set<string>();
+        if (assignments?.length) {
+          for (const assignment of assignments) {
+            if (assignment.report_memo_id && memoIds.includes(assignment.report_memo_id)) {
+              reportMemoIdsSet.add(assignment.report_memo_id);
+            }
+          }
+        }
+        setReportMemoIds(reportMemoIdsSet);
+      } catch (error) {
+        console.error('Error fetching report memo info:', error);
+      }
+    };
+
+    fetchReportMemoInfo();
+  }, [localMemos]);
 
   // อัพเดท localDocReceive เมื่อ docReceiveList เปลี่ยน
   useEffect(() => {
@@ -759,12 +800,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   {memo.__source_table === 'doc_receive' ? (
                     <FileInput className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-green-500'}`} />
-                  ) : memo.subject?.startsWith('รายงานผล') ? (
+                  ) : reportMemoIds.has(memo.id) ? (
                     <FileCheck className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-teal-500'}`} />
                   ) : (
                     <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-purple-500'}`} />
                   )}
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : memo.subject?.startsWith('รายงานผล') ? 'text-foreground group-hover:text-teal-700 dark:text-teal-300' : 'text-foreground group-hover:text-purple-700 dark:text-purple-300'}`} title={memo.subject}>{memo.subject}</span>
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : reportMemoIds.has(memo.id) ? 'text-foreground group-hover:text-teal-700 dark:text-teal-300' : 'text-foreground group-hover:text-purple-700 dark:text-purple-300'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {
@@ -1070,14 +1111,20 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {/* Edit button - only show for memo author and not yet proposed (current_signer_order <= 1) */}
-                      {profile?.user_id === memo.user_id && memo.current_signer_order <= 1 && (
+                      {/* Edit button - show for memo author (draft or rejected) OR rejected report memos */}
+                      {((profile?.user_id === memo.user_id && memo.current_signer_order <= 1) ||
+                        (memo.status === 'rejected' && reportMemoIds.has(memo.id))) && (
                         <div className="relative">
-                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 dark:text-purple-600"
+                          <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center ${reportMemoIds.has(memo.id) ? 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400' : 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400'}`}
                             onClick={() => {
-                              // Navigate to edit page based on document type
-                              const editRoute = getDocumentEditRoute(memo, memo.id);
-                              navigate(editRoute);
+                              if (reportMemoIds.has(memo.id)) {
+                                // Navigate to edit report memo page
+                                navigate(`/edit-report-memo/${memo.id}`);
+                              } else {
+                                // Navigate to edit page based on document type
+                                const editRoute = getDocumentEditRoute(memo, memo.id);
+                                navigate(editRoute);
+                              }
                             }}
                           >
                             <Edit className="h-4 w-4" />
@@ -1098,7 +1145,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
                         <div className="relative">
                           {(() => {
-                            const isReportMemo = memo.subject?.startsWith('รายงานผล');
+                            const isReportMemo = reportMemoIds.has(memo.id);
                             const buttonColor = isReportMemo
                               ? (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400')
                               : (memo.current_signer_order > 1 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400');

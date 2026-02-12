@@ -44,10 +44,49 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   // State สำหรับ realtime updates
   const [localMemos, setLocalMemos] = useState(realMemos);
 
+  // State สำหรับติดตาม memo ที่เป็น report memo
+  const [reportMemoIds, setReportMemoIds] = useState<Set<string>>(new Set());
+
   // อัพเดท localMemos เมื่อ realMemos เปลี่ยน
   useEffect(() => {
     setLocalMemos(realMemos);
   }, [realMemos]);
+
+  // Fetch report memo info to identify which memos ARE report memos
+  useEffect(() => {
+    const fetchReportMemoInfo = async () => {
+      if (!localMemos.length) return;
+
+      try {
+        const memoIds = localMemos.map(m => m.id);
+
+        const { data: assignments, error: assignmentsError } = await (supabase as any)
+          .from('task_assignments')
+          .select('memo_id, report_memo_id')
+          .or(`memo_id.in.(${memoIds.join(',')}),report_memo_id.in.(${memoIds.join(',')})`)
+          .is('deleted_at', null);
+
+        if (assignmentsError) {
+          console.error('Error fetching task assignments for report memo detection:', assignmentsError);
+          return;
+        }
+
+        const reportMemoIdsSet = new Set<string>();
+        if (assignments?.length) {
+          for (const assignment of assignments) {
+            if (assignment.report_memo_id && memoIds.includes(assignment.report_memo_id)) {
+              reportMemoIdsSet.add(assignment.report_memo_id);
+            }
+          }
+        }
+        setReportMemoIds(reportMemoIdsSet);
+      } catch (error) {
+        console.error('Error fetching report memo info:', error);
+      }
+    };
+
+    fetchReportMemoInfo();
+  }, [localMemos]);
 
   // Setup realtime listeners
   useEffect(() => {
@@ -389,12 +428,12 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
               return (
               <div key={memo.id} className={`${baseClasses} ${completedClasses}`}>
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  {memo.subject?.startsWith('รายงานผล') ? (
+                  {reportMemoIds.has(memo.id) ? (
                     <FileCheck className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-teal-500'}`} />
                   ) : (
                     <FileText className={`h-4 w-4 flex-shrink-0 ${isCompleted ? 'text-muted-foreground' : 'text-blue-500'}`} />
                   )}
-                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : memo.subject?.startsWith('รายงานผล') ? 'text-foreground group-hover:text-teal-700 dark:text-teal-300' : 'text-foreground group-hover:text-blue-700 dark:text-blue-300'}`} title={memo.subject}>{memo.subject}</span>
+                  <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : reportMemoIds.has(memo.id) ? 'text-foreground group-hover:text-teal-700 dark:text-teal-300' : 'text-foreground group-hover:text-blue-700 dark:text-blue-300'}`} title={memo.subject}>{memo.subject}</span>
                   {(() => {
                     let attachedFileCount = 0;
                     if (memo.attached_files) {

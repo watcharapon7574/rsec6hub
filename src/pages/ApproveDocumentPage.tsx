@@ -1149,52 +1149,40 @@ const ApproveDocumentPage: React.FC = () => {
             </Card>
 
             {/* Comment Section (for deputy and director only) */}
-            {canComment && (() => {
-              const isAdminSigning = isAdminUser && !currentUserSigner && !currentUserSignature;
-              const previewPrefix = isAdminSigning ? '[admin] ' : '';
-              const cleanedPreview = comment.replace(/\n/g, '').trim();
-              const previewFullText = cleanedPreview ? `- ${previewPrefix}${cleanedPreview}` : '';
-              const previewLines = previewFullText ? wrapByVisibleChars(previewFullText, 30) : [];
-
-              return (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5" />
-                      ความเห็น
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="comment">ความเห็นเพิ่มเติม (ไม่บังคับ)</Label>
-                        <Textarea
-                          id="comment"
-                          placeholder="ระบุความเห็นหรือข้อเสนอแนะ..."
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          rows={3}
-                          className="resize-none"
-                        />
-                      </div>
-                      {previewLines.length > 0 && (
-                        <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
-                          <p className="text-xs font-medium text-blue-700 mb-1">ตัวอย่างบน PDF (ตัดที่ 30 ตัวอักษร):</p>
-                          <div className="font-[sarabun] text-sm text-blue-900 leading-relaxed">
-                            {previewLines.map((line, i) => (
-                              <div key={i}>
-                                {line}
-                                <span className="text-blue-400 text-xs ml-1">({countVisibleChars(line)})</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })()}
+            {canComment && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    ความเห็น
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label htmlFor="comment">ความเห็นเพิ่มเติม (ไม่บังคับ)</Label>
+                    <Textarea
+                      id="comment"
+                      placeholder="ระบุความเห็นหรือข้อเสนอแนะ..."
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      rows={4}
+                      cols={30}
+                      style={{
+                        fontFamily: 'monospace',
+                        maxWidth: '32ch',
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-all',
+                        lineHeight: '1.6',
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      ตัวอักษรที่มองเห็น: {countVisibleChars(comment)}/30 ต่อบรรทัด
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Approval Action Button */}
             <Card>

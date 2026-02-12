@@ -1061,10 +1061,12 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 px-2 flex items-center border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
+                          className="h-7 px-2 flex items-center gap-1 border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 dark:bg-amber-950"
                           onClick={() => navigate(`/edit-doc-receive/${memo.id}`)}
+                          title="แก้ไขข้อมูลเอกสาร"
                         >
                           <Edit className="h-4 w-4" />
+                          <span className="text-xs">แก้ไข</span>
                         </Button>
                       )}
                       {/* Debug: Check user position */}

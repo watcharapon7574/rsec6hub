@@ -481,13 +481,13 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
   return (
     <Card>
       <CardHeader
-        className={`bg-teal-600 py-3 px-4 cursor-pointer hover:bg-teal-700 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
+        className={`bg-pink-600 py-3 px-4 cursor-pointer hover:bg-pink-700 transition-all ${isCollapsed ? 'rounded-lg' : 'rounded-t-lg'}`}
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <CardTitle className="flex items-center gap-2 text-base text-white">
-          <ClipboardList className="h-4 w-4 text-teal-100" />
+          <ClipboardList className="h-4 w-4 text-pink-100" />
           งานที่ได้รับมอบหมาย
-          <Badge variant="secondary" className="ml-auto bg-teal-700 text-white font-semibold px-2 py-1 rounded-full">
+          <Badge variant="secondary" className="ml-auto bg-pink-700 text-white font-semibold px-2 py-1 rounded-full">
             {filteredAndSortedTasks.length > 0 ? `${filteredAndSortedTasks.length} รายการ` : 'ไม่มีงาน'}
           </Badge>
           <Button
@@ -508,7 +508,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
             )}
           </div>
         </CardTitle>
-        <div className="text-sm text-teal-100 font-normal mt-1">
+        <div className="text-sm text-pink-100 font-normal mt-1">
           {isCollapsed ? 'คลิกเพื่อแสดงรายการ' : 'รายการงานที่ได้รับมอบหมายจากเอกสารราชการ'}
         </div>
       </CardHeader>
@@ -525,14 +525,14 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
               placeholder="ค้นหางาน..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-7 pr-3 py-1 text-xs h-8 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-teal-400 focus:ring-teal-400 focus:ring-1"
+              className="pl-7 pr-3 py-1 text-xs h-8 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-pink-400 focus:ring-pink-400 focus:ring-1"
             />
           </div>
 
           {/* ตัวกรองตามสถานะ */}
           <div className="w-32">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-8 text-xs border-border focus:border-teal-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-pink-400">
                 <SelectValue placeholder="สถานะ" />
               </SelectTrigger>
               <SelectContent>
@@ -548,7 +548,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
           {/* ตัวกรองตามประเภทเอกสาร */}
           <div className="w-28">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-8 text-xs border-border focus:border-teal-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-pink-400">
                 <SelectValue placeholder="ประเภท" />
               </SelectTrigger>
               <SelectContent>
@@ -562,7 +562,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
           {/* การจัดเรียง */}
           <div className="w-20">
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-8 text-xs border-border focus:border-teal-400">
+              <SelectTrigger className="h-8 text-xs border-border focus:border-pink-400">
                 <SelectValue placeholder="เรียง" />
               </SelectTrigger>
               <SelectContent>
@@ -579,7 +579,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
             variant="outline"
             size="sm"
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="h-8 w-8 p-0 border-border hover:border-teal-400 hover:text-teal-600"
+            className="h-8 w-8 p-0 border-border hover:border-pink-400 hover:text-pink-600"
             title={sortOrder === 'asc' ? 'เรียงจากน้อยไปมาก' : 'เรียงจากมากไปน้อย'}
           >
             <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -595,7 +595,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                 setStatusFilter('all');
                 setTypeFilter('all');
               }}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-teal-600 hover:bg-teal-50 dark:bg-teal-950"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-pink-600 hover:bg-pink-50 dark:bg-pink-950"
               title="ล้างตัวกรอง"
             >
               <span className="text-sm">×</span>
@@ -613,11 +613,11 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
       <CardContent className="p-3">
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-3"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600 mx-auto mb-3"></div>
             <div className="text-muted-foreground text-sm">กำลังโหลดรายการงาน...</div>
           </div>
         ) : filteredAndSortedTasks.length === 0 ? (
-          <div className="text-center py-6 text-teal-300">
+          <div className="text-center py-6 text-pink-300">
             <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-60" />
             {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' ? (
               <div>
@@ -630,7 +630,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                     setStatusFilter('all');
                     setTypeFilter('all');
                   }}
-                  className="text-teal-400 hover:text-teal-600 mt-1 text-xs h-6"
+                  className="text-pink-400 hover:text-pink-600 mt-1 text-xs h-6"
                 >
                   ล้างตัวกรอง
                 </Button>
@@ -816,7 +816,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-2 mt-2 border-t border-teal-100 dark:border-teal-900">
+          <div className="flex items-center justify-between pt-2 mt-2 border-t border-pink-100 dark:border-pink-900">
             <div className="text-xs text-muted-foreground">
               แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedTasks.length)} จาก {filteredAndSortedTasks.length} รายการ
             </div>
@@ -824,7 +824,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-teal-200"
+                className="h-7 w-7 p-0 border-pink-200"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
               >
@@ -836,7 +836,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 border-teal-200"
+                className="h-7 w-7 p-0 border-pink-200"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
               >
@@ -973,7 +973,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
         <DialogContent className="sm:max-w-md w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-teal-600 flex-shrink-0" />
+              <Users className="h-5 w-5 text-pink-600 flex-shrink-0" />
               <span>รายชื่อผู้รับมอบหมาย</span>
             </DialogTitle>
             <DialogDescription className="line-clamp-2 text-sm">
@@ -984,7 +984,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
           <div className="py-4 flex-1 overflow-y-auto min-h-0">
             {loadingAssignees ? (
               <div className="flex items-center justify-center py-8">
-                <svg className="animate-spin h-8 w-8 text-teal-500" viewBox="0 0 24 24">
+                <svg className="animate-spin h-8 w-8 text-pink-500" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                 </svg>

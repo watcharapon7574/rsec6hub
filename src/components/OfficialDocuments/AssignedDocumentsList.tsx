@@ -780,9 +780,9 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
 
                   {task.status === 'in_progress' && (
                     <>
-                      {/* ปุ่มจัดการทีม - เฉพาะ is_team_leader, assignment_source = 'position', และยังไม่มีผู้รายงาน */}
-                      {/* ถ้ามีผู้รายงานแล้ว จะต้องรอผู้รายงานส่งรายงานก่อน จึงไม่สามารถจัดการทีมได้ */}
-                      {task.is_team_leader && task.assignment_source === 'position' && !task.has_reporter_assigned && (
+                      {/* ปุ่มจัดการทีม - เฉพาะ is_team_leader และ assignment_source = 'position' */}
+                      {/* หัวหน้าทีมสามารถจัดการทีมได้ตลอดเวลา ไม่ว่าจะมีผู้รายงานแล้วหรือไม่ */}
+                      {task.is_team_leader && task.assignment_source === 'position' && (
                         <Button
                           size="sm"
                           variant="outline"

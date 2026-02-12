@@ -667,7 +667,7 @@ const CreateReportMemoPage = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="attached_files">อัปโหลดไฟล์แนบ</Label>
-                        <Input
+                        <input
                           id="attached_files"
                           type="file"
                           multiple
@@ -677,7 +677,16 @@ const CreateReportMemoPage = () => {
                             setSelectedFiles(files);
                             setFormData(prev => ({ ...prev, attached_files: files.map(f => f.name) }));
                           }}
-                          className="border-border focus:border-teal-500"
+                          className="block w-full text-sm text-muted-foreground
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-lg file:border-0
+                            file:text-sm file:font-medium
+                            file:cursor-pointer
+                            file:bg-teal-500 file:text-white
+                            hover:file:bg-teal-600
+                            cursor-pointer
+                            border border-border rounded-lg p-2
+                            focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                         />
                       </div>
                     </div>

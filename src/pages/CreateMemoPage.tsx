@@ -822,7 +822,7 @@ const CreateMemoPage = () => {
                         <Label htmlFor="attached_files" className="text-sm font-medium text-foreground">
                           อัปโหลดไฟล์แนบ
                         </Label>
-                        <Input
+                        <input
                           id="attached_files"
                           type="file"
                           multiple
@@ -836,7 +836,16 @@ const CreateMemoPage = () => {
                               attached_files: fileNames
                             }));
                           }}
-                          className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 dark:bg-blue-950 file:text-blue-700 dark:text-blue-300 hover:file:bg-blue-100 dark:bg-blue-900"
+                          className="block w-full text-sm text-muted-foreground
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-lg file:border-0
+                            file:text-sm file:font-medium
+                            file:cursor-pointer
+                            file:bg-amber-500 file:text-white
+                            hover:file:bg-amber-600
+                            cursor-pointer
+                            border border-border rounded-lg p-2
+                            focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
                           รองรับไฟล์: PDF, Word, รูปภาพ (JPG, PNG) ขนาดไม่เกิน 10MB ต่อไฟล์

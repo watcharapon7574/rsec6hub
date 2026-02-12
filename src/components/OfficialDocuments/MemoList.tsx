@@ -678,7 +678,7 @@ const MemoList: React.FC<MemoListProps> = ({
                         <Eye className="h-4 w-4" />
                       </Button>
 
-                      {/* Edit button - show for memo author (not yet proposed) OR rejected report memos */}
+                      {/* Edit button - show for memo author (draft or rejected) OR rejected report memos */}
                       {((profile?.user_id === memo.user_id && memo.current_signer_order <= 1) ||
                         (memo.status === 'rejected' && reportMemoIds.has(memo.id))) && (
                         <div className="relative">

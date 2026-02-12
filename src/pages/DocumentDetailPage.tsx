@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight, MapPin, ClipboardList } from 'lucide-react';
+import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight, MapPin, ClipboardList, Link2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
 
@@ -41,12 +41,24 @@ interface DocumentDetail {
   }>;
 }
 
+interface OriginalDocument {
+  id: string;
+  document_type: 'memo' | 'doc_receive';
+  subject: string;
+  doc_number: string | null;
+  author_name: string;
+  pdf_draft_path?: string;
+  pdf_final_path?: string;
+}
+
 const ITEMS_PER_PAGE = 5;
 
 const DocumentDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [document, setDocument] = useState<DocumentDetail | null>(null);
+  const [originalDocument, setOriginalDocument] = useState<OriginalDocument | null>(null);
+  const [isReportMemo, setIsReportMemo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -70,17 +82,60 @@ const DocumentDetailPage: React.FC = () => {
 
       // Fetch document from appropriate table
       const tableName = documentType === 'memo' ? 'memos' : 'doc_receive';
-      const { data: docData, error: docError } = await supabase
-        .from(tableName)
+      const { data: docData, error: docError } = await (supabase
+        .from(tableName as any)
         .select('*')
         .eq('id', documentId)
-        .single();
+        .single() as any);
 
       if (docError) throw docError;
 
+      // Check if this document is a report memo (has a task_assignment that references it as report_memo_id)
+      if (documentType === 'memo') {
+        const { data: taskData, error: taskError } = await (supabase
+          .from('task_assignments' as any)
+          .select('id, memo_id, doc_receive_id')
+          .eq('report_memo_id', documentId)
+          .is('deleted_at', null)
+          .maybeSingle() as any);
+
+        if (!taskError && taskData) {
+          setIsReportMemo(true);
+
+          // Fetch the original document
+          if (taskData.memo_id) {
+            const { data: originalMemo, error: originalError } = await (supabase
+              .from('memos' as any)
+              .select('id, subject, doc_number, author_name, pdf_draft_path, pdf_final_path')
+              .eq('id', taskData.memo_id)
+              .single() as any);
+
+            if (!originalError && originalMemo) {
+              setOriginalDocument({
+                ...originalMemo,
+                document_type: 'memo'
+              });
+            }
+          } else if (taskData.doc_receive_id) {
+            const { data: originalDoc, error: originalError } = await (supabase
+              .from('doc_receive' as any)
+              .select('id, subject, doc_number, author_name, pdf_draft_path, pdf_final_path')
+              .eq('id', taskData.doc_receive_id)
+              .single() as any);
+
+            if (!originalError && originalDoc) {
+              setOriginalDocument({
+                ...originalDoc,
+                document_type: 'doc_receive'
+              });
+            }
+          }
+        }
+      }
+
       // Fetch task assignments for this document
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('task_assignments')
+      const { data: tasksData, error: tasksError } = await (supabase
+        .from('task_assignments' as any)
         .select(`
           id,
           assigned_at,
@@ -97,7 +152,7 @@ const DocumentDetailPage: React.FC = () => {
         `)
         .eq(documentType === 'memo' ? 'memo_id' : 'doc_receive_id', documentId)
         .is('deleted_at', null)
-        .order('assigned_at', { ascending: false });
+        .order('assigned_at', { ascending: false }) as any);
 
       if (tasksError) throw tasksError;
 
@@ -157,7 +212,7 @@ const DocumentDetailPage: React.FC = () => {
         id: docData.id,
         document_type: documentType as 'memo' | 'doc_receive',
         task_assignments: filteredTasks || []
-      });
+      } as DocumentDetail);
     } catch (error) {
       console.error('Error fetching document detail:', error);
     } finally {
@@ -278,6 +333,53 @@ const DocumentDetailPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Original Document Card - Show only for report memos */}
+          {isReportMemo && originalDocument && (
+            <Card className="border-2 border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-950/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-teal-700 dark:text-teal-300">
+                  <Link2 className="h-5 w-5" />
+                  เอกสารต้นเรื่อง (อ้างอิง)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">เรื่อง</label>
+                  <p className="text-base font-semibold">{originalDocument.subject}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">เลขที่หนังสือ</label>
+                    <p className="text-base">{originalDocument.doc_number || 'ยังไม่มีเลขที่'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">ประเภท</label>
+                    <p className="text-base">{originalDocument.document_type === 'memo' ? 'บันทึกข้อความ' : 'หนังสือรับ'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900"
+                    onClick={() => {
+                      const pdfPath = originalDocument.pdf_final_path || originalDocument.pdf_draft_path;
+                      if (pdfPath) {
+                        window.open(pdfPath, '_blank');
+                      }
+                    }}
+                    disabled={!originalDocument.pdf_final_path && !originalDocument.pdf_draft_path}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    ดู PDF ต้นเรื่อง
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Task Assignments Card */}
           {document.task_assignments && document.task_assignments.length > 0 && (() => {

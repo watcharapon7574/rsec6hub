@@ -76,11 +76,136 @@ serve(async (req) => {
     console.log('✅ OTP verified successfully')
 
     // 2. Get profile information
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('phone', normalizedPhone)
-      .maybeSingle()
+    // For admin phone (036776259), use telegram_chat_id to identify which admin
+    // This allows multiple admins to share the same phone number with separate sessions
+    const isAdminPhone = normalizedPhone === '036776259'
+    let profile = null
+    let profileError = null
+
+    if (isAdminPhone && otpRecord.telegram_chat_id) {
+      console.log('👤 Admin phone detected, looking up by telegram_chat_id:', otpRecord.telegram_chat_id)
+
+      // For admin phone: find profile with matching telegram_chat_id AND is_admin = true
+      // This prevents getting teacher profile when same person has both admin and teacher profiles
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('telegram_chat_id', String(otpRecord.telegram_chat_id))
+        .eq('is_admin', true)
+        .maybeSingle()
+
+      profile = data
+      profileError = error
+
+      // If no profile found by telegram_chat_id for admin
+      if (!profile && !profileError) {
+        console.log('⚠️ No profile found by telegram_chat_id for admin, checking phone profile')
+
+        // Check if there's a profile by phone that hasn't been claimed
+        const { data: phoneData, error: phoneError } = await supabaseAdmin
+          .from('profiles')
+          .select('*')
+          .eq('phone', normalizedPhone)
+          .is('telegram_chat_id', null)
+          .maybeSingle()
+
+        if (phoneData && !phoneError) {
+          // Found unclaimed profile - claim it
+          console.log('✅ Found unclaimed admin profile, claiming it')
+          profile = phoneData
+          profileError = phoneError
+        } else {
+          // No unclaimed profile - need to create a new one for this admin
+          console.log('🆕 Creating new admin profile for telegram_chat_id:', otpRecord.telegram_chat_id)
+
+          // Get admin name from admin_otp_recipients
+          const { data: recipient } = await supabaseAdmin
+            .from('admin_otp_recipients')
+            .select('recipient_name')
+            .eq('telegram_chat_id', otpRecord.telegram_chat_id)
+            .eq('is_active', true)
+            .maybeSingle()
+
+          const adminName = recipient?.recipient_name || 'Admin'
+          const nameParts = adminName.split(' ')
+          const firstName = nameParts[0] || 'Admin'
+          const lastName = nameParts.slice(1).join(' ') || 'User'
+
+          // Generate unique employee_id for new admin
+          const timestamp = Date.now().toString(36).toUpperCase()
+          const newEmployeeId = `ADMIN${timestamp}`
+          const newEmail = `admin.${timestamp}@rsec6.temp`
+
+          // First create auth user (without phone in metadata to avoid trigger issue)
+          // The trigger handle_new_auth_user() tries to update ALL profiles with matching phone
+          // which causes errors when multiple admins share the same phone
+          // Phone is stored in profiles table instead
+          const { data: newAuthData, error: newAuthError } = await supabaseAdmin.auth.admin.createUser({
+            email: newEmail,
+            email_confirm: true,
+            user_metadata: {
+              employee_id: newEmployeeId,
+              first_name: firstName,
+              last_name: lastName,
+              position: 'director'
+            }
+          })
+
+          if (newAuthError) {
+            console.error('❌ Failed to create auth user for new admin:', newAuthError)
+            return new Response(
+              JSON.stringify({ error: 'ไม่สามารถสร้างบัญชี admin ใหม่ได้: ' + newAuthError.message }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+
+          console.log('✅ Created new auth user for admin:', newAuthData.user.id)
+
+          // Create new admin profile
+          const { data: newProfile, error: newProfileError } = await supabaseAdmin
+            .from('profiles')
+            .insert({
+              user_id: newAuthData.user.id,
+              employee_id: newEmployeeId,
+              first_name: firstName,
+              last_name: lastName,
+              phone: normalizedPhone,
+              telegram_chat_id: String(otpRecord.telegram_chat_id),
+              position: 'director',
+              job_position: 'ผู้ดูแลระบบ',
+              workplace: 'ศูนย์การศึกษาพิเศษ เขตการศึกษา 6',
+              is_admin: true,
+              email: newEmail
+            })
+            .select()
+            .single()
+
+          if (newProfileError) {
+            console.error('❌ Failed to create new admin profile:', newProfileError)
+            // Clean up: delete the auth user we just created
+            await supabaseAdmin.auth.admin.deleteUser(newAuthData.user.id)
+            return new Response(
+              JSON.stringify({ error: 'ไม่สามารถสร้างโปรไฟล์ admin ใหม่ได้: ' + newProfileError.message }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+
+          console.log('✅ Created new admin profile:', newProfile.employee_id)
+          profile = newProfile
+          profileError = null
+        }
+      }
+    } else {
+      // Normal user: lookup by phone
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('phone', normalizedPhone)
+        .maybeSingle()
+
+      profile = data
+      profileError = error
+    }
 
     if (profileError || !profile) {
       console.error('Profile lookup error:', profileError)
@@ -151,13 +276,12 @@ serve(async (req) => {
       // สร้าง user ด้วย email แทน phone เพื่อให้ทำงานได้ดีกว่า
       const tempEmail = `${profile.employee_id}@rsec6.temp`
       
+      // Don't include phone in createUser to avoid trigger issues
+      // The trigger handle_new_auth_user() causes problems when profiles share phone numbers
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: tempEmail,
-        phone: formattedPhone,
         email_confirm: true,
-        phone_confirm: true,
         user_metadata: {
-          phone: normalizedPhone,
           employee_id: profile.employee_id,
           first_name: profile.first_name,
           last_name: profile.last_name,

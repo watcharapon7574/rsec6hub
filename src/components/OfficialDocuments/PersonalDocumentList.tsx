@@ -9,7 +9,7 @@ import { Eye, Download, Edit, Calendar, User, AlertCircle, Clock, CheckCircle, X
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { supabase } from '@/integrations/supabase/client';
-import { extractPdfUrl } from '@/utils/fileUpload';
+import { formatThaiDateShort } from '@/utils/dateUtils';
 
 interface PersonalDocumentListProps {
   realMemos?: any[];
@@ -457,7 +457,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                     );
                   })()}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatThaiDateShort(memo.created_at)}</span>
                   {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span
                     style={{
@@ -659,31 +659,30 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                 <div className="flex gap-1 ml-auto">
                   {/* เมื่อ current_signer_order = 5 แสดงเฉพาะปุ่ม "ดูเอกสาร" */}
                   {memo.current_signer_order === 5 ? (
-                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
+                    <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                       onClick={() => {
-                        const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                        navigate('/pdf-just-preview', {
+                        const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+                        navigate('/document-detail', {
                           state: {
-                            fileUrl,
-                            fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                            memoId: memo.id
+                            documentId: memo.id,
+                            documentType: documentType
                           }
                         });
                       }}
                     >
                       <Eye className="h-4 w-4" />
+                      {memo.is_assigned && <span className="text-xs font-medium">ดูรายงาน</span>}
                     </Button>
                   ) : (
                     <>
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
                       <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                         onClick={() => {
-                          const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                          navigate('/pdf-just-preview', {
+                          const documentType = memo.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+                          navigate('/document-detail', {
                             state: {
-                              fileUrl,
-                              fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                              memoId: memo.id
+                              documentId: memo.id,
+                              documentType: documentType
                             }
                           });
                         }}

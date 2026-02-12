@@ -15,6 +15,7 @@ import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDocumentManageRoute, isPDFUploadMemo } from '@/utils/memoUtils';
+import { formatThaiDateShort } from '@/utils/dateUtils';
 import Accordion from './Accordion';
 import TeamMemberIcon from '@/components/TaskAssignment/TeamMemberIcon';
 
@@ -741,7 +742,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                     );
                   })()}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatThaiDateShort(memo.created_at)}</span>
                   {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span
                     style={{
@@ -987,12 +988,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                     <>
                       <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                         onClick={() => {
-                          const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                          navigate('/pdf-just-preview', {
+                          navigate('/document-detail', {
                             state: {
-                              fileUrl,
-                              fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                              memoId: memo.id
+                              documentId: memo.id,
+                              documentType: 'doc_receive'
                             }
                           });
                         }}
@@ -1047,12 +1046,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       {/* ปุ่มดูปกติสำหรับสถานะอื่นๆ */}
                       <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 dark:text-blue-600"
                         onClick={() => {
-                          const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || memo.pdfUrl || memo.pdf_url || memo.fileUrl || memo.file_url || '';
-                          navigate('/pdf-just-preview', {
+                          navigate('/document-detail', {
                             state: {
-                              fileUrl,
-                              fileName: memo.subject || memo.title || 'ไฟล์ PDF',
-                              memoId: memo.id
+                              documentId: memo.id,
+                              documentType: 'doc_receive'
                             }
                           });
                         }}

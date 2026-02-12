@@ -95,12 +95,12 @@ const ApproveDocumentPage: React.FC = () => {
 
       try {
         // Check if this memo is a report memo by finding task_assignment with this report_memo_id
-        const { data: assignment, error: assignmentError } = await supabase
-          .from('task_assignments')
+        const { data: assignment, error: assignmentError } = await (supabase
+          .from('task_assignments' as any)
           .select('*')
           .eq('report_memo_id', memoId)
           .is('deleted_at', null)
-          .single();
+          .single() as any);
 
         // If no assignment found with this report_memo_id, it's not a report memo
         if (assignmentError || !assignment) {
@@ -127,11 +127,11 @@ const ApproveDocumentPage: React.FC = () => {
             originalDoc = { ...origMemo, type: 'memo' };
           }
         } else if (assignment.document_type === 'doc_receive' && assignment.doc_receive_id) {
-          const { data: origDocReceive, error: origError } = await supabase
-            .from('doc_receives')
+          const { data: origDocReceive, error: origError } = await (supabase
+            .from('doc_receives' as any)
             .select('*')
             .eq('id', assignment.doc_receive_id)
-            .single();
+            .single() as any);
 
           if (!origError && origDocReceive) {
             originalDoc = { ...origDocReceive, type: 'doc_receive' };

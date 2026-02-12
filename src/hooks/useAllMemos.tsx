@@ -30,6 +30,7 @@ export interface MemoRecord {
   attached_files?: string[];
   has_in_progress_task?: boolean;
   revision_count?: number; // จำนวนครั้งที่เอกสารถูกตีกลับ/แก้ไข
+  doc_del?: any; // soft delete field (JSON with deleted_by, deleted_at, deleted_name)
 }
 
 export const useAllMemos = () => {

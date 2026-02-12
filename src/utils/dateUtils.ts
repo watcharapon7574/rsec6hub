@@ -44,7 +44,7 @@ export const formatThaiDateFull = (date: Date | string | null): string => {
 
 /**
  * แปลงวันที่เป็นรูปแบบภาษาไทยแบบสั้น
- * เช่น "๒/๒/๒๕๖๘"
+ * เช่น "12/2/69" (ปี 2 หลัก)
  *
  * @param date - วันที่ที่ต้องการแปลง
  * @returns วันที่ในรูปแบบภาษาไทยแบบสั้น
@@ -59,9 +59,9 @@ export const formatThaiDateShort = (date: Date | string | null): string => {
 
   const day = d.getDate();
   const month = d.getMonth() + 1;
-  const year = d.getFullYear() + 543; // แปลง ค.ศ. เป็น พ.ศ.
+  const year = (d.getFullYear() + 543) % 100; // แปลง ค.ศ. เป็น พ.ศ. แบบ 2 หลัก (เช่น 69)
 
-  return `${convertToThaiNumerals(day)}/${convertToThaiNumerals(month)}/${convertToThaiNumerals(year)}`;
+  return `${day}/${month}/${year}`;
 };
 
 /**

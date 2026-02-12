@@ -4,14 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp, ClipboardCheck, FileCheck, Trash2 } from 'lucide-react';
+import { Eye, Download, AlertCircle, Clock, CheckCircle, XCircle, FileText, Paperclip, Search, ChevronLeft, ChevronRight, RotateCcw, Edit, ChevronDown, ChevronUp, ClipboardCheck, ClipboardList, FileCheck, Trash2, Users } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDocumentManageRoute, getDocumentEditRoute } from '@/utils/memoUtils';
+import { formatThaiDateShort } from '@/utils/dateUtils';
+import { useToast } from '@/hooks/use-toast';
+import TeamMemberIcon from '@/components/TaskAssignment/TeamMemberIcon';
 
 interface MemoDocument {
   id: number;
@@ -42,9 +46,18 @@ const MemoList: React.FC<MemoListProps> = ({
   const permissions = getPermissions();
   const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // State สำหรับ collapsible
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  // State สำหรับ modal ดูรายชื่อผู้รับมอบหมาย
+  const [showAssigneesModal, setShowAssigneesModal] = useState(false);
+  const [selectedMemoForAssignees, setSelectedMemoForAssignees] = useState<any>(null);
+  const [assigneesList, setAssigneesList] = useState<any[]>([]);
+  const [assigneesPage, setAssigneesPage] = useState(1);
+  const [isLoadingAssignees, setIsLoadingAssignees] = useState(false);
+  const assigneesPerPage = 5;
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
@@ -205,6 +218,82 @@ const MemoList: React.FC<MemoListProps> = ({
     const clerkProfile = profiles.find(p => p.user_id === clerkId);
     if (!clerkProfile) return '-';
     return `${clerkProfile.first_name} ${clerkProfile.last_name}`;
+  };
+
+  // ฟังก์ชันสำหรับดูรายชื่อผู้รับมอบหมาย
+  const handleViewAssignees = async (memo: any) => {
+    setSelectedMemoForAssignees(memo);
+    setAssigneesPage(1);
+    setIsLoadingAssignees(true);
+    setShowAssigneesModal(true);
+
+    try {
+      // Step 1: Fetch task assignments for this memo
+      const { data: assignments, error: assignmentError } = await (supabase as any)
+        .from('task_assignments')
+        .select(`
+          id,
+          assigned_to,
+          note,
+          status,
+          completion_note,
+          assigned_at,
+          completed_at,
+          is_team_leader,
+          is_reporter
+        `)
+        .eq('memo_id', memo.id)
+        .eq('document_type', 'memo')
+        .is('deleted_at', null)
+        .order('is_team_leader', { ascending: false })
+        .order('is_reporter', { ascending: false })
+        .order('assigned_at', { ascending: true });
+
+      if (assignmentError) {
+        console.error('Error fetching assignees:', assignmentError);
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่สามารถดึงรายชื่อผู้รับมอบหมายได้",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!assignments || assignments.length === 0) {
+        setAssigneesList([]);
+        return;
+      }
+
+      // Step 2: Get unique user IDs and fetch their profiles
+      const userIds = Array.from(new Set(assignments.map((a: any) => String(a.assigned_to)))).filter(Boolean) as string[];
+      const { data: profilesData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds as string[]);
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+      }
+
+      // Create a map of user_id to full_name
+      const profileMap = new Map();
+      (profilesData || []).forEach((p: any) => {
+        const fullName = [p.first_name, p.last_name].filter(Boolean).join(' ');
+        profileMap.set(p.user_id, fullName || 'ไม่ทราบชื่อ');
+      });
+
+      // Transform data to include assignee_name from profiles
+      const transformedData = assignments.map((item: any) => ({
+        ...item,
+        assignee_name: profileMap.get(item.assigned_to) || 'ไม่ทราบชื่อ'
+      }));
+
+      setAssigneesList(transformedData);
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setIsLoadingAssignees(false);
+    }
   };
 
   // ฟังก์ชันสำหรับข้อความสถานะตาม current_signer_order
@@ -472,7 +561,7 @@ const MemoList: React.FC<MemoListProps> = ({
                   )}
                   <span className={`font-medium truncate max-w-[120px] sm:max-w-[160px] sm:text-base text-sm ${isCompleted ? 'text-muted-foreground group-hover:text-foreground' : reportMemoIds.has(memo.id) ? 'text-teal-700 dark:text-teal-300 group-hover:text-teal-800' : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'}`} title={memo.subject}>{memo.subject}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatThaiDateShort(memo.created_at)}</span>
                   {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span
                     style={{
@@ -647,50 +736,71 @@ const MemoList: React.FC<MemoListProps> = ({
                   {/* เมื่อ current_signer_order = 5 (เสร็จสิ้น) */}
                   {memo.current_signer_order === 5 ? (
                     <>
-                      {/* Report memo ที่เสร็จสิ้น - แสดง "ดูรายงาน" + ถังขยะ */}
-                      {reportMemoIds.has(memo.id) ? (
+                      {/* ปุ่ม "ดูเอกสาร" - นำไปหน้า document-detail */}
+                      <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 ${reportMemoIds.has(memo.id) ? 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400' : 'border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'}`}
+                        onClick={() => {
+                          navigate('/document-detail', {
+                            state: {
+                              documentId: memo.id,
+                              documentType: 'memo'
+                            }
+                          });
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        {memo.is_assigned && <span className="text-xs font-medium">ดูรายงาน</span>}
+                      </Button>
+                      {/* ปุ่มมอบหมายงาน/ดูรายชื่อ - แสดงเฉพาะธุรการ และไม่ใช่ report memo */}
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && !reportMemoIds.has(memo.id) && (
                         <>
-                          <Button variant="outline" size="sm" className="h-7 px-2 flex items-center gap-1 border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400"
-                            onClick={() => {
-                              navigate('/document-detail', {
-                                state: {
-                                  documentId: memo.id,
-                                  documentType: 'memo'
-                                }
-                              });
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                            <span className="text-xs font-medium">ดูรายงาน</span>
-                          </Button>
-                          {/* ปุ่มลบ - เฉพาะ admin และ clerk */}
-                          {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
-                            <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
-                              onClick={() => {
-                                // TODO: Implement delete functionality
-                                console.log('Delete report memo:', memo.id);
-                              }}
-                              title="ลบรายงาน"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                          {!memo.is_assigned ? (
+                            <div className="relative">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  navigate(`/task-assignment?documentId=${memo.id}&documentType=memo`);
+                                }}
+                                className="h-7 px-2 flex items-center gap-1 bg-green-50 dark:bg-green-950 border-green-500 text-green-700 dark:text-green-300 hover:bg-green-100 dark:bg-green-900 dark:hover:bg-green-900"
+                              >
+                                <ClipboardList className="h-4 w-4" />
+                                <span className="text-xs font-medium">มอบหมายงาน</span>
+                              </Button>
+                              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10">
+                                ใหม่
+                              </span>
+                            </div>
+                          ) : memo.has_active_tasks ? (
+                            <div className="relative">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewAssignees(memo)}
+                                className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:bg-blue-900 dark:hover:bg-blue-900"
+                              >
+                                <ClipboardList className="h-4 w-4" />
+                                <span className="text-xs font-medium">ดูรายชื่อ</span>
+                              </Button>
+                              {/* Show "ทราบแล้ว" badge when task is in progress */}
+                              {memo.has_in_progress_task && (
+                                <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10">
+                                  ทราบแล้ว
+                                </span>
+                              )}
+                            </div>
+                          ) : null}
                         </>
-                      ) : (
-                        /* Memo ปกติที่เสร็จสิ้น - แสดงเฉพาะปุ่มดู */
-                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                      )}
+                      {/* ปุ่มลบ - เฉพาะ report memo */}
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && reportMemoIds.has(memo.id) && (
+                        <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
                           onClick={() => {
-                            const fileUrl = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path || '';
-                            navigate('/pdf-just-preview', {
-                              state: {
-                                fileUrl,
-                                fileName: memo.subject || 'ไฟล์ PDF',
-                                memoId: memo.id
-                              }
-                            });
+                            // TODO: Implement delete functionality
+                            console.log('Delete report memo:', memo.id);
                           }}
+                          title="ลบรายงาน"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </>
@@ -845,6 +955,116 @@ const MemoList: React.FC<MemoListProps> = ({
       </CardContent>
       </>
       )}
+
+      {/* Modal ดูรายชื่อผู้รับมอบหมาย */}
+      <Dialog open={showAssigneesModal} onOpenChange={setShowAssigneesModal}>
+        <DialogContent className="sm:max-w-md w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Users className="h-5 w-5 text-amber-600" />
+              รายชื่อผู้รับมอบหมาย
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 flex-1 overflow-y-auto min-h-0">
+            {isLoadingAssignees ? (
+              <div className="flex items-center justify-center py-8">
+                <svg className="animate-spin h-8 w-8 text-amber-500" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+              </div>
+            ) : assigneesList.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">ไม่พบข้อมูลผู้รับมอบหมาย</p>
+            ) : (
+              <div className="space-y-2">
+                {assigneesList
+                  .slice((assigneesPage - 1) * assigneesPerPage, assigneesPage * assigneesPerPage)
+                  .map((assignee) => (
+                    <div
+                      key={assignee.id}
+                      className="flex items-center justify-between p-3 bg-muted dark:bg-card/60 rounded-lg border gap-2"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {/* Role Icon */}
+                        <TeamMemberIcon
+                          isLeader={assignee.is_team_leader}
+                          isReporter={assignee.is_reporter}
+                          size="sm"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-foreground text-sm truncate">{assignee.assignee_name}</span>
+                          {/* Role badges */}
+                          <div className="flex gap-1">
+                            {assignee.is_team_leader && (
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">หัวหน้า</span>
+                            )}
+                            {assignee.is_reporter && (
+                              <span className="text-[10px] text-pink-600 dark:text-pink-400 font-medium">
+                                {assignee.is_team_leader && '• '}ผู้รายงาน
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={`flex-shrink-0 text-xs ${
+                          assignee.status === 'completed'
+                            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                            : assignee.status === 'in_progress'
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                            : 'bg-muted text-foreground'
+                        }`}
+                      >
+                        {assignee.status === 'completed' ? 'เสร็จ' : assignee.status === 'in_progress' ? 'กำลังทำ' : 'รอ'}
+                      </Badge>
+                    </div>
+                  ))}
+
+                {/* Pagination */}
+                {assigneesList.length > assigneesPerPage && (
+                  <div className="flex items-center justify-between pt-3 mt-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAssigneesPage((p) => Math.max(1, p - 1))}
+                      disabled={assigneesPage === 1}
+                      className="h-7 text-xs"
+                    >
+                      <ChevronLeft className="h-3 w-3 mr-1" />
+                      ก่อนหน้า
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      {assigneesPage} / {Math.ceil(assigneesList.length / assigneesPerPage)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setAssigneesPage((p) =>
+                          Math.min(Math.ceil(assigneesList.length / assigneesPerPage), p + 1)
+                        )
+                      }
+                      disabled={assigneesPage >= Math.ceil(assigneesList.length / assigneesPerPage)}
+                      className="h-7 text-xs"
+                    >
+                      ถัดไป
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <Button variant="outline" onClick={() => setShowAssigneesModal(false)} className="w-full sm:w-auto">
+              ปิด
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

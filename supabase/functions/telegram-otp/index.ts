@@ -182,49 +182,59 @@ serve(async (req) => {
           console.log('⏩ Skipping rate limit for admin phone')
         }
 
-        // Check if user exists and get telegram_chat_id
-        const { data: profile, error: profileError } = await supabaseClient
-          .from('profiles')
-          .select('telegram_chat_id, first_name, last_name, user_id')
-          .eq('phone', normalizedPhone)
-          .maybeSingle()
+        // For admin phone, skip profile lookup since multiple admins share the same phone
+        // Instead, we'll send OTP to all active recipients in admin_otp_recipients
+        let profile = null
+        let chatId = telegram_chat_id
 
-        if (profileError) {
-          console.error('Profile lookup error:', profileError)
-          return new Response(
-            JSON.stringify({ error: 'เกิดข้อผิดพลาดในการค้นหาข้อมูล' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-          )
+        if (!isAdminPhone) {
+          // Check if user exists and get telegram_chat_id (normal user flow)
+          const { data: profileData, error: profileError } = await supabaseClient
+            .from('profiles')
+            .select('telegram_chat_id, first_name, last_name, user_id')
+            .eq('phone', normalizedPhone)
+            .maybeSingle()
+
+          if (profileError) {
+            console.error('Profile lookup error:', profileError)
+            return new Response(
+              JSON.stringify({ error: 'เกิดข้อผิดพลาดในการค้นหาข้อมูล' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            )
+          }
+
+          // ถ้าไม่พบ profile = เบอร์ไม่มีในระบบ (ติดต่อแอดมิน)
+          if (!profileData) {
+            return new Response(
+              JSON.stringify({
+                error: 'user_not_found',
+                message: 'ไม่พบเบอร์โทรศัพท์นี้ในระบบ กรุณาติดต่อผู้ดูแลระบบ'
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            )
+          }
+
+          // ถ้ามี profile แต่ไม่มี telegram_chat_id และไม่มีส่งมาด้วย = ผู้ใช้เข้าครั้งแรกต้องกรอก chat id
+          if (profileData && !profileData.telegram_chat_id && !telegram_chat_id) {
+            return new Response(
+              JSON.stringify({
+                error: 'need_telegram_chat_id',
+                message: 'กรุณาใส่ Telegram Chat ID สำหรับการเข้าใช้งานครั้งแรก'
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            )
+          }
+
+          profile = profileData
+          // ใช้ telegram_chat_id จาก profile หรือจากที่ผู้ใช้ส่งมา (สำหรับผู้ใช้ใหม่)
+          chatId = profile?.telegram_chat_id || telegram_chat_id
+          console.log('🔑 Using chatId:', chatId, 'from profile:', !!profile?.telegram_chat_id)
+        } else {
+          console.log('👤 Admin phone detected, skipping profile lookup (multiple admins share same phone)')
         }
 
-        // ถ้าไม่พบ profile = เบอร์ไม่มีในระบบ (ติดต่อแอดมิน)
-        if (!profile) {
-          return new Response(
-            JSON.stringify({
-              error: 'user_not_found',
-              message: 'ไม่พบเบอร์โทรศัพท์นี้ในระบบ กรุณาติดต่อผู้ดูแลระบบ'
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-          )
-        }
-
-        // ถ้ามี profile แต่ไม่มี telegram_chat_id และไม่มีส่งมาด้วย = ผู้ใช้เข้าครั้งแรกต้องกรอก chat id
-        if (profile && !profile.telegram_chat_id && !telegram_chat_id) {
-          return new Response(
-            JSON.stringify({
-              error: 'need_telegram_chat_id',
-              message: 'กรุณาใส่ Telegram Chat ID สำหรับการเข้าใช้งานครั้งแรก'
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-          )
-        }
-
-        // ใช้ telegram_chat_id จาก profile หรือจากที่ผู้ใช้ส่งมา (สำหรับผู้ใช้ใหม่)
-        // telegram_chat_id is already validated as number above
-        const chatId = profile?.telegram_chat_id || telegram_chat_id
-        console.log('🔑 Using chatId:', chatId, 'from profile:', !!profile?.telegram_chat_id)
-
-        if (!chatId) {
+        // For admin phone, chatId is not required (we'll send to all recipients)
+        if (!chatId && !isAdminPhone) {
           return new Response(
             JSON.stringify({
               error: 'telegram_chat_id_required',

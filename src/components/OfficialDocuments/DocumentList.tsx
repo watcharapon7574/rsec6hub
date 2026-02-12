@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import Accordion from './Accordion';
 import { MemoService } from '@/services/memoService';
+import { formatThaiDateShort } from '@/utils/dateUtils';
 import TeamMemberIcon from '@/components/TaskAssignment/TeamMemberIcon';
 
 // ประเภทเอกสารจาก mock data
@@ -828,7 +829,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     );
                   })()}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatThaiDateShort(memo.created_at)}</span>
                   {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span
                     style={{

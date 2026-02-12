@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FileText, Clock, AlertCircle, PenTool, Eye, Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, ArrowUpDown, RotateCcw } from 'lucide-react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
+import { formatThaiDateShort } from '@/utils/dateUtils';
 
 interface PendingDocumentCardProps {
   pendingMemos: any[];
@@ -396,7 +397,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   <FileText className="h-4 w-4 text-amber-500 flex-shrink-0" />
                   <span className="font-medium text-foreground truncate max-w-[120px] sm:max-w-[160px] group-hover:text-amber-700 dark:text-amber-300 sm:text-base text-sm" title={memo.subject}>{memo.subject}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(memo.date || memo.created_at).toLocaleDateString('th-TH')}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatThaiDateShort(memo.date || memo.created_at)}</span>
                   <span
                     style={{
                       background: getStatusColorBySignerOrder(memo.current_signer_order),

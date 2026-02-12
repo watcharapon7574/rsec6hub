@@ -19,7 +19,6 @@ import OfficialDocumentsPage from "@/pages/OfficialDocumentsPage";
 import CreateDocumentPage from "@/pages/CreateDocumentPage";
 import CreateMemoPage from "@/pages/CreateMemoPage";
 import CreateReportMemoPage from "@/pages/CreateReportMemoPage";
-import EditReportMemoPage from "@/pages/EditReportMemoPage";
 import ManageReportMemoPage from "@/pages/ManageReportMemoPage";
 import PDFSignaturePage from "@/pages/PDFSignaturePage";
 import DocumentManagePage from "@/pages/DocumentManagePage";
@@ -149,9 +148,9 @@ const AppContent = () => {
           <CreateReportMemoPage />
         </ProtectedRoute>
       } />
-      <Route path="/edit-report-memo/:memoId" element={
+      <Route path="/create-report-memo" element={
         <ProtectedRoute>
-          <EditReportMemoPage />
+          <CreateReportMemoPage />
         </ProtectedRoute>
       } />
       <Route path="/manage-report-memo/:memoId" element={

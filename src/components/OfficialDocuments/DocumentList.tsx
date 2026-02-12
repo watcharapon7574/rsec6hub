@@ -1119,8 +1119,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center ${reportMemoIds.has(memo.id) ? 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400' : 'border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400'}`}
                             onClick={() => {
                               if (reportMemoIds.has(memo.id)) {
-                                // Navigate to edit report memo page
-                                navigate(`/edit-report-memo/${memo.id}`);
+                                // Navigate to create report memo page with edit mode
+                                navigate(`/create-report-memo?edit=${memo.id}`);
                               } else {
                                 // Navigate to edit page based on document type
                                 const editRoute = getDocumentEditRoute(memo, memo.id);

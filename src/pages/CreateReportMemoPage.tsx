@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useMemo } from '@/hooks/useMemo';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
+import { useAllMemos } from '@/hooks/useAllMemos';
 import { MemoFormData } from '@/types/memo';
-import { FileText, ArrowLeft, Sparkles, Eye, ChevronDown, ChevronUp, ClipboardCheck, AlertCircle } from 'lucide-react';
+import { FileText, ArrowLeft, Sparkles, Eye, ChevronDown, ChevronUp, ClipboardCheck, AlertCircle, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AnimatedProgress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -31,12 +32,26 @@ interface TaskInfo {
 const CreateReportMemoPage = () => {
   const navigate = useNavigate();
   const { taskId } = useParams<{ taskId: string }>();
+  const [searchParams] = useSearchParams();
+  const editMemoId = searchParams.get('edit');
   const { profile } = useEmployeeAuth();
   const { createMemoDraft, loading } = useMemo();
+  const { getMemoById, refetch } = useAllMemos();
   const { toast } = useToast();
 
+  // Edit mode states
+  const [isEditMode, setIsEditMode] = useState(!!editMemoId);
+  const [originalMemo, setOriginalMemo] = useState<any>(null);
+  const [rejectionInfo, setRejectionInfo] = useState<{
+    name: string;
+    comment: string;
+    rejected_at: string;
+    position?: string;
+  } | null>(null);
+  const [loadingMemo, setLoadingMemo] = useState(false);
+
   const [taskInfo, setTaskInfo] = useState<TaskInfo | null>(null);
-  const [loadingTask, setLoadingTask] = useState(true);
+  const [loadingTask, setLoadingTask] = useState(!editMemoId); // Only load task in create mode
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [grammarLoading, setGrammarLoading] = useState(false);
   const [showGrammarModal, setShowGrammarModal] = useState(false);
@@ -75,9 +90,95 @@ const CreateReportMemoPage = () => {
     attached_files: []
   });
 
-  // Load task info
+  // Load memo for edit mode (same pattern as CreateMemoPage)
+  useEffect(() => {
+    const loadMemoForEdit = async () => {
+      if (!editMemoId) return;
+
+      setIsEditMode(true);
+      setLoadingMemo(true);
+
+      try {
+        // Try to get from hook first
+        let memo = getMemoById ? getMemoById(editMemoId) : null;
+
+        // If not found, fetch directly
+        if (!memo) {
+          const { data, error } = await supabase
+            .from('memos')
+            .select('*')
+            .eq('id', editMemoId)
+            .single();
+
+          if (error) throw error;
+          memo = data as any;
+        }
+
+        if (!memo) {
+          throw new Error('Memo not found');
+        }
+
+        setOriginalMemo(memo);
+
+        // Set form data from memo (same pattern as CreateMemoPage)
+        setFormData({
+          doc_number: memo.doc_number || '',
+          date: memo.date || new Date().toISOString().split('T')[0],
+          subject: memo.subject || '',
+          attachment_title: memo.attachment_title || '',
+          introduction: memo.introduction || '',
+          author_name: memo.author_name || (profile ? `${profile.first_name} ${profile.last_name}` : ''),
+          author_position: memo.author_position || profile?.current_position || profile?.job_position || profile?.position || '',
+          fact: memo.fact || '',
+          proposal: memo.proposal || '',
+          attached_files: memo.attached_files || []
+        });
+
+        // Load rejection info if any
+        if (memo.rejected_name_comment) {
+          try {
+            let rejectedData;
+            if (typeof memo.rejected_name_comment === 'string') {
+              rejectedData = JSON.parse(memo.rejected_name_comment);
+            } else {
+              rejectedData = memo.rejected_name_comment;
+            }
+            setRejectionInfo({
+              name: rejectedData.name || 'ไม่ระบุ',
+              comment: rejectedData.comment || 'ไม่มีความคิดเห็น',
+              rejected_at: rejectedData.rejected_at || new Date().toISOString(),
+              position: rejectedData.position || ''
+            });
+          } catch (e) {
+            console.error('Error parsing rejected_name_comment:', e);
+          }
+        }
+
+      } catch (error) {
+        console.error('Error loading memo for edit:', error);
+        toast({
+          title: 'เกิดข้อผิดพลาด',
+          description: 'ไม่สามารถโหลดข้อมูลเอกสารได้',
+          variant: 'destructive'
+        });
+        navigate('/documents');
+      } finally {
+        setLoadingMemo(false);
+      }
+    };
+
+    loadMemoForEdit();
+  }, [editMemoId, getMemoById, navigate, toast, profile]);
+
+  // Load task info (only in create mode)
   useEffect(() => {
     const loadTaskInfo = async () => {
+      // Skip if in edit mode
+      if (editMemoId) {
+        setLoadingTask(false);
+        return;
+      }
+
       if (!taskId) {
         toast({
           title: 'ไม่พบข้อมูลงาน',
@@ -188,6 +289,40 @@ const CreateReportMemoPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Edit mode - update existing memo
+    if (isEditMode && originalMemo) {
+      const submissionData = {
+        ...formData,
+        doc_number: formData.doc_number.trim() || ''
+      };
+
+      // Use pre-generated PDF if preview is still valid
+      const validPreviewBlob = isPreviewValid() ? previewBlob : undefined;
+
+      // Use createMemoDraft with memo_id to trigger update mode
+      const result = await createMemoDraft({
+        ...submissionData,
+        memo_id: originalMemo.id,
+        attachedFileObjects: selectedFiles,
+        preGeneratedPdfBlob: validPreviewBlob
+      } as any);
+
+      if (result.success) {
+        // Refetch memos
+        if (refetch) {
+          await refetch();
+        }
+
+        toast({
+          title: 'แก้ไขสำเร็จ',
+          description: 'บันทึกข้อความรายงานผลถูกแก้ไขเรียบร้อยแล้ว',
+        });
+        navigate('/documents');
+      }
+      return;
+    }
+
+    // Create mode - validate taskId and taskInfo
     if (!taskId || !taskInfo) {
       toast({
         title: 'ไม่พบข้อมูลงาน',
@@ -442,7 +577,7 @@ const CreateReportMemoPage = () => {
     };
   }, [previewUrl]);
 
-  if (loadingTask) {
+  if (loadingTask || loadingMemo) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="p-8">
@@ -451,7 +586,9 @@ const CreateReportMemoPage = () => {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
-            <p className="text-lg font-medium">กำลังโหลดข้อมูลงาน...</p>
+            <p className="text-lg font-medium">
+              {isEditMode ? 'กำลังโหลดข้อมูลเอกสาร...' : 'กำลังโหลดข้อมูลงาน...'}
+            </p>
           </div>
         </Card>
       </div>
@@ -547,8 +684,30 @@ const CreateReportMemoPage = () => {
             </Button>
           </div>
 
-          {/* Task Info Card */}
-          {taskInfo && (
+          {/* Rejection Info Card (Edit Mode) */}
+          {isEditMode && rejectionInfo && (
+            <Card className="mb-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
+              <CardHeader className="bg-red-100 dark:bg-red-900 border-b border-red-200 dark:border-red-800">
+                <CardTitle className="text-red-800 dark:text-red-200 flex items-center gap-2">
+                  <XCircle className="h-5 w-5" />
+                  เหตุผลที่ถูกตีกลับ
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-2 text-sm">
+                <div><span className="font-medium">ตีกลับโดย:</span> {rejectionInfo.name}</div>
+                {rejectionInfo.position && (
+                  <div><span className="font-medium">ตำแหน่ง:</span> {rejectionInfo.position}</div>
+                )}
+                <div><span className="font-medium">เหตุผล:</span> {rejectionInfo.comment}</div>
+                {rejectionInfo.rejected_at && (
+                  <div><span className="font-medium">เมื่อ:</span> {new Date(rejectionInfo.rejected_at).toLocaleString('th-TH')}</div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Task Info Card (Create Mode Only) */}
+          {!isEditMode && taskInfo && (
             <Card className="mb-6 border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950">
               <CardHeader className="bg-teal-100 dark:bg-teal-900 border-b border-teal-200 dark:border-teal-800">
                 <CardTitle className="text-teal-800 dark:text-teal-200 flex items-center gap-2">
@@ -590,12 +749,26 @@ const CreateReportMemoPage = () => {
                 </div>
 
                 <h1 className="text-3xl font-bold mb-3 tracking-tight">
-                  บันทึกข้อความรายงานผล
+                  {isEditMode ? 'แก้ไขบันทึกข้อความรายงานผล' : 'บันทึกข้อความรายงานผล'}
                 </h1>
 
                 <p className="text-teal-100 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-                  สร้างบันทึกข้อความรายงานผลการปฏิบัติงานอย่างเป็นทางการ
+                  {isEditMode
+                    ? 'แก้ไขเอกสารตามข้อเสนอแนะและส่งใหม่'
+                    : 'สร้างบันทึกข้อความรายงานผลการปฏิบัติงานอย่างเป็นทางการ'}
                 </p>
+
+                {/* Status Badge for Edit Mode */}
+                {isEditMode && (
+                  <div className="mt-4">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-500/20 text-yellow-100 border border-yellow-500/30">
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      โหมดแก้ไข
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="absolute bottom-0 left-0 right-0">
@@ -802,7 +975,9 @@ const CreateReportMemoPage = () => {
                     disabled={loading || grammarLoading}
                     className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-8 py-2 rounded-lg shadow-md"
                   >
-                    {loading ? 'กำลังส่งรายงาน...' : 'ส่งรายงาน'}
+                    {loading
+                      ? (isEditMode ? 'กำลังบันทึก...' : 'กำลังส่งรายงาน...')
+                      : (isEditMode ? 'บันทึกการแก้ไข' : 'ส่งรายงาน')}
                   </Button>
                   <Button
                     type="button"

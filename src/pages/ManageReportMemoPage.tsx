@@ -445,16 +445,25 @@ const ManageReportMemoPage: React.FC = () => {
 
   // Handle reject report - รับ reason จาก RejectionCard component
   const handleRejectFromCard = async (reason: string) => {
-    if (!reason.trim() || !memoId || !taskAssignment) return;
+    if (!reason.trim() || !memoId || !taskAssignment || !profile) return;
 
     setIsRejecting(true);
     try {
+      // สร้าง rejected_name_comment สำหรับแสดงในรายการและหน้าแก้ไข
+      const rejectedNameComment = {
+        name: `${profile.first_name} ${profile.last_name}`,
+        comment: reason.trim(),
+        rejected_at: new Date().toISOString(),
+        position: profile.current_position || profile.job_position || profile.position || ''
+      };
+
       // 1. Update report memo status to rejected
       const { error: memoError } = await supabase
         .from('memos')
         .update({
           status: 'rejected',
-          rejection_reason: reason.trim(),
+          current_signer_order: 0, // ระบุว่าถูกตีกลับ
+          rejected_name_comment: rejectedNameComment, // ข้อมูลผู้ตีกลับ
           updated_at: new Date().toISOString()
         })
         .eq('id', memoId);

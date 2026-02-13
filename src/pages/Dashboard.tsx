@@ -16,28 +16,11 @@ import {
 } from 'lucide-react';
 
 const Dashboard = () => {
-  const { profile, loading, isAuthenticated } = useEmployeeAuth();
+  // ไม่ต้องเช็ค loading/isAuthenticated ที่นี่ เพราะ ProtectedRoute guard อยู่แล้ว
+  // การสร้าง useEmployeeAuth() instance ใหม่จะทำให้ loading ค้างซ้ำซ้อน
+  const { profile } = useEmployeeAuth();
 
   const navigate = useNavigate();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="text-center p-8">
-          <h2 className="text-xl font-semibold mb-2 text-foreground">กรุณาเข้าสู่ระบบ</h2>
-          <p className="text-muted-foreground">เพื่อเข้าใช้งาน RSEC6 OfficeHub</p>
-        </Card>
-      </div>
-    );
-  }
 
   // Show dashboard even if profile is still loading
   const displayName = profile ? `${profile.first_name} ${profile.last_name}` : 'ผู้ใช้งาน';

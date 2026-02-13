@@ -84,18 +84,22 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, position, employee_id')
+        .select('user_id, first_name, last_name, position, employee_id, is_admin')
         .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
-        .limit(5);
+        .limit(10);
 
       if (!error && data) {
-        // Filter out already selected members
+        // Filter out already selected members and admin accounts
         const existingIds = new Set([
           ...teamMembers.map(m => m.user_id),
           ...newMembers.map(m => m.user_id),
           currentUserId
         ]);
-        setSearchResults(data.filter(u => !existingIds.has(u.user_id)));
+        setSearchResults(
+          data
+            .filter(u => !existingIds.has(u.user_id) && u.is_admin !== true)
+            .slice(0, 5)
+        );
       }
     } catch (err) {
       console.error('Search error:', err);

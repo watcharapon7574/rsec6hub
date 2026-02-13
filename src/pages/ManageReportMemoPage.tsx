@@ -194,6 +194,32 @@ const ManageReportMemoPage: React.FC = () => {
             (signer, index, self) => index === self.findIndex(s => s.order === signer.order)
           );
 
+          // Replace order 1 (ผู้เขียน) with reporter's info
+          if (memo.created_by) {
+            const { data: reporterProfile } = await supabase
+              .from('profiles')
+              .select('user_id, first_name, last_name, prefix, position, job_position, academic_rank, org_structure_role, signature_url')
+              .eq('user_id', memo.created_by)
+              .single();
+
+            if (reporterProfile) {
+              const firstSignerIndex = uniqueSigners.findIndex(s => s.order === 1);
+              if (firstSignerIndex !== -1) {
+                uniqueSigners[firstSignerIndex] = {
+                  ...uniqueSigners[firstSignerIndex],
+                  user_id: reporterProfile.user_id,
+                  name: `${reporterProfile.prefix || ''}${reporterProfile.first_name} ${reporterProfile.last_name}`.trim(),
+                  position: reporterProfile.job_position || reporterProfile.position || uniqueSigners[firstSignerIndex].position,
+                  job_position: reporterProfile.job_position,
+                  academic_rank: reporterProfile.academic_rank,
+                  org_structure_role: reporterProfile.org_structure_role,
+                  prefix: reporterProfile.prefix,
+                  signature_url: reporterProfile.signature_url
+                };
+              }
+            }
+          }
+
           setSigners(uniqueSigners.sort((a, b) => a.order - b.order));
         }
 

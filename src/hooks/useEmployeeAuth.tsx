@@ -42,29 +42,34 @@ export const useEmployeeAuth = () => {
               console.error('Failed to load profile from Supabase user:', error);
             });
           } else if (session.user.id) {
-            // Try to find profile by user_id
-            try {
-              const { data: profileData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-              
-              if (profileData) {
-                const profile = {
-                  ...profileData,
-                  marital_status: profileData.marital_status as Profile['marital_status'],
-                  position: profileData.position as Profile['position']
-                } as Profile;
-                
-                if (isMounted) {
-                  setProfile(profile);
-                  console.log('✅ Profile loaded by user_id:', profile.employee_id);
-                }
-              }
-            } catch (error) {
-              console.error('Failed to load profile by user_id:', error);
+            // ผู้ใช้ใหม่ไม่มี phone ใน user_metadata
+            // โหลด profile จาก localStorage ก่อน (ทันที) แล้วค่อย refresh จาก DB ทีหลัง
+            const cachedProfile = getCurrentProfile();
+            if (cachedProfile && isMounted) {
+              setProfile(cachedProfile);
+              console.log('✅ Profile loaded from localStorage:', cachedProfile.employee_id);
             }
+
+            // Refresh จาก DB แบบ non-blocking (ไม่ await เพราะอาจ deadlock กับ Supabase internal lock)
+            supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle()
+              .then(({ data: profileData }) => {
+                if (profileData && isMounted) {
+                  const dbProfile = {
+                    ...profileData,
+                    marital_status: profileData.marital_status as Profile['marital_status'],
+                    position: profileData.position as Profile['position']
+                  } as Profile;
+                  setProfile(dbProfile);
+                  console.log('✅ Profile refreshed from DB by user_id:', dbProfile.employee_id);
+                }
+              })
+              .catch(error => {
+                console.error('Failed to load profile by user_id:', error);
+              });
           }
         } else {
           // No Supabase session

@@ -57,24 +57,13 @@ const ScrollToTop = () => {
   return null;
 };
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, loading } = useEmployeeAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background w-full">
-        <div className="p-8 rounded-lg animate-pulse">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-4 text-center">กำลังโหลด...</p>
-        </div>
-      </div>
-    );
-  }
-  
+// ProtectedRoute ใช้ auth state จาก AppContent (props) แทนการสร้าง useEmployeeAuth ใหม่
+// เพื่อป้องกัน loading ค้างจากการมีหลาย hook instance
+const ProtectedRoute = ({ children, isAuthenticated }: { children: React.ReactNode; isAuthenticated: boolean }) => {
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
-  
+
   return (
     <div className="w-full bg-background min-h-screen overflow-x-hidden">
       <TopBar />
@@ -126,132 +115,132 @@ const AppContent = () => {
           element={<TelegramAssigneesPage />}
         />
       <Route path="/dashboard" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <Dashboard />
         </ProtectedRoute>
       } />
       <Route path="/profile" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <Profile />
         </ProtectedRoute>
       } />
       <Route path="/leave-requests" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <LeaveRequestsPage />
         </ProtectedRoute>
       } />
       <Route path="/daily-reports" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <DailyReportsPage />
         </ProtectedRoute>
       } />
       <Route path="/documents" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <OfficialDocumentsPage />
         </ProtectedRoute>
       } />
       <Route path="/create-document" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <CreateDocumentPage />
         </ProtectedRoute>
       } />
       <Route path="/create-memo" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <CreateMemoPage />
         </ProtectedRoute>
       } />
       <Route path="/report-memo/:taskId" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <CreateReportMemoPage />
         </ProtectedRoute>
       } />
       <Route path="/create-report-memo" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <CreateReportMemoPage />
         </ProtectedRoute>
       } />
       <Route path="/manage-report-memo/:memoId" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <ManageReportMemoPage />
         </ProtectedRoute>
       } />
       <Route path="/create-doc-receive" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <CreateDocReceivePage />
         </ProtectedRoute>
       } />
       <Route path="/document-manage/:memoId" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <DocumentManagePage />
         </ProtectedRoute>
       } />
       <Route path="/pdf-document-manage/:memoId" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <PDFDocumentManagePage />
         </ProtectedRoute>
       } />
       <Route path="/pdf-receive-manage/:memoId" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <PDFReceiveManagePage />
         </ProtectedRoute>
       } />
       <Route path="/edit-doc-receive/:memoId" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <EditDocReceivePage />
         </ProtectedRoute>
       } />
       <Route path="/approve-document/:memoId" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <ApproveDocumentPage />
         </ProtectedRoute>
       } />
       <Route path="/pdf-just-preview" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <PDFjustPreview />
         </ProtectedRoute>
       } />
       <Route path="/notifications" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <NotificationsPage />
         </ProtectedRoute>
       } />
       <Route path="/task-assignment" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <TaskAssignmentPage />
         </ProtectedRoute>
       } />
       <Route path="/assigned-tasks" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <AssignedTasksPage />
         </ProtectedRoute>
       } />
       <Route path="/document-detail" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <DocumentDetailPage />
         </ProtectedRoute>
       } />
       <Route path="/test-queue" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <TestRequestQueuePage />
         </ProtectedRoute>
       } />
       <Route path="/QRealtime" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <QueueRealtimePage />
         </ProtectedRoute>
       } />
       <Route path="/admin/profiles" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <AdminProfileManagementPage />
         </ProtectedRoute>
       } />
       <Route path="/admin/otp-management" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <AdminOtpManagementPage />
         </ProtectedRoute>
       } />
       <Route path="/railway" element={
-        <ProtectedRoute>
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
           <RailwayManagementPage />
         </ProtectedRoute>
       } />

@@ -46,13 +46,13 @@ const CreateDocReceivePage = () => {
   useEffect(() => {
     const fetchSuggestedDocNumber = async () => {
       try {
-        const currentYear = new Date().getFullYear() + 543; // Thai Buddhist year
+        const shortYear = (new Date().getFullYear() + 543).toString().slice(-2); // e.g. "69"
 
-        // Get max doc_number for current year
+        // Get max doc_number for current year (format: 0001/69)
         const { data: existingDocs, error: fetchError } = await (supabase as any)
           .from('doc_receive')
           .select('doc_number')
-          .ilike('doc_number', `${currentYear}/%`)
+          .ilike('doc_number', `%/${shortYear}`)
           .order('created_at', { ascending: false });
 
         if (fetchError) {
@@ -60,11 +60,11 @@ const CreateDocReceivePage = () => {
           return;
         }
 
-        // Extract max number
+        // Extract max running number (before /)
         let maxNumber = 0;
         if (existingDocs && existingDocs.length > 0) {
           for (const doc of existingDocs) {
-            const match = doc.doc_number.match(/\/(\d+)$/);
+            const match = doc.doc_number.match(/^(\d+)\//);
             if (match) {
               const num = parseInt(match[1], 10);
               if (num > maxNumber) maxNumber = num;
@@ -73,7 +73,7 @@ const CreateDocReceivePage = () => {
         }
 
         const nextNumber = maxNumber + 1;
-        const suggested = `${currentYear}/${nextNumber.toString().padStart(4, '0')}`;
+        const suggested = `${nextNumber.toString().padStart(4, '0')}/${shortYear}`;
         setSuggestedDocNumber(suggested);
       } catch (error) {
         console.error('Error fetching suggested doc number:', error);
@@ -105,7 +105,7 @@ const CreateDocReceivePage = () => {
             setFormData({
               date: doc.date || new Date().toISOString().split('T')[0],
               subject: doc.subject || '',
-              docNumber: doc.doc_number ? doc.doc_number.split('/')[1] || '' : '',
+              docNumber: doc.doc_number ? doc.doc_number.split('/')[0] || '' : '',
               pdfFile: null
             });
 
@@ -171,16 +171,16 @@ const CreateDocReceivePage = () => {
   };
 
   const getDocNumberValue = () => {
-    const currentYear = new Date().getFullYear() + 543;
-    // If user typed something, use it. Otherwise use suggested number
+    const shortYear = (new Date().getFullYear() + 543).toString().slice(-2);
+    // If user typed something, use it as running number. Otherwise use suggested number
     const numPart = formData.docNumber || getSuggestedNumber();
-    return `${currentYear}/${numPart}`;
+    return `${numPart}/${shortYear}`;
   };
 
   const getSuggestedNumber = () => {
     if (!suggestedDocNumber) return '';
-    // Extract just the number part from suggested (e.g., "2568/001" -> "001")
-    const match = suggestedDocNumber.match(/\/(\d+)$/);
+    // Extract just the running number part from suggested (e.g., "0001/69" -> "0001")
+    const match = suggestedDocNumber.match(/^(\d+)\//);
     return match ? match[1] : '';
   };
 

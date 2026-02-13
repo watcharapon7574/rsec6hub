@@ -195,11 +195,11 @@ const ManageReportMemoPage: React.FC = () => {
           );
 
           // Replace order 1 (ผู้เขียน) with reporter's info
-          if (memo.created_by) {
+          if (memo.user_id) {
             const { data: reporterProfile } = await supabase
               .from('profiles')
               .select('user_id, first_name, last_name, prefix, position, job_position, academic_rank, org_structure_role, signature_url')
-              .eq('user_id', memo.created_by)
+              .eq('user_id', memo.user_id)
               .single();
 
             if (reporterProfile) {

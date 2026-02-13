@@ -18,7 +18,9 @@ const SessionTimer = () => {
   }, []);
 
   useEffect(() => {
-    if (timeRemaining === null || (timeRemaining && timeRemaining.hours === 0 && timeRemaining.minutes === 0 && timeRemaining.seconds === 0)) {
+    // sign out เฉพาะเมื่อ session หมดเวลาจริงๆ (hours=0, minutes=0, seconds=0)
+    // ไม่ sign out เมื่อ timeRemaining === null เพราะอาจแค่ยังไม่มี session record
+    if (timeRemaining && timeRemaining.hours === 0 && timeRemaining.minutes === 0 && timeRemaining.seconds === 0) {
       (async () => {
         await signOut();
         navigate('/auth');

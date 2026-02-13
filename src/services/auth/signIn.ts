@@ -40,33 +40,7 @@ export const signIn = async (phone: string, otp: string): Promise<AuthResult> =>
     console.log('OTP verified successfully, setting Supabase session...');
     console.log('🔄 Processing response data...');
     
-    // ตั้งค่า Supabase Auth session จาก Edge Function
-    if (result.session) {
-      console.log('🔄 Setting Supabase session with tokens...');
-      console.log('Access Token length:', result.session.access_token?.length);
-      
-      try {
-        // ต้อง await setSession เพื่อให้ Supabase client มี session ก่อน navigate
-        // ถ้าไม่ await จะเกิด race condition: getSession() ใน component อื่นจะรอ internal lock
-        // ทำให้ loading ค้างไม่จบ (โดยเฉพาะผู้ใช้ใหม่ที่เข้าครั้งแรก)
-        const { error: setSessionError } = await supabase.auth.setSession({
-          access_token: result.session.access_token,
-          refresh_token: result.session.refresh_token
-        });
-
-        if (setSessionError) {
-          console.error('⚠️ setSession error:', setSessionError);
-        } else {
-          console.log('✅ setSession completed successfully');
-        }
-
-        console.log('🚀 Session established, continuing with login...');
-        console.log('User ID:', result.session.user.id);
-      } catch (error) {
-        console.error('💥 Session setup failed:', error);
-        // Don't return error here, continue with login
-      }
-    } else {
+    if (!result.session) {
       console.error('❌ No session in response from verify-otp');
       return { error: new Error('ไม่ได้รับ session จากเซิร์ฟเวอร์') };
     }
@@ -74,17 +48,11 @@ export const signIn = async (phone: string, otp: string): Promise<AuthResult> =>
     // Get user และ profile data จาก response
     const { session: sessionData, profile: profileData } = result;
     console.log('📊 Retrieved data - session:', !!sessionData, 'profile:', !!profileData);
-    console.log('Session user:', sessionData?.user?.id);
-    console.log('Profile employee_id:', profileData?.employee_id);
 
     if (!sessionData?.user || !profileData) {
       console.error('Missing user or profile data from verification');
-      console.error('Session data:', sessionData);
-      console.error('Profile data:', profileData);
       return { error: new Error('เกิดข้อผิดพลาดในการยืนยันตัวตน') };
     }
-
-    console.log('🎉 Authentication successful with Supabase Auth:', sessionData.user.id);
 
     // Cast the profile data to Profile type with proper type casting
     const profile: Profile = {
@@ -93,12 +61,30 @@ export const signIn = async (phone: string, otp: string): Promise<AuthResult> =>
       position: profileData.position as Profile['position']
     };
 
-    // Store authentication data (for backward compatibility only)
+    // ⚠️ สำคัญ: store auth data ก่อน setSession
+    // เพราะ setSession จะ trigger onAuthStateChange → React re-render → SessionTimer mount
+    // ถ้า authData ไม่อยู่ใน localStorage ตอนนั้น SessionTimer จะ sign out ทันที
     storeAuthData(profile);
+    console.log('💾 Auth data stored to localStorage');
+
+    // ตั้งค่า Supabase Auth session
+    console.log('🔄 Setting Supabase session with tokens...');
+    try {
+      const { error: setSessionError } = await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token
+      });
+
+      if (setSessionError) {
+        console.error('⚠️ setSession error:', setSessionError);
+      } else {
+        console.log('✅ setSession completed successfully');
+      }
+    } catch (error) {
+      console.error('💥 Session setup failed:', error);
+    }
 
     // Create session record in user_sessions table for device tracking
-    // This enables single-device restriction for non-admins
-    // Admins can have multiple devices (handled in createSession)
     if (sessionData.user?.id) {
       console.log('📝 Creating session record for user:', sessionData.user.id);
       const { error: sessionError } = await createSession(sessionData.user.id);

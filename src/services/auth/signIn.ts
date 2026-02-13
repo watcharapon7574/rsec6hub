@@ -46,19 +46,21 @@ export const signIn = async (phone: string, otp: string): Promise<AuthResult> =>
       console.log('Access Token length:', result.session.access_token?.length);
       
       try {
-        // ใช้ setSession แบบไม่รอ และให้ onAuthStateChange จัดการ
-        supabase.auth.setSession({
+        // ต้อง await setSession เพื่อให้ Supabase client มี session ก่อน navigate
+        // ถ้าไม่ await จะเกิด race condition: getSession() ใน component อื่นจะรอ internal lock
+        // ทำให้ loading ค้างไม่จบ (โดยเฉพาะผู้ใช้ใหม่ที่เข้าครั้งแรก)
+        const { error: setSessionError } = await supabase.auth.setSession({
           access_token: result.session.access_token,
           refresh_token: result.session.refresh_token
-        }).then(({ error }) => {
-          if (error) {
-            console.error('⚠️ setSession error (non-blocking):', error);
-          } else {
-            console.log('✅ setSession completed successfully');
-          }
         });
 
-        console.log('🚀 Session setting initiated, continuing with login...');
+        if (setSessionError) {
+          console.error('⚠️ setSession error:', setSessionError);
+        } else {
+          console.log('✅ setSession completed successfully');
+        }
+
+        console.log('🚀 Session established, continuing with login...');
         console.log('User ID:', result.session.user.id);
       } catch (error) {
         console.error('💥 Session setup failed:', error);

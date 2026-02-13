@@ -356,7 +356,7 @@ const ReportMemoList: React.FC<ReportMemoListProps> = ({
 
                       {/* Assignees - แสดงผู้เกี่ยวข้อง (scroll แนวนอน, จำกัด 5 คน) */}
                       {assigneesMap.has(memo.id) && (
-                        <div className="hidden sm:flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-md px-2 py-0.5 max-w-[280px] overflow-x-auto">
+                        <div className="hidden sm:flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-md px-2 py-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           <Users className="h-3 w-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                           <div className="flex items-center gap-1">
                             {assigneesMap.get(memo.id)!.slice(0, 5).map((assignee, idx) => (

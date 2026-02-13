@@ -554,7 +554,7 @@ const PDFReceiveManagePage: React.FC = () => {
                     title: "ตีกลับเรียบร้อย",
                     description: "หนังสือรับถูกตีกลับแล้ว",
                   });
-                  navigate('/official-documents');
+                  navigate('/documents');
                 } catch (error) {
                   console.error('Error rejecting doc_receive:', error);
                   toast({

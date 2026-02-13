@@ -1082,28 +1082,6 @@ const ManageReportMemoPage: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4 space-y-3">
-                <div>
-                  <Label className="text-muted-foreground">เรื่อง</Label>
-                  <p className="font-medium">{reportMemo?.subject || '-'}</p>
-                </div>
-                {reportMemo?.introduction && (
-                  <div>
-                    <Label className="text-muted-foreground">คำขึ้นต้น</Label>
-                    <p>{reportMemo.introduction}</p>
-                  </div>
-                )}
-                {reportMemo?.fact && (
-                  <div>
-                    <Label className="text-muted-foreground">ข้อเท็จจริง</Label>
-                    <p className="whitespace-pre-wrap">{reportMemo.fact}</p>
-                  </div>
-                )}
-                {reportMemo?.proposal && (
-                  <div>
-                    <Label className="text-muted-foreground">ข้อเสนอ</Label>
-                    <p className="whitespace-pre-wrap">{reportMemo.proposal}</p>
-                  </div>
-                )}
                 {reportMemo?.pdf_draft_path && (
                   <div className="pt-2">
                     <PDFViewer

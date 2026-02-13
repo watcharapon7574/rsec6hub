@@ -36,6 +36,7 @@ const PDFReceiveManagePage: React.FC = () => {
     title: "กำลังดำเนินการ",
     description: "กรุณารอสักครู่..."
   });
+  const [isRejecting, setIsRejecting] = useState(false);
 
   // Doc receive data
   const [docReceive, setDocReceive] = useState<any>(null);
@@ -525,14 +526,47 @@ const PDFReceiveManagePage: React.FC = () => {
               signers={signers}
               onNext={handleNext}
               onReject={async (reason: string) => {
-                // TODO: Implement reject functionality if needed
-                toast({
-                  title: "ไม่สามารถตีกลับได้",
-                  description: "ฟังก์ชันนี้ยังไม่พร้อมใช้งาน",
-                  variant: "destructive",
-                });
+                if (!memoId || !profile) return;
+                setIsRejecting(true);
+                try {
+                  const updates: any = {
+                    status: 'rejected',
+                    current_signer_order: 0,
+                  };
+
+                  if (reason) {
+                    updates.rejected_name_comment = {
+                      name: `${profile.first_name} ${profile.last_name}`,
+                      comment: reason,
+                      rejected_at: new Date().toISOString(),
+                      position: profile.current_position || profile.job_position || profile.position || ''
+                    };
+                  }
+
+                  const { error } = await (supabase as any)
+                    .from('doc_receive')
+                    .update(updates)
+                    .eq('id', memoId);
+
+                  if (error) throw error;
+
+                  toast({
+                    title: "ตีกลับเรียบร้อย",
+                    description: "หนังสือรับถูกตีกลับแล้ว",
+                  });
+                  navigate('/official-documents');
+                } catch (error) {
+                  console.error('Error rejecting doc_receive:', error);
+                  toast({
+                    title: "เกิดข้อผิดพลาด",
+                    description: "ไม่สามารถตีกลับเอกสารได้",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsRejecting(false);
+                }
               }}
-              isRejecting={false}
+              isRejecting={isRejecting}
               isStepComplete={isStepComplete(1)}
             />
           )}

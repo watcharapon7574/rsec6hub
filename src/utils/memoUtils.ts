@@ -66,6 +66,10 @@ export const isCreateMemoForm = (memo: any): boolean => {
 export const getDocumentEditRoute = (memo: any, memoId: string): string => {
   // Check if this is from doc_receive table (marked with __source_table)
   if (memo?.__source_table === 'doc_receive') {
+    // ถ้าถูกตีกลับ → ไปหน้า re-upload เพื่อ reset status/signer_order
+    if (memo.status === 'rejected') {
+      return `/create-doc-receive?edit=${memoId}`;
+    }
     return `/edit-doc-receive/${memoId}`;
   }
 

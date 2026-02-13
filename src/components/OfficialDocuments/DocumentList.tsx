@@ -1143,7 +1143,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     }
                                   }
                                 }}
-                                disabled={memo.status === 'rejected' || memo.current_signer_order > 1}
+                                disabled={memo.current_signer_order > 1}
                                 title={buttonTitle}
                               >
                                 <IconComponent className="h-4 w-4" />

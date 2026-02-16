@@ -67,9 +67,10 @@ export const RejectionCard: React.FC<RejectionCardProps> = ({
       const url = await uploadAnnotatedPdf(blob, documentId, userId);
       setAnnotatedPdfUrl(url);
       setShowAnnotationEditor(false);
+      setShowReasonInput(true);
       toast({
         title: "บันทึก annotation สำเร็จ",
-        description: "annotation ถูกบันทึกแล้ว กดยืนยันตีกลับเพื่อส่ง",
+        description: "กรุณาระบุเหตุผลแล้วกดยืนยันตีกลับ",
       });
     } catch (error) {
       console.error('Error uploading annotated PDF:', error);
@@ -100,7 +101,13 @@ export const RejectionCard: React.FC<RejectionCardProps> = ({
               </p>
               <Button
                 variant="destructive"
-                onClick={() => setShowReasonInput(true)}
+                onClick={() => {
+                  if (pdfUrl && documentId && userId) {
+                    setShowAnnotationEditor(true);
+                  } else {
+                    setShowReasonInput(true);
+                  }
+                }}
                 className="w-full"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
@@ -177,7 +184,10 @@ export const RejectionCard: React.FC<RejectionCardProps> = ({
         <PDFAnnotationEditor
           pdfUrl={pdfUrl}
           isOpen={showAnnotationEditor}
-          onClose={() => setShowAnnotationEditor(false)}
+          onClose={() => {
+            setShowAnnotationEditor(false);
+            setShowReasonInput(true);
+          }}
           onSave={handleAnnotationSave}
           isSaving={isSavingAnnotation}
         />

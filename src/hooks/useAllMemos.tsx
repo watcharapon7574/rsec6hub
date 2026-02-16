@@ -83,12 +83,16 @@ export const useAllMemos = () => {
         }))
       });
 
-      // Transform data to match MemoRecord type and add has_in_progress_task
+      // Transform data to match MemoRecord type and add has_in_progress_task + has_active_tasks
       const transformedData = data?.map(memo => {
         const tasks = memo.task_assignments || [];
         // Check for in_progress tasks that are not deleted
         const hasInProgressTask = tasks.some((task: any) =>
           task.status === 'in_progress' && task.deleted_at === null
+        );
+        // Check for active tasks (pending or in_progress, not completed or cancelled)
+        const hasActiveTasks = tasks.some((task: any) =>
+          (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
         );
 
         // Debug log - ล็อกทุก memo ที่มี is_assigned
@@ -99,7 +103,8 @@ export const useAllMemos = () => {
             is_assigned: memo.is_assigned,
             tasks: tasks,
             tasksLength: tasks.length,
-            hasInProgressTask: hasInProgressTask
+            hasInProgressTask: hasInProgressTask,
+            hasActiveTasks: hasActiveTasks
           });
         }
 
@@ -115,7 +120,8 @@ export const useAllMemos = () => {
               return [];
             }
           })(),
-          has_in_progress_task: hasInProgressTask
+          has_in_progress_task: hasInProgressTask,
+          has_active_tasks: hasActiveTasks
         };
       }) || [];
 

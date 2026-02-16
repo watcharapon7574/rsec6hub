@@ -41,6 +41,7 @@ import RegisterInternalPage from "@/pages/RegisterInternalPage";
 import RegisterExternalPage from "@/pages/RegisterExternalPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
 import DarkModeToggle from "@/components/Layout/DarkModeToggle";
+import APIMaintenanceBanner from "@/components/Layout/APIMaintenanceBanner";
 
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const ProtectedRoute = ({ children, isAuthenticated }: { children: React.ReactNo
 
   return (
     <div className="w-full bg-background min-h-screen overflow-x-hidden">
+      <APIMaintenanceBanner />
       <TopBar />
       <main className="w-full">
         {children}

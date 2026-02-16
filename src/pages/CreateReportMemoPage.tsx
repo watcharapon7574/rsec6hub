@@ -48,6 +48,7 @@ const CreateReportMemoPage = () => {
     rejected_at: string;
     position?: string;
   } | null>(null);
+  const [annotatedPdfPath, setAnnotatedPdfPath] = useState<string | null>(null);
   const [loadingMemo, setLoadingMemo] = useState(false);
 
   const [taskInfo, setTaskInfo] = useState<TaskInfo | null>(null);
@@ -149,6 +150,11 @@ const CreateReportMemoPage = () => {
           proposal: memo.proposal || '',
           attached_files: parsedAttachedFiles
         });
+
+        // Load annotated PDF path if any
+        if (memo.annotated_pdf_path) {
+          setAnnotatedPdfPath(memo.annotated_pdf_path);
+        }
 
         // Load rejection info if any
         if (memo.rejected_name_comment) {
@@ -718,6 +724,19 @@ const CreateReportMemoPage = () => {
                 <div><span className="font-medium">เหตุผล:</span> {rejectionInfo.comment}</div>
                 {rejectionInfo.rejected_at && (
                   <div><span className="font-medium">เมื่อ:</span> {new Date(rejectionInfo.rejected_at).toLocaleString('th-TH')}</div>
+                )}
+                {annotatedPdfPath && (
+                  <div className="mt-3 pt-3 border-t border-red-200">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                      onClick={() => window.open(annotatedPdfPath, '_blank')}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      ดูเอกสารที่มี annotation จากผู้ตีกลับ
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>

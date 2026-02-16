@@ -387,7 +387,7 @@ const ApproveDocumentPage: React.FC = () => {
   }, [memo, profile, userCanSign, currentUserSigner, currentUserSignature, navigate, toast, hasShownPermissionToast]);
 
   // Handle rejection from RejectionCard
-  const handleReject = async (rejectionReason: string) => {
+  const handleReject = async (rejectionReason: string, annotatedPdfUrl?: string) => {
     if (!memoId || !memo || !profile) return;
 
     setIsRejecting(true);
@@ -395,13 +395,22 @@ const ApproveDocumentPage: React.FC = () => {
       console.log('🔄 ApproveDocumentPage: Calling updateDocumentApproval for rejection', {
         memoId,
         rejectionReason,
+        annotatedPdfUrl: annotatedPdfUrl ? 'yes' : 'no',
         isDocReceive,
         profile: { name: `${profile.first_name} ${profile.last_name}`, position: profile.position }
       });
 
       const result = await updateDocumentApproval(memoId, 'reject', rejectionReason);
-      
+
       if (result.success) {
+        // Save annotated PDF URL if provided (memo/report_memo only)
+        if (annotatedPdfUrl && !isDocReceive) {
+          await (supabase as any)
+            .from('memos')
+            .update({ annotated_pdf_path: annotatedPdfUrl })
+            .eq('id', memoId);
+        }
+
         toast({
           title: "ตีกลับเอกสารสำเร็จ",
           description: "เอกสารถูกตีกลับไปยังผู้เขียนเพื่อแก้ไข",
@@ -1138,9 +1147,12 @@ const ApproveDocumentPage: React.FC = () => {
             </Card>
 
             {/* Rejection Card */}
-            <RejectionCard 
+            <RejectionCard
               onReject={handleReject}
               isLoading={isRejecting}
+              pdfUrl={!isDocReceive && memo?.pdf_draft_path ? (extractPdfUrl(memo.pdf_draft_path) || undefined) : undefined}
+              documentId={memoId}
+              userId={profile?.user_id}
             />
           </div>
 

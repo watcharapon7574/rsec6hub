@@ -32,6 +32,7 @@ const CreateMemoPage = () => {
   const [isEditMode, setIsEditMode] = useState(!!editMemoId);
   const [originalMemo, setOriginalMemo] = useState<any>(null);
   const [rejectionComments, setRejectionComments] = useState<any[]>([]);
+  const [annotatedPdfPath, setAnnotatedPdfPath] = useState<string | null>(null);
   const [loadingMemo, setLoadingMemo] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [grammarLoading, setGrammarLoading] = useState(false);
@@ -142,6 +143,11 @@ const CreateMemoPage = () => {
           proposal: memo.proposal || '',
           attached_files: parsedAttachedFiles
         });
+
+        // Load annotated PDF path if any
+        if ((memo as any).annotated_pdf_path) {
+          setAnnotatedPdfPath((memo as any).annotated_pdf_path);
+        }
 
         // Load rejection comments if any from rejected_name_comment
         if ((memo as any).rejected_name_comment) {
@@ -635,6 +641,19 @@ const CreateMemoPage = () => {
                     </AlertDescription>
                   </Alert>
                 ))}
+                {annotatedPdfPath && (
+                  <div className="mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                      onClick={() => window.open(annotatedPdfPath, '_blank')}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      ดูเอกสารที่มี annotation จากผู้ตีกลับ
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

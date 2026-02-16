@@ -477,7 +477,7 @@ const ManageReportMemoPage: React.FC = () => {
   };
 
   // Handle reject report - รับ reason จาก RejectionCard component
-  const handleRejectFromCard = async (reason: string, annotatedPdfUrl?: string) => {
+  const handleRejectFromCard = async (reason: string, annotatedPdfUrl?: string, annotatedAttachments?: string[]) => {
     // Debug: ตรวจสอบค่าที่จำเป็น
     console.log('🔴 handleRejectFromCard called:', { reason: reason?.trim(), memoId, taskAssignment: !!taskAssignment, profile: !!profile });
 
@@ -517,6 +517,9 @@ const ManageReportMemoPage: React.FC = () => {
       };
       if (annotatedPdfUrl) {
         updateData.annotated_pdf_path = annotatedPdfUrl;
+      }
+      if (annotatedAttachments && annotatedAttachments.length > 0) {
+        updateData.annotated_attachment_paths = JSON.stringify(annotatedAttachments);
       }
 
       const { error: memoError } = await (supabase as any)
@@ -1193,6 +1196,7 @@ const ManageReportMemoPage: React.FC = () => {
               onReject={handleRejectFromCard}
               isLoading={isRejecting}
               pdfUrl={reportMemo?.pdf_draft_path ? (extractPdfUrl(reportMemo.pdf_draft_path) || undefined) : undefined}
+              attachedFiles={getAttachedFiles(reportMemo)}
               documentId={memoId}
               userId={profile?.user_id}
             />

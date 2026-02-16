@@ -33,6 +33,7 @@ const CreateMemoPage = () => {
   const [originalMemo, setOriginalMemo] = useState<any>(null);
   const [rejectionComments, setRejectionComments] = useState<any[]>([]);
   const [annotatedPdfPath, setAnnotatedPdfPath] = useState<string | null>(null);
+  const [annotatedAttachmentPaths, setAnnotatedAttachmentPaths] = useState<string[]>([]);
   const [loadingMemo, setLoadingMemo] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [grammarLoading, setGrammarLoading] = useState(false);
@@ -147,6 +148,15 @@ const CreateMemoPage = () => {
         // Load annotated PDF path if any
         if ((memo as any).annotated_pdf_path) {
           setAnnotatedPdfPath((memo as any).annotated_pdf_path);
+        }
+        // Load annotated attachment paths if any
+        if ((memo as any).annotated_attachment_paths) {
+          try {
+            const paths = typeof (memo as any).annotated_attachment_paths === 'string'
+              ? JSON.parse((memo as any).annotated_attachment_paths)
+              : (memo as any).annotated_attachment_paths;
+            if (Array.isArray(paths)) setAnnotatedAttachmentPaths(paths);
+          } catch { /* ignore parse error */ }
         }
 
         // Load rejection comments if any from rejected_name_comment
@@ -641,17 +651,31 @@ const CreateMemoPage = () => {
                     </AlertDescription>
                   </Alert>
                 ))}
-                {annotatedPdfPath && (
-                  <div className="mt-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-orange-300 text-orange-700 hover:bg-orange-50"
-                      onClick={() => window.open(annotatedPdfPath, '_blank')}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      ดูเอกสารที่มี annotation จากผู้ตีกลับ
-                    </Button>
+                {(annotatedPdfPath || annotatedAttachmentPaths.length > 0) && (
+                  <div className="mt-3 space-y-2">
+                    {annotatedPdfPath && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                        onClick={() => window.open(annotatedPdfPath, '_blank')}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        ดูเอกสารหลักที่มี annotation จากผู้ตีกลับ
+                      </Button>
+                    )}
+                    {annotatedAttachmentPaths.map((url, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        size="sm"
+                        className="border-orange-300 text-orange-700 hover:bg-orange-50 ml-2"
+                        onClick={() => window.open(url, '_blank')}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        ดูไฟล์แนบ annotation #{i + 1}
+                      </Button>
+                    ))}
                   </div>
                 )}
               </CardContent>

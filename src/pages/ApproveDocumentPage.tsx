@@ -387,7 +387,7 @@ const ApproveDocumentPage: React.FC = () => {
   }, [memo, profile, userCanSign, currentUserSigner, currentUserSignature, navigate, toast, hasShownPermissionToast]);
 
   // Handle rejection from RejectionCard
-  const handleReject = async (rejectionReason: string, annotatedPdfUrl?: string) => {
+  const handleReject = async (rejectionReason: string, annotatedPdfUrl?: string, annotatedAttachments?: string[]) => {
     if (!memoId || !memo || !profile) return;
 
     setIsRejecting(true);
@@ -404,10 +404,15 @@ const ApproveDocumentPage: React.FC = () => {
 
       if (result.success) {
         // Save annotated PDF URL if provided (memo/report_memo only)
-        if (annotatedPdfUrl && !isDocReceive) {
+        if (!isDocReceive && (annotatedPdfUrl || (annotatedAttachments && annotatedAttachments.length > 0))) {
+          const annotationUpdate: any = {};
+          if (annotatedPdfUrl) annotationUpdate.annotated_pdf_path = annotatedPdfUrl;
+          if (annotatedAttachments && annotatedAttachments.length > 0) {
+            annotationUpdate.annotated_attachment_paths = JSON.stringify(annotatedAttachments);
+          }
           await (supabase as any)
             .from('memos')
-            .update({ annotated_pdf_path: annotatedPdfUrl })
+            .update(annotationUpdate)
             .eq('id', memoId);
         }
 
@@ -1151,6 +1156,13 @@ const ApproveDocumentPage: React.FC = () => {
               onReject={handleReject}
               isLoading={isRejecting}
               pdfUrl={!isDocReceive && memo?.pdf_draft_path ? (extractPdfUrl(memo.pdf_draft_path) || undefined) : undefined}
+              attachedFiles={(() => {
+                if (isDocReceive || !memo?.attached_files) return [];
+                try {
+                  const parsed = typeof memo.attached_files === 'string' ? JSON.parse(memo.attached_files) : memo.attached_files;
+                  return Array.isArray(parsed) ? parsed : [];
+                } catch { return []; }
+              })()}
               documentId={memoId}
               userId={profile?.user_id}
             />

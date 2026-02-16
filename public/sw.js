@@ -1,5 +1,5 @@
-// เพิ่มเวอร์ชันทุกครั้งที่ deploy ใหม่ เพื่อบังคับให้ล้างแคชเก่า
-const CACHE_NAME = 'fastdoc-v1.4.27';
+// CACHE_NAME จะถูกอัปเดตอัตโนมัติทุกครั้งที่ build (ผ่าน vite build script)
+const CACHE_NAME = 'fastdoc-v1.4.27-1771240335273';
 const urlsToCache = [
   '/',
   '/fastdocIcon.png',

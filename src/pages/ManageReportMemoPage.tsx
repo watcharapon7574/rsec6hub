@@ -363,10 +363,14 @@ const ManageReportMemoPage: React.FC = () => {
         1000
       );
 
-      // Refresh session before upload to prevent expired JWT errors
-      const { error: sessionError } = await supabase.auth.refreshSession();
-      if (sessionError) {
-        console.warn('Session refresh failed, attempting upload anyway:', sessionError.message);
+      // Ensure valid auth session before upload
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        // No session - try to refresh
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          throw new Error('กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)');
+        }
       }
 
       // Upload new PDF to Supabase Storage (overwrite existing)
@@ -472,9 +476,22 @@ const ManageReportMemoPage: React.FC = () => {
       });
     } catch (error: any) {
       console.error('Error assigning number:', error);
+      const errorMsg = error.message || 'ไม่สามารถลงเลขหนังสือได้';
+
+      // If session is missing, redirect to login
+      if (errorMsg.includes('Session หมดอายุ') || errorMsg.includes('Auth session missing')) {
+        toast({
+          title: 'Session หมดอายุ',
+          description: 'กรุณาเข้าสู่ระบบใหม่',
+          variant: 'destructive'
+        });
+        setTimeout(() => navigate('/login'), 1500);
+        return;
+      }
+
       toast({
         title: 'เกิดข้อผิดพลาด',
-        description: error.message || 'ไม่สามารถลงเลขหนังสือได้',
+        description: errorMsg,
         variant: 'destructive'
       });
     } finally {

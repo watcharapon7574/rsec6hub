@@ -211,10 +211,13 @@ export class MemoService {
           );
         }
         
-        // Refresh session before upload to prevent expired JWT errors
-        const { error: sessionError } = await supabase.auth.refreshSession();
-        if (sessionError) {
-          console.warn('Session refresh failed, attempting upload anyway:', sessionError.message);
+        // Ensure valid auth session before upload
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          const { error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError) {
+            throw new Error('กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)');
+          }
         }
 
         // Upload PDF to Supabase Storage (use queue + retry)

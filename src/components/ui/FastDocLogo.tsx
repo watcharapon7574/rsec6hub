@@ -73,7 +73,7 @@ export default function FastDocLogo({ className = "h-10 w-auto", showText = true
   return (
     <div className="flex items-center gap-0.5">
       <FastDocIcon className={className} />
-      <span className={textClassName || "text-2xl font-bold tracking-tight"}>
+      <span className={textClassName || "text-5xl font-bold tracking-tight"}>
         <span className="text-[#3478F6]">Fast</span>
         <span className="text-foreground">Doc</span>
       </span>

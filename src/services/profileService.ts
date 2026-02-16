@@ -132,67 +132,32 @@ export async function getNextEmployeeId(): Promise<string> {
  */
 export async function createProfileWithAuth(data: CreateProfileData): Promise<Profile> {
   try {
-    // 1. Generate employee_id
-    const employee_id = await getNextEmployeeId();
-    console.log(`Creating new profile with employee_id: ${employee_id}`);
+    console.log(`Creating new profile via Edge Function...`);
 
-    // 2. Create Supabase Auth user (phone-based)
-    // Note: ใช้ admin API เพื่อสร้าง user โดยไม่ต้อง verify OTP
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      phone: data.phone,
-      phone_confirm: true, // Auto-confirm phone
-      user_metadata: {
-        employee_id,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        prefix: data.prefix,
-      },
-    });
-
-    if (authError) {
-      console.error('Error creating auth user:', authError);
-      throw new Error(`Failed to create auth user: ${authError.message}`);
-    }
-
-    if (!authData.user) {
-      throw new Error('Auth user creation failed - no user returned');
-    }
-
-    console.log(`Auth user created: ${authData.user.id}`);
-
-    // 3. Create profile in profiles table
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        user_id: authData.user.id,
-        employee_id,
-        prefix: data.prefix,
-        first_name: data.first_name,
-        last_name: data.last_name,
+    const { data: result, error } = await supabase.functions.invoke('create-profile', {
+      body: {
         phone: data.phone,
-        position: data.position as any, // Type assertion for position enum
+        prefix: data.prefix,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        position: data.position,
         job_position: data.job_position,
         academic_rank: data.academic_rank,
         org_structure_role: data.org_structure_role,
-        // Default values
-        nationality: 'ไทย',
-        ethnicity: 'ไทย',
-        religion: 'พุทธ',
-        is_admin: false,
-      })
-      .select()
-      .single();
+      },
+    });
 
-    if (profileError) {
-      console.error('Error creating profile:', profileError);
-      // Rollback: Delete auth user if profile creation fails
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      throw new Error(`Failed to create profile: ${profileError.message}`);
+    if (error) {
+      console.error('Edge Function error:', error);
+      throw new Error(`Failed to create profile: ${error.message}`);
     }
 
-    console.log(`Profile created successfully: ${profileData.employee_id}`);
+    if (result?.error) {
+      throw new Error(result.error);
+    }
 
-    return profileData;
+    console.log(`Profile created successfully: ${result.profile.employee_id}`);
+    return result.profile;
   } catch (error: any) {
     console.error('Error in createProfileWithAuth:', error);
     throw error;

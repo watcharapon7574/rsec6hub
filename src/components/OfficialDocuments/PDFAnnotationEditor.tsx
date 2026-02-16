@@ -526,7 +526,7 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
         <div className="w-px h-6 bg-gray-300" />
 
         {/* Save */}
-        <Button onClick={handleSave} disabled={isSaving} size="sm">
+        <Button onClick={handleSave} disabled={isSaving} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
           {isSaving ? (
             <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> กำลังบันทึก...</>
           ) : (

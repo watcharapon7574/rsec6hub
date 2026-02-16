@@ -122,17 +122,35 @@ function extractStoragePath(url: string): string | null {
 /**
  * Delete annotated PDF files from Supabase storage and clear DB columns.
  * Call this when annotations are no longer needed (e.g. author resubmits, or new rejection replaces old).
+ * Supports both memos and doc_receive tables.
  */
-export async function cleanupAnnotatedFiles(memoId: string): Promise<void> {
+export async function cleanupAnnotatedFiles(documentId: string): Promise<void> {
   try {
-    // Fetch current annotation paths from DB
-    const { data: memo, error: fetchError } = await (supabase as any)
+    // Try memos table first, then doc_receive
+    let memo: any = null;
+    let tableName = 'memos';
+
+    const { data: memoData } = await (supabase as any)
       .from('memos')
       .select('annotated_pdf_path, annotated_attachment_paths')
-      .eq('id', memoId)
+      .eq('id', documentId)
       .maybeSingle();
 
-    if (fetchError || !memo) return;
+    if (memoData) {
+      memo = memoData;
+    } else {
+      const { data: docData } = await (supabase as any)
+        .from('doc_receive')
+        .select('annotated_pdf_path, annotated_attachment_paths')
+        .eq('id', documentId)
+        .maybeSingle();
+      if (docData) {
+        memo = docData;
+        tableName = 'doc_receive';
+      }
+    }
+
+    if (!memo) return;
 
     const filesToDelete: string[] = [];
 
@@ -171,9 +189,9 @@ export async function cleanupAnnotatedFiles(memoId: string): Promise<void> {
 
     // Clear DB columns
     await (supabase as any)
-      .from('memos')
+      .from(tableName)
       .update({ annotated_pdf_path: null, annotated_attachment_paths: null })
-      .eq('id', memoId);
+      .eq('id', documentId);
   } catch (error) {
     console.warn('Error cleaning up annotated files:', error);
   }

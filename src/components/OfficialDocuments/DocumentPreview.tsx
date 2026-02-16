@@ -150,7 +150,7 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ formData, signaturePo
       </Card>
 
       {/* Export Button */}
-      <div className="flex justify-center gap-4">
+      <div className="flex flex-wrap justify-center gap-3">
         <Button onClick={handleExportPDF} className="flex items-center gap-2">
           <Download className="h-4 w-4" />
           ดาวน์โหลด PDF

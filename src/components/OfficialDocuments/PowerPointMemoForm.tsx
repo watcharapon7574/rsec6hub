@@ -282,7 +282,7 @@ const PowerPointMemoForm: React.FC<PowerPointMemoFormProps> = ({ onSubmit }) => 
             </div>
 
             {/* ปุ่มดำเนินการ */}
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-wrap gap-3 pt-4">
               <Button 
                 onClick={handleSubmit} 
                 className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white flex-1"

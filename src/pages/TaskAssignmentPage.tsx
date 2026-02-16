@@ -323,7 +323,7 @@ const TaskAssignmentPage = () => {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between gap-4 relative z-0">
+        <div className="flex flex-wrap justify-between gap-3 relative z-0">
           <Button
             variant="outline"
             onClick={handlePrevious}
@@ -334,7 +334,7 @@ const TaskAssignmentPage = () => {
             ย้อนกลับ
           </Button>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
               onClick={() => navigate('/documents')}

@@ -1036,11 +1036,11 @@ const CreateReportMemoPage = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 pt-6 border-t border-border">
+                <div className="flex flex-wrap gap-3 pt-6 border-t border-border">
                   <Button
                     type="submit"
                     disabled={loading || grammarLoading}
-                    className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-8 py-2 rounded-lg shadow-md"
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md"
                   >
                     {loading
                       ? (isEditMode ? 'กำลังบันทึก...' : 'กำลังส่งรายงาน...')
@@ -1072,7 +1072,7 @@ const CreateReportMemoPage = () => {
                       <><Eye className="h-4 w-4 mr-2" />ดูตัวอย่าง</>
                     )}
                   </Button>
-                  <div className="flex-1"></div>
+                  <div className="hidden sm:block flex-1"></div>
                   <Button
                     type="button"
                     variant="outline"

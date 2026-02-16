@@ -214,7 +214,7 @@ const AdminSigningTools: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline">
                     <Eye className="h-4 w-4 mr-1" />
                     ดูตัวอย่าง

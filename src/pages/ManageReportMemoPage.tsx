@@ -1155,9 +1155,9 @@ const ManageReportMemoPage: React.FC = () => {
                     </p>
                   )}
                 </div>
-                <div className="flex justify-between">
+                <div className="flex flex-wrap justify-between gap-2">
                   <div /> {/* Empty div for spacing */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={handleAssignNumber}
                       disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || isNumberAssigned || isAssigningNumber}

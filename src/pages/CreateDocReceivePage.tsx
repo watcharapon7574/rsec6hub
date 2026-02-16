@@ -771,11 +771,11 @@ const CreateDocReceivePage = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 pt-6 border-t border-border">
+                <div className="flex flex-wrap gap-3 pt-6 border-t border-border">
                   <Button
                     type="submit"
                     disabled={loading || !formData.pdfFile || !formData.subject.trim()}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading
                       ? (isEditMode ? 'กำลังแก้ไข...' : 'กำลังอัพโหลด...')

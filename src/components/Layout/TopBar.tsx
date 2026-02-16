@@ -91,7 +91,10 @@ const TopBar = () => {
           <div className="flex items-center space-x-2 sm:space-x-6 flex-1 min-w-0">
             {/* Logo - Fixed size to prevent compression */}
             <Link to="/dashboard" className="flex-shrink-0">
-              <FastDocLogo className="h-10 sm:h-12 w-auto" />
+              <div className="flex flex-col items-start">
+                <span className="text-[10px] text-muted-foreground leading-none mb-0.5">v{__APP_VERSION__}</span>
+                <FastDocLogo className="h-10 sm:h-12 w-auto" />
+              </div>
             </Link>
             
             {/* Profile Section - Hidden on very small screens, shown on sm+ */}

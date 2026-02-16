@@ -33,6 +33,7 @@ const PDFDocumentManagePage: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [signaturePositions, setSignaturePositions] = useState<any[]>([]);
   const [comment, setComment] = useState('');
+  const [documentSummary, setDocumentSummary] = useState('');
   const [selectedSignerIndex, setSelectedSignerIndex] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState(1);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -745,9 +746,11 @@ const PDFDocumentManagePage: React.FC = () => {
               signers={signers}
               signaturePositions={signaturePositions}
               comment={comment}
+              documentSummary={documentSummary}
               selectedSignerIndex={selectedSignerIndex}
               memo={docReceive}
               onCommentChange={setComment}
+              onDocumentSummaryChange={setDocumentSummary}
               onSelectedSignerIndexChange={setSelectedSignerIndex}
               onPositionClick={handlePositionClick}
               onPositionRemove={handlePositionRemove}

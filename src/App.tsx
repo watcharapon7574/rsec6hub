@@ -37,6 +37,8 @@ import AdminProfileManagementPage from "@/pages/AdminProfileManagementPage";
 import AdminOtpManagementPage from "@/pages/AdminOtpManagementPage";
 import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import TelegramAssigneesPage from "@/pages/TelegramAssigneesPage";
+import RegisterInternalPage from "@/pages/RegisterInternalPage";
+import RegisterExternalPage from "@/pages/RegisterExternalPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
 import DarkModeToggle from "@/components/Layout/DarkModeToggle";
 
@@ -187,6 +189,16 @@ const AppContent = () => {
       <Route path="/edit-doc-receive/:memoId" element={
         <ProtectedRoute isAuthenticated={isAuthenticated}>
           <EditDocReceivePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/register-internal" element={
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
+          <RegisterInternalPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/register-external" element={
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
+          <RegisterExternalPage />
         </ProtectedRoute>
       } />
       <Route path="/approve-document/:memoId" element={

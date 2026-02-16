@@ -81,65 +81,54 @@ const DocumentManagePage: React.FC = () => {
     });
   }, [memoId, memo]);
 
-  // Get latest document number and generate suggestion
+  // Get latest document number and generate suggestion (ดูจาก memos + manual entries)
   const getLatestDocNumber = React.useCallback(async () => {
     try {
+      let maxNumber = 0;
+
+      // 1. ดึงจาก memos ที่ลงเลขแล้ว
       const { data, error } = await supabase
         .from('memos')
         .select('doc_number, doc_number_status')
         .not('doc_number_status', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(10); // ดึงล่าสุด 10 รายการมาเรียง
+        .limit(50);
 
-      if (error) {
-        console.error('Error fetching latest doc numbers:', error);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        // หาเลขล่าสุดที่มี timestamp ใหม่ที่สุด
-        let latestDoc = null;
-        let latestTimestamp = null;
-
+      if (!error && data) {
         for (const item of data) {
           const docData = item as any;
-          if (docData.doc_number && docData.doc_number_status) {
-            let timestamp = null;
-            
-            // ตรวจสอบ format ของ doc_number_status
-            if (typeof docData.doc_number_status === 'object' && docData.doc_number_status.assigned_at) {
-              timestamp = docData.doc_number_status.assigned_at;
+          if (docData.doc_number) {
+            let docToProcess = docData.doc_number;
+            if (docToProcess.includes('ศธ')) {
+              const m = docToProcess.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+              if (m) docToProcess = m[1];
             }
-            
-            if (timestamp && (!latestTimestamp || timestamp > latestTimestamp)) {
-              latestTimestamp = timestamp;
-              latestDoc = docData.doc_number;
+            const m = docToProcess.match(/(\d+)\//);
+            if (m) {
+              const num = parseInt(m[1]);
+              if (num > maxNumber) maxNumber = num;
             }
           }
         }
+      }
 
-        if (latestDoc) {
-          // ตรวจสอบและแยกเลขจากรูปแบบ
-          let docToProcess = latestDoc;
-          
-          // ถ้าเป็น full format ให้แยก suffix ออกมา
-          if (latestDoc.startsWith('ศธ ๐๔๐๐๗.๖๐๐/') || latestDoc.includes('ศธ')) {
-            const match = latestDoc.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
-            if (match) {
-              docToProcess = match[1];
-            }
-          }
-          
-          // แยกเลขจากรูปแบบ เช่น "4567/68" หรือ "0001/69"
-          const match = docToProcess.match(/(\d+)\/(\d+)$/);
-          if (match) {
-            const lastNumber = parseInt(match[1]);
-            const nextNumber = lastNumber + 1;
-            // ใช้ปีปัจจุบันแทนปีจากเอกสารเก่า และ zero-pad เป็น 4 หลัก
-            const paddedNumber = nextNumber.toString().padStart(4, '0');
-            setSuggestedDocNumber(`${paddedNumber}/${yearShort}`);
-          }
-        }
+      // 2. ดึงจาก manual entries (internal) เพื่อเลข running number ต่อเนื่อง
+      const { data: manualData } = await supabase
+        .from('document_register_manual')
+        .select('register_number')
+        .eq('register_type', 'internal')
+        .eq('year', currentBuddhistYear)
+        .order('register_number', { ascending: false })
+        .limit(1);
+
+      if (manualData && manualData.length > 0 && manualData[0].register_number > maxNumber) {
+        maxNumber = manualData[0].register_number;
+      }
+
+      if (maxNumber > 0) {
+        const nextNumber = maxNumber + 1;
+        const paddedNumber = nextNumber.toString().padStart(4, '0');
+        setSuggestedDocNumber(`${paddedNumber}/${yearShort}`);
       }
     } catch (error) {
       console.error('Error processing latest doc number:', error);

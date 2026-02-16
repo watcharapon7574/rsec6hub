@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Signature } from 'lucide-react';
+import { FileText, Signature, BookOpen, BookMarked } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 
@@ -19,14 +19,32 @@ const CreateDocumentPage = () => {
       path: '/create-memo'
     },
     // แสดงหนังสือรับเฉพาะ Admin หรือธุรการเท่านั้น
-    ...((permissions.isAdmin || permissions.isClerk) ? [{
-      id: 'pdf-sign',
-      title: 'หนังสือรับ',
-      description: 'หนังสือรับมาเป็น PDF เพื่อเกษียนหนังสือภายในสถานศึกษา',
-      icon: Signature,
-      color: 'bg-green-500 hover:bg-green-600',
-      path: '/create-doc-receive'
-    }] : [])
+    ...((permissions.isAdmin || permissions.isClerk) ? [
+      {
+        id: 'pdf-sign',
+        title: 'หนังสือรับ',
+        description: 'หนังสือรับมาเป็น PDF เพื่อเกษียนหนังสือภายในสถานศึกษา',
+        icon: Signature,
+        color: 'bg-green-500 hover:bg-green-600',
+        path: '/create-doc-receive'
+      },
+      {
+        id: 'register-internal',
+        title: 'ทะเบียนรับภายใน',
+        description: 'ทะเบียนหนังสือรับจากบันทึกข้อความภายในสถานศึกษา',
+        icon: BookOpen,
+        color: 'bg-orange-500 hover:bg-orange-600',
+        path: '/register-internal'
+      },
+      {
+        id: 'register-external',
+        title: 'ทะเบียนรับภายนอก',
+        description: 'ทะเบียนหนังสือรับจากหน่วยงานภายนอก',
+        icon: BookMarked,
+        color: 'bg-purple-500 hover:bg-purple-600',
+        path: '/register-external'
+      }
+    ] : [])
   ];
 
   return (

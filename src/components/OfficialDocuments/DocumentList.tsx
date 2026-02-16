@@ -646,10 +646,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
       </CardHeader>
 
       {/* ส่วนค้นหาและกรอง - แถวเดียวแนวนอน */}
-      <div className="bg-card border-b border-border px-3 py-2">
-        <div className="flex gap-2 items-center">
+      <div className="bg-card border-b border-border px-3 py-2 overflow-x-auto">
+        <div className="flex gap-2 items-center min-w-max">
           {/* ช่องค้นหา */}
-          <div className="relative flex-1">
+          <div className="relative w-40 sm:flex-1 sm:w-auto">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
               placeholder="ค้นหาเอกสาร..."

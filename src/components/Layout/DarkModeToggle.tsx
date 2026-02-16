@@ -39,6 +39,7 @@ const DarkModeToggle: React.FC = () => {
   const startPos = useRef({ x: 0, y: 0 });
   const startBtn = useRef({ x: 0, y: 0 });
   const moved = useRef(false);
+  const lastTouchEnd = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isSnapping, setIsSnapping] = useState(false);
 
@@ -90,13 +91,19 @@ const DarkModeToggle: React.FC = () => {
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
-    const onMouseUp = () => handleEnd();
+    const onMouseUp = () => {
+      if (Date.now() - lastTouchEnd.current < 500) return;
+      handleEnd();
+    };
     const onTouchMove = (e: TouchEvent) => {
       if (dragging.current) e.preventDefault();
       const t = e.touches[0];
       handleMove(t.clientX, t.clientY);
     };
-    const onTouchEnd = () => handleEnd();
+    const onTouchEnd = () => {
+      lastTouchEnd.current = Date.now();
+      handleEnd();
+    };
 
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
@@ -125,7 +132,11 @@ const DarkModeToggle: React.FC = () => {
   return (
     <button
       ref={btnRef}
-      onMouseDown={(e) => { e.preventDefault(); handleStart(e.clientX, e.clientY); }}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        if (Date.now() - lastTouchEnd.current < 500) return;
+        handleStart(e.clientX, e.clientY);
+      }}
       onTouchStart={(e) => { const t = e.touches[0]; handleStart(t.clientX, t.clientY); }}
       onTransitionEnd={() => setIsSnapping(false)}
       aria-label="สลับโหมดมืด/สว่าง"

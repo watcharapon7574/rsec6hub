@@ -265,7 +265,7 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <div className="relative w-full min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 overflow-x-hidden">
+  <div className="relative w-full min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 overflow-x-hidden">
     <Particles
       className="absolute inset-0 -z-10"
       quantity={100}

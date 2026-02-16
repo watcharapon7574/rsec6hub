@@ -462,9 +462,9 @@ const MemoList: React.FC<MemoListProps> = ({
       {!isCollapsed && (
       <>
       {/* ส่วนค้นหาและกรอง */}
-      <div className="bg-card border-b border-border px-3 py-2">
-        <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
+      <div className="bg-card border-b border-border px-3 py-2 overflow-x-auto">
+        <div className="flex gap-2 items-center min-w-max">
+          <div className="relative w-40 sm:flex-1 sm:w-auto">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-foreground" />
             <Input
               placeholder="ค้นหาเอกสาร..."

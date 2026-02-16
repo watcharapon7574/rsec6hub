@@ -1095,13 +1095,26 @@ const DocumentManagePage: React.FC = () => {
     }
   };
 
-  const handleReject = async (reason: string) => {
+  const handleReject = async (reason: string, annotatedPdfUrl?: string, annotatedAttachments?: string[]) => {
     if (!memoId) return;
-    
+
     setIsRejecting(true);
     try {
       const updateResult = await updateMemoStatus(memoId, 'rejected', undefined, reason);
       if (updateResult.success) {
+        // Save annotated PDF URLs if provided
+        if (annotatedPdfUrl || (annotatedAttachments && annotatedAttachments.length > 0)) {
+          const annotationUpdate: any = {};
+          if (annotatedPdfUrl) annotationUpdate.annotated_pdf_path = annotatedPdfUrl;
+          if (annotatedAttachments && annotatedAttachments.length > 0) {
+            annotationUpdate.annotated_attachment_paths = JSON.stringify(annotatedAttachments);
+          }
+          await (supabase as any)
+            .from('memos')
+            .update(annotationUpdate)
+            .eq('id', memoId);
+        }
+
         toast({
           title: "ตีกลับเอกสารสำเร็จ",
           description: "เอกสารถูกตีกลับไปยังผู้เขียนเพื่อแก้ไข",
@@ -1232,6 +1245,8 @@ const DocumentManagePage: React.FC = () => {
               onReject={handleReject}
               isRejecting={isRejecting}
               isStepComplete={isStepComplete(1)}
+              documentId={memoId}
+              userId={profile?.user_id}
             />
           )}
 

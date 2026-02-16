@@ -19,9 +19,11 @@ interface Step1Props {
   onDocNumberSuffixChange: (value: string) => void;
   onAssignNumber: () => void;
   onNext: () => void;
-  onReject: (reason: string) => void;
+  onReject: (reason: string, annotatedPdfUrl?: string, annotatedAttachments?: string[]) => void;
   isRejecting: boolean;
   isStepComplete: boolean;
+  documentId?: string;
+  userId?: string;
 }
 
 const Step1DocumentNumber: React.FC<Step1Props> = ({
@@ -36,7 +38,9 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
   onNext,
   onReject,
   isRejecting,
-  isStepComplete
+  isStepComplete,
+  documentId,
+  userId
 }) => {
   // Document number prefix - ศธ ๐๔๐๐๗.๖๐๐/
   const docNumberPrefix = 'ศธ ๐๔๐๐๗.๖๐๐/';
@@ -175,9 +179,13 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
       )}
 
       {/* Rejection Card */}
-      <RejectionCard 
+      <RejectionCard
         onReject={onReject}
         isLoading={isRejecting}
+        pdfUrl={memo?.pdf_draft_path ? (extractPdfUrl(memo.pdf_draft_path) || undefined) : undefined}
+        attachedFiles={attachedFiles}
+        documentId={documentId}
+        userId={userId}
       />
     </div>
   );

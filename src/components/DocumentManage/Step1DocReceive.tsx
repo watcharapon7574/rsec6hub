@@ -38,7 +38,7 @@ interface Step1DocReceiveProps {
   signers: any[];
   // Navigation & Actions
   onNext: () => void;
-  onReject: (reason: string) => void;
+  onReject: (reason: string, annotatedPdfUrl?: string, annotatedAttachments?: string[]) => void;
   isRejecting: boolean;
   isStepComplete: boolean;
 }

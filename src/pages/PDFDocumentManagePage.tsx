@@ -627,7 +627,7 @@ const PDFDocumentManagePage: React.FC = () => {
     }
   };
 
-  const handleReject = async (reason: string) => {
+  const handleReject = async (reason: string, _annotatedPdfUrl?: string, _annotatedAttachments?: string[]) => {
     if (!memoId) return;
 
     setIsRejecting(true);

@@ -84,7 +84,7 @@
             }
 
             // 🆕 REGISTER SERVICE WORKER
-            const registration = await navigator.serviceWorker.register('/sw.js');
+            const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
             console.log('✅ SW registered:', registration);
 
             // ตรวจสอบอัปเดททุก 60 วินาที

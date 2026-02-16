@@ -104,3 +104,77 @@ export async function uploadAnnotatedPdf(
 
   return `${urlData.publicUrl}?t=${Date.now()}`;
 }
+
+/**
+ * Extract storage file path from a Supabase public URL
+ * e.g. "https://xxx.supabase.co/storage/v1/object/public/documents/memos/uid/file.pdf?t=123"
+ * → "memos/uid/file.pdf"
+ */
+function extractStoragePath(url: string): string | null {
+  try {
+    const match = url.match(/\/storage\/v1\/object\/public\/documents\/(.+?)(\?|$)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Delete annotated PDF files from Supabase storage and clear DB columns.
+ * Call this when annotations are no longer needed (e.g. author resubmits, or new rejection replaces old).
+ */
+export async function cleanupAnnotatedFiles(memoId: string): Promise<void> {
+  try {
+    // Fetch current annotation paths from DB
+    const { data: memo, error: fetchError } = await (supabase as any)
+      .from('memos')
+      .select('annotated_pdf_path, annotated_attachment_paths')
+      .eq('id', memoId)
+      .maybeSingle();
+
+    if (fetchError || !memo) return;
+
+    const filesToDelete: string[] = [];
+
+    // Main annotated PDF
+    if (memo.annotated_pdf_path) {
+      const path = extractStoragePath(memo.annotated_pdf_path);
+      if (path) filesToDelete.push(path);
+    }
+
+    // Annotated attachments
+    if (memo.annotated_attachment_paths) {
+      try {
+        const paths: string[] = typeof memo.annotated_attachment_paths === 'string'
+          ? JSON.parse(memo.annotated_attachment_paths)
+          : memo.annotated_attachment_paths;
+        if (Array.isArray(paths)) {
+          for (const url of paths) {
+            const path = extractStoragePath(url);
+            if (path) filesToDelete.push(path);
+          }
+        }
+      } catch { /* ignore parse error */ }
+    }
+
+    // Delete files from storage
+    if (filesToDelete.length > 0) {
+      const { error: removeError } = await supabase.storage
+        .from('documents')
+        .remove(filesToDelete);
+      if (removeError) {
+        console.warn('Failed to delete annotated files:', removeError.message);
+      } else {
+        console.log(`🗑️ Deleted ${filesToDelete.length} annotated file(s)`);
+      }
+    }
+
+    // Clear DB columns
+    await (supabase as any)
+      .from('memos')
+      .update({ annotated_pdf_path: null, annotated_attachment_paths: null })
+      .eq('id', memoId);
+  } catch (error) {
+    console.warn('Error cleaning up annotated files:', error);
+  }
+}

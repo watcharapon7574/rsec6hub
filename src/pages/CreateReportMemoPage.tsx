@@ -340,6 +340,13 @@ const CreateReportMemoPage = () => {
       } as any);
 
       if (result.success) {
+        // Cleanup annotated files from previous rejection (if any)
+        if (annotatedPdfPath || annotatedAttachmentPaths.length > 0) {
+          import('@/utils/pdfAnnotationUtils').then(({ cleanupAnnotatedFiles }) => {
+            cleanupAnnotatedFiles(originalMemo.id);
+          }).catch(() => {});
+        }
+
         // Refetch memos
         if (refetch) {
           await refetch();

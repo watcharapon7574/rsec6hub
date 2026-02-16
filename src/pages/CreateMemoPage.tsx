@@ -250,6 +250,13 @@ const CreateMemoPage = () => {
       } as any);
 
       if (result.success) {
+        // Cleanup annotated files from previous rejection (if any)
+        if (annotatedPdfPath || annotatedAttachmentPaths.length > 0) {
+          import('@/utils/pdfAnnotationUtils').then(({ cleanupAnnotatedFiles }) => {
+            cleanupAnnotatedFiles(originalMemo.id);
+          }).catch(() => {});
+        }
+
         // Check if only attached files were changed
         const contentFields = ['doc_number', 'subject', 'date', 'attachment_title', 'introduction', 'author_name', 'author_position', 'fact', 'proposal'];
         const hasContentChanges = contentFields.some(field => {

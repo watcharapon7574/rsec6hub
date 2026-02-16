@@ -1100,6 +1100,10 @@ const DocumentManagePage: React.FC = () => {
 
     setIsRejecting(true);
     try {
+      // Cleanup old annotated files before saving new ones
+      const { cleanupAnnotatedFiles } = await import('@/utils/pdfAnnotationUtils');
+      await cleanupAnnotatedFiles(memoId);
+
       const updateResult = await updateMemoStatus(memoId, 'rejected', undefined, reason);
       if (updateResult.success) {
         // Save annotated PDF URLs if provided

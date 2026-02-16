@@ -500,6 +500,10 @@ const ManageReportMemoPage: React.FC = () => {
 
     setIsRejecting(true);
     try {
+      // Cleanup old annotated files before saving new ones
+      const { cleanupAnnotatedFiles } = await import('@/utils/pdfAnnotationUtils');
+      await cleanupAnnotatedFiles(memoId);
+
       // สร้าง rejected_name_comment สำหรับแสดงในรายการและหน้าแก้ไข
       const rejectedNameComment = {
         name: `${profile.first_name} ${profile.last_name}`,

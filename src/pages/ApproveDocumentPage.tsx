@@ -400,6 +400,12 @@ const ApproveDocumentPage: React.FC = () => {
         profile: { name: `${profile.first_name} ${profile.last_name}`, position: profile.position }
       });
 
+      // Cleanup old annotated files before saving new ones (memo/report_memo only)
+      if (!isDocReceive) {
+        const { cleanupAnnotatedFiles } = await import('@/utils/pdfAnnotationUtils');
+        await cleanupAnnotatedFiles(memoId);
+      }
+
       const result = await updateDocumentApproval(memoId, 'reject', rejectionReason);
 
       if (result.success) {

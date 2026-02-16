@@ -67,31 +67,24 @@ export const signIn = async (phone: string, otp: string): Promise<AuthResult> =>
     storeAuthData(profile);
     console.log('💾 Auth data stored to localStorage');
 
-    // ตั้งค่า Supabase Auth session แบบ non-blocking
-    // เพราะ setSession อาจ hang ระหว่าง token validation/refresh
-    // authData อยู่ใน localStorage แล้ว ดังนั้น UI จะทำงานได้ทันที
-    console.log('🔄 Setting Supabase session with tokens (non-blocking)...');
-    const setSessionPromise = supabase.auth.setSession({
+    // ตั้งค่า Supabase Auth session (ต้อง await เพื่อให้ session พร้อมใช้งาน)
+    console.log('🔄 Setting Supabase session with tokens...');
+    const { error: setSessionError } = await supabase.auth.setSession({
       access_token: result.session.access_token,
       refresh_token: result.session.refresh_token
-    }).then(({ error: setSessionError }) => {
-      if (setSessionError) {
-        console.error('⚠️ setSession error:', setSessionError);
-      } else {
-        console.log('✅ setSession completed successfully');
-      }
-    }).catch(error => {
-      console.error('💥 Session setup failed:', error);
     });
 
-    // Chain createSession หลัง setSession สำเร็จ (ต้องมี auth session ก่อนถึงจะ insert ผ่าน RLS ได้)
+    if (setSessionError) {
+      console.error('⚠️ setSession error:', setSessionError);
+    } else {
+      console.log('✅ setSession completed successfully');
+    }
+
+    // สร้าง session record หลัง setSession สำเร็จ (non-blocking)
     if (sessionData.user?.id) {
-      const userId = sessionData.user.id;
-      setSessionPromise.then(async () => {
-        console.log('📝 Creating session record for user:', userId);
-        const { error: sessionError } = await createSession(userId);
+      createSession(sessionData.user.id).then(({ error: sessionError }) => {
         if (sessionError) {
-          console.warn('⚠️ Failed to create session record (non-blocking):', sessionError);
+          console.warn('⚠️ Failed to create session record:', sessionError);
         } else {
           console.log('✅ Session record created successfully');
         }
@@ -100,8 +93,6 @@ export const signIn = async (phone: string, otp: string): Promise<AuthResult> =>
 
     console.log('✅ Authentication completed successfully with profile:', profile.user_id);
 
-    // Return ทันทีโดยไม่ต้องรอ setSession
-    // UI ใช้ข้อมูลจาก localStorage (storeAuthData) ที่เก็บไว้แล้ว
     return {
       user: sessionData.user,
       profile

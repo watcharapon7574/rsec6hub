@@ -160,7 +160,7 @@ const AdminProfileManagementPage: React.FC = () => {
         {/* Page Header */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
               <div>
                 <h1 className="text-xl font-bold text-foreground mb-1">จัดการโปรไฟล์ทั้งหมด</h1>
                 <p className="text-sm text-muted-foreground">จัดการข้อมูลบุคลากรทั้งหมดในระบบ (Admin Only)</p>
@@ -171,17 +171,15 @@ const AdminProfileManagementPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            <div className="ml-4">
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
                 size="lg"
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg w-full sm:w-auto"
               >
                 <UserPlus className="h-5 w-5 mr-2" />
                 เพิ่มโปรไฟล์ใหม่
               </Button>
             </div>
-          </div>
           </CardContent>
         </Card>
 
@@ -309,11 +307,11 @@ const AdminProfileManagementPage: React.FC = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between border-t border-blue-100 dark:border-blue-900 pt-4 bg-blue-50 dark:bg-blue-950/30 rounded-b-lg px-4 py-3">
-                  <div className="text-sm text-muted-foreground">
-                    แสดง <span className="font-semibold text-blue-600 dark:text-blue-400">{startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)}</span> จาก <span className="font-semibold text-blue-600 dark:text-blue-400 dark:text-blue-600">{filteredProfiles.length}</span> รายการ
+                <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-blue-100 dark:border-blue-900 pt-4 bg-blue-50 dark:bg-blue-950/30 rounded-b-lg px-4 py-3">
+                  <div className="text-sm text-muted-foreground text-center sm:text-left">
+                    แสดง <span className="font-semibold text-blue-600 dark:text-blue-400">{startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)}</span> จาก <span className="font-semibold text-blue-600 dark:text-blue-400">{filteredProfiles.length}</span> รายการ
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -324,7 +322,7 @@ const AdminProfileManagementPage: React.FC = () => {
                       ก่อนหน้า
                     </Button>
 
-                    <div className="flex items-center gap-1">
+                    <div className="hidden sm:flex items-center gap-1">
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNumber;
                         if (totalPages <= 5) {

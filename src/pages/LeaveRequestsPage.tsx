@@ -288,6 +288,7 @@ const LeaveRequestsPage = () => {
                   <p className="text-sm">คลิก "ขอลาใหม่" เพื่อเริ่มต้น</p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -322,6 +323,7 @@ const LeaveRequestsPage = () => {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

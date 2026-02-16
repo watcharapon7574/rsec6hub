@@ -166,7 +166,7 @@ const DailyReportsPage = () => {
           </Card>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <Card>
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
@@ -218,6 +218,7 @@ const DailyReportsPage = () => {
                   <p className="text-sm">คลิก "เพิ่มรายงานใหม่" เพื่อเริ่มต้น</p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -230,13 +231,13 @@ const DailyReportsPage = () => {
                   <TableBody>
                     {dailyReports.map((report) => (
                       <TableRow key={report.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium whitespace-nowrap">
                           {new Date(report.report_date).toLocaleDateString('th-TH')}
                         </TableCell>
-                        <TableCell className="max-w-md">
+                        <TableCell className="min-w-[200px]">
                           <p className="line-clamp-2">{report.description}</p>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {report.location ? (
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               <MapPin className="h-3 w-3" />
@@ -246,13 +247,14 @@ const DailyReportsPage = () => {
                             <span className="text-muted-foreground text-sm">ไม่ระบุ</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {new Date(report.created_at).toLocaleDateString('th-TH')}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -140,8 +140,8 @@ const NotificationsPage = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-24 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-background pb-24">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <Card className="mb-6">
           <CardContent className="bg-rose-500 rounded-t-lg pt-6">
@@ -206,7 +206,7 @@ const NotificationsPage = () => {
         <Card className="mb-6">
           <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <TabsList className="bg-muted/50">
                   <TabsTrigger value="all">ทั้งหมด</TabsTrigger>
                   <TabsTrigger value="unread" className="relative">
@@ -222,7 +222,7 @@ const NotificationsPage = () => {
 
                 <div className="flex items-center space-x-2">
                   <Filter className="h-4 w-4 text-muted-foreground" />
-                  <select 
+                  <select
                     value={filterPriority}
                     onChange={(e) => setFilterPriority(e.target.value)}
                     className="text-sm border border-border rounded-lg px-3 py-1 bg-background"

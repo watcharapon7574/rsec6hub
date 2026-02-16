@@ -224,7 +224,7 @@ const TaskAssignmentPage = () => {
 
   if (loadingDocument) {
     return (
-      <div className="min-h-screen bg-background pt-20 pb-24 px-4">
+      <div className="min-h-screen bg-background pb-24 px-4 py-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -240,7 +240,7 @@ const TaskAssignmentPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-24 px-4">
+    <div className="min-h-screen bg-background pb-24 px-4 py-6">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-6">

@@ -242,49 +242,54 @@ const ManageReportMemoPage: React.FC = () => {
     loadData();
   }, [memoId, navigate, toast]);
 
-  // Get latest doc number for suggestion
+  // Get latest doc number for suggestion (ดูจาก memos + manual entries)
   const getLatestDocNumber = async () => {
     try {
+      let maxNumber = 0;
+
+      // 1. ดึงจาก memos ที่ลงเลขแล้ว
       const { data, error } = await supabase
         .from('memos')
         .select('doc_number, doc_number_status')
         .not('doc_number_status', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
-      if (error || !data) return;
-
-      let latestDoc = null;
-      let latestTimestamp = null;
-
-      for (const item of data) {
-        const docData = item as any;
-        if (docData.doc_number && docData.doc_number_status) {
-          let timestamp = null;
-          if (typeof docData.doc_number_status === 'object' && docData.doc_number_status.assigned_at) {
-            timestamp = docData.doc_number_status.assigned_at;
-          }
-          if (timestamp && (!latestTimestamp || timestamp > latestTimestamp)) {
-            latestTimestamp = timestamp;
-            latestDoc = docData.doc_number;
+      if (!error && data) {
+        for (const item of data) {
+          const docData = item as any;
+          if (docData.doc_number) {
+            let docToProcess = docData.doc_number;
+            if (docToProcess.includes('ศธ')) {
+              const m = docToProcess.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
+              if (m) docToProcess = m[1];
+            }
+            const m = docToProcess.match(/(\d+)\//);
+            if (m) {
+              const num = parseInt(m[1]);
+              if (num > maxNumber) maxNumber = num;
+            }
           }
         }
       }
 
-      if (latestDoc) {
-        let docToProcess = latestDoc;
-        if (latestDoc.includes('ศธ')) {
-          const match = latestDoc.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
-          if (match) docToProcess = match[1];
-        }
-        const match = docToProcess.match(/(\d+)\/(\d+)$/);
-        if (match) {
-          const lastNumber = parseInt(match[1]);
-          const nextNumber = lastNumber + 1;
-          // Zero-pad เป็น 4 หลัก
-          const paddedNumber = nextNumber.toString().padStart(4, '0');
-          setSuggestedDocNumber(`${paddedNumber}/${yearShort}`);
-        }
+      // 2. ดึงจาก manual entries (internal) เพื่อเลข running number ต่อเนื่อง
+      const { data: manualData } = await supabase
+        .from('document_register_manual')
+        .select('register_number')
+        .eq('register_type', 'internal')
+        .eq('year', currentBuddhistYear)
+        .order('register_number', { ascending: false })
+        .limit(1);
+
+      if (manualData && manualData.length > 0 && manualData[0].register_number > maxNumber) {
+        maxNumber = manualData[0].register_number;
+      }
+
+      if (maxNumber > 0) {
+        const nextNumber = maxNumber + 1;
+        const paddedNumber = nextNumber.toString().padStart(4, '0');
+        setSuggestedDocNumber(`${paddedNumber}/${yearShort}`);
       }
     } catch (error) {
       console.error('Error getting latest doc number:', error);
@@ -472,7 +477,7 @@ const ManageReportMemoPage: React.FC = () => {
   };
 
   // Handle reject report - รับ reason จาก RejectionCard component
-  const handleRejectFromCard = async (reason: string) => {
+  const handleRejectFromCard = async (reason: string, annotatedPdfUrl?: string) => {
     // Debug: ตรวจสอบค่าที่จำเป็น
     console.log('🔴 handleRejectFromCard called:', { reason: reason?.trim(), memoId, taskAssignment: !!taskAssignment, profile: !!profile });
 
@@ -504,14 +509,19 @@ const ManageReportMemoPage: React.FC = () => {
       };
 
       // 1. Update report memo status to rejected
-      const { error: memoError } = await supabase
+      const updateData: any = {
+        status: 'rejected',
+        current_signer_order: 0,
+        rejected_name_comment: rejectedNameComment,
+        updated_at: new Date().toISOString()
+      };
+      if (annotatedPdfUrl) {
+        updateData.annotated_pdf_path = annotatedPdfUrl;
+      }
+
+      const { error: memoError } = await (supabase as any)
         .from('memos')
-        .update({
-          status: 'rejected',
-          current_signer_order: 0, // ระบุว่าถูกตีกลับ
-          rejected_name_comment: rejectedNameComment, // ข้อมูลผู้ตีกลับ
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', memoId);
 
       if (memoError) throw memoError;
@@ -1182,6 +1192,9 @@ const ManageReportMemoPage: React.FC = () => {
             <RejectionCard
               onReject={handleRejectFromCard}
               isLoading={isRejecting}
+              pdfUrl={reportMemo?.pdf_draft_path ? (extractPdfUrl(reportMemo.pdf_draft_path) || undefined) : undefined}
+              documentId={memoId}
+              userId={profile?.user_id}
             />
           </div>
         )}

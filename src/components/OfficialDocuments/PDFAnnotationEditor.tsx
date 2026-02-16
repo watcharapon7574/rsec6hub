@@ -3,7 +3,7 @@ import { Canvas as FabricCanvas, PencilBrush, Circle, Line, Textbox, FabricObjec
 import { Button } from '@/components/ui/button';
 import {
   X, Pen, Highlighter, Type, CircleIcon, ArrowRight,
-  Eraser, Undo2, ChevronLeft, ChevronRight, Save, Loader2, Minus, Plus
+  Eraser, Undo2, ChevronLeft, ChevronRight, Save, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -49,10 +49,18 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
 
-  // Tool state
+  // Tool state (both state for UI + ref for canvas handlers)
   const [activeTool, setActiveTool] = useState<Tool>('pen');
   const [penColor, setPenColor] = useState('#FF0000');
   const [penWidth, setPenWidth] = useState(4);
+  const activeToolRef = useRef<Tool>('pen');
+  const penColorRef = useRef('#FF0000');
+  const penWidthRef = useRef(4);
+
+  // Keep refs in sync with state
+  useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
+  useEffect(() => { penColorRef.current = penColor; }, [penColor]);
+  useEffect(() => { penWidthRef.current = penWidth; }, [penWidth]);
 
   // Canvas
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,7 +116,6 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
   // Render current page
   const renderPage = useCallback(async () => {
     if (!pdfDoc || !bgCanvasRef.current) return;
-
     const size = await renderPdfPageToCanvas(pdfDoc, currentPage, bgCanvasRef.current, 1.5);
     setPageSize(size);
   }, [pdfDoc, currentPage]);
@@ -117,77 +124,23 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
     if (pdfDoc) renderPage();
   }, [pdfDoc, currentPage, renderPage]);
 
-  // Initialize / update Fabric canvas when page size changes
-  useEffect(() => {
-    if (pageSize.width === 0 || pageSize.height === 0 || !drawCanvasRef.current) return;
+  // ===== Core: apply tool to Fabric canvas =====
+  const applyCurrentTool = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
 
-    // Dispose old canvas
-    if (fabricRef.current) {
-      fabricRef.current.dispose();
-      fabricRef.current = null;
-    }
+    const tool = activeToolRef.current;
+    const color = penColorRef.current;
+    const width = penWidthRef.current;
 
-    const fc = new FabricCanvas(drawCanvasRef.current, {
-      width: pageSize.width,
-      height: pageSize.height,
-      backgroundColor: 'transparent',
-      isDrawingMode: true,
-    });
-
-    // iPad: only draw with pen, let touch scroll
-    const wrapper = fc.getSelectionElement()?.parentElement;
-    if (wrapper) {
-      wrapper.addEventListener('pointerdown', (e: PointerEvent) => {
-        if (e.pointerType === 'touch') {
-          fc.isDrawingMode = false;
-          fc.selection = false;
-        } else if (e.pointerType === 'pen' || e.pointerType === 'mouse') {
-          applyTool(fc, activeTool, penColor, penWidth);
-        }
-      }, { passive: true });
-
-      wrapper.addEventListener('pointerup', (e: PointerEvent) => {
-        if (e.pointerType === 'touch') {
-          applyTool(fc, activeTool, penColor, penWidth);
-        }
-      }, { passive: true });
-    }
-
-    // Restore annotations for this page if any
-    const saved = annotationsRef.current.get(currentPage);
-    if (saved) {
-      fc.loadFromJSON(saved).then(() => {
-        fc.renderAll();
-      });
-    }
-
-    // Track history for undo
-    fc.on('object:added', () => {
-      historyRef.current.push(fc.toJSON() as unknown as string);
-      setCanUndo(historyRef.current.length > 1);
-    });
-
-    fabricRef.current = fc;
-    applyTool(fc, activeTool, penColor, penWidth);
-
-    return () => {
-      // Save current page annotations before dispose
-      if (fabricRef.current) {
-        const json = JSON.stringify(fabricRef.current.toJSON());
-        annotationsRef.current.set(currentPage, json);
-      }
-      fc.dispose();
-      fabricRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageSize]);
-
-  // Apply tool settings to canvas
-  const applyTool = (fc: FabricCanvas, tool: Tool, color: string, width: number) => {
-    // Remove shape event listeners
+    // Clean up all custom event handlers
     fc.off('mouse:down');
     fc.off('mouse:move');
     fc.off('mouse:up');
+
+    // Reset shape state
+    isDrawingShapeRef.current = false;
+    currentShapeRef.current = null;
 
     switch (tool) {
       case 'pen': {
@@ -203,7 +156,6 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
         fc.isDrawingMode = true;
         fc.selection = false;
         const hlBrush = new PencilBrush(fc);
-        // Convert hex to rgba with opacity
         const r = parseInt(color.slice(1, 3), 16);
         const g = parseInt(color.slice(3, 5), 16);
         const b = parseInt(color.slice(5, 7), 16);
@@ -215,26 +167,135 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
       case 'text': {
         fc.isDrawingMode = false;
         fc.selection = true;
-        setupTextTool(fc, color);
+        fc.on('mouse:down', (opt: any) => {
+          if (opt.target) return; // clicked existing object, skip
+          const pointer = fc.getScenePoint(opt.e);
+          const text = new Textbox('ข้อความ', {
+            left: pointer.x,
+            top: pointer.y,
+            fontSize: 20,
+            fill: color,
+            width: 200,
+            editable: true,
+          });
+          fc.add(text);
+          fc.setActiveObject(text);
+          text.enterEditing();
+          fc.renderAll();
+        });
         break;
       }
       case 'circle': {
         fc.isDrawingMode = false;
         fc.selection = false;
-        setupCircleTool(fc, color, width);
+
+        fc.on('mouse:down', (opt: any) => {
+          const pointer = fc.getScenePoint(opt.e);
+          isDrawingShapeRef.current = true;
+          shapeStartRef.current = { x: pointer.x, y: pointer.y };
+
+          const circle = new Circle({
+            left: pointer.x,
+            top: pointer.y,
+            radius: 1,
+            fill: 'transparent',
+            stroke: color,
+            strokeWidth: width,
+            selectable: false,
+            originX: 'center',
+            originY: 'center',
+          });
+          fc.add(circle);
+          currentShapeRef.current = circle;
+        });
+
+        fc.on('mouse:move', (opt: any) => {
+          if (!isDrawingShapeRef.current || !currentShapeRef.current) return;
+          const pointer = fc.getScenePoint(opt.e);
+          const start = shapeStartRef.current;
+          const dx = pointer.x - start.x;
+          const dy = pointer.y - start.y;
+          const radius = Math.sqrt(dx * dx + dy * dy) / 2;
+          const cx = (start.x + pointer.x) / 2;
+          const cy = (start.y + pointer.y) / 2;
+
+          (currentShapeRef.current as Circle).set({
+            left: cx,
+            top: cy,
+            radius: Math.max(radius, 1),
+            scaleX: 1,
+            scaleY: 1,
+          });
+          fc.renderAll();
+        });
+
+        fc.on('mouse:up', () => {
+          if (currentShapeRef.current) {
+            currentShapeRef.current.set({ selectable: true });
+          }
+          isDrawingShapeRef.current = false;
+          currentShapeRef.current = null;
+        });
         break;
       }
       case 'arrow': {
         fc.isDrawingMode = false;
         fc.selection = false;
-        setupArrowTool(fc, color, width);
+
+        fc.on('mouse:down', (opt: any) => {
+          const pointer = fc.getScenePoint(opt.e);
+          isDrawingShapeRef.current = true;
+          shapeStartRef.current = { x: pointer.x, y: pointer.y };
+
+          const line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+            stroke: color,
+            strokeWidth: width,
+            selectable: false,
+          });
+          fc.add(line);
+          currentShapeRef.current = line;
+        });
+
+        fc.on('mouse:move', (opt: any) => {
+          if (!isDrawingShapeRef.current || !currentShapeRef.current) return;
+          const pointer = fc.getScenePoint(opt.e);
+          (currentShapeRef.current as Line).set({ x2: pointer.x, y2: pointer.y });
+          fc.renderAll();
+        });
+
+        fc.on('mouse:up', (opt: any) => {
+          if (!currentShapeRef.current) return;
+          const pointer = fc.getScenePoint(opt.e);
+          const start = shapeStartRef.current;
+          const angle = Math.atan2(pointer.y - start.y, pointer.x - start.x);
+          const headLen = 15;
+
+          const arrow1 = new Line([
+            pointer.x, pointer.y,
+            pointer.x - headLen * Math.cos(angle - Math.PI / 6),
+            pointer.y - headLen * Math.sin(angle - Math.PI / 6),
+          ], { stroke: color, strokeWidth: width, selectable: true });
+
+          const arrow2 = new Line([
+            pointer.x, pointer.y,
+            pointer.x - headLen * Math.cos(angle + Math.PI / 6),
+            pointer.y - headLen * Math.sin(angle + Math.PI / 6),
+          ], { stroke: color, strokeWidth: width, selectable: true });
+
+          fc.add(arrow1);
+          fc.add(arrow2);
+          currentShapeRef.current.set({ selectable: true });
+
+          isDrawingShapeRef.current = false;
+          currentShapeRef.current = null;
+          fc.renderAll();
+        });
         break;
       }
       case 'eraser': {
         fc.isDrawingMode = false;
         fc.selection = true;
-        // In eraser mode, clicking an object deletes it
-        fc.on('mouse:down', (opt) => {
+        fc.on('mouse:down', (opt: any) => {
           const target = fc.findTarget(opt.e);
           if (target) {
             fc.remove(target);
@@ -244,141 +305,60 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
         break;
       }
     }
-  };
+  }, []);
 
-  const setupTextTool = (fc: FabricCanvas, color: string) => {
-    fc.on('mouse:down', (opt) => {
-      const pointer = fc.getScenePoint(opt.e);
-      const text = new Textbox('ข้อความ', {
-        left: pointer.x,
-        top: pointer.y,
-        fontSize: 20,
-        fill: color,
-        width: 200,
-        editable: true,
-      });
-      fc.add(text);
-      fc.setActiveObject(text);
-      // Enter editing mode
-      text.enterEditing();
-      fc.renderAll();
-      // Remove listener after placing one text
-      fc.off('mouse:down');
-    });
-  };
-
-  const setupCircleTool = (fc: FabricCanvas, color: string, width: number) => {
-    fc.on('mouse:down', (opt) => {
-      const pointer = fc.getScenePoint(opt.e);
-      isDrawingShapeRef.current = true;
-      shapeStartRef.current = { x: pointer.x, y: pointer.y };
-
-      const circle = new Circle({
-        left: pointer.x,
-        top: pointer.y,
-        radius: 1,
-        fill: 'transparent',
-        stroke: color,
-        strokeWidth: width,
-        selectable: false,
-      });
-      fc.add(circle);
-      currentShapeRef.current = circle;
-    });
-
-    fc.on('mouse:move', (opt) => {
-      if (!isDrawingShapeRef.current || !currentShapeRef.current) return;
-      const pointer = fc.getScenePoint(opt.e);
-      const start = shapeStartRef.current;
-
-      const rx = Math.abs(pointer.x - start.x) / 2;
-      const ry = Math.abs(pointer.y - start.y) / 2;
-      const radius = Math.max(rx, ry);
-
-      (currentShapeRef.current as Circle).set({
-        left: Math.min(start.x, pointer.x),
-        top: Math.min(start.y, pointer.y),
-        radius,
-        scaleX: rx > ry ? rx / radius : 1,
-        scaleY: ry > rx ? ry / radius : 1,
-      });
-      fc.renderAll();
-    });
-
-    fc.on('mouse:up', () => {
-      if (currentShapeRef.current) {
-        currentShapeRef.current.set({ selectable: true });
-      }
-      isDrawingShapeRef.current = false;
-      currentShapeRef.current = null;
-    });
-  };
-
-  const setupArrowTool = (fc: FabricCanvas, color: string, width: number) => {
-    fc.on('mouse:down', (opt) => {
-      const pointer = fc.getScenePoint(opt.e);
-      isDrawingShapeRef.current = true;
-      shapeStartRef.current = { x: pointer.x, y: pointer.y };
-
-      const line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-        stroke: color,
-        strokeWidth: width,
-        selectable: false,
-      });
-      fc.add(line);
-      currentShapeRef.current = line;
-    });
-
-    fc.on('mouse:move', (opt) => {
-      if (!isDrawingShapeRef.current || !currentShapeRef.current) return;
-      const pointer = fc.getScenePoint(opt.e);
-      (currentShapeRef.current as Line).set({
-        x2: pointer.x,
-        y2: pointer.y,
-      });
-      fc.renderAll();
-    });
-
-    fc.on('mouse:up', (opt) => {
-      if (!currentShapeRef.current) return;
-      const pointer = fc.getScenePoint(opt.e);
-      const start = shapeStartRef.current;
-
-      // Draw arrowhead
-      const angle = Math.atan2(pointer.y - start.y, pointer.x - start.x);
-      const headLen = 15;
-
-      const arrow1 = new Line([
-        pointer.x, pointer.y,
-        pointer.x - headLen * Math.cos(angle - Math.PI / 6),
-        pointer.y - headLen * Math.sin(angle - Math.PI / 6),
-      ], { stroke: color, strokeWidth: width, selectable: false });
-
-      const arrow2 = new Line([
-        pointer.x, pointer.y,
-        pointer.x - headLen * Math.cos(angle + Math.PI / 6),
-        pointer.y - headLen * Math.sin(angle + Math.PI / 6),
-      ], { stroke: color, strokeWidth: width, selectable: false });
-
-      fc.add(arrow1);
-      fc.add(arrow2);
-      currentShapeRef.current.set({ selectable: true });
-      arrow1.set({ selectable: true });
-      arrow2.set({ selectable: true });
-
-      isDrawingShapeRef.current = false;
-      currentShapeRef.current = null;
-      fc.renderAll();
-    });
-  };
-
-  // Update tool when changed
+  // Initialize Fabric canvas when page size changes
   useEffect(() => {
+    if (pageSize.width === 0 || pageSize.height === 0 || !drawCanvasRef.current) return;
+
+    // Dispose old canvas
     if (fabricRef.current) {
-      applyTool(fabricRef.current, activeTool, penColor, penWidth);
+      fabricRef.current.dispose();
+      fabricRef.current = null;
     }
+
+    const fc = new FabricCanvas(drawCanvasRef.current, {
+      width: pageSize.width,
+      height: pageSize.height,
+      backgroundColor: 'transparent',
+      isDrawingMode: false,
+    });
+
+    // Track history for undo
+    fc.on('object:added', () => {
+      historyRef.current.push(JSON.stringify(fc.toJSON()));
+      setCanUndo(historyRef.current.length > 1);
+    });
+
+    fabricRef.current = fc;
+
+    // Restore annotations for this page if any
+    const saved = annotationsRef.current.get(currentPage);
+    if (saved) {
+      fc.loadFromJSON(saved).then(() => {
+        fc.renderAll();
+        applyCurrentTool();
+      });
+    } else {
+      applyCurrentTool();
+    }
+
+    return () => {
+      // Save current page annotations before dispose
+      if (fabricRef.current) {
+        const json = JSON.stringify(fabricRef.current.toJSON());
+        annotationsRef.current.set(currentPage, json);
+      }
+      fc.dispose();
+      fabricRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTool, penColor, penWidth]);
+  }, [pageSize]);
+
+  // Re-apply tool when tool/color/width changes
+  useEffect(() => {
+    applyCurrentTool();
+  }, [activeTool, penColor, penWidth, applyCurrentTool]);
 
   // Page navigation
   const saveCurrentAnnotations = () => {
@@ -399,12 +379,13 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
   // Undo
   const handleUndo = () => {
     if (!fabricRef.current || historyRef.current.length <= 1) return;
-    historyRef.current.pop(); // Remove current state
+    historyRef.current.pop();
     const prev = historyRef.current[historyRef.current.length - 1];
     if (prev) {
       fabricRef.current.loadFromJSON(prev).then(() => {
         fabricRef.current?.renderAll();
         setCanUndo(historyRef.current.length > 1);
+        applyCurrentTool();
       });
     } else {
       fabricRef.current.clear();
@@ -418,15 +399,12 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
 
     saveCurrentAnnotations();
 
-    // Collect canvas images for annotated pages
     const pageImages = new Map<number, string>();
 
     for (const [pageNum, jsonStr] of annotationsRef.current) {
-      // Check if page has any objects
       const parsed = JSON.parse(jsonStr);
       if (!parsed.objects || parsed.objects.length === 0) continue;
 
-      // Create a temp canvas and render the annotations
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = pageSize.width;
       tempCanvas.height = pageSize.height;
@@ -446,7 +424,6 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
     }
 
     if (pageImages.size === 0) {
-      // No annotations, still save
       onSave(new Blob([pdfBytes], { type: 'application/pdf' }));
       return;
     }
@@ -567,13 +544,11 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
           </div>
         ) : (
           <div className="relative shadow-lg" style={{ width: pageSize.width, height: pageSize.height }}>
-            {/* Background: rendered PDF page */}
             <canvas
               ref={bgCanvasRef}
               className="absolute inset-0"
               style={{ width: pageSize.width, height: pageSize.height }}
             />
-            {/* Overlay: Fabric.js drawing canvas */}
             <canvas
               ref={drawCanvasRef}
               className="absolute inset-0"

@@ -207,19 +207,22 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ registerType, onSaved }) =>
             {/* Row 1: เลขทะเบียนรับ (auto) + ที่ + ลงวันที่ */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <Label className="text-sm font-medium flex items-center gap-1.5">
+                <Label htmlFor="register_number" className="text-sm font-medium flex items-center gap-1.5">
                   <Hash className="h-3.5 w-3.5 text-muted-foreground" />
                   เลขทะเบียนรับ
                 </Label>
-                <div className={`mt-1.5 px-3 py-2.5 rounded-lg border-2 border-dashed text-sm font-mono font-bold flex items-center gap-2 ${isInternal ? 'border-orange-300 bg-orange-50/50 text-orange-700 dark:border-orange-700 dark:bg-orange-950/20 dark:text-orange-300' : 'border-purple-300 bg-purple-50/50 text-purple-700 dark:border-purple-700 dark:bg-purple-950/20 dark:text-purple-300'}`}>
-                  {loadingNumber ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      {String(nextNumber).padStart(4, '0')}/{yearShort}
-                      <Badge variant="outline" className="text-[10px] font-normal ml-auto">อัตโนมัติ</Badge>
-                    </>
-                  )}
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <Input
+                    id="register_number"
+                    type="number"
+                    min={1}
+                    value={nextNumber ?? ''}
+                    onChange={(e) => setNextNumber(e.target.value ? Number(e.target.value) : null)}
+                    placeholder={loadingNumber ? 'กำลังโหลด...' : 'เลขที่'}
+                    disabled={loadingNumber}
+                    className="font-mono font-bold text-center"
+                  />
+                  <span className="text-sm font-mono font-bold text-muted-foreground whitespace-nowrap">/{yearShort}</span>
                 </div>
               </div>
               <div>

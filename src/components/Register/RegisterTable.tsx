@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Loader2, ExternalLink, ChevronLeft, ChevronRight,
-  Save, X, Pencil, ArrowUpDown, Search, FileText, PenLine, Hash, Download, CalendarRange
+  Save, X, Pencil, ArrowUpDown, Search, FileText, PenLine, Hash, FileSpreadsheet, CalendarRange
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
@@ -433,11 +433,11 @@ const RegisterTable: React.FC<RegisterTableProps> = ({
           <Button
             variant="outline"
             size="sm"
-            className="text-xs gap-1 h-7"
+            className="text-xs gap-1.5 h-7 border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950"
             onClick={exportToExcel}
             disabled={filteredData.length === 0}
           >
-            <Download className="h-3 w-3" />
+            <FileSpreadsheet className="h-3.5 w-3.5" />
             Export Excel
           </Button>
           <Button

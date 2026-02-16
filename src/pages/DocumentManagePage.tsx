@@ -452,6 +452,12 @@ const DocumentManagePage: React.FC = () => {
         1000
       );
       
+      // Refresh session before upload to prevent expired JWT errors
+      const { error: sessionError } = await supabase.auth.refreshSession();
+      if (sessionError) {
+        console.warn('Session refresh failed, attempting upload anyway:', sessionError.message);
+      }
+
       // Upload new PDF to Supabase Storage (overwrite existing)
       const fileName = `memo_${Date.now()}_${docSuffix.replace(/[^\w]/g, '_')}.pdf`;
       const filePath = `memos/${profile.user_id}/${fileName}`;

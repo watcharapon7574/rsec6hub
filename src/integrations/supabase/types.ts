@@ -47,6 +47,57 @@ export type Database = {
         }
         Relationships: []
       }
+      document_register_manual: {
+        Row: {
+          id: string
+          register_type: string
+          register_number: number
+          doc_reference: string | null
+          doc_date: string | null
+          from_org: string | null
+          to_person: string | null
+          subject: string
+          action_taken: string | null
+          remarks: string | null
+          year: number | null
+          created_by: string | null
+          created_at: string | null
+          doc_number: string | null
+        }
+        Insert: {
+          id?: string
+          register_type: string
+          register_number: number
+          doc_reference?: string | null
+          doc_date?: string | null
+          from_org?: string | null
+          to_person?: string | null
+          subject: string
+          action_taken?: string | null
+          remarks?: string | null
+          year?: number | null
+          created_by?: string | null
+          created_at?: string | null
+          doc_number?: string | null
+        }
+        Update: {
+          id?: string
+          register_type?: string
+          register_number?: number
+          doc_reference?: string | null
+          doc_date?: string | null
+          from_org?: string | null
+          to_person?: string | null
+          subject?: string
+          action_taken?: string | null
+          remarks?: string | null
+          year?: number | null
+          created_by?: string | null
+          created_at?: string | null
+          doc_number?: string | null
+        }
+        Relationships: []
+      }
       daily_reports: {
         Row: {
           created_at: string | null

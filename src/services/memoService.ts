@@ -211,6 +211,12 @@ export class MemoService {
           );
         }
         
+        // Refresh session before upload to prevent expired JWT errors
+        const { error: sessionError } = await supabase.auth.refreshSession();
+        if (sessionError) {
+          console.warn('Session refresh failed, attempting upload anyway:', sessionError.message);
+        }
+
         // Upload PDF to Supabase Storage (use queue + retry)
         const fileName = `memo_${Date.now()}_${formData.doc_number.replace(/[^\w]/g, '_')}.pdf`;
         const filePath = `memos/${userId}/${fileName}`;

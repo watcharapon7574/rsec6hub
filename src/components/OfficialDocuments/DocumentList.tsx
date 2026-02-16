@@ -1025,7 +1025,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         {(reportMemoIds.has(memo.id) || memo.is_assigned) && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
                       {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ และไม่ใช่ report memo */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && !reportMemoIds.has(memo.id) && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && !reportMemoIds.has(memo.id) && (
                         <>
                           {!memo.is_assigned ? (
                             <div className="relative">
@@ -1113,10 +1113,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       )}
                       {/* Debug: Check user position */}
                       {(() => {
-                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher'));
+                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director'));
                         return null;
                       })()}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
                         <div className="relative">
                           {(() => {
                             const isReportMemo = reportMemoIds.has(memo.id);
@@ -1165,7 +1165,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   )}
                   {/* Delete button - แสดงเฉพาะธุรการเท่านั้น */}
                   {(() => {
-                    const shouldShow = (profile?.is_admin || profile?.position === 'clerk_teacher');
+                    const shouldShow = (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director');
                     console.log('🗑️ DocumentList Delete Button Check:', {
                       position: profile?.position,
                       isClerkTeacher: shouldShow,
@@ -1174,7 +1174,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     });
                     return null;
                   })()}
-                  {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
+                  {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
                     <Button
                       variant="outline"
                       size="sm"

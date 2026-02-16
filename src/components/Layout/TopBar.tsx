@@ -5,6 +5,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Power, User } from 'lucide-react';
 import SessionTimer from './SessionTimer';
+import FastDocLogo from '@/components/ui/FastDocLogo';
 
 
 const TopBar = () => {
@@ -90,11 +91,7 @@ const TopBar = () => {
           <div className="flex items-center space-x-2 sm:space-x-6 flex-1 min-w-0">
             {/* Logo - Fixed size to prevent compression */}
             <Link to="/dashboard" className="flex-shrink-0">
-              <img
-                src="/fastdoc.png"
-                alt="RSEC6 OfficeHub Logo"
-                className="h-10 sm:h-12 w-auto object-contain"
-              />
+              <FastDocLogo className="h-10 sm:h-12 w-auto" />
             </Link>
             
             {/* Profile Section - Hidden on very small screens, shown on sm+ */}

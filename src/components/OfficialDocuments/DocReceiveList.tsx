@@ -1000,7 +1000,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         {memo.is_assigned && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
                       {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
                         <>
                           {!memo.is_assigned ? (
                             <div className="relative">
@@ -1057,7 +1057,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                         <Eye className="h-4 w-4" />
                       </Button>
                       {/* Edit button - Edit metadata (date, subject, doc_number) before managing document */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && memo.current_signer_order === 1 && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && memo.current_signer_order === 1 && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -1071,10 +1071,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       )}
                       {/* Debug: Check user position */}
                       {(() => {
-                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher'));
+                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director'));
                         return null;
                       })()}
-                      {((profile?.is_admin || profile?.position === 'clerk_teacher') || isPDFUploadMemo(memo)) && (
+                      {((profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') || isPDFUploadMemo(memo)) && (
                         <div className="relative">
                           {memo.status === 'rejected' ? (
                             /* ปุ่มแก้ไขสำหรับเอกสารที่ถูกตีกลับ */
@@ -1128,7 +1128,7 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                       )}
 
                       {/* จัดการรายงาน button - แสดงเมื่อมี report memo ที่ status = draft */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher') && draftReportMemos[memo.id] && (
+                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && draftReportMemos[memo.id] && (
                         <div className="relative">
                           <Button
                             variant="outline"

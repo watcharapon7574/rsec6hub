@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MessageCircle, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import FastDocLogo from '@/components/ui/FastDocLogo';
 
 interface TelegramLinkingProps {
   phone: string;
@@ -36,11 +37,7 @@ const TelegramLinking: React.FC<TelegramLinkingProps> = ({ phone, onLinked, onBa
   return (
     <Card className="border-0 shadow-xl bg-card backdrop-blur-sm">
       <div className="flex justify-center pt-6 pb-4">
-        <img
-          src="/fastdoc.png"
-          alt="RSEC6 OfficeHub Logo"
-          className="h-16 w-auto"
-        />
+        <FastDocLogo className="h-16 w-auto" />
       </div>
       
       <CardContent className="space-y-6 px-6">

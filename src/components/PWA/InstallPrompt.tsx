@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, X } from 'lucide-react';
+import FastDocLogo from '@/components/ui/FastDocLogo';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -92,11 +93,7 @@ const InstallPrompt: React.FC = () => {
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
-              <img
-                src="/fastdocIcon.png"
-                alt="RSEC6 OfficeHub"
-                className="h-8 w-8"
-              />
+              <FastDocLogo className="h-8 w-8" showText={false} />
               <h3 className="font-semibold text-foreground">ติดตั้งแอป</h3>
             </div>
             <Button

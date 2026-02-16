@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import FastDocLogo from '@/components/ui/FastDocLogo';
 import { 
   Calendar, 
   FileText, 
@@ -48,11 +49,7 @@ const Dashboard = () => {
         <Card className="mb-6">
           <CardContent className="bg-blue-600 rounded-t-lg pt-6">
             <div className="flex items-center gap-4">
-              <img
-                src="/fastdocIcon.png"
-                alt="RSEC6 OfficeHub Icon"
-                className="h-10 w-10 object-contain"
-              />
+              <FastDocLogo className="h-10 w-10" showText={false} />
               <div>
                 <h1 className="text-2xl font-bold text-white">
                   ยินดีต้อนรับ, {displayName}

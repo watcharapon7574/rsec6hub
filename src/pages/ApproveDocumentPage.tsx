@@ -400,24 +400,23 @@ const ApproveDocumentPage: React.FC = () => {
         profile: { name: `${profile.first_name} ${profile.last_name}`, position: profile.position }
       });
 
-      // Cleanup old annotated files before saving new ones (memo/report_memo only)
-      if (!isDocReceive) {
-        const { cleanupAnnotatedFiles } = await import('@/utils/pdfAnnotationUtils');
-        await cleanupAnnotatedFiles(memoId);
-      }
+      // Cleanup old annotated files before saving new ones
+      const { cleanupAnnotatedFiles } = await import('@/utils/pdfAnnotationUtils');
+      await cleanupAnnotatedFiles(memoId);
 
       const result = await updateDocumentApproval(memoId, 'reject', rejectionReason);
 
       if (result.success) {
-        // Save annotated PDF URL if provided (memo/report_memo only)
-        if (!isDocReceive && (annotatedPdfUrl || (annotatedAttachments && annotatedAttachments.length > 0))) {
+        // Save annotated PDF URL if provided
+        if (annotatedPdfUrl || (annotatedAttachments && annotatedAttachments.length > 0)) {
           const annotationUpdate: any = {};
           if (annotatedPdfUrl) annotationUpdate.annotated_pdf_path = annotatedPdfUrl;
           if (annotatedAttachments && annotatedAttachments.length > 0) {
             annotationUpdate.annotated_attachment_paths = JSON.stringify(annotatedAttachments);
           }
+          const tableName = isDocReceive ? 'doc_receive' : 'memos';
           await (supabase as any)
-            .from('memos')
+            .from(tableName)
             .update(annotationUpdate)
             .eq('id', memoId);
         }
@@ -1161,9 +1160,9 @@ const ApproveDocumentPage: React.FC = () => {
             <RejectionCard
               onReject={handleReject}
               isLoading={isRejecting}
-              pdfUrl={!isDocReceive && memo?.pdf_draft_path ? (extractPdfUrl(memo.pdf_draft_path) || undefined) : undefined}
+              pdfUrl={memo?.pdf_draft_path ? (extractPdfUrl(memo.pdf_draft_path) || undefined) : undefined}
               attachedFiles={(() => {
-                if (isDocReceive || !memo?.attached_files) return [];
+                if (!memo?.attached_files) return [];
                 try {
                   const parsed = typeof memo.attached_files === 'string' ? JSON.parse(memo.attached_files) : memo.attached_files;
                   return Array.isArray(parsed) ? parsed : [];

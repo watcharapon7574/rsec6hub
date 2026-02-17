@@ -713,7 +713,14 @@ const ApproveDocumentPage: React.FC = () => {
           const newFilePath = oldFilePath.replace(/[^/]+$/, newFileName);
 
           // เรียก Edge Function (server-to-server ไม่ต้องดาวน์โหลด PDF ผ่านมือถือ)
+          // Refresh session ก่อนเรียก Edge Function เพื่อให้ได้ fresh access_token
+          await supabase.auth.refreshSession();
           const { data: { session } } = await supabase.auth.getSession();
+
+          if (!session?.access_token) {
+            throw new Error('Session หมดอายุ กรุณาล็อกอินใหม่');
+          }
+
           const edgeRes = await fetch(
             'https://ikfioqvjrhquiyeylmsv.supabase.co/functions/v1/sign-document',
             {
@@ -738,7 +745,10 @@ const ApproveDocumentPage: React.FC = () => {
 
           const edgeResult = await edgeRes.json();
           if (!edgeRes.ok) {
-            throw new Error(edgeResult.error || 'ไม่สามารถเซ็นเอกสารได้');
+            if (edgeRes.status === 401) {
+              throw new Error('Session หมดอายุ กรุณาล็อกเอาท์แล้วล็อกอินใหม่');
+            }
+            throw new Error(edgeResult.error || edgeResult.msg || 'ไม่สามารถเซ็นเอกสารได้');
           }
 
           setShowLoadingModal(false);

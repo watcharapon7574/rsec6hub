@@ -15,6 +15,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
   const isPulling = useRef(false);
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
+  const startScrollY = useRef(0);
 
   // Keep refs in sync with state
   useEffect(() => { pullDistanceRef.current = pullDistance; }, [pullDistance]);
@@ -22,8 +23,13 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
 
   // Register touch listeners once
   useEffect(() => {
+    const getScrollTop = () => Math.max(window.scrollY, document.documentElement.scrollTop, 0);
+
     const onTouchStart = (e: TouchEvent) => {
-      if (window.scrollY > 0 || isRefreshingRef.current) return;
+      const scrollTop = getScrollTop();
+      startScrollY.current = scrollTop;
+      // Only allow pull-to-refresh when truly at the top
+      if (scrollTop > 5 || isRefreshingRef.current) return;
       touchStartY.current = e.touches[0].clientY;
       isPulling.current = true;
     };
@@ -31,10 +37,18 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
     const onTouchMove = (e: TouchEvent) => {
       if (!isPulling.current || isRefreshingRef.current) return;
 
+      // Double-check: if page scrolled since touchstart, cancel pull
+      if (startScrollY.current > 5 || getScrollTop() > 5) {
+        isPulling.current = false;
+        pullDistanceRef.current = 0;
+        setPullDistance(0);
+        return;
+      }
+
       const currentY = e.touches[0].clientY;
       const diff = currentY - touchStartY.current;
 
-      if (diff > 0 && window.scrollY === 0) {
+      if (diff > 0 && getScrollTop() <= 5) {
         const distance = Math.min(diff * 0.5, MAX_PULL);
         pullDistanceRef.current = distance;
         setPullDistance(distance);

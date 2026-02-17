@@ -25,7 +25,6 @@ import { submitPDFSignature } from '@/services/pdfSignatureService';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AnimatedProgress } from '@/components/ui/progress';
-import { railwayPDFQueue } from '@/utils/requestQueue';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
@@ -486,8 +485,6 @@ const ApproveDocumentPage: React.FC = () => {
         }
         
         setShowLoadingModal(true);
-        let signSuccess = false;
-        let signedPdfBlob: Blob | null = null;
 
         // ถ้าเป็น admin ลงนามแทน ให้เพิ่ม "admin" นำหน้า comment
         const isAdminSigning = isAdminUser && !currentUserSigner && !currentUserSignature;
@@ -629,55 +626,6 @@ const ApproveDocumentPage: React.FC = () => {
             return;
           }
 
-          // ดาวน์โหลด PDF + ลายเซ็น พร้อมกัน (parallel) เพื่อเร็วขึ้นบนมือถือ
-          console.log('📥 Fetching PDF and signature in parallel...');
-          const [pdfRes, sigRes] = await Promise.all([
-            fetch(extractedPdfUrl),
-            fetch(signatureUrl)
-          ]);
-
-          if (!pdfRes.ok) {
-            console.error('❌ Failed to fetch PDF:', pdfRes.status, pdfRes.statusText);
-            setShowLoadingModal(false);
-            toast({
-              title: 'ไม่พบไฟล์ PDF',
-              description: `ไม่สามารถดาวน์โหลดไฟล์ PDF ได้ (${pdfRes.status}) กรุณารีเฟรชหน้าและลองใหม่`,
-              variant: 'destructive'
-            });
-            return;
-          }
-          if (!sigRes.ok) {
-            console.error('❌ Failed to fetch signature:', sigRes.status, sigRes.statusText);
-            setShowLoadingModal(false);
-            toast({
-              title: 'ไม่พบไฟล์ลายเซ็น',
-              description: `ไม่สามารถดาวน์โหลดลายเซ็นได้ (${sigRes.status}) กรุณาตรวจสอบลายเซ็นในโปรไฟล์`,
-              variant: 'destructive'
-            });
-            return;
-          }
-
-          const [pdfBlob, sigBlob] = await Promise.all([
-            pdfRes.blob(),
-            sigRes.blob()
-          ]);
-          console.log('✅ PDF fetched:', pdfBlob.size, 'bytes, Signature fetched:', sigBlob.size, 'bytes');
-
-          // ตรวจสอบว่า blob เป็น PDF จริง
-          if (pdfBlob.type !== 'application/pdf' && !pdfBlob.type.includes('pdf')) {
-            console.error('❌ Invalid PDF blob type:', pdfBlob.type);
-            setShowLoadingModal(false);
-            toast({
-              title: 'ไฟล์ไม่ถูกต้อง',
-              description: 'ไฟล์ที่ได้รับไม่ใช่ PDF กรุณารีเฟรชหน้าและลองใหม่',
-              variant: 'destructive'
-            });
-            return;
-          }
-
-          const formData = new FormData();
-          formData.append('pdf', pdfBlob, 'document.pdf');
-          formData.append('sig1', sigBlob, 'signature.png');
           // ใช้ตำแหน่งของผู้ลงนาม - ใช้ข้อมูลจาก signer_list_progress หากมี
           // ถ้าเป็น admin ลงนามแทน ให้ใช้ current_signer_order
           const signerOrder = isAdminSigning
@@ -743,104 +691,63 @@ const ApproveDocumentPage: React.FC = () => {
             return;
           }
           
-          // สร้าง signatures payload สำหรับ /add_signature_v2 - comment เฉพาะตำแหน่งแรก
+          // สร้าง signatures payload สำหรับ Edge Function
           const signaturesPayload = userSignaturePositions.map((pos, index) => ({
-            page: pos.page - 1, // ปรับจาก 1-based เป็น 0-based
+            page: pos.page - 1,
             x: Math.round(pos.x),
             y: Math.round(pos.y),
             width: 120,
             height: 60,
-            lines: index === 0 ? linesWithComment : linesWithoutComment // comment เฉพาะตำแหน่งแรก
+            lines: index === 0 ? linesWithComment : linesWithoutComment
           }));
-          
-          formData.append('signatures', JSON.stringify(signaturesPayload));
-          
-          console.log(`📝 User signature positions (${userSignaturePositions.length} positions):`, userSignaturePositions.map(pos => ({ x: pos.x, y: pos.y, page: pos.page })));
-          console.log(`📝 Signatures payload:`, JSON.stringify(signaturesPayload, null, 2));
 
-          // Call Railway add_signature_v2 API with queue + retry logic
-          signedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
-            async () => {
-              const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
-                method: 'POST',
-                body: formData
-              });
-              if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(errorText);
-              }
-              return await res.blob();
-            },
-            'Add Signature V2 (Approve)',
-            3,
-            1000
-          );
-          signSuccess = true;
-        } catch (e) {
-          setShowLoadingModal(false);
-          toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถเซ็นเอกสารได้' });
-          return;
-        }
-        if (signSuccess && signedPdfBlob) {
-          // --- อัปโหลดไฟล์ใหม่ (ชื่อใหม่) ---
+          console.log(`📝 Signatures payload (${userSignaturePositions.length} positions)`);
+
+          // คำนวณ next signer order และ status
+          const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;
+          const approvalResult = calculateNextSignerOrder(currentOrder, signaturePositions, signingPosition);
+
+          // คำนวณ file paths
           const oldFilePath = extractedPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
           const newFileName = `signed_${Date.now()}_${oldFilePath.split('/').pop()}`;
           const newFilePath = oldFilePath.replace(/[^/]+$/, newFileName);
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('documents')
-            .upload(newFilePath, signedPdfBlob, {
-              contentType: 'application/pdf',
-              upsert: false
-            });
-          if (uploadError) {
-            setShowLoadingModal(false);
-            toast({ title: 'Upload error', description: uploadError.message });
-            return;
+
+          // เรียก Edge Function (server-to-server ไม่ต้องดาวน์โหลด PDF ผ่านมือถือ)
+          const { data: { session } } = await supabase.auth.getSession();
+          const edgeRes = await fetch(
+            'https://ikfioqvjrhquiyeylmsv.supabase.co/functions/v1/sign-document',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token}`,
+              },
+              body: JSON.stringify({
+                pdfUrl: extractedPdfUrl,
+                signatureUrl,
+                signatures: signaturesPayload,
+                oldFilePath,
+                newFilePath,
+                documentId: memoId,
+                tableName: isDocReceive ? 'doc_receive' : 'memos',
+                newStatus: approvalResult.newStatus,
+                nextSignerOrder: approvalResult.nextSignerOrder,
+              }),
+            }
+          );
+
+          const edgeResult = await edgeRes.json();
+          if (!edgeRes.ok) {
+            throw new Error(edgeResult.error || 'ไม่สามารถเซ็นเอกสารได้');
           }
-          // --- อัปเดต path และ current_signer_order ใน database ---
-          const { data: { publicUrl: newPublicUrl } } = supabase.storage
-            .from('documents')
-            .getPublicUrl(newFilePath);
-          
-          // หา nextSignerOrder - ใช้ centralized logic จาก approvalWorkflowService
-          const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;
-          
-          // calculateNextSignerOrder รองรับการข้ามผู้ลงนาม + Director shortcut
-          const approvalResult = calculateNextSignerOrder(currentOrder, signaturePositions, signingPosition);
-          const nextSignerOrder = approvalResult.nextSignerOrder;
-          const newStatus = approvalResult.newStatus;
-          
-          const updateResult = await updateDocumentStatus(memoId, newStatus, undefined, undefined, nextSignerOrder, newPublicUrl);
-          
-          // ตรวจสอบว่า database update สำเร็จก่อนลบไฟล์เก่า
-          if (!updateResult.success) {
-            console.error('❌ Failed to update document status:', (updateResult as any).error);
-            // ลบไฟล์ใหม่ที่อัปโหลดไปแล้วเพื่อ rollback
-            await supabase.storage.from('documents').remove([newFilePath]);
-            setShowLoadingModal(false);
-            toast({ 
-              title: 'เกิดข้อผิดพลาด', 
-              description: 'ไม่สามารถอัปเดตสถานะเอกสารได้ กรุณาลองใหม่',
-              variant: 'destructive'
-            });
-            return;
-          }
-          
-          console.log('✅ Document status updated successfully, new PDF path:', newPublicUrl);
-          
-          // --- ลบไฟล์เก่า (หลังจาก database update สำเร็จแล้ว) ---
-          const { error: removeError } = await supabase.storage
-            .from('documents')
-            .remove([oldFilePath]);
-          if (removeError) {
-            console.warn('⚠️ Failed to remove old PDF file:', removeError.message);
-            // ไม่ต้อง return, แค่ log เพราะไฟล์ใหม่ถูกอัปโหลดและ database อัปเดตแล้ว
-          } else {
-            console.log('🗑️ Old PDF file removed successfully');
-          }
+
           setShowLoadingModal(false);
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });
           navigate('/documents');
+          return;
+        } catch (e) {
+          setShowLoadingModal(false);
+          toast({ title: 'เกิดข้อผิดพลาด', description: (e instanceof Error ? e.message : 'ไม่สามารถเซ็นเอกสารได้') });
           return;
         }
       }

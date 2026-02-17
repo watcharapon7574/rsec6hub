@@ -452,27 +452,45 @@ class TaskAssignmentService {
       });
 
       // Create assignment for each user with isTeamLeader flag
+      const skippedDuplicates: string[] = [];
       for (let i = 0; i < assignedToUserIds.length; i++) {
         const userId = assignedToUserIds[i];
         const isLeader = userId === teamLeaderUserId;
 
-        const assignmentId = await this.createTaskAssignment(
-          documentId,
-          documentType,
-          userId,
-          {
-            ...options,
-            isTeamLeader: isLeader
+        try {
+          const assignmentId = await this.createTaskAssignment(
+            documentId,
+            documentType,
+            userId,
+            {
+              ...options,
+              isTeamLeader: isLeader
+            }
+          );
+          assignmentIds.push(assignmentId);
+          console.log(`  ✅ Created assignment for ${userId}, isTeamLeader: ${isLeader}`);
+        } catch (err: any) {
+          // Skip duplicate assignments instead of failing the whole batch
+          if (err.message?.includes('ได้รับมอบหมายงานในเอกสารนี้แล้ว')) {
+            console.warn(`  ⚠️ Skipped duplicate assignment for ${userId}`);
+            skippedDuplicates.push(userId);
+          } else {
+            throw err;
           }
-        );
-        assignmentIds.push(assignmentId);
-
-        console.log(`  ✅ Created assignment for ${userId}, isTeamLeader: ${isLeader}`);
+        }
       }
 
-      // Send group notification to Telegram (fire and forget)
-      this.sendGroupNotification(documentId, documentType, assignedToUserIds, options)
-        .catch(err => console.error('Group notification failed:', err));
+      // If ALL users were duplicates, throw error
+      if (assignmentIds.length === 0 && skippedDuplicates.length > 0) {
+        throw new Error('ผู้ใช้ทุกคนได้รับมอบหมายงานในเอกสารนี้แล้ว');
+      }
+
+      // Send group notification only for newly assigned users
+      const newlyAssignedUserIds = assignedToUserIds.filter(id => !skippedDuplicates.includes(id));
+      if (newlyAssignedUserIds.length > 0) {
+        this.sendGroupNotification(documentId, documentType, newlyAssignedUserIds, options)
+          .catch(err => console.error('Group notification failed:', err));
+      }
 
       return assignmentIds;
     } catch (error) {

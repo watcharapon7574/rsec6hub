@@ -41,6 +41,8 @@ interface Step1DocReceiveProps {
   onReject: (reason: string, annotatedPdfUrl?: string, annotatedAttachments?: string[]) => void;
   isRejecting: boolean;
   isStepComplete: boolean;
+  // สำหรับ annotation ตอนตีกลับ
+  userId?: string;
 }
 
 const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
@@ -55,7 +57,8 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
   onNext,
   onReject,
   isRejecting,
-  isStepComplete
+  isStepComplete,
+  userId
 }) => {
   // Debug log
   console.log('📋 Step1DocReceive memo:', {
@@ -250,6 +253,10 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
       <RejectionCard
         onReject={onReject}
         isLoading={isRejecting}
+        pdfUrl={extractPdfUrl(memo?.pdf_draft_path) || memo?.pdf_draft_path}
+        attachedFiles={attachedFiles}
+        documentId={memo?.id}
+        userId={userId}
       />
     </div>
   );

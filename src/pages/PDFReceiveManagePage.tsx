@@ -525,7 +525,7 @@ const PDFReceiveManagePage: React.FC = () => {
               onSelectedDeputyChange={setSelectedDeputy}
               signers={signers}
               onNext={handleNext}
-              onReject={async (reason: string) => {
+              onReject={async (reason: string, annotatedPdfUrl?: string, annotatedAttachments?: string[]) => {
                 if (!memoId || !profile) return;
                 setIsRejecting(true);
                 try {
@@ -539,7 +539,9 @@ const PDFReceiveManagePage: React.FC = () => {
                       name: `${profile.first_name} ${profile.last_name}`,
                       comment: reason,
                       rejected_at: new Date().toISOString(),
-                      position: profile.current_position || profile.job_position || profile.position || ''
+                      position: profile.current_position || profile.job_position || profile.position || '',
+                      annotated_pdf_url: annotatedPdfUrl || null,
+                      annotated_attachments: annotatedAttachments || null,
                     };
                   }
 
@@ -568,6 +570,7 @@ const PDFReceiveManagePage: React.FC = () => {
               }}
               isRejecting={isRejecting}
               isStepComplete={isStepComplete(1)}
+              userId={profile?.user_id}
             />
           )}
 

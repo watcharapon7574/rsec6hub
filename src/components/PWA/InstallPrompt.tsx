@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, X, Globe } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import FastDocLogo from '@/components/ui/FastDocLogo';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -13,22 +13,35 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
-const isChrome = () => /Chrome/i.test(navigator.userAgent) && !/Edge|OPR|Samsung/i.test(navigator.userAgent);
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+const isTelegramMiniApp = () => {
+  return !!(window as any).Telegram?.WebApp?.initData || window.location.pathname.startsWith('/telegram');
+};
+
+const isStandalone = () => {
+  return window.matchMedia?.('(display-mode: standalone)').matches ||
+    (navigator as any).standalone === true;
+};
 
 const InstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [showChromeHint, setShowChromeHint] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Check if app is already installed
-    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+    // ไม่แสดงบน iOS, Telegram Mini App, หรือถ้าติดตั้งแล้ว
+    if (isIOS() || isTelegramMiniApp() || isStandalone()) {
       setIsInstalled(true);
       return;
     }
 
-    // Listen for the beforeinstallprompt event
+    // ตรวจสอบว่าเคย dismiss แล้วหรือยัง (ใช้ localStorage เพื่อจำข้ามเซสชัน)
+    if (localStorage.getItem('pwa-prompt-dismissed')) {
+      return;
+    }
+
+    // Listen for the beforeinstallprompt event (Chrome/Edge on Android/Desktop only)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -43,20 +56,10 @@ const InstallPrompt: React.FC = () => {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setShowPrompt(false);
-      setShowChromeHint(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Not Chrome (Android or PC) → show hint to switch to Chrome
-    if (!isChrome()) {
-      setTimeout(() => {
-        if (!sessionStorage.getItem('pwa-chrome-hint-dismissed')) {
-          setShowChromeHint(true);
-        }
-      }, 3000);
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -67,71 +70,24 @@ const InstallPrompt: React.FC = () => {
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
-    // Show the install prompt
     deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === 'accepted') {
       console.log('User accepted the PWA install prompt');
-    } else {
-      console.log('User dismissed the PWA install prompt');
     }
 
-    // Clear the deferredPrompt
     setDeferredPrompt(null);
     setShowPrompt(false);
   };
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    setShowChromeHint(false);
-    sessionStorage.setItem('pwa-prompt-dismissed', 'true');
-    sessionStorage.setItem('pwa-chrome-hint-dismissed', 'true');
+    localStorage.setItem('pwa-prompt-dismissed', 'true');
   };
 
-  // Don't show if already installed
-  if (isInstalled) return null;
-
-  // Check if user previously dismissed
-  if (sessionStorage.getItem('pwa-prompt-dismissed')) {
-    // Still show Chrome hint if on Android non-Chrome
-    if (!showChromeHint) return null;
-  }
-
-  // Android non-Chrome: show "please use Chrome" hint
-  if (showChromeHint && !deferredPrompt) {
-    return (
-      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 sm:max-w-sm">
-        <Card className="bg-card shadow-lg border border-orange-200 dark:border-orange-800">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Globe className="h-6 w-6 text-orange-500" />
-                <h3 className="font-semibold text-foreground">เปิดใน Chrome</h3>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDismiss}
-                className="h-6 w-6 p-0 hover:bg-accent"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              เพื่อติดตั้ง FastDoc เป็นแอป กรุณาเปิดเว็บไซต์นี้ใน <strong>Google Chrome</strong> แล้วกด "ติดตั้ง"
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Normal install prompt (Chrome on Android)
-  if (!showPrompt || !deferredPrompt) return null;
+  // ไม่แสดงถ้าติดตั้งแล้ว หรือไม่มี prompt จาก browser
+  if (isInstalled || !showPrompt || !deferredPrompt) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 sm:max-w-sm">

@@ -10,7 +10,9 @@ import ProfileForm from './ProfileForm';
 import ProfileHeader from './ProfileHeader';
 import ProfileImageUpload from './ProfileImageUpload';
 import SignatureUpload from './SignatureUpload';
+import SessionManagement from './SessionManagement';
 import { useProfileUpload } from '@/hooks/useProfileUpload';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ const ProfilePage = () => {
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAllProfiles, setShowAllProfiles] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const { toast } = useToast();
 
   const permissions = getPermissions();
@@ -114,6 +117,7 @@ const ProfilePage = () => {
         onToggleAllProfiles={() => navigate('/admin/profiles')}
         onExportPDF={exportToPDF}
         onToggleEdit={handleToggleEdit}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       {showAllProfiles && permissions.isAdmin ? (
@@ -159,6 +163,15 @@ const ProfilePage = () => {
           />
         </div>
       )}
+
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>ตั้งค่า</DialogTitle>
+          </DialogHeader>
+          <SessionManagement />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

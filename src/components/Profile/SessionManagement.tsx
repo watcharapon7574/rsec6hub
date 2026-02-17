@@ -65,7 +65,30 @@ const SessionManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSessions((data as SessionRecord[]) || []);
+      let dbSessions = (data as SessionRecord[]) || [];
+
+      // If current device's session is not in DB, add a virtual entry
+      if (currentSessionToken && !dbSessions.some(s => s.session_token === currentSessionToken)) {
+        const storedAuth = localStorage.getItem('employee_auth');
+        let loginTime = new Date().toISOString();
+        if (storedAuth) {
+          try {
+            const parsed = JSON.parse(storedAuth);
+            if (parsed.loginTime) loginTime = new Date(parsed.loginTime).toISOString();
+          } catch {}
+        }
+        dbSessions = [{
+          id: 'current-device',
+          session_token: currentSessionToken,
+          device_fingerprint: localStorage.getItem('device_fingerprint'),
+          user_agent: navigator.userAgent,
+          created_at: loginTime,
+          expires_at: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+          is_active: true,
+        }, ...dbSessions];
+      }
+
+      setSessions(dbSessions);
     } catch (err: any) {
       console.error('Error fetching sessions:', err);
       toast({
@@ -121,7 +144,7 @@ const SessionManagement = () => {
 
       if (error) throw error;
 
-      setSessions(prev => prev.filter(s => s.session_token === currentSessionToken));
+      setSessions(prev => prev.filter(s => s.session_token === currentSessionToken || s.id === 'current-device'));
       toast({
         title: 'ยกเลิกทุก session สำเร็จ',
         description: 'อุปกรณ์อื่นทั้งหมดจะถูกเตะออกจากระบบ',
@@ -171,7 +194,7 @@ const SessionManagement = () => {
           <Button variant="ghost" size="sm" onClick={fetchSessions}>
             <RefreshCw className="h-4 w-4" />
           </Button>
-          {sessions.length > 1 && (
+          {sessions.filter(s => s.session_token !== currentSessionToken).length > 0 && (
             <Button
               variant="destructive"
               size="sm"

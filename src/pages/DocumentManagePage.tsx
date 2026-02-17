@@ -882,9 +882,13 @@ const DocumentManagePage: React.FC = () => {
           if (authorProfile.org_structure_role) {
             lines.push({ type: "role", value: authorProfile.org_structure_role });
           }
-          // ดาวน์โหลด PDF
-          console.log('📥 Fetching PDF from:', extractedPdfUrl);
-          const pdfRes = await fetch(extractedPdfUrl);
+          // ดาวน์โหลด PDF + ลายเซ็น พร้อมกัน (parallel)
+          console.log('📥 Fetching PDF and signature in parallel...');
+          const [pdfRes, sigRes] = await Promise.all([
+            fetch(extractedPdfUrl),
+            fetch(authorProfile.signature_url)
+          ]);
+
           if (!pdfRes.ok) {
             console.error('❌ Failed to fetch PDF:', pdfRes.status, pdfRes.statusText);
             setShowLoadingModal(false);
@@ -895,9 +899,23 @@ const DocumentManagePage: React.FC = () => {
             });
             return;
           }
-          const pdfBlob = await pdfRes.blob();
-          console.log('✅ PDF fetched successfully, size:', pdfBlob.size, 'bytes');
-          
+          if (!sigRes.ok) {
+            console.error('❌ Failed to fetch signature:', sigRes.status, sigRes.statusText);
+            setShowLoadingModal(false);
+            toast({
+              title: 'ไม่พบไฟล์ลายเซ็น',
+              description: `ไม่สามารถดาวน์โหลดลายเซ็นได้ (${sigRes.status}) กรุณาตรวจสอบลายเซ็นในโปรไฟล์`,
+              variant: 'destructive'
+            });
+            return;
+          }
+
+          const [pdfBlob, sigBlob] = await Promise.all([
+            pdfRes.blob(),
+            sigRes.blob()
+          ]);
+          console.log('✅ PDF fetched:', pdfBlob.size, 'bytes, Signature fetched:', sigBlob.size, 'bytes');
+
           // ตรวจสอบว่า blob เป็น PDF จริง
           if (pdfBlob.type !== 'application/pdf' && !pdfBlob.type.includes('pdf')) {
             console.error('❌ Invalid PDF blob type:', pdfBlob.type);
@@ -909,22 +927,7 @@ const DocumentManagePage: React.FC = () => {
             });
             return;
           }
-          
-          // ดาวน์โหลดลายเซ็น
-          console.log('📥 Fetching signature from:', authorProfile.signature_url);
-          const sigRes = await fetch(authorProfile.signature_url);
-          if (!sigRes.ok) {
-            console.error('❌ Failed to fetch signature:', sigRes.status, sigRes.statusText);
-            setShowLoadingModal(false);
-            toast({
-              title: 'ไม่พบไฟล์ลายเซ็น',
-              description: `ไม่สามารถดาวน์โหลดลายเซ็นได้ (${sigRes.status}) กรุณาตรวจสอบลายเซ็นในโปรไฟล์`,
-              variant: 'destructive'
-            });
-            return;
-          }
-          const sigBlob = await sigRes.blob();
-          console.log('✅ Signature fetched successfully, size:', sigBlob.size, 'bytes');
+
           const formData = new FormData();
           formData.append('pdf', pdfBlob, 'document.pdf');
           formData.append('sig1', sigBlob, 'signature.png');

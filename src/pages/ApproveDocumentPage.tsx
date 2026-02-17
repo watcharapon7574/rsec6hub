@@ -614,35 +614,7 @@ const ApproveDocumentPage: React.FC = () => {
             linesWithoutComment = [...linesWithComment]; // ผู้เขียนไม่มี comment อยู่แล้ว
           }
           // --- เตรียม FormData และเรียก API ลายเซ็น ---
-          // ดาวน์โหลด PDF
-          console.log('📥 Fetching PDF from:', extractedPdfUrl);
-          const pdfRes = await fetch(extractedPdfUrl);
-          if (!pdfRes.ok) {
-            console.error('❌ Failed to fetch PDF:', pdfRes.status, pdfRes.statusText);
-            setShowLoadingModal(false);
-            toast({
-              title: 'ไม่พบไฟล์ PDF',
-              description: `ไม่สามารถดาวน์โหลดไฟล์ PDF ได้ (${pdfRes.status}) กรุณารีเฟรชหน้าและลองใหม่`,
-              variant: 'destructive'
-            });
-            return;
-          }
-          const pdfBlob = await pdfRes.blob();
-          console.log('✅ PDF fetched successfully, size:', pdfBlob.size, 'bytes');
-          
-          // ตรวจสอบว่า blob เป็น PDF จริง
-          if (pdfBlob.type !== 'application/pdf' && !pdfBlob.type.includes('pdf')) {
-            console.error('❌ Invalid PDF blob type:', pdfBlob.type);
-            setShowLoadingModal(false);
-            toast({
-              title: 'ไฟล์ไม่ถูกต้อง',
-              description: 'ไฟล์ที่ได้รับไม่ใช่ PDF กรุณารีเฟรชหน้าและลองใหม่',
-              variant: 'destructive'
-            });
-            return;
-          }
-          
-          // ดาวน์โหลดลายเซ็น - ใช้ลายเซ็นของผู้ลงนามจริง (signerProfile) ไม่ใช่ของ admin
+          // ตรวจสอบ signature URL ก่อนดาวน์โหลด
           const signatureUrl = signerProfile.signature_url;
           if (!signatureUrl) {
             console.error('❌ No signature URL for signer:', signerProfile);
@@ -656,8 +628,24 @@ const ApproveDocumentPage: React.FC = () => {
             });
             return;
           }
-          console.log('📥 Fetching signature from:', signatureUrl, isAdminSigning ? '(actual signer)' : '(current user)');
-          const sigRes = await fetch(signatureUrl);
+
+          // ดาวน์โหลด PDF + ลายเซ็น พร้อมกัน (parallel) เพื่อเร็วขึ้นบนมือถือ
+          console.log('📥 Fetching PDF and signature in parallel...');
+          const [pdfRes, sigRes] = await Promise.all([
+            fetch(extractedPdfUrl),
+            fetch(signatureUrl)
+          ]);
+
+          if (!pdfRes.ok) {
+            console.error('❌ Failed to fetch PDF:', pdfRes.status, pdfRes.statusText);
+            setShowLoadingModal(false);
+            toast({
+              title: 'ไม่พบไฟล์ PDF',
+              description: `ไม่สามารถดาวน์โหลดไฟล์ PDF ได้ (${pdfRes.status}) กรุณารีเฟรชหน้าและลองใหม่`,
+              variant: 'destructive'
+            });
+            return;
+          }
           if (!sigRes.ok) {
             console.error('❌ Failed to fetch signature:', sigRes.status, sigRes.statusText);
             setShowLoadingModal(false);
@@ -668,8 +656,25 @@ const ApproveDocumentPage: React.FC = () => {
             });
             return;
           }
-          const sigBlob = await sigRes.blob();
-          console.log('✅ Signature fetched successfully, size:', sigBlob.size, 'bytes');
+
+          const [pdfBlob, sigBlob] = await Promise.all([
+            pdfRes.blob(),
+            sigRes.blob()
+          ]);
+          console.log('✅ PDF fetched:', pdfBlob.size, 'bytes, Signature fetched:', sigBlob.size, 'bytes');
+
+          // ตรวจสอบว่า blob เป็น PDF จริง
+          if (pdfBlob.type !== 'application/pdf' && !pdfBlob.type.includes('pdf')) {
+            console.error('❌ Invalid PDF blob type:', pdfBlob.type);
+            setShowLoadingModal(false);
+            toast({
+              title: 'ไฟล์ไม่ถูกต้อง',
+              description: 'ไฟล์ที่ได้รับไม่ใช่ PDF กรุณารีเฟรชหน้าและลองใหม่',
+              variant: 'destructive'
+            });
+            return;
+          }
+
           const formData = new FormData();
           formData.append('pdf', pdfBlob, 'document.pdf');
           formData.append('sig1', sigBlob, 'signature.png');

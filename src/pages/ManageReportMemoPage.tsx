@@ -865,14 +865,17 @@ const ManageReportMemoPage: React.FC = () => {
         const extractedPdfUrl = extractPdfUrl(reportMemo.pdf_draft_path);
         if (extractedPdfUrl) {
           try {
-            // Fetch PDF and signature
-            const pdfRes = await fetch(extractedPdfUrl);
+            // Fetch PDF and signature in parallel
+            const [pdfRes, sigRes] = await Promise.all([
+              fetch(extractedPdfUrl),
+              fetch(firstSigner.signature_url)
+            ]);
             if (!pdfRes.ok) throw new Error('ไม่สามารถดาวน์โหลด PDF ได้');
-            const pdfBlob = await pdfRes.blob();
-
-            const sigRes = await fetch(firstSigner.signature_url);
             if (!sigRes.ok) throw new Error('ไม่สามารถดาวน์โหลดลายเซ็นได้');
-            const sigBlob = await sigRes.blob();
+            const [pdfBlob, sigBlob] = await Promise.all([
+              pdfRes.blob(),
+              sigRes.blob()
+            ]);
 
             // Prepare signature data
             const lines = [

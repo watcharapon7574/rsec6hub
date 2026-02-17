@@ -115,7 +115,7 @@ const AuthPage = () => {
         setOtpError('');
         toast({
           title: "เข้าสู่ระบบสำเร็จ",
-          description: "ยินดีต้อนรับสู่ RSEC6 OfficeHub"
+          description: "ยินดีต้อนรับสู่ FastDoc"
         });
         navigate('/dashboard');
       }

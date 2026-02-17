@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import OTPInput from './OTPInput';
@@ -23,6 +23,15 @@ const OTPStep: React.FC<OTPStepProps> = ({
   onSubmittingChange
 }) => {
   const [resetOTP, setResetOTP] = useState(false);
+  const prevErrorRef = useRef(error);
+
+  // Auto-clear OTP when a new error appears (wrong OTP)
+  useEffect(() => {
+    if (error && error !== prevErrorRef.current) {
+      setResetOTP(true);
+    }
+    prevErrorRef.current = error;
+  }, [error]);
 
   const handleOTPComplete = (otp: string) => {
     onVerifyOTP(otp);

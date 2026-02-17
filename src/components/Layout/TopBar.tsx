@@ -130,7 +130,7 @@ const TopBar = () => {
             {profile && (
               <div className="sm:hidden flex items-center space-x-2 min-w-0">
                 <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarImage src="" />
+                  <AvatarImage src={profile.profile_picture_url || undefined} />
                   <AvatarFallback className="bg-gradient-primary text-white text-xs font-semibold shadow-primary">
                     {getUserInitials()}
                   </AvatarFallback>

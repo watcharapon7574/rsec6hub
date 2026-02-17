@@ -16,6 +16,8 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
   const pullDistanceRef = useRef(0);
   const isRefreshingRef = useRef(false);
   const startScrollY = useRef(0);
+  const moveCount = useRef(0);
+  const touchStartTime = useRef(0);
 
   // Keep refs in sync with state
   useEffect(() => { pullDistanceRef.current = pullDistance; }, [pullDistance]);
@@ -28,8 +30,9 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
     const onTouchStart = (e: TouchEvent) => {
       const scrollTop = getScrollTop();
       startScrollY.current = scrollTop;
-      // Only allow pull-to-refresh when truly at the top
-      if (scrollTop > 5 || isRefreshingRef.current) return;
+      moveCount.current = 0;
+      touchStartTime.current = Date.now();
+      if (scrollTop > 0 || isRefreshingRef.current) return;
       touchStartY.current = e.touches[0].clientY;
       isPulling.current = true;
     };
@@ -37,8 +40,10 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
     const onTouchMove = (e: TouchEvent) => {
       if (!isPulling.current || isRefreshingRef.current) return;
 
-      // Double-check: if page scrolled since touchstart, cancel pull
-      if (startScrollY.current > 5 || getScrollTop() > 5) {
+      moveCount.current++;
+
+      // Cancel if page scrolled
+      if (startScrollY.current > 0 || getScrollTop() > 0) {
         isPulling.current = false;
         pullDistanceRef.current = 0;
         setPullDistance(0);
@@ -48,7 +53,18 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       const currentY = e.touches[0].clientY;
       const diff = currentY - touchStartY.current;
 
-      if (diff > 0 && getScrollTop() <= 5) {
+      if (diff > 0 && getScrollTop() === 0) {
+        // Require at least 5 touchmove events (slow deliberate pull)
+        // Fast flicks have fewer events before touchend
+        if (moveCount.current < 5) {
+          // Show visual feedback but don't allow threshold yet
+          const distance = Math.min(diff * 0.3, THRESHOLD * 0.5);
+          pullDistanceRef.current = distance;
+          setPullDistance(distance);
+          if (distance > 10) e.preventDefault();
+          return;
+        }
+
         const distance = Math.min(diff * 0.5, MAX_PULL);
         pullDistanceRef.current = distance;
         setPullDistance(distance);
@@ -67,7 +83,10 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       if (!isPulling.current || isRefreshingRef.current) return;
       isPulling.current = false;
 
-      if (pullDistanceRef.current >= THRESHOLD) {
+      const elapsed = Date.now() - touchStartTime.current;
+
+      // Require: enough move events AND enough time (>300ms) AND past threshold
+      if (pullDistanceRef.current >= THRESHOLD && moveCount.current >= 5 && elapsed > 300) {
         isRefreshingRef.current = true;
         setIsRefreshing(true);
         setPullDistance(THRESHOLD);

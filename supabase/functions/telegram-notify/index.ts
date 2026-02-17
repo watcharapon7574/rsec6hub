@@ -232,6 +232,9 @@ function formatMessage(payload: NotificationPayload): string {
       if (payload.location) {
         message += `📍 <b>สถานที่:</b> ${payload.location}\n`
       }
+      if (payload.doc_number) {
+        message += `🔢 <b>เลขหนังสือ:</b> ${payload.doc_number}\n`
+      }
       if (payload.note) {
         message += `💬 <b>หมายเหตุ:</b> ${payload.note}\n`
       }

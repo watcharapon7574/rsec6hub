@@ -4,6 +4,7 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/database';
 import { signIn, signOut, getCurrentProfile, isAuthenticated, refreshProfile, sendOTP, getSessionTimeRemaining } from '@/services/authService';
+import { getStoredAuthData, clearAuthStorage } from '@/services/auth/storage';
 import { getPermissions } from '@/utils/permissionUtils';
 
 export const useEmployeeAuth = () => {
@@ -23,6 +24,33 @@ export const useEmployeeAuth = () => {
         if (!isMounted) return;
         
         if (session?.user) {
+          // ตรวจสอบ 8-hour session limit ก่อน
+          const storedAuth = getStoredAuthData();
+          if (storedAuth) {
+            const currentTime = new Date().getTime();
+            if (currentTime > storedAuth.expirationTime) {
+              // Session 8 ชม. หมดอายุแล้ว → บังคับ sign out
+              console.log('⏰ Session 8 ชม. หมดอายุแล้ว (เข้าตั้งแต่', new Date(storedAuth.loginTime).toLocaleString(), ')');
+              clearAuthStorage();
+              setUser(null);
+              setIsAuth(false);
+              setProfile(null);
+              setLoading(false);
+              // Defer signOut เพื่อไม่ให้ขัดกับ onAuthStateChange
+              setTimeout(() => supabase.auth.signOut(), 0);
+              return;
+            }
+          } else if (event !== 'SIGNED_IN') {
+            // ไม่มี auth data แต่มี Supabase session (อาจถูกเคลียร์ไปแล้วเพราะหมดอายุ)
+            console.log('❌ ไม่มี auth data แต่มี Supabase session → บังคับ sign out');
+            setUser(null);
+            setIsAuth(false);
+            setProfile(null);
+            setLoading(false);
+            setTimeout(() => supabase.auth.signOut(), 0);
+            return;
+          }
+
           setUser(session.user);
           setIsAuth(true);
           setLoading(false); // Reset loading when authenticated

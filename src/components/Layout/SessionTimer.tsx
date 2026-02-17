@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock } from 'lucide-react';
 import { getSessionTimeRemaining } from '@/services/authService';
@@ -6,6 +6,8 @@ import { signOut } from '@/services/auth/signOut';
 
 const SessionTimer = () => {
   const [timeRemaining, setTimeRemaining] = useState(getSessionTimeRemaining());
+  const prevTimeRef = useRef(timeRemaining);
+  const signingOutRef = useRef(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,14 +20,24 @@ const SessionTimer = () => {
   }, []);
 
   useEffect(() => {
-    // sign out เฉพาะเมื่อ session หมดเวลาจริงๆ (hours=0, minutes=0, seconds=0)
-    // ไม่ sign out เมื่อ timeRemaining === null เพราะอาจแค่ยังไม่มี session record
-    if (timeRemaining && timeRemaining.hours === 0 && timeRemaining.minutes === 0 && timeRemaining.seconds === 0) {
+    if (signingOutRef.current) return;
+
+    const shouldSignOut =
+      // กรณี 1: เวลาถึง 00:00:00 พอดี
+      (timeRemaining && timeRemaining.hours === 0 && timeRemaining.minutes === 0 && timeRemaining.seconds === 0) ||
+      // กรณี 2: เวลาเปลี่ยนจากมีค่า → null (timer หมดอายุ ข้ามจาก >0 ไปเป็น null)
+      (prevTimeRef.current !== null && timeRemaining === null);
+
+    if (shouldSignOut) {
+      signingOutRef.current = true;
+      console.log('⏰ Session timer expired, signing out...');
       (async () => {
         await signOut();
-        navigate('/auth');
+        navigate('/auth', { replace: true });
       })();
     }
+
+    prevTimeRef.current = timeRemaining;
   }, [timeRemaining, navigate]);
 
   if (!timeRemaining) return null;

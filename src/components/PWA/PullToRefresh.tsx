@@ -25,14 +25,21 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
 
   // Register touch listeners once
   useEffect(() => {
-    const getScrollTop = () => Math.max(window.scrollY, document.documentElement.scrollTop, 0);
+    // Check ALL possible scroll positions (iOS PWA can have different scroll containers)
+    const isAtTop = () => {
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      const docScrollTop = document.documentElement.scrollTop || 0;
+      const bodyScrollTop = document.body.scrollTop || 0;
+      const scrollingEl = document.scrollingElement?.scrollTop || 0;
+      return Math.max(scrollY, docScrollTop, bodyScrollTop, scrollingEl) === 0;
+    };
 
     const onTouchStart = (e: TouchEvent) => {
-      const scrollTop = getScrollTop();
-      startScrollY.current = scrollTop;
+      const atTop = isAtTop();
+      startScrollY.current = atTop ? 0 : 1;
       moveCount.current = 0;
       touchStartTime.current = Date.now();
-      if (scrollTop > 0 || isRefreshingRef.current) return;
+      if (!atTop || isRefreshingRef.current) return;
       touchStartY.current = e.touches[0].clientY;
       isPulling.current = true;
     };
@@ -42,8 +49,8 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
 
       moveCount.current++;
 
-      // Cancel if page scrolled
-      if (startScrollY.current > 0 || getScrollTop() > 0) {
+      // Cancel if page is no longer at top
+      if (!isAtTop()) {
         isPulling.current = false;
         pullDistanceRef.current = 0;
         setPullDistance(0);
@@ -53,11 +60,9 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ children }) => {
       const currentY = e.touches[0].clientY;
       const diff = currentY - touchStartY.current;
 
-      if (diff > 0 && getScrollTop() === 0) {
+      if (diff > 0) {
         // Require at least 5 touchmove events (slow deliberate pull)
-        // Fast flicks have fewer events before touchend
         if (moveCount.current < 5) {
-          // Show visual feedback but don't allow threshold yet
           const distance = Math.min(diff * 0.3, THRESHOLD * 0.5);
           pullDistanceRef.current = distance;
           setPullDistance(distance);

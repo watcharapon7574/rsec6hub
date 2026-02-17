@@ -9,6 +9,7 @@ import { useLayoutEffect } from "react";
 import { useEmployeeAuth } from "@/hooks/useEmployeeAuth";
 import TopBar from "@/components/Layout/TopBar";
 import FloatingNavbar from "@/components/Layout/FloatingNavbar";
+import PullToRefresh from "@/components/PWA/PullToRefresh";
 import { LoadingQueue } from "@/components/ui/LoadingQueue";
 import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
@@ -68,15 +69,17 @@ const ProtectedRoute = ({ children, isAuthenticated }: { children: React.ReactNo
   }
 
   return (
-    <div className="w-full bg-background min-h-screen overflow-x-hidden">
-      <APIMaintenanceBanner />
-      <TopBar />
-      <main className="w-full">
-        {children}
-      </main>
-      <FloatingNavbar />
-      <DarkModeToggle />
-    </div>
+    <PullToRefresh>
+      <div className="w-full bg-background min-h-screen overflow-x-hidden">
+        <APIMaintenanceBanner />
+        <TopBar />
+        <main className="w-full">
+          {children}
+        </main>
+        <FloatingNavbar />
+        <DarkModeToggle />
+      </div>
+    </PullToRefresh>
   );
 };
 

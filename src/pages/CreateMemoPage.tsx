@@ -953,7 +953,7 @@ const CreateMemoPage = () => {
                             focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          รองรับไฟล์: PDF, Word, รูปภาพ (JPG, PNG) ขนาดไม่เกิน 10MB ต่อไฟล์
+                          รองรับไฟล์: PDF, Word, รูปภาพ (JPG, PNG) ขนาดไม่เกิน 30MB ต่อไฟล์
                         </p>
                       </div>
                     </div>

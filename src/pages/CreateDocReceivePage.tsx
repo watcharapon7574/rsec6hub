@@ -195,10 +195,10 @@ const CreateDocReceivePage = () => {
         });
         return;
       }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 30 * 1024 * 1024) { // 30MB limit
         toast({
           title: "ไฟล์ขนาดใหญ่เกินไป",
-          description: "กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 10MB",
+          description: "กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 30MB",
           variant: "destructive",
         });
         return;
@@ -642,7 +642,7 @@ const CreateDocReceivePage = () => {
                           เลือกไฟล์ PDF
                         </Label>
                         <p className="text-sm text-muted-foreground mt-2">
-                          รองรับไฟล์ PDF เท่านั้น (ขนาดไม่เกิน 10MB)
+                          รองรับไฟล์ PDF เท่านั้น (ขนาดไม่เกิน 30MB)
                         </p>
                       </div>
                       {formData.pdfFile && (

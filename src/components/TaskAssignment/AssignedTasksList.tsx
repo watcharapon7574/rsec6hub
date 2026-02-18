@@ -157,9 +157,9 @@ const AssignedTasksList = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // ตรวจสอบขนาดไฟล์ (จำกัดที่ 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('ไฟล์มีขนาดใหญ่เกิน 10MB');
+      // ตรวจสอบขนาดไฟล์ (จำกัดที่ 30MB)
+      if (file.size > 30 * 1024 * 1024) {
+        alert('ไฟล์มีขนาดใหญ่เกิน 30MB');
         return;
       }
       setReportFile(file);
@@ -598,7 +598,7 @@ const AssignedTasksList = () => {
                     >
                       <Upload className="h-5 w-5 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        คลิกเพื่อเลือกไฟล์ (สูงสุด 10MB)
+                        คลิกเพื่อเลือกไฟล์ (สูงสุด 30MB)
                       </span>
                     </label>
                     <p className="text-xs text-muted-foreground mt-2">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, X } from 'lucide-react';
@@ -25,6 +26,7 @@ const isStandalone = () => {
 };
 
 const InstallPrompt: React.FC = () => {
+  const location = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -42,10 +44,10 @@ const InstallPrompt: React.FC = () => {
     }
 
     // ตรวจสอบ event ที่จับไว้ใน index.html ก่อน React mount (ป้องกันพลาด event)
+    // เก็บ __pwaInstallPrompt ไว้ให้หน้า auth page ใช้ได้ด้วย (ไม่ลบออก)
     const earlyPrompt = (window as any).__pwaInstallPrompt;
     if (earlyPrompt) {
       setDeferredPrompt(earlyPrompt as BeforeInstallPromptEvent);
-      (window as any).__pwaInstallPrompt = null;
       setTimeout(() => {
         setShowPrompt(true);
       }, 3000);
@@ -55,6 +57,8 @@ const InstallPrompt: React.FC = () => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      // เก็บไว้ใน global ให้ปุ่มดาวน์โหลดบนหน้า login ใช้ได้ด้วย
+      (window as any).__pwaInstallPrompt = e;
 
       // Show prompt after a delay
       setTimeout(() => {
@@ -89,6 +93,7 @@ const InstallPrompt: React.FC = () => {
 
     setDeferredPrompt(null);
     setShowPrompt(false);
+    (window as any).__pwaInstallPrompt = null;
   };
 
   const handleDismiss = () => {
@@ -96,8 +101,8 @@ const InstallPrompt: React.FC = () => {
     localStorage.setItem('pwa-prompt-dismissed', 'true');
   };
 
-  // ไม่แสดงถ้าติดตั้งแล้ว หรือไม่มี prompt จาก browser
-  if (isInstalled || !showPrompt || !deferredPrompt) return null;
+  // ไม่แสดงถ้าติดตั้งแล้ว, ไม่มี prompt จาก browser, หรืออยู่หน้า login (มีปุ่มดาวน์โหลดของตัวเองแล้ว)
+  if (isInstalled || !showPrompt || !deferredPrompt || location.pathname === '/auth') return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 sm:max-w-sm">

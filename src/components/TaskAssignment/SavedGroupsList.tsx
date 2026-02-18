@@ -18,6 +18,8 @@ interface SavedGroupsListProps {
   selectedPositionIds?: string[];
 }
 
+const INITIAL_DISPLAY_COUNT = 10;
+
 const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
   groups,
   onSelectGroup,
@@ -30,10 +32,13 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
 }) => {
   // Delete mode state - MUST be before any early returns (React Rules of Hooks)
   const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   // Separate groups and positions - MUST be before any early returns (React Rules of Hooks)
   const groupsOnly = useMemo(() => groups.filter(g => g.group_type !== 'position'), [groups]);
   const positionsOnly = useMemo(() => groups.filter(g => g.group_type === 'position'), [groups]);
+  const displayedGroups = showAll ? groups : groups.slice(0, INITIAL_DISPLAY_COUNT);
+  const hasMore = groups.length > INITIAL_DISPLAY_COUNT;
 
   if (loading) {
     return (
@@ -128,7 +133,7 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
 
       {/* Groups and Positions list */}
       <div className="flex flex-wrap gap-2">
-        {groups.map((group) => {
+        {displayedGroups.map((group) => {
           const isPosition = group.group_type === 'position';
           const isSelected = isPosition && selectedPositionIds.includes(group.id);
 
@@ -195,6 +200,17 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             </div>
           );
         })}
+        {/* Show more / Show less toggle */}
+        {hasMore && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAll(!showAll)}
+            className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground"
+          >
+            {showAll ? 'ย่อรายการ' : `ดูเพิ่มเติม (+${groups.length - INITIAL_DISPLAY_COUNT})`}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -200,8 +200,10 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
             </div>
           );
         })}
-        {/* Show more / Show less toggle */}
-        {hasMore && (
+      </div>
+      {/* Show more / Show less toggle */}
+      {hasMore && (
+        <div className="flex justify-center">
           <Button
             variant="ghost"
             size="sm"
@@ -210,8 +212,8 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
           >
             {showAll ? 'ย่อรายการ' : `ดูเพิ่มเติม (+${groups.length - INITIAL_DISPLAY_COUNT})`}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

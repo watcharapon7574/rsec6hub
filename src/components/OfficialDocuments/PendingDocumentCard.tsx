@@ -437,9 +437,9 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         ? 'text-green-700 dark:text-green-300 group-hover:text-green-800'
                         : 'text-foreground group-hover:text-amber-700 dark:text-amber-300'
                   }`} title={memo.subject}>{memo.subject}</span>
-                  {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{(memo.author_name || '-').split(' ')[0]}</span>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">{formatThaiDateShort(memo.date || memo.created_at)}</span>
+                  {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span
                     style={{
                       background: getStatusColorBySignerOrder(memo.current_signer_order),

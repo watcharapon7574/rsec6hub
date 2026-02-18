@@ -313,51 +313,49 @@ serve(async (req) => {
       }
     }
 
-    // 5. สร้าง session ด้วย signInWithPassword (สำหรับ server-side)
+    // 5. สร้าง session ด้วย generateLink + verifyOtp (ไม่ invalidate session เดิม)
+    // วิธีนี้รองรับ multi-device login โดยไม่ทำให้อุปกรณ์เก่าหลุด session
     console.log('🔑 Creating session for user:', authUser.id)
     console.log('Using email:', authUser.email)
-    
-    // สร้าง temporary password สำหรับ user (จะ reset ทันที)
-    const tempPassword = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`
-    
-    // Update user password temporarily
-    const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(
-      authUser.id,
-      { password: tempPassword }
-    )
-    
-    if (passwordError) {
-      console.error('❌ Failed to set temporary password:', passwordError)
+
+    // Generate magic link token (server-side, ไม่ invalidate session เดิม)
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: authUser.email!,
+    })
+
+    if (linkError || !linkData) {
+      console.error('❌ Failed to generate magic link:', linkError)
       return new Response(
         JSON.stringify({ error: 'ไม่สามารถสร้าง session ได้' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-    
-    // Create client for sign in
+
+    // Create client to verify token and get session
     const clientSupabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
-    
-    // Sign in to get session
-    const { data: signInData, error: signInError } = await clientSupabase.auth.signInWithPassword({
-      email: authUser.email!,
-      password: tempPassword
+
+    // Verify the token to get a proper session
+    const { data: verifyData, error: verifyError } = await clientSupabase.auth.verifyOtp({
+      token_hash: linkData.properties.hashed_token,
+      type: 'email',
     })
-    
-    if (signInError || !signInData.session) {
-      console.error('❌ Failed to sign in with temp password:', signInError)
+
+    if (verifyError || !verifyData.session) {
+      console.error('❌ Failed to verify magic link token:', verifyError)
       return new Response(
         JSON.stringify({ error: 'ไม่สามารถสร้าง access token ได้' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-    
+
     console.log('✅ Session created successfully')
-    
+
     // สร้าง session object
-    const session = signInData.session
+    const session = verifyData.session
 
     console.log('✅ Session object created')
 

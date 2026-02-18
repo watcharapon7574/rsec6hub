@@ -46,6 +46,7 @@ async function sendTelegramMessage(botToken: string, chatId: string, message: st
     chat_id: chatId,
     text: message,
     parse_mode: 'HTML',
+    disable_web_page_preview: true,
   }
 
   if (replyMarkup) {
@@ -273,7 +274,28 @@ function formatMessage(payload: NotificationPayload): string {
       return message // Return early without document ID
   }
 
-  message += `\n🔗 ID: ${payload.document_id}`
+  // Build clickable link to the document
+  const baseUrl = 'https://fastdoc.rsec6.ac.th'
+  const id = payload.document_id
+  const isMemo = payload.document_type === 'memo'
+
+  let docUrl: string
+  switch (payload.type) {
+    case 'document_pending':
+      docUrl = `${baseUrl}/approve-document/${id}`
+      break
+    case 'document_rejected':
+      docUrl = isMemo ? `${baseUrl}/document-manage/${id}` : `${baseUrl}/edit-doc-receive/${id}`
+      break
+    case 'document_created':
+      docUrl = isMemo ? `${baseUrl}/document-manage/${id}` : `${baseUrl}/pdf-receive-manage/${id}`
+      break
+    default:
+      docUrl = isMemo ? `${baseUrl}/pdf-document-manage/${id}` : `${baseUrl}/pdf-receive-manage/${id}`
+      break
+  }
+
+  message += `\n🔗 <a href="${docUrl}">ดูเอกสาร</a>`
 
   return message
 }

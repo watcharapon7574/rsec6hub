@@ -50,9 +50,11 @@ export interface SelectionInfo {
   source: AssignmentSource | null;
   positionId?: string;
   positionName?: string;
+  // Multiple positions: track all selected positions with their member mapping
+  positions?: { id: string; name: string; memberId: string }[];
   groupId?: string;
   groupName?: string;
-  // For group assignments: track leader user IDs from each selected group
+  // For group/position assignments: track leader user IDs
   groupLeaderIds?: string[];
 }
 
@@ -250,10 +252,9 @@ class TaskAssignmentService {
         docNumber = docReceive?.doc_number || '';
       }
 
-      // For position-based assignments (ส้ม), only show the first person (position holder)
-      // Team leader will manage and add team members later
+      // For position-based: show all position holders (they are all team leaders)
       const isPositionBased = options?.selectionInfo?.source === 'position';
-      const userIdsToShow = isPositionBased ? [assigneeUserIds[0]] : assigneeUserIds;
+      const userIdsToShow = assigneeUserIds;
 
       // Get assignee names
       const { data: profiles } = await supabase
@@ -341,25 +342,30 @@ class TaskAssignmentService {
       const isNameBased = options?.selectionInfo?.source === 'name';
       const groupLeaderIds = options?.selectionInfo?.groupLeaderIds || [];
 
-      // Determine team leader BEFORE creating assignments
+      // Determine team leader(s) BEFORE creating assignments
+      // For position-based: ALL position holders are leaders (multi-leader)
+      // For others: single leader determined by rules below
       let teamLeaderUserId: string | null = null;
+      const teamLeaderUserIds: Set<string> = new Set();
 
       // ===== Team Leader Determination Rules =====
-      // Case 1: Position (ส้ม) - ผู้รับผิดชอบตำแหน่งเป็นหัวหน้า (เพิ่มคนอื่นไม่ได้)
+      // Case 1: Position (ส้ม) - ทุกตำแหน่งที่เลือกเป็นหัวหน้าทีมร่วม (หลายคนได้)
       // Case 2: Group 1 กลุ่ม (ม่วง) - ใช้ leader_user_id ที่บันทึกตอนสร้างกลุ่ม
       // Case 3: Name only (น้ำเงิน) - คนแรกที่เพิ่มเป็นหัวหน้า
       // Case 4: Group + เพิ่มรายคน - หัวหน้ากลุ่มเป็นหัวหน้าเสมอ
       // Case 5: หลายกลุ่ม - เปรียบเทียบ RSEC ของหัวหน้าทุกกลุ่ม (น้อยสุดเป็นหัว)
       // Case 6: หลายกลุ่ม + รายคน - ใช้ logic เดียวกับ Case 5
 
-      if (assignedToUserIds.length === 1) {
-        // Single user: they are the team leader
-        teamLeaderUserId = assignedToUserIds[0];
-      } else if (isPositionBased && groupLeaderIds.length > 0) {
-        // Case 1: Position - use the position member (stored in groupLeaderIds)
-        teamLeaderUserId = groupLeaderIds[0];
+      if (isPositionBased && groupLeaderIds.length > 0) {
+        // Case 1: Position(s) - ALL position holders are team leaders
+        groupLeaderIds.forEach(id => teamLeaderUserIds.add(id));
+        teamLeaderUserId = groupLeaderIds[0]; // fallback for non-set code paths
       } else if (isPositionBased) {
         // Position fallback (shouldn't happen)
+        teamLeaderUserId = assignedToUserIds[0];
+        teamLeaderUserIds.add(assignedToUserIds[0]);
+      } else if (assignedToUserIds.length === 1) {
+        // Single user: they are the team leader
         teamLeaderUserId = assignedToUserIds[0];
       } else if ((isGroupBased || (isPositionBased && groupLeaderIds.length > 0)) && groupLeaderIds.length > 0) {
         // Case 2, 4, 5: Group-based with leaders
@@ -447,28 +453,44 @@ class TaskAssignmentService {
         isNameBased,
         groupLeaderIds,
         teamLeaderUserId,
+        teamLeaderUserIds: [...teamLeaderUserIds],
         assignedToUserIds,
-        source: options?.selectionInfo?.source
+        source: options?.selectionInfo?.source,
+        positions: options?.selectionInfo?.positions
       });
+
+      // Build per-user position map for multi-position assignments
+      const positionMap = new Map<string, string>();
+      if (isPositionBased && options?.selectionInfo?.positions) {
+        for (const pos of options.selectionInfo.positions) {
+          positionMap.set(pos.memberId, pos.id);
+        }
+      }
 
       // Create assignment for each user with isTeamLeader flag
       const skippedDuplicates: string[] = [];
       for (let i = 0; i < assignedToUserIds.length; i++) {
         const userId = assignedToUserIds[i];
-        const isLeader = userId === teamLeaderUserId;
+        // For position-based: check multi-leader set; for others: single leader
+        const isLeader = isPositionBased
+          ? teamLeaderUserIds.has(userId)
+          : userId === teamLeaderUserId;
+
+        // Override per-user positionId for multi-position assignments
+        const perUserPositionId = positionMap.get(userId);
+        const userOptions = perUserPositionId
+          ? { ...options, isTeamLeader: isLeader, selectionInfo: { ...options?.selectionInfo, positionId: perUserPositionId } }
+          : { ...options, isTeamLeader: isLeader };
 
         try {
           const assignmentId = await this.createTaskAssignment(
             documentId,
             documentType,
             userId,
-            {
-              ...options,
-              isTeamLeader: isLeader
-            }
+            userOptions
           );
           assignmentIds.push(assignmentId);
-          console.log(`  ✅ Created assignment for ${userId}, isTeamLeader: ${isLeader}`);
+          console.log(`  ✅ Created assignment for ${userId}, isTeamLeader: ${isLeader}, positionId: ${perUserPositionId || 'default'}`);
         } catch (err: any) {
           // Skip duplicate assignments instead of failing the whole batch
           if (err.message?.includes('ได้รับมอบหมายงานในเอกสารนี้แล้ว')) {

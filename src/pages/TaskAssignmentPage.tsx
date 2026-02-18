@@ -98,11 +98,11 @@ const TaskAssignmentPage = () => {
           author_name: data.author_name,
           document_type: documentType,
           pdf_url: pdfUrl,
-          signer_list_progress: data.signer_list_progress || []
+          signer_list_progress: (Array.isArray(data.signer_list_progress) ? data.signer_list_progress : []) as any[]
         });
 
         // ดึง comment จากผู้อำนวยการ (current_signer_order = 5)
-        const signerProgress = data.signer_list_progress || [];
+        const signerProgress: any[] = Array.isArray(data.signer_list_progress) ? data.signer_list_progress : [];
         const directorSigner = signerProgress.find((s: any) => s.order === 5);
         if (directorSigner?.comment) {
           setDirectorComment(directorSigner.comment);

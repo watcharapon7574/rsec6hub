@@ -22,9 +22,11 @@ export interface SelectionInfo {
   source: SelectionSource;
   positionId?: string;
   positionName?: string;
+  // Multiple positions: track all selected positions with their member mapping
+  positions?: { id: string; name: string; memberId: string }[];
   groupId?: string;
   groupName?: string;
-  // For group assignments: track leader user IDs from each selected group
+  // For group/position assignments: track leader user IDs
   groupLeaderIds?: string[];
 }
 
@@ -143,17 +145,39 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
       return;
     }
 
-    // Block adding another position
+    // Allow adding more positions in position mode (toggle behavior)
     if (isPositionMode && isPosition) {
-      toast({
-        title: 'ไม่สามารถเพิ่มหน้าที่ได้',
-        description: 'เลือกได้เพียง 1 หน้าที่เท่านั้น',
-        variant: 'destructive',
-      });
-      return;
+      const positionMemberId = group.members[0]?.user_id;
+      const existingPositions = selectionInfo?.positions || [];
+      const alreadySelected = existingPositions.some(p => p.id === group.id);
+
+      if (alreadySelected) {
+        // Toggle off: remove this position
+        const updatedPositions = existingPositions.filter(p => p.id !== group.id);
+        const updatedLeaderIds = (selectionInfo?.groupLeaderIds || []).filter(id => id !== positionMemberId);
+
+        if (updatedPositions.length === 0) {
+          onUsersChange(selectedUsers.filter(u => u.user_id !== positionMemberId));
+          if (onSelectionInfoChange) onSelectionInfoChange({ source: null });
+        } else {
+          onUsersChange(selectedUsers.filter(u => u.user_id !== positionMemberId));
+          if (onSelectionInfoChange) {
+            onSelectionInfoChange({
+              source: 'position',
+              positionId: updatedPositions[0].id,
+              positionName: updatedPositions[0].name,
+              positions: updatedPositions,
+              groupLeaderIds: updatedLeaderIds,
+            });
+          }
+        }
+        toast({ title: 'ยกเลิกหน้าที่', description: `ยกเลิก "${group.name}"` });
+        return;
+      }
+      // Not already selected → fall through to add logic below
     }
 
-    // Block if already has users and trying to add position
+    // Block if already has users from name/group mode and trying to add position
     if (isPosition && selectedUsers.length > 0 && !isPositionMode) {
       toast({
         title: 'ไม่สามารถเพิ่มหน้าที่ได้',
@@ -189,13 +213,18 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
       console.log('📋 Updating selectionInfo - current:', selectionInfo);
 
       if (isPosition) {
-        // For positions, the single member is the "leader" (responsible person)
+        // For positions: accumulate into positions array, all members become leaders
         const positionMemberId = group.members[0]?.user_id;
+        const existingPositions = selectionInfo?.positions || [];
+        const existingLeaderIds = selectionInfo?.groupLeaderIds || [];
+        const newPositions = [...existingPositions, { id: group.id, name: group.name, memberId: positionMemberId }];
+        const newLeaderIds = [...existingLeaderIds, ...(positionMemberId ? [positionMemberId] : [])];
         const newInfo = {
           source: 'position' as const,
-          positionId: group.id,
-          positionName: group.name,
-          groupLeaderIds: positionMemberId ? [positionMemberId] : []
+          positionId: newPositions[0].id,
+          positionName: newPositions[0].name,
+          positions: newPositions,
+          groupLeaderIds: newLeaderIds
         };
         console.log('📋 Setting position selectionInfo:', newInfo);
         onSelectionInfoChange(newInfo);
@@ -303,6 +332,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
           loading={loadingGroups}
           isPositionMode={isPositionMode}
           isNameOrGroupMode={isNameOrGroupMode}
+          selectedPositionIds={selectionInfo?.positions?.map(p => p.id) || []}
         />
 
         {/* Divider if there are saved groups and NOT in position mode */}
@@ -344,20 +374,15 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
           />
         )}
 
-        {/* Position mode: show selected user with clear option */}
-        {isPositionMode && (
-          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+        {/* Position mode: show all selected positions */}
+        {isPositionMode && selectionInfo?.positions && selectionInfo.positions.length > 0 && (
+          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-orange-500" />
-                <div>
-                  <span className="font-medium text-orange-800 dark:text-orange-200">
-                    {selectionInfo?.positionName}
-                  </span>
-                  <p className="text-sm text-orange-600 dark:text-orange-400">
-                    ผู้รับผิดชอบ: {selectedUsers[0]?.first_name} {selectedUsers[0]?.last_name}
-                  </p>
-                </div>
+                <span className="font-medium text-orange-800 dark:text-orange-200">
+                  หน้าที่ที่เลือก ({selectionInfo.positions.length})
+                </span>
               </div>
               <Button
                 variant="ghost"
@@ -366,11 +391,24 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
                 className="text-orange-600 hover:text-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900"
               >
                 <RotateCcw className="h-4 w-4 mr-1" />
-                ล้าง
+                ล้างทั้งหมด
               </Button>
             </div>
-            <p className="text-xs mt-2 text-orange-500 dark:text-orange-400">
-              ไม่สามารถเพิ่มคนอื่นได้ในโหมดหน้าที่ • กดล้างเพื่อเลือกใหม่
+            {selectionInfo.positions.map((pos) => {
+              const member = selectedUsers.find(u => u.user_id === pos.memberId);
+              return (
+                <div key={pos.id} className="flex items-center justify-between bg-white dark:bg-orange-900/30 rounded-md px-3 py-2">
+                  <div>
+                    <span className="text-sm font-medium text-orange-800 dark:text-orange-200">{pos.name}</span>
+                    <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">
+                      ({member?.first_name} {member?.last_name})
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            <p className="text-xs text-orange-500 dark:text-orange-400">
+              เลือกหน้าที่เพิ่มได้จากรายการด้านบน • ทุกคนเป็นหัวหน้าทีมร่วม • กดหน้าที่ซ้ำเพื่อยกเลิก
             </p>
           </div>
         )}

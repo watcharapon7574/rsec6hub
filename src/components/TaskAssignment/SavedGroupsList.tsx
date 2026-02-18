@@ -10,10 +10,12 @@ interface SavedGroupsListProps {
   onDeleteGroup: (groupId: string) => void;
   onCreateGroup?: () => void;
   loading?: boolean;
-  /** Position mode: disable groups/positions (only allow name search) */
+  /** Position mode: disable groups (but positions remain togglable) */
   isPositionMode?: boolean;
   /** Name/Group mode: disable positions */
   isNameOrGroupMode?: boolean;
+  /** IDs of currently selected positions (for visual highlight) */
+  selectedPositionIds?: string[];
 }
 
 const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
@@ -23,7 +25,8 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
   onCreateGroup,
   loading = false,
   isPositionMode = false,
-  isNameOrGroupMode = false
+  isNameOrGroupMode = false,
+  selectedPositionIds = []
 }) => {
   // Delete mode state - MUST be before any early returns (React Rules of Hooks)
   const [isDeleteMode, setIsDeleteMode] = useState(false);
@@ -127,21 +130,26 @@ const SavedGroupsList: React.FC<SavedGroupsListProps> = ({
       <div className="flex flex-wrap gap-2">
         {groups.map((group) => {
           const isPosition = group.group_type === 'position';
+          const isSelected = isPosition && selectedPositionIds.includes(group.id);
 
           // Determine if this item is disabled
-          // - In position mode: all groups and positions are disabled
+          // - In position mode: groups are disabled, but positions remain clickable (toggle)
           // - In name/group mode: only positions are disabled
-          const isDisabled = isPositionMode || (isNameOrGroupMode && isPosition);
+          const isDisabled = (isPositionMode && !isPosition) || (isNameOrGroupMode && isPosition);
 
-          const borderColor = isDisabled
-            ? 'border-border'
-            : isPosition ? 'border-orange-200 dark:border-orange-800' : 'border-purple-200 dark:border-purple-800';
+          const borderColor = isSelected
+            ? 'border-orange-500 dark:border-orange-400 ring-2 ring-orange-300 dark:ring-orange-700'
+            : isDisabled
+              ? 'border-border'
+              : isPosition ? 'border-orange-200 dark:border-orange-800' : 'border-purple-200 dark:border-purple-800';
           const textColor = isDisabled
             ? 'text-muted-foreground cursor-not-allowed'
             : isPosition ? 'text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:hover:text-orange-100' : 'text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100';
           const badgeBg = isDisabled
             ? 'bg-muted dark:bg-background/80 text-muted-foreground'
-            : isPosition ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300' : 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300';
+            : isSelected
+              ? 'bg-orange-500 dark:bg-orange-600 text-white'
+              : isPosition ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300' : 'bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300';
           const Icon = isPosition ? Briefcase : Users;
 
           // Find leader name for groups

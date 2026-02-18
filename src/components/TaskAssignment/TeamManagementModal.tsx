@@ -243,9 +243,6 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
     }
   };
 
-  // Find leader
-  const leader = teamMembers.find(m => m.is_team_leader);
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>

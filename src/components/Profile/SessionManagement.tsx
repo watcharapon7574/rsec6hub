@@ -54,7 +54,10 @@ const SessionManagement = () => {
   const currentSessionToken = localStorage.getItem('session_token');
 
   const fetchSessions = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase

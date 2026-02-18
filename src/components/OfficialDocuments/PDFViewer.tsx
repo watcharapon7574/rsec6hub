@@ -527,48 +527,46 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
               <FileText className="h-4 w-4 flex-shrink-0" />
               <span className="truncate">{fileName}</span>
             </CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               {/* Page Navigation Controls */}
               {totalPages > 0 && !editMode && !showSignatureMode && (
-                <div className="flex items-center justify-center w-full">
-                  <span className="text-base font-semibold px-2 text-gray-700 bg-white bg-opacity-80 rounded shadow-sm">
-                    {currentPageIndex + 1} / {totalPages}
-                  </span>
-                </div>
+                <span className="text-xs font-medium px-1.5 py-0.5 text-gray-600 whitespace-nowrap">
+                  {currentPageIndex + 1}/{totalPages}
+                </span>
               )}
               {totalPages > 0 && (editMode || showSignatureMode) && (
-                <div className="flex items-center gap-1 bg-white border rounded-lg px-2 py-1">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0"
+                <div className="flex items-center gap-0.5 bg-white border rounded-md px-1 py-0.5">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
                     onClick={goToPreviousPage}
                     disabled={currentPageIndex === 0}
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5" />
                   </Button>
-                  <span className="text-sm font-medium px-2 text-gray-700">
-                    {currentPageIndex + 1} / {totalPages}
+                  <span className="text-xs font-medium px-1 text-gray-700">
+                    {currentPageIndex + 1}/{totalPages}
                   </span>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0"
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
                     onClick={goToNextPage}
                     disabled={currentPageIndex === totalPages - 1}
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               )}
-              
+
               {/* Zoom Controls */}
               {showZoomControls && (
-                <div className="flex items-center gap-1 bg-white border rounded-lg px-2 py-1">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0"
+                <div className="flex items-center gap-0.5 bg-white border rounded-md px-1 py-0.5">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
                     onClick={() => {
                       const newScale = Math.max(0.5, scale - 0.25);
                       setScale(newScale);
@@ -576,15 +574,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                     }}
                     disabled={scale <= 0.5}
                   >
-                    <span className="text-lg font-bold">−</span>
+                    <span className="text-sm font-bold">−</span>
                   </Button>
-                  <span className="text-sm font-medium px-2 text-gray-700 min-w-[60px] text-center">
+                  <span className="text-xs font-medium px-1 text-gray-700 min-w-[36px] text-center">
                     {Math.round(scale * 100)}%
                   </span>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 w-8 p-0"
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
                     onClick={() => {
                       const newScale = Math.min(3, scale + 0.25);
                       setScale(newScale);
@@ -592,18 +590,18 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                     }}
                     disabled={scale >= 3}
                   >
-                    <span className="text-lg font-bold">+</span>
+                    <span className="text-sm font-bold">+</span>
                   </Button>
                 </div>
               )}
-              
+
               {signaturePositions.length > 0 && (
-                <Button size="sm" variant="outline" onClick={refreshPositions}>
-                  <RefreshCw className="h-4 w-4" />
+                <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={refreshPositions}>
+                  <RefreshCw className="h-3.5 w-3.5" />
                 </Button>
               )}
-              <Button size="sm" variant="outline" onClick={downloadPDF}>
-                <Download className="h-4 w-4" />
+              <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={downloadPDF}>
+                <Download className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>

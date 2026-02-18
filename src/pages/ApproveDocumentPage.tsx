@@ -766,15 +766,18 @@ const ApproveDocumentPage: React.FC = () => {
           }
 
           setShowLoadingModal(false);
-          (window as any).__signingInProgress = false;
-          // ถ้ามี SW update ค้างอยู่ ให้ apply หลังจาก navigate
-          if ((window as any).__pendingSWReload) {
-            (window as any).__pendingSWReload = false;
-            setTimeout(() => window.location.reload(), 500);
-            return;
-          }
+          // ⚠️ ยังคง __signingInProgress = true ไว้จนกว่า navigate จะเสร็จ
+          // เพื่อป้องกัน auth listener ตรวจ 8-hour limit แล้วบังคับ signOut ก่อน navigate
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });
           navigate('/documents');
+          // Clear signing flag หลัง navigate แล้ว + apply pending SW update
+          setTimeout(() => {
+            (window as any).__signingInProgress = false;
+            if ((window as any).__pendingSWReload) {
+              (window as any).__pendingSWReload = false;
+              window.location.reload();
+            }
+          }, 1500);
           return;
         } catch (e) {
           setShowLoadingModal(false);

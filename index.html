@@ -135,6 +135,12 @@
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   console.log('🆕 New Service Worker available');
+                  // ถ้ากำลังลงนามอยู่ ให้เก็บไว้ก่อน ไม่ SKIP_WAITING ทันที
+                  if (window.__signingInProgress) {
+                    console.log('⏳ Signing in progress, deferring SW update...');
+                    window.__pendingSWUpdate = newWorker;
+                    return;
+                  }
                   // บันทึกเวลาก่อน reload
                   sessionStorage.setItem(SW_RELOAD_KEY, Date.now().toString());
                   newWorker.postMessage({ type: 'SKIP_WAITING' });
@@ -145,6 +151,12 @@
             // เมื่อ SW ถูกเปลี่ยนแล้ว ให้รีโหลดหน้า (เพียงครั้งเดียว)
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
+              // ถ้ากำลังลงนามอยู่ ไม่ reload ทันที
+              if (window.__signingInProgress) {
+                console.log('⏳ Signing in progress, deferring reload...');
+                window.__pendingSWReload = true;
+                return;
+              }
               if (!refreshing) {
                 refreshing = true;
                 console.log('🔄 Controller changed, reloading...');

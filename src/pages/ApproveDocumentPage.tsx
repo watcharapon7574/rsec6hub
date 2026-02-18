@@ -485,6 +485,8 @@ const ApproveDocumentPage: React.FC = () => {
         }
         
         setShowLoadingModal(true);
+        // ป้องกัน SW reload ระหว่างลงนาม
+        (window as any).__signingInProgress = true;
 
         // ถ้าเป็น admin ลงนามแทน ให้เพิ่ม "admin" นำหน้า comment
         const isAdminSigning = isAdminUser && !currentUserSigner && !currentUserSignature;
@@ -752,11 +754,19 @@ const ApproveDocumentPage: React.FC = () => {
           }
 
           setShowLoadingModal(false);
+          (window as any).__signingInProgress = false;
+          // ถ้ามี SW update ค้างอยู่ ให้ apply หลังจาก navigate
+          if ((window as any).__pendingSWReload) {
+            (window as any).__pendingSWReload = false;
+            setTimeout(() => window.location.reload(), 500);
+            return;
+          }
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });
           navigate('/documents');
           return;
         } catch (e) {
           setShowLoadingModal(false);
+          (window as any).__signingInProgress = false;
           toast({ title: 'เกิดข้อผิดพลาด', description: (e instanceof Error ? e.message : 'ไม่สามารถเซ็นเอกสารได้') });
           return;
         }

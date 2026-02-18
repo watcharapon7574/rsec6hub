@@ -716,12 +716,27 @@ const ApproveDocumentPage: React.FC = () => {
 
           // เรียก Edge Function (server-to-server ไม่ต้องดาวน์โหลด PDF ผ่านมือถือ)
           // Refresh session ก่อนเรียก Edge Function เพื่อให้ได้ fresh access_token
-          await supabase.auth.refreshSession();
-          const { data: { session } } = await supabase.auth.getSession();
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
-          if (!session?.access_token) {
+          let accessToken: string | undefined;
+
+          if (refreshError || !refreshData?.session) {
+            console.warn('⚠️ refreshSession failed, trying getSession:', refreshError?.message);
+            // Fallback: ลอง getSession เผื่อ token ยังไม่หมดอายุจริง
+            const { data: { session: existingSession } } = await supabase.auth.getSession();
+            accessToken = existingSession?.access_token;
+          } else {
+            accessToken = refreshData.session.access_token;
+          }
+
+          if (!accessToken) {
+            // Session หมดอายุจริง ให้ sign out แล้ว redirect ไป login
+            await supabase.auth.signOut();
+            navigate('/auth');
             throw new Error('Session หมดอายุ กรุณาล็อกอินใหม่');
           }
+
+          console.log('🔑 Using access token (expires:', refreshData?.session?.expires_at ? new Date(refreshData.session.expires_at * 1000).toISOString() : 'unknown', ')');
 
           const edgeRes = await fetch(
             'https://ikfioqvjrhquiyeylmsv.supabase.co/functions/v1/sign-document',
@@ -729,7 +744,7 @@ const ApproveDocumentPage: React.FC = () => {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session?.access_token}`,
+                'Authorization': `Bearer ${accessToken}`,
               },
               body: JSON.stringify({
                 pdfUrl: extractedPdfUrl,
@@ -748,7 +763,10 @@ const ApproveDocumentPage: React.FC = () => {
           const edgeResult = await edgeRes.json();
           if (!edgeRes.ok) {
             if (edgeRes.status === 401) {
-              throw new Error('Session หมดอายุ กรุณาล็อกเอาท์แล้วล็อกอินใหม่');
+              // Token ถูก reject - sign out แล้ว redirect
+              await supabase.auth.signOut();
+              navigate('/auth');
+              throw new Error('Session หมดอายุ ระบบจะพาไปหน้า login');
             }
             throw new Error(edgeResult.error || edgeResult.msg || 'ไม่สามารถเซ็นเอกสารได้');
           }

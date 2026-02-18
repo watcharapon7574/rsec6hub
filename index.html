@@ -89,6 +89,14 @@
         }
       })();
     </script>
+    <!-- จับ beforeinstallprompt ก่อน React mount เพื่อไม่พลาด event -->
+    <script>
+      window.__pwaInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.__pwaInstallPrompt = e;
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     

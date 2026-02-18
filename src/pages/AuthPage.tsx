@@ -230,6 +230,28 @@ const AuthPage = () => {
       {/* Loading Modal */}
       <LoadingModal isOpen={verifyingOTP} message="กำลังตรวจสอบรหัส OTP" />
 
+      {/* ปุ่มดาวน์โหลดล่างสุดของจอ */}
+      <button
+        type="button"
+        onClick={() => {
+          const prompt = (window as any).__pwaInstallPrompt;
+          if (prompt) {
+            prompt.prompt();
+            prompt.userChoice.then(() => {
+              (window as any).__pwaInstallPrompt = null;
+            });
+          } else {
+            toast({
+              title: "ติดตั้งแอป",
+              description: "เปิดเมนู Chrome แล้วเลือก \"เพิ่มในหน้าจอหลัก\"",
+            });
+          }
+        }}
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 text-sm text-gray-400 hover:text-gray-200"
+      >
+        ดาวน์โหลด
+      </button>
+
       <div className="max-w-md space-y-6 mx-auto">
         {step === 'telegram' ? (
           <TelegramLinking

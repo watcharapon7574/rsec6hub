@@ -41,6 +41,16 @@ const InstallPrompt: React.FC = () => {
       return;
     }
 
+    // ตรวจสอบ event ที่จับไว้ใน index.html ก่อน React mount (ป้องกันพลาด event)
+    const earlyPrompt = (window as any).__pwaInstallPrompt;
+    if (earlyPrompt) {
+      setDeferredPrompt(earlyPrompt as BeforeInstallPromptEvent);
+      (window as any).__pwaInstallPrompt = null;
+      setTimeout(() => {
+        setShowPrompt(true);
+      }, 3000);
+    }
+
     // Listen for the beforeinstallprompt event (Chrome/Edge on Android/Desktop only)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();

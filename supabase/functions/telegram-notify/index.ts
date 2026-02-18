@@ -271,29 +271,19 @@ function formatMessage(payload: NotificationPayload): string {
         }
       }
 
-      return message // Return early without document ID
+      // Add document detail link for group notifications too
+      const groupBaseUrl = 'https://fastdoc.rsec6.ac.th'
+      const groupDocType = payload.document_type === 'memo' ? 'memo' : 'doc_receive'
+      message += `\n🔗 <a href="${groupBaseUrl}/document-detail?id=${payload.document_id}&type=${groupDocType}">ดูเอกสาร</a>`
+
+      return message
   }
 
-  // Build clickable link to the document
+  // Build clickable link to the document detail page
   const baseUrl = 'https://fastdoc.rsec6.ac.th'
   const id = payload.document_id
-  const isMemo = payload.document_type === 'memo'
-
-  let docUrl: string
-  switch (payload.type) {
-    case 'document_pending':
-      docUrl = `${baseUrl}/approve-document/${id}`
-      break
-    case 'document_rejected':
-      docUrl = isMemo ? `${baseUrl}/document-manage/${id}` : `${baseUrl}/edit-doc-receive/${id}`
-      break
-    case 'document_created':
-      docUrl = isMemo ? `${baseUrl}/document-manage/${id}` : `${baseUrl}/pdf-receive-manage/${id}`
-      break
-    default:
-      docUrl = isMemo ? `${baseUrl}/pdf-document-manage/${id}` : `${baseUrl}/pdf-receive-manage/${id}`
-      break
-  }
+  const docType = payload.document_type === 'memo' ? 'memo' : 'doc_receive'
+  const docUrl = `${baseUrl}/document-detail?id=${id}&type=${docType}`
 
   message += `\n🔗 <a href="${docUrl}">ดูเอกสาร</a>`
 

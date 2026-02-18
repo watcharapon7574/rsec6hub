@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Users, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ const TaskAssignmentPage = () => {
   const [selectedUsers, setSelectedUsers] = useState<Profile[]>([]);
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [loadingDocument, setLoadingDocument] = useState(true);
   const [directorComment, setDirectorComment] = useState<string>('');
   const [currentStep, setCurrentStep] = useState(1);
@@ -146,6 +147,9 @@ const TaskAssignmentPage = () => {
 
   // มอบหมายงาน
   const handleAssignTasks = async () => {
+    // Prevent double-click with ref guard (faster than state update)
+    if (isSubmittingRef.current) return;
+
     if (selectedUsers.length === 0) {
       toast({
         title: 'กรุณาเลือกผู้รับมอบหมาย',
@@ -159,6 +163,7 @@ const TaskAssignmentPage = () => {
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
 
     try {
@@ -218,6 +223,7 @@ const TaskAssignmentPage = () => {
         variant: 'destructive',
       });
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };

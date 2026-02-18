@@ -9,17 +9,12 @@ export interface SavedLocation {
 }
 
 export const locationService = {
-  // Get all locations for current user (sorted by usage_count)
+  // Get all locations visible to current user
+  // RLS handles filtering: clerk/admin see all, others see only their own
   async getLocations(): Promise<SavedLocation[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('ไม่พบข้อมูลผู้ใช้');
-    }
-
     const { data, error } = await supabase
       .from('saved_locations')
       .select('*')
-      .eq('created_by', user.id)
       .order('usage_count', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -42,7 +37,6 @@ export const locationService = {
     const { data: existing } = await supabase
       .from('saved_locations')
       .select('*')
-      .eq('created_by', user.id)
       .eq('name', name)
       .maybeSingle();
 

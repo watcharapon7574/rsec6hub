@@ -789,30 +789,16 @@ class TaskAssignmentService {
         }
       }
 
-      // For name/group-based assignments, update reporter status for all team members
-      if (assignment.assignment_source === 'name' || assignment.assignment_source === 'group') {
-        // Update all assignments in the same group
-        const docColumn = assignment.document_type === 'memo' ? 'memo_id' : 'doc_receive_id';
-        const docId = assignment.document_type === 'memo' ? assignment.memo_id : assignment.doc_receive_id;
+      // Update reporter status for all team members using SECURITY DEFINER function
+      // This bypasses RLS restrictions that prevent updating non-pending or team leader members
+      const { error: rpcError } = await (supabase as any)
+        .rpc('update_document_reporters', {
+          p_assignment_id: assignmentId,
+          p_reporter_user_ids: reporterIds
+        });
 
-        // Get all assignments for this document
-        const { data: allAssignments } = await (supabase as any)
-          .from('task_assignments')
-          .select('id, assigned_to')
-          .eq(docColumn, docId)
-          .is('deleted_at', null);
-
-        if (allAssignments) {
-          for (const a of allAssignments) {
-            // Only update is_reporter, don't change status (each member needs to acknowledge themselves)
-            await (supabase as any)
-              .from('task_assignments')
-              .update({
-                is_reporter: reporterIds.includes(a.assigned_to)
-              })
-              .eq('id', a.id);
-          }
-        }
+      if (rpcError) {
+        console.error('Failed to update reporters via RPC:', rpcError);
       }
 
       return true;
@@ -988,36 +974,16 @@ class TaskAssignmentService {
       // Reporter is now optional - no validation required
       const reporterIds = options.reporterIds || [];
 
-      // Get the assignment to find document info
-      const { data: assignment, error: fetchError } = await (supabase as any)
-        .from('task_assignments')
-        .select('*')
-        .eq('id', assignmentId)
-        .single();
+      // Update is_reporter for all team members using SECURITY DEFINER function
+      // This bypasses RLS restrictions that prevent updating non-pending or team leader members
+      const { error: rpcError } = await (supabase as any)
+        .rpc('update_document_reporters', {
+          p_assignment_id: assignmentId,
+          p_reporter_user_ids: reporterIds
+        });
 
-      if (fetchError || !assignment) {
-        throw new Error('ไม่พบงานมอบหมาย');
-      }
-
-      // Get document column
-      const docColumn = assignment.document_type === 'memo' ? 'memo_id' : 'doc_receive_id';
-      const docId = assignment.document_type === 'memo' ? assignment.memo_id : assignment.doc_receive_id;
-
-      // Get all current team members for this document
-      const { data: allAssignments } = await (supabase as any)
-        .from('task_assignments')
-        .select('id, assigned_to')
-        .eq(docColumn, docId)
-        .is('deleted_at', null);
-
-      // Update is_reporter for all existing team members
-      if (allAssignments) {
-        for (const a of allAssignments) {
-          await (supabase as any)
-            .from('task_assignments')
-            .update({ is_reporter: reporterIds.includes(a.assigned_to) })
-            .eq('id', a.id);
-        }
+      if (rpcError) {
+        throw new Error(rpcError.message || 'ไม่สามารถอัปเดตผู้รายงานได้');
       }
 
       // Add new team members if any

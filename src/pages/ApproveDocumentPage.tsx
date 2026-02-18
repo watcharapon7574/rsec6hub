@@ -235,7 +235,9 @@ const ApproveDocumentPage: React.FC = () => {
     if (isDocReceive) {
       // Handle doc_receive approval/rejection
       try {
-        const updates: any = {};
+        const updates: any = {
+          updated_at: new Date().toISOString(),
+        };
 
         if (action === 'reject') {
           updates.status = 'rejected';
@@ -715,19 +717,11 @@ const ApproveDocumentPage: React.FC = () => {
           const newFilePath = oldFilePath.replace(/[^/]+$/, newFileName);
 
           // เรียก Edge Function (server-to-server ไม่ต้องดาวน์โหลด PDF ผ่านมือถือ)
-          // Refresh session ก่อนเรียก Edge Function เพื่อให้ได้ fresh access_token
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          // ใช้ getSession แทน refreshSession เพื่อไม่ให้ trigger TOKEN_REFRESHED event
+          // ซึ่งจะทำให้ onAuthStateChange ตรวจ 8-hour limit แล้วบังคับ signOut ระหว่างลงนาม
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-          let accessToken: string | undefined;
-
-          if (refreshError || !refreshData?.session) {
-            console.warn('⚠️ refreshSession failed, trying getSession:', refreshError?.message);
-            // Fallback: ลอง getSession เผื่อ token ยังไม่หมดอายุจริง
-            const { data: { session: existingSession } } = await supabase.auth.getSession();
-            accessToken = existingSession?.access_token;
-          } else {
-            accessToken = refreshData.session.access_token;
-          }
+          let accessToken = currentSession?.access_token;
 
           if (!accessToken) {
             // Session หมดอายุจริง ให้ sign out แล้ว redirect ไป login
@@ -736,7 +730,7 @@ const ApproveDocumentPage: React.FC = () => {
             throw new Error('Session หมดอายุ กรุณาล็อกอินใหม่');
           }
 
-          console.log('🔑 Using access token (expires:', refreshData?.session?.expires_at ? new Date(refreshData.session.expires_at * 1000).toISOString() : 'unknown', ')');
+          console.log('🔑 Using access token from getSession');
 
           const edgeRes = await fetch(
             'https://ikfioqvjrhquiyeylmsv.supabase.co/functions/v1/sign-document',

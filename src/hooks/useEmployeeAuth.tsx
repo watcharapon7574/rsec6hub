@@ -25,30 +25,41 @@ export const useEmployeeAuth = () => {
         
         if (session?.user) {
           // ตรวจสอบ 8-hour session limit ก่อน
+          // ⚠️ ข้าม enforcement ถ้ากำลังลงนามอยู่ เพื่อป้องกัน signOut ระหว่างลงนาม
+          const isSigningInProgress = !!(window as any).__signingInProgress;
           const storedAuth = getStoredAuthData();
           if (storedAuth) {
             const currentTime = new Date().getTime();
             if (currentTime > storedAuth.expirationTime) {
-              // Session 8 ชม. หมดอายุแล้ว → บังคับ sign out
-              console.log('⏰ Session 8 ชม. หมดอายุแล้ว (เข้าตั้งแต่', new Date(storedAuth.loginTime).toLocaleString(), ')');
-              clearAuthStorage();
+              if (isSigningInProgress) {
+                // กำลังลงนามอยู่ → ข้ามการบังคับ signOut ไว้ก่อน
+                console.log('⏰ Session 8 ชม. หมดอายุ แต่กำลังลงนามอยู่ → ข้ามไปก่อน');
+              } else {
+                // Session 8 ชม. หมดอายุแล้ว → บังคับ sign out
+                console.log('⏰ Session 8 ชม. หมดอายุแล้ว (เข้าตั้งแต่', new Date(storedAuth.loginTime).toLocaleString(), ')');
+                clearAuthStorage();
+                setUser(null);
+                setIsAuth(false);
+                setProfile(null);
+                setLoading(false);
+                // Defer signOut เพื่อไม่ให้ขัดกับ onAuthStateChange
+                setTimeout(() => supabase.auth.signOut(), 0);
+                return;
+              }
+            }
+          } else if (event !== 'SIGNED_IN') {
+            if (isSigningInProgress) {
+              console.log('⚠️ ไม่มี auth data แต่กำลังลงนามอยู่ → ข้ามไปก่อน');
+            } else {
+              // ไม่มี auth data แต่มี Supabase session (อาจถูกเคลียร์ไปแล้วเพราะหมดอายุ)
+              console.log('❌ ไม่มี auth data แต่มี Supabase session → บังคับ sign out');
               setUser(null);
               setIsAuth(false);
               setProfile(null);
               setLoading(false);
-              // Defer signOut เพื่อไม่ให้ขัดกับ onAuthStateChange
               setTimeout(() => supabase.auth.signOut(), 0);
               return;
             }
-          } else if (event !== 'SIGNED_IN') {
-            // ไม่มี auth data แต่มี Supabase session (อาจถูกเคลียร์ไปแล้วเพราะหมดอายุ)
-            console.log('❌ ไม่มี auth data แต่มี Supabase session → บังคับ sign out');
-            setUser(null);
-            setIsAuth(false);
-            setProfile(null);
-            setLoading(false);
-            setTimeout(() => supabase.auth.signOut(), 0);
-            return;
           }
 
           setUser(session.user);

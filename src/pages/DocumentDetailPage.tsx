@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight, MapPin, ClipboardList, Link2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
+import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 
 interface DocumentDetail {
   id: string;
@@ -526,24 +527,23 @@ const DocumentDetailPage: React.FC = () => {
 
         {/* Right Column - PDF Viewer */}
         <div className="lg:sticky lg:top-6 h-fit">
-          <Card>
-            <CardHeader>
-              <CardTitle>ตัวอย่างเอกสาร PDF</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pdfUrl ? (
-                <iframe
-                  src={pdfUrl}
-                  className="w-full h-[800px] border rounded"
-                  title="PDF Viewer"
-                />
-              ) : (
+          {pdfUrl ? (
+            <PDFViewer
+              fileUrl={pdfUrl}
+              fileName={document.subject || 'เอกสาร PDF'}
+              editMode={false}
+              showSignatureMode={false}
+              showZoomControls={true}
+            />
+          ) : (
+            <Card>
+              <CardContent>
                 <div className="flex items-center justify-center h-[400px] bg-muted rounded">
                   <p className="text-muted-foreground">ไม่มีไฟล์ PDF</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

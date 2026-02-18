@@ -23,17 +23,12 @@ export interface UserGroup {
 }
 
 export const userGroupService = {
-  // Get all groups for current user
+  // Get all groups visible to current user
+  // RLS handles filtering: clerk/admin see all, others see only their own
   async getGroups(): Promise<UserGroup[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('ไม่พบข้อมูลผู้ใช้');
-    }
-
     const { data, error } = await supabase
       .from('user_groups')
       .select('*')
-      .eq('created_by', user.id)
       .order('usage_count', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -53,15 +48,9 @@ export const userGroupService = {
 
   // Get groups filtered by type
   async getGroupsByType(type: GroupType): Promise<UserGroup[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('ไม่พบข้อมูลผู้ใช้');
-    }
-
     const { data, error } = await supabase
       .from('user_groups')
       .select('*')
-      .eq('created_by', user.id)
       .eq('group_type', type)
       .order('usage_count', { ascending: false })
       .order('created_at', { ascending: false });
@@ -200,11 +189,6 @@ export const userGroupService = {
 
   // Search groups and positions by name
   async searchGroupsAndPositions(query: string): Promise<UserGroup[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('ไม่พบข้อมูลผู้ใช้');
-    }
-
     if (!query || query.length < 1) {
       return [];
     }
@@ -212,7 +196,6 @@ export const userGroupService = {
     const { data, error } = await supabase
       .from('user_groups')
       .select('*')
-      .eq('created_by', user.id)
       .ilike('name', `%${query}%`)
       .order('group_type', { ascending: true }) // groups first, then positions
       .order('usage_count', { ascending: false })

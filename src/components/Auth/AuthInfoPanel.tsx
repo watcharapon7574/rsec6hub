@@ -1,19 +1,28 @@
-import React from 'react';
-import { AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertCircle, ChevronDown } from 'lucide-react';
 
 const AuthInfoPanel: React.FC = () => {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-      <div className="flex items-start space-x-3">
-        <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 dark:text-blue-600 mt-0.5 flex-shrink-0" />
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">ข้อมูลสำหรับการเข้าสู่ระบบ</p>
-          <p className="text-xs text-blue-700 dark:text-blue-300">
-            ใช้เบอร์โทรศัพท์ที่ลงทะเบียนไว้ในระบบ จะได้รับรหัส OTP ผ่าน Telegram
-          </p>
+    <button
+      type="button"
+      onClick={() => setOpen(!open)}
+      className="w-full text-left bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+          <p className="text-xs font-medium text-blue-900 dark:text-blue-100">ข้อมูลสำหรับการเข้าสู่ระบบ</p>
         </div>
+        <ChevronDown className={`h-3.5 w-3.5 text-blue-600 dark:text-blue-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </div>
-    </div>
+      {open && (
+        <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 ml-6">
+          ใช้เบอร์โทรศัพท์ที่ลงทะเบียนไว้ในระบบ จะได้รับรหัส OTP ผ่าน Telegram
+        </p>
+      )}
+    </button>
   );
 };
 

@@ -64,11 +64,12 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
     try {
       const results: SearchResultItem[] = [];
 
-      // 1. Search users (profiles) - exclude admin accounts
+      // 1. Search users (profiles) - exclude admin accounts and profiles without user_id
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('user_id, first_name, last_name, position, employee_id, is_admin')
         .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
+        .not('user_id', 'is', null)
         .order('first_name', { ascending: true })
         .limit(10); // Fetch more to account for filtered admins
 

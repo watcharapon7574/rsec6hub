@@ -827,6 +827,11 @@ class TaskAssignmentService {
     leaderNote?: string
   ): Promise<string> {
     try {
+      // Validate userId before proceeding
+      if (!userId) {
+        throw new Error('ไม่สามารถเพิ่มสมาชิกได้: ผู้ใช้ยังไม่มีบัญชีในระบบ');
+      }
+
       // Get parent assignment details
       const { data: parent, error: parentError } = await (supabase as any)
         .from('task_assignments')

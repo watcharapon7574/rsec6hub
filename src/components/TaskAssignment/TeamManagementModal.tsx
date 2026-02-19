@@ -91,6 +91,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
         .from('profiles')
         .select('user_id, first_name, last_name, position, employee_id, is_admin')
         .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
+        .not('user_id', 'is', null)
         .limit(10);
 
       if (!error && data) {

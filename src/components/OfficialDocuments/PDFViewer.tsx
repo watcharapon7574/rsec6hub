@@ -186,14 +186,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const isRotated = rotation === 90;
 
   // Grab-to-scroll (drag เมาส์เลื่อนเอกสาร) ในโหมดเต็มจอ
+  const fullscreenScrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!isFullscreen) return;
     // ไม่ทำงานถ้าคลิกปุ่มหรือ link
     if ((e.target as HTMLElement).closest('button, a, input')) return;
-    const scrollEl = containerRef.current;
+    const scrollEl = fullscreenScrollRef.current;
     if (!scrollEl) return;
     isDragging.current = true;
     dragStart.current = {
@@ -203,11 +203,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       scrollTop: scrollEl.scrollTop,
     };
     e.preventDefault();
-  }, [isFullscreen]);
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging.current) return;
-    const scrollEl = containerRef.current;
+    const scrollEl = fullscreenScrollRef.current;
     if (!scrollEl) return;
     const dx = e.clientX - dragStart.current.x;
     const dy = e.clientY - dragStart.current.y;
@@ -675,36 +675,27 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           </Button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto" style={fullscreenContentStyle}>
-        <Card className="w-full" style={{ borderRadius: 0, border: 'none', height: '100%' }}>
-          <CardContent className="p-0" style={{ flex: 1, overflow: 'auto', height: '100%' }}>
-            <div
-              ref={containerRef}
-              className="relative w-full pdf-grab-scroll"
-              style={{ height: '100%', overflow: 'auto' }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-            >
-              <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
-                <div
-                  ref={viewerRef}
-                  style={{ height: '100%', width: '100%', overflow: 'auto', position: 'relative' }}
-                >
-                  {blobUrl && (
-                    <Viewer
-                      fileUrl={blobUrl}
-                      plugins={[defaultLayoutPluginInstance, zoomPluginInstance]}
-                      onPageChange={handlePageChange}
-                      onDocumentLoad={handleDocumentLoad}
-                    />
-                  )}
-                </div>
-              </Worker>
-            </div>
-          </CardContent>
-        </Card>
+      <div
+        ref={fullscreenScrollRef}
+        className="flex-1 overflow-auto pdf-grab-scroll"
+        style={fullscreenContentStyle}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
+          <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+            {blobUrl && (
+              <Viewer
+                fileUrl={blobUrl}
+                plugins={[defaultLayoutPluginInstance, zoomPluginInstance]}
+                onPageChange={handlePageChange}
+                onDocumentLoad={handleDocumentLoad}
+              />
+            )}
+          </div>
+        </Worker>
       </div>
     </div>,
     document.body

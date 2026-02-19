@@ -62,10 +62,9 @@ export const isAuthenticated = (): boolean => {
       validateSession(sessionToken).then(({ valid, reason }) => {
         if (!valid) {
           console.log('Session validation failed, reason:', reason);
-          // Only kick out if session was explicitly invalidated (another login from different device)
-          // Don't kick out for: no_record (old login), expired (natural), fingerprint mismatch, error
-          if (reason === 'invalidated') {
-            console.log('Session was invalidated by another login, logging out...');
+          // เด้งออกเมื่อ: session ถูก invalidate (login จากเครื่องเดียวกัน) หรือ DB session หมดอายุ
+          if (reason === 'invalidated' || reason === 'expired') {
+            console.log(`Session ${reason}, logging out...`);
             clearAuthStorage();
             setTimeout(() => window.location.reload(), 100);
           }

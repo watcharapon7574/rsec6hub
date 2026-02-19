@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/database';
@@ -13,16 +13,41 @@ export const useEmployeeAuth = () => {
   const [loading, setLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
 
+  // Health check: ตรวจสอบว่า Supabase Auth session ยังใช้งานได้จริง
+  // ป้องกัน "zombie state" = localStorage บอกว่า logged in แต่ Supabase Auth ไม่ทำงาน
+  const checkSessionHealth = useCallback(async () => {
+    const storedAuth = getStoredAuthData();
+    if (!storedAuth) return; // ไม่ได้ login
+
+    // ตรวจ 8-hour limit
+    const currentTime = new Date().getTime();
+    if (currentTime > storedAuth.expirationTime) {
+      console.log('⏰ Health check: session 8 ชม. หมดอายุ');
+      clearAuthStorage();
+      await supabase.auth.signOut();
+      window.location.reload();
+      return;
+    }
+
+    // ตรวจว่า Supabase Auth session ยังอยู่จริง
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.log('❌ Health check: Supabase Auth session หายไป → บังคับ sign out');
+      clearAuthStorage();
+      window.location.reload();
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
-    
+
     // Set up Supabase Auth state listener เป็นหลัก
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔄 Supabase Auth state changed:', event, session?.user?.id);
-        
+
         if (!isMounted) return;
-        
+
         if (session?.user) {
           // ตรวจสอบ 8-hour session limit ก่อน
           // ⚠️ ข้าม enforcement ถ้ากำลังลงนามอยู่ เพื่อป้องกัน signOut ระหว่างลงนาม
@@ -67,7 +92,7 @@ export const useEmployeeAuth = () => {
           setLoading(false); // Reset loading when authenticated
           console.log('✅ Supabase user authenticated:', session.user.id);
           console.log('📊 Current states - loading:', false, 'isAuth:', true, 'profile:', !!profile);
-          
+
           // Fetch profile using user_metadata phone or user_id (non-blocking)
           if (session.user.user_metadata?.phone) {
             // Don't await - make it non-blocking
@@ -114,11 +139,11 @@ export const useEmployeeAuth = () => {
           // No Supabase session
           setUser(null);
           console.log('❌ No Supabase session');
-          
+
           // ตรวจสอบระบบเดิมเป็น fallback เท่านั้น (ไม่ใช้ session monitoring)
           const authStatus = isAuthenticated();
           const currentProfile = getCurrentProfile();
-          
+
           if (authStatus && currentProfile) {
             console.log('🔄 Fallback to legacy auth system');
             setIsAuth(true);
@@ -128,7 +153,7 @@ export const useEmployeeAuth = () => {
             setProfile(null);
           }
         }
-        
+
         if (isMounted) {
           setLoading(false);
         }
@@ -153,6 +178,30 @@ export const useEmployeeAuth = () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Health check เมื่อกลับมาใช้งาน (เปิดจอ, สลับ tab, กลับจาก background)
+  // ป้องกันปัญหา: มือถือ sleep แล้ว session หมดอายุแต่ไม่เด้งออก
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Tab became visible, checking session health...');
+        checkSessionHealth();
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('🔍 Window focused, checking session health...');
+      checkSessionHealth();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [checkSessionHealth]);
 
   const handleSendOTP = async (phone: string, telegramChatId?: string) => {
     try {

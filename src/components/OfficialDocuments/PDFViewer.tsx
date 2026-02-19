@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Viewer, Worker } from '@react-pdf-viewer/core';
@@ -47,6 +48,16 @@ const pdfViewerStyles = `
   .pulse-pin {
     animation: pulse 2s ease-in-out infinite;
   }
+
+  .pdf-grab-scroll {
+    cursor: grab !important;
+  }
+  .pdf-grab-scroll:active {
+    cursor: grabbing !important;
+  }
+  .pdf-grab-scroll * {
+    cursor: inherit !important;
+  }
 `;
 import {
   Download,
@@ -57,7 +68,10 @@ import {
   ChevronRight,
   X,
   Maximize2,
-  RotateCw
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  Minimize2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -170,6 +184,40 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   }, []);
 
   const isRotated = rotation === 90;
+
+  // Grab-to-scroll (drag เมาส์เลื่อนเอกสาร) ในโหมดเต็มจอ
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!isFullscreen) return;
+    // ไม่ทำงานถ้าคลิกปุ่มหรือ link
+    if ((e.target as HTMLElement).closest('button, a, input')) return;
+    const scrollEl = containerRef.current;
+    if (!scrollEl) return;
+    isDragging.current = true;
+    dragStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      scrollLeft: scrollEl.scrollLeft,
+      scrollTop: scrollEl.scrollTop,
+    };
+    e.preventDefault();
+  }, [isFullscreen]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const scrollEl = containerRef.current;
+    if (!scrollEl) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    scrollEl.scrollLeft = dragStart.current.scrollLeft - dx;
+    scrollEl.scrollTop = dragStart.current.scrollTop - dy;
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
 
   // ฟังก์ชันแปลงวันที่เป็นรูปแบบไทย
   const formatThaiDate = (dateString: string) => {
@@ -565,59 +613,109 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     );
   }
 
-  // Fullscreen wrapper style (CSS-based overlay)
-  const fullscreenWrapperStyle: React.CSSProperties | undefined = isFullscreen
+  // Content rotation style inside fullscreen (swap width/height for landscape)
+  const fullscreenContentStyle: React.CSSProperties | undefined = isRotated
     ? {
+        transform: 'rotate(90deg)',
+        transformOrigin: 'center center',
+        width: '100vh',
+        height: '100vw',
+        position: 'absolute' as const,
+        top: 'calc(50% - 50vw)',
+        left: 'calc(50% - 50vh)',
+      }
+    : undefined;
+
+  // Fullscreen overlay ใช้ Portal เพื่อ render บน document.body (อยู่เหนือ TopBar)
+  const fullscreenOverlay = isFullscreen ? createPortal(
+    <div
+      ref={fullscreenWrapperRef}
+      style={{
         position: 'fixed',
         top: 0,
         left: 0,
         width: '100vw',
         height: '100vh',
-        zIndex: 99999,
+        zIndex: 999999,
         background: '#000',
         display: 'flex',
         flexDirection: 'column',
-      }
-    : undefined;
-
-  // Content rotation style inside fullscreen (swap width/height for landscape)
-  const fullscreenContentStyle: React.CSSProperties | undefined =
-    isFullscreen && isRotated
-      ? {
-          transform: 'rotate(90deg)',
-          transformOrigin: 'center center',
-          width: '100vh',
-          height: '100vw',
-          position: 'absolute' as const,
-          top: 'calc(50% - 50vw)',
-          left: 'calc(50% - 50vh)',
-        }
-      : undefined;
+      }}
+    >
+      {/* Floating toolbar */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-black/80 backdrop-blur-sm flex-shrink-0" style={{ zIndex: 1000000 }}>
+        <span className="text-white text-sm truncate max-w-[30%]">{fileName}</span>
+        <div className="flex items-center gap-1.5">
+          {/* Zoom controls */}
+          <Button variant="ghost" size="sm"
+            onClick={() => { const s = Math.max(0.5, scale - 0.25); setScale(s); zoomTo(s); }}
+            disabled={scale <= 0.5}
+            className="text-white hover:bg-white/20 h-8 w-8 p-0">
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <span className="text-white text-xs min-w-[40px] text-center">{Math.round(scale * 100)}%</span>
+          <Button variant="ghost" size="sm"
+            onClick={() => { const s = Math.min(3, scale + 0.25); setScale(s); zoomTo(s); }}
+            disabled={scale >= 3}
+            className="text-white hover:bg-white/20 h-8 w-8 p-0">
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <div className="w-px h-5 bg-white/30 mx-1" />
+          {/* Rotate */}
+          <Button variant="ghost" size="sm" onClick={toggleRotation}
+            className="text-white hover:bg-white/20 h-8 px-2">
+            <RotateCw className="h-4 w-4 mr-1" />
+            <span className="text-xs">{isRotated ? 'แนวตั้ง' : 'แนวนอน'}</span>
+          </Button>
+          {/* Exit fullscreen */}
+          <Button variant="ghost" size="sm" onClick={exitFullscreen}
+            className="text-white hover:bg-white/20 h-8 px-2">
+            <Minimize2 className="h-4 w-4 mr-1" />
+            <span className="text-xs hidden sm:inline">ออก</span>
+          </Button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-auto" style={fullscreenContentStyle}>
+        <Card className="w-full" style={{ borderRadius: 0, border: 'none', height: '100%' }}>
+          <CardContent className="p-0" style={{ flex: 1, overflow: 'auto', height: '100%' }}>
+            <div
+              ref={containerRef}
+              className="relative w-full pdf-grab-scroll"
+              style={{ height: '100%', overflow: 'auto' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
+                <div
+                  ref={viewerRef}
+                  style={{ height: '100%', width: '100%', overflow: 'auto', position: 'relative' }}
+                >
+                  {blobUrl && (
+                    <Viewer
+                      fileUrl={blobUrl}
+                      plugins={[defaultLayoutPluginInstance, zoomPluginInstance]}
+                      onPageChange={handlePageChange}
+                      onDocumentLoad={handleDocumentLoad}
+                    />
+                  )}
+                </div>
+              </Worker>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>,
+    document.body
+  ) : null;
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: pdfViewerStyles }} />
-      <div ref={fullscreenWrapperRef} style={fullscreenWrapperStyle}>
-        {/* Floating toolbar in fullscreen mode */}
-        {isFullscreen && (
-          <div className="flex items-center justify-between px-3 py-1.5 bg-black/80 backdrop-blur-sm flex-shrink-0" style={{ zIndex: 100000 }}>
-            <span className="text-white text-sm truncate max-w-[40%]">{fileName}</span>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={toggleRotation}
-                className="text-white hover:bg-white/20 h-8 px-2">
-                <RotateCw className="h-4 w-4 mr-1" />
-                <span className="text-xs">{isRotated ? 'แนวตั้ง' : 'แนวนอน'}</span>
-              </Button>
-              <Button variant="ghost" size="sm" onClick={exitFullscreen}
-                className="text-white hover:bg-white/20 h-8 w-8 p-0">
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        )}
-        <div className={isFullscreen ? 'flex-1 overflow-auto' : ''} style={fullscreenContentStyle}>
-      <Card className="w-full" style={isFullscreen ? { borderRadius: 0, border: 'none', height: '100%' } : undefined}>
-        <CardHeader className="bg-gray-50 border-b px-4 py-3" style={isFullscreen ? { display: 'none' } : undefined}>
+      {fullscreenOverlay}
+      <Card className="w-full">
+        <CardHeader className="bg-gray-50 border-b px-4 py-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium flex items-center gap-2 truncate">
               <FileText className="h-4 w-4 flex-shrink-0" />
@@ -708,11 +806,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           </div>
         </CardHeader>
       
-      <CardContent className="p-0 overflow-hidden" style={isFullscreen ? { flex: 1, overflow: 'auto' } : undefined}>
+      <CardContent className="p-0 overflow-hidden">
         <div
           ref={containerRef}
           className={`relative w-full ${showSignatureMode ? 'cursor-crosshair' : ''}`}
-          style={{ height: isFullscreen ? '100%' : '600px', overflow: isFullscreen ? 'auto' : 'hidden' }}
+          style={{ height: '600px', overflow: 'hidden' }}
         >
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
@@ -1106,19 +1204,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         )}
       </CardContent>
     </Card>
-        </div>{/* close rotation/fullscreen content div */}
-
-        {/* Close rotation overlay button (non-fullscreen rotated mode) */}
-        {isRotated && !isFullscreen && showFullscreenButton && (
-          <div className="fixed top-3 right-3 z-[10000]">
-            <Button variant="secondary" size="sm" onClick={toggleRotation}
-              className="shadow-lg h-9 px-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-              <RotateCw className="h-4 w-4 mr-1" />
-              แนวตั้ง
-            </Button>
-          </div>
-        )}
-      </div>{/* close fullscreenWrapperRef div */}
     </>
   );
 };

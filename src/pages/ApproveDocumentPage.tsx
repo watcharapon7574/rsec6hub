@@ -1005,6 +1005,7 @@ const ApproveDocumentPage: React.FC = () => {
                       fileName={memo.subject}
                       showSignatureMode={false}
                       showZoomControls={true}
+                      showFullscreenButton={true}
                     />
                   </div>
                 ) : (

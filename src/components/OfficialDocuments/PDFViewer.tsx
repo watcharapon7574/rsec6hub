@@ -580,19 +580,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       }
     : undefined;
 
-  // Content rotation style inside fullscreen
+  // Content rotation style inside fullscreen (swap width/height for landscape)
   const fullscreenContentStyle: React.CSSProperties | undefined =
     isFullscreen && isRotated
       ? {
           transform: 'rotate(90deg)',
           transformOrigin: 'center center',
           width: '100vh',
-          height: 'calc(100vw - 44px)',
-          position: 'relative' as const,
-          left: '50%',
-          top: '50%',
-          marginLeft: '-50vh',
-          marginTop: 'calc(-50vw + 22px)',
+          height: '100vw',
+          position: 'absolute' as const,
+          top: 'calc(50% - 50vw)',
+          left: 'calc(50% - 50vh)',
         }
       : undefined;
 
@@ -617,7 +615,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             </div>
           </div>
         )}
-        <div className={isFullscreen ? 'flex-1 overflow-hidden' : ''} style={fullscreenContentStyle}>
+        <div className={isFullscreen ? 'flex-1 overflow-auto' : ''} style={fullscreenContentStyle}>
       <Card className="w-full" style={isFullscreen ? { borderRadius: 0, border: 'none', height: '100%' } : undefined}>
         <CardHeader className="bg-gray-50 border-b px-4 py-3" style={isFullscreen ? { display: 'none' } : undefined}>
           <div className="flex items-center justify-between">
@@ -710,11 +708,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           </div>
         </CardHeader>
       
-      <CardContent className="p-0 overflow-hidden" style={isFullscreen ? { flex: 1 } : undefined}>
+      <CardContent className="p-0 overflow-hidden" style={isFullscreen ? { flex: 1, overflow: 'auto' } : undefined}>
         <div
           ref={containerRef}
-          className={`relative w-full overflow-hidden ${showSignatureMode ? 'cursor-crosshair' : ''}`}
-          style={{ height: isFullscreen ? '100%' : '600px' }}
+          className={`relative w-full ${showSignatureMode ? 'cursor-crosshair' : ''}`}
+          style={{ height: isFullscreen ? '100%' : '600px', overflow: isFullscreen ? 'auto' : 'hidden' }}
         >
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">

@@ -185,39 +185,65 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   const isRotated = rotation === 90;
 
-  // Grab-to-scroll (drag เมาส์เลื่อนเอกสาร) ในโหมดเต็มจอ
+  // Grab-to-scroll ใช้ native event listener จับ scroll container จริงของ PDF viewer
   const fullscreenScrollRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const dragStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // ไม่ทำงานถ้าคลิกปุ่มหรือ link
-    if ((e.target as HTMLElement).closest('button, a, input')) return;
-    const scrollEl = fullscreenScrollRef.current;
-    if (!scrollEl) return;
-    isDragging.current = true;
-    dragStart.current = {
-      x: e.clientX,
-      y: e.clientY,
-      scrollLeft: scrollEl.scrollLeft,
-      scrollTop: scrollEl.scrollTop,
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const wrapper = fullscreenScrollRef.current;
+    if (!wrapper) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startScrollLeft = 0;
+    let startScrollTop = 0;
+    let scrollEl: Element | null = null;
+
+    // หา scroll container จริงของ react-pdf-viewer
+    const findScrollContainer = (): Element | null => {
+      return wrapper.querySelector('.rpv-core__inner-pages')
+        || wrapper.querySelector('[style*="overflow"]')
+        || wrapper;
     };
-    e.preventDefault();
-  }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging.current) return;
-    const scrollEl = fullscreenScrollRef.current;
-    if (!scrollEl) return;
-    const dx = e.clientX - dragStart.current.x;
-    const dy = e.clientY - dragStart.current.y;
-    scrollEl.scrollLeft = dragStart.current.scrollLeft - dx;
-    scrollEl.scrollTop = dragStart.current.scrollTop - dy;
-  }, []);
+    const onMouseDown = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('button, a, input, .rpv-default-layout__toolbar')) return;
+      scrollEl = findScrollContainer();
+      if (!scrollEl) return;
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startScrollLeft = scrollEl.scrollLeft;
+      startScrollTop = scrollEl.scrollTop;
+      wrapper.style.cursor = 'grabbing';
+      e.preventDefault();
+    };
 
-  const handleMouseUp = useCallback(() => {
-    isDragging.current = false;
-  }, []);
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !scrollEl) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      scrollEl.scrollLeft = startScrollLeft - dx;
+      scrollEl.scrollTop = startScrollTop - dy;
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+      scrollEl = null;
+      if (wrapper) wrapper.style.cursor = 'grab';
+    };
+
+    wrapper.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      wrapper.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isFullscreen]);
 
   // ฟังก์ชันแปลงวันที่เป็นรูปแบบไทย
   const formatThaiDate = (dateString: string) => {
@@ -679,10 +705,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         ref={fullscreenScrollRef}
         className="flex-1 overflow-auto pdf-grab-scroll"
         style={fullscreenContentStyle}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
       >
         <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
           <div style={{ height: '100%', width: '100%', position: 'relative' }}>

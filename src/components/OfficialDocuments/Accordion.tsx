@@ -99,6 +99,7 @@ const Accordion: React.FC<AccordionProps> = ({
                   fileName={getFileName(attachments[0])}
                   showSignatureMode={false}
                   showZoomControls={true}
+                  showFullscreenButton={true}
                 />
               </div>
             )}

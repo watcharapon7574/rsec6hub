@@ -8,7 +8,50 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Custom lock function with timeout (ป้องกัน navigator.locks ค้างบน Android PWA)
+// Default Supabase ใช้ navigator.locks.request() แบบไม่มี timeout (-1 = wait forever)
+// ถ้า PWA ถูก kill แล้วเปิดใหม่ lock อาจค้าง → auth initialization ค้างทั้งหมด
+const lockWithTimeout: (
+  name: string,
+  acquireTimeout: number,
+  fn: () => Promise<any>
+) => Promise<any> = async (name, acquireTimeout, fn) => {
+  // ใช้ timeout 10 วินาที (แทน infinite) เพื่อป้องกัน lock ค้าง
+  const effectiveTimeout = acquireTimeout <= 0 ? 10000 : acquireTimeout;
+
+  if (navigator?.locks) {
+    // ใช้ AbortController เพื่อ timeout navigator.locks.request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), effectiveTimeout);
+
+    try {
+      return await navigator.locks.request(
+        name,
+        { signal: controller.signal },
+        async () => {
+          clearTimeout(timeoutId);
+          return await fn();
+        }
+      );
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err?.name === 'AbortError') {
+        // Lock timeout → run function without lock (better than hanging)
+        console.warn('⚠️ Lock timeout for', name, '→ executing without lock');
+        return await fn();
+      }
+      throw err;
+    }
+  } else {
+    // Fallback: no locks API → just run the function
+    return await fn();
+  }
+};
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    lock: lockWithTimeout,
+  },
   realtime: {
     params: {
       eventsPerSecond: 10,

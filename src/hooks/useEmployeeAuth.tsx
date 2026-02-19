@@ -24,19 +24,64 @@ export const useEmployeeAuth = () => {
     if (currentTime > storedAuth.expirationTime) {
       console.log('⏰ Health check: session 8 ชม. หมดอายุ');
       clearAuthStorage();
-      await supabase.auth.signOut();
-      window.location.reload();
+      setUser(null);
+      setIsAuth(false);
+      setProfile(null);
+      // ใช้ state change แทน reload เพื่อป้องกัน reload loop
+      setTimeout(() => supabase.auth.signOut(), 0);
       return;
     }
 
-    // ตรวจว่า Supabase Auth session ยังอยู่จริง
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      console.log('❌ Health check: Supabase Auth session หายไป → บังคับ sign out');
-      clearAuthStorage();
-      window.location.reload();
+    // ตรวจว่า Supabase Auth session ยังอยู่จริง (ใช้ timeout ป้องกันค้าง)
+    try {
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+      const result = await Promise.race([sessionPromise, timeoutPromise]);
+
+      if (result === null) {
+        // getSession() timeout → ข้ามไป ไม่ reload
+        console.warn('⚠️ Health check: getSession() timeout → skip');
+        return;
+      }
+
+      if (!result.data?.session?.user) {
+        console.log('❌ Health check: Supabase Auth session หายไป → sign out');
+        clearAuthStorage();
+        setUser(null);
+        setIsAuth(false);
+        setProfile(null);
+      }
+    } catch (err) {
+      console.warn('⚠️ Health check error (ignored):', err);
     }
   }, []);
+
+  // ⏱️ Loading timeout: ป้องกัน loading ค้างบน Android PWA
+  // เกิดจาก Supabase Auth initialization ใช้ navigator.locks + token refresh ผ่าน network
+  // ถ้า network ช้าหรือ lock contention → getSession() + onAuthStateChange ถูก block
+  // ทำให้ loading ค้าง true → ผู้ใช้เห็น spinner ค้าง ("หมุน")
+  useEffect(() => {
+    if (!loading) return;
+
+    const timeout = setTimeout(() => {
+      console.log('⏱️ Loading timeout (5s) → fallback to cached auth');
+      const cachedProfile = getCurrentProfile();
+      const authStatus = isAuthenticated();
+
+      if (authStatus && cachedProfile) {
+        console.log('✅ Fallback: ใช้ cached profile:', cachedProfile.employee_id);
+        setProfile(cachedProfile);
+        setIsAuth(true);
+      } else {
+        console.log('❌ Fallback: ไม่มี cached auth → แสดงหน้า login');
+        setIsAuth(false);
+        setProfile(null);
+      }
+      setLoading(false);
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [loading]);
 
   useEffect(() => {
     let isMounted = true;

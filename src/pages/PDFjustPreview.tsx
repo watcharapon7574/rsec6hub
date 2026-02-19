@@ -277,6 +277,7 @@ const PDFjustPreview: React.FC = () => {
               editMode={false}
               showSignatureMode={false}
               showZoomControls={true}
+              showFullscreenButton={true}
             />
           </div>
 

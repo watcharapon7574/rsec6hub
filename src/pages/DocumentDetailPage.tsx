@@ -549,6 +549,7 @@ const DocumentDetailPage: React.FC = () => {
               editMode={false}
               showSignatureMode={false}
               showZoomControls={true}
+              showFullscreenButton={true}
             />
           ) : (
             <Card>

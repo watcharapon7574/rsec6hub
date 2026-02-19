@@ -34,6 +34,7 @@ const Step1DocumentPreview: React.FC<Step1DocumentPreviewProps> = ({
                 editMode={false}
                 showSignatureMode={false}
                 showZoomControls={true}
+                showFullscreenButton={true}
               />
             </div>
           ) : (

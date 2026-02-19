@@ -39,6 +39,7 @@ interface DocumentDetail {
     event_date: string | null;
     event_time: string | null;
     location: string | null;
+    leader_note: string | null;
   }>;
 }
 
@@ -149,7 +150,8 @@ const DocumentDetailPage: React.FC = () => {
           task_description,
           event_date,
           event_time,
-          location
+          location,
+          leader_note
         `)
         .eq(documentType === 'memo' ? 'memo_id' : 'doc_receive_id', documentId)
         .is('deleted_at', null)
@@ -199,7 +201,8 @@ const DocumentDetailPage: React.FC = () => {
           task_description: task.task_description,
           event_date: task.event_date,
           event_time: task.event_time,
-          location: task.location
+          location: task.location,
+          leader_note: task.leader_note
         };
       });
 
@@ -459,6 +462,18 @@ const DocumentDetailPage: React.FC = () => {
                                 </div>
                               </div>
                             )}
+                          </div>
+                        )}
+
+                        {task.leader_note && (
+                          <div className="mt-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                            <div className="flex items-start gap-2">
+                              <MessageSquare className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <label className="text-xs font-medium text-amber-700 dark:text-amber-300">หมายเหตุจากหัวหน้าทีม</label>
+                                <p className="text-sm text-foreground whitespace-pre-wrap mt-0.5">{task.leader_note}</p>
+                              </div>
+                            </div>
                           </div>
                         )}
 

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, FileText, ClipboardList, RotateCcw, ChevronDown, ChevronUp, MapPin, Users, Settings2, Search } from 'lucide-react';
+import { Eye, Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, FileText, ClipboardList, RotateCcw, ChevronDown, ChevronUp, MapPin, Users, Settings2, Search, MessageSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAssignedTasks } from '@/hooks/useAssignedTasks';
@@ -331,7 +331,8 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
   // Handle team management modal confirmation
   const handleTeamConfirm = async (
     reporterIds: string[],
-    newTeamMembers?: { userId: string; isReporter: boolean }[]
+    newTeamMembers?: { userId: string; isReporter: boolean }[],
+    leaderNote?: string
   ) => {
     if (!teamModalTask) return;
 
@@ -341,7 +342,8 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
         // First time: acknowledge and set reporters
         await taskAssignmentService.acknowledgeTask(teamModalTask.assignment_id, {
           reporterIds,
-          teamMembers: newTeamMembers
+          teamMembers: newTeamMembers,
+          leaderNote
         });
 
         toast({
@@ -352,7 +354,8 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
         // Already in progress: just update reporters and add new members
         await taskAssignmentService.updateTeamAndReporters(teamModalTask.assignment_id, {
           reporterIds,
-          newTeamMembers
+          newTeamMembers,
+          leaderNote
         });
 
         toast({
@@ -734,6 +737,16 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
                       <ClipboardList className="h-3 w-3 text-purple-600 dark:text-purple-400 dark:text-purple-600 flex-shrink-0" />
                       <span className="text-xs text-purple-700 dark:text-purple-300 truncate max-w-[150px] font-medium">
                         {truncateText(task.task_description, 40)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* หมายเหตุจากหัวหน้าทีม (leader_note) */}
+                  {task.leader_note && (
+                    <div className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 border border-amber-200 dark:border-amber-800 rounded-md px-2.5 py-1">
+                      <MessageSquare className="h-3 w-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                      <span className="text-xs text-amber-700 dark:text-amber-300 truncate max-w-[150px] font-medium">
+                        {truncateText(task.leader_note, 30)}
                       </span>
                     </div>
                   )}
@@ -1139,6 +1152,7 @@ const AssignedDocumentsList: React.FC<AssignedDocumentsListProps> = ({ defaultCo
           positionName={teamModalTask.position_name || undefined}
           currentUserId={currentUserId}
           existingTeam={teamMembers}
+          existingLeaderNote={teamModalTask.leader_note || ''}
           onConfirm={handleTeamConfirm}
         />
       )}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Search, X, AlertCircle, Check, Trash2 } from 'lucide-react';
+import { Users, UserPlus, Search, X, AlertCircle, Check, Trash2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,7 +28,8 @@ interface TeamManagementModalProps {
   positionName?: string;
   currentUserId: string;
   existingTeam?: TeamMember[];
-  onConfirm: (reporterIds: string[], newTeamMembers?: { userId: string; isReporter: boolean }[]) => void;
+  existingLeaderNote?: string;
+  onConfirm: (reporterIds: string[], newTeamMembers?: { userId: string; isReporter: boolean }[], leaderNote?: string) => void;
 }
 
 const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
@@ -38,6 +40,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
   positionName,
   currentUserId,
   existingTeam = [],
+  existingLeaderNote = '',
   onConfirm
 }) => {
   // State for team members (includes existing + new)
@@ -45,6 +48,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
   const [newMembers, setNewMembers] = useState<Profile[]>([]);
   const [reporterIds, setReporterIds] = useState<Set<string>>(new Set());
   const [removedMemberIds, setRemovedMemberIds] = useState<Set<string>>(new Set());
+  const [leaderNote, setLeaderNote] = useState('');
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,9 +71,10 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
       setReporterIds(new Set(existingReporterIds));
       setNewMembers([]);
       setRemovedMemberIds(new Set());
+      setLeaderNote(existingLeaderNote);
       setError(null);
     }
-  }, [open, existingTeam]);
+  }, [open, existingTeam, existingLeaderNote]);
 
   // Search for users
   const handleSearch = async (query: string) => {
@@ -206,7 +211,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
         isReporter: reporterIds.has(m.user_id)
       }));
 
-      await onConfirm(Array.from(reporterIds), newTeamMembersData);
+      await onConfirm(Array.from(reporterIds), newTeamMembersData, leaderNote.trim() || undefined);
       onClose();
     } catch (err: any) {
       setError(err.message || 'เกิดข้อผิดพลาด');
@@ -306,6 +311,24 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Leader note */}
+          {isPositionBased && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-pink-500" />
+                หมายเหตุถึงทีม
+              </Label>
+              <Textarea
+                placeholder="พิมพ์หมายเหตุหรือรายละเอียดเพิ่มเติมให้ทุกคนในทีมทราบ..."
+                value={leaderNote}
+                onChange={(e) => setLeaderNote(e.target.value)}
+                className="border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-pink-400 min-h-[80px] resize-none"
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground text-right">{leaderNote.length}/500</p>
             </div>
           )}
 

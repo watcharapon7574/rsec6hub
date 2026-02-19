@@ -104,11 +104,14 @@ export interface TaskAssignmentWithDetails {
   has_reporter_assigned: boolean;
   // Flag to check if the reporter has submitted their report (has report_memo_id)
   reporter_has_reported: boolean;
+  // Leader note to team members
+  leader_note: string | null;
 }
 
 export interface AcknowledgeOptions {
   teamMembers?: { userId: string; isReporter: boolean }[];
   reporterIds: string[]; // User IDs who are reporters (must have at least 1)
+  leaderNote?: string;
 }
 
 export interface DocumentReadyForAssignment {
@@ -766,12 +769,17 @@ class TaskAssignmentService {
       });
 
       // Update the main assignment
+      const updateData: Record<string, any> = {
+        status: newStatus,
+        is_reporter: isThisPersonReporter
+      };
+      if (options.leaderNote !== undefined) {
+        updateData.leader_note = options.leaderNote || null;
+      }
+
       const { error: updateError } = await (supabase as any)
         .from('task_assignments')
-        .update({
-          status: newStatus,
-          is_reporter: isThisPersonReporter
-        })
+        .update(updateData)
         .eq('id', assignmentId);
 
       if (updateError) {
@@ -784,7 +792,8 @@ class TaskAssignmentService {
           await this.addTeamMember(
             assignmentId,
             member.userId,
-            member.isReporter
+            member.isReporter,
+            options.leaderNote
           );
         }
       }
@@ -814,7 +823,8 @@ class TaskAssignmentService {
   async addTeamMember(
     parentAssignmentId: string,
     userId: string,
-    isReporter: boolean = false
+    isReporter: boolean = false,
+    leaderNote?: string
   ): Promise<string> {
     try {
       // Get parent assignment details
@@ -850,7 +860,8 @@ class TaskAssignmentService {
         position_id: parent.position_id,
         is_reporter: isReporter,
         is_team_leader: false,
-        parent_assignment_id: parentAssignmentId
+        parent_assignment_id: parentAssignmentId,
+        leader_note: leaderNote !== undefined ? (leaderNote || null) : (parent.leader_note || null)
       };
 
       const { data, error } = await (supabase as any)
@@ -968,6 +979,7 @@ class TaskAssignmentService {
     options: {
       reporterIds: string[];
       newTeamMembers?: { userId: string; isReporter: boolean }[];
+      leaderNote?: string;
     }
   ): Promise<boolean> {
     try {
@@ -986,13 +998,32 @@ class TaskAssignmentService {
         throw new Error(rpcError.message || 'ไม่สามารถอัปเดตผู้รายงานได้');
       }
 
+      // Update leader_note on parent and all existing team members
+      if (options.leaderNote !== undefined) {
+        const noteValue = options.leaderNote || null;
+
+        // Update parent assignment
+        await (supabase as any)
+          .from('task_assignments')
+          .update({ leader_note: noteValue })
+          .eq('id', assignmentId);
+
+        // Update all child assignments (team members)
+        await (supabase as any)
+          .from('task_assignments')
+          .update({ leader_note: noteValue })
+          .eq('parent_assignment_id', assignmentId)
+          .is('deleted_at', null);
+      }
+
       // Add new team members if any
       if (options.newTeamMembers && options.newTeamMembers.length > 0) {
         for (const member of options.newTeamMembers) {
           await this.addTeamMember(
             assignmentId,
             member.userId,
-            member.isReporter
+            member.isReporter,
+            options.leaderNote
           );
         }
       }

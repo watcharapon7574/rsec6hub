@@ -127,86 +127,47 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
 
-  // Fullscreen + Rotation state
+  // Fullscreen + Rotation state (CSS-based, works on iOS Safari)
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [rotation, setRotation] = useState(0); // 0 or 90
-  const [orientationLocked, setOrientationLocked] = useState(false);
   const fullscreenWrapperRef = useRef<HTMLDivElement>(null);
-  
-  // ===== Fullscreen + Rotation logic =====
-  const isMobileScreen = useCallback(() => window.innerWidth < 768, []);
 
-  const lockLandscape = useCallback(async () => {
-    try {
-      const orientation = screen.orientation as any;
-      if (orientation?.lock) {
-        await orientation.lock('landscape');
-        setOrientationLocked(true);
-        return true;
-      }
-    } catch {
-      // Screen Orientation API ไม่รองรับ
-    }
-    return false;
+  // ===== Fullscreen + Rotation logic (CSS-based overlay) =====
+  const enterFullscreen = useCallback(() => {
+    setIsFullscreen(true);
+    // ป้องกันการ scroll ของ body เมื่ออยู่ใน fullscreen
+    document.body.style.overflow = 'hidden';
   }, []);
 
-  const unlockOrientation = useCallback(() => {
-    try {
-      const orientation = screen.orientation as any;
-      if (orientation?.unlock) orientation.unlock();
-    } catch { /* ignore */ }
-    setOrientationLocked(false);
+  const exitFullscreen = useCallback(() => {
+    setIsFullscreen(false);
+    setRotation(0);
+    document.body.style.overflow = '';
   }, []);
 
-  const enterFullscreen = useCallback(async () => {
-    try {
-      await fullscreenWrapperRef.current?.requestFullscreen();
-      if (isMobileScreen()) {
-        const locked = await lockLandscape();
-        if (!locked) setRotation(90);
-      }
-    } catch (err) {
-      console.error('Fullscreen error:', err);
-    }
-  }, [lockLandscape, isMobileScreen]);
+  const toggleFullscreen = useCallback(() => {
+    if (!isFullscreen) enterFullscreen();
+    else exitFullscreen();
+  }, [isFullscreen, enterFullscreen, exitFullscreen]);
 
-  const exitFullscreen = useCallback(async () => {
-    try {
-      unlockOrientation();
-      setRotation(0);
-      if (document.fullscreenElement) await document.exitFullscreen();
-    } catch { /* ignore */ }
-  }, [unlockOrientation]);
+  const toggleRotation = useCallback(() => {
+    setRotation(prev => prev === 0 ? 90 : 0);
+  }, []);
 
-  const toggleFullscreen = useCallback(async () => {
-    if (!document.fullscreenElement) await enterFullscreen();
-    else await exitFullscreen();
-  }, [enterFullscreen, exitFullscreen]);
-
-  const toggleRotation = useCallback(async () => {
-    if (rotation === 0) {
-      if (isFullscreen) {
-        const locked = await lockLandscape();
-        if (!locked) setRotation(90);
-      } else {
-        setRotation(90);
-      }
-    } else {
-      unlockOrientation();
-      setRotation(0);
-    }
-  }, [rotation, isFullscreen, lockLandscape, unlockOrientation]);
-
-  // Listen for fullscreen changes
+  // กด Escape เพื่อออกจาก fullscreen
   useEffect(() => {
-    const handler = () => {
-      const fs = !!document.fullscreenElement;
-      setIsFullscreen(fs);
-      if (!fs) { unlockOrientation(); setRotation(0); }
+    if (!isFullscreen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') exitFullscreen();
     };
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
-  }, [unlockOrientation]);
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isFullscreen, exitFullscreen]);
+
+  // Cleanup body overflow on unmount
+  useEffect(() => {
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   const isRotated = rotation === 90;
 
@@ -604,15 +565,30 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     );
   }
 
-  // Fullscreen wrapper style
-  const fullscreenRotatedStyle: React.CSSProperties | undefined =
+  // Fullscreen wrapper style (CSS-based overlay)
+  const fullscreenWrapperStyle: React.CSSProperties | undefined = isFullscreen
+    ? {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 99999,
+        background: '#000',
+        display: 'flex',
+        flexDirection: 'column',
+      }
+    : undefined;
+
+  // Content rotation style inside fullscreen
+  const fullscreenContentStyle: React.CSSProperties | undefined =
     isFullscreen && isRotated
       ? {
           transform: 'rotate(90deg)',
           transformOrigin: 'center center',
           width: '100vh',
           height: 'calc(100vw - 44px)',
-          position: 'relative',
+          position: 'relative' as const,
           left: '50%',
           top: '50%',
           marginLeft: '-50vh',
@@ -623,16 +599,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: pdfViewerStyles }} />
-      <div ref={fullscreenWrapperRef} className={isFullscreen ? 'bg-black flex flex-col w-screen h-screen' : ''}>
+      <div ref={fullscreenWrapperRef} style={fullscreenWrapperStyle}>
         {/* Floating toolbar in fullscreen mode */}
         {isFullscreen && (
-          <div className="flex items-center justify-between px-3 py-1.5 bg-black/80 backdrop-blur-sm z-50 flex-shrink-0">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-black/80 backdrop-blur-sm flex-shrink-0" style={{ zIndex: 100000 }}>
             <span className="text-white text-sm truncate max-w-[40%]">{fileName}</span>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={toggleRotation}
                 className="text-white hover:bg-white/20 h-8 px-2">
                 <RotateCw className="h-4 w-4 mr-1" />
-                <span className="text-xs">{isRotated || orientationLocked ? 'แนวตั้ง' : 'แนวนอน'}</span>
+                <span className="text-xs">{isRotated ? 'แนวตั้ง' : 'แนวนอน'}</span>
               </Button>
               <Button variant="ghost" size="sm" onClick={exitFullscreen}
                 className="text-white hover:bg-white/20 h-8 w-8 p-0">
@@ -641,7 +617,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             </div>
           </div>
         )}
-        <div className={isFullscreen ? 'flex-1 overflow-hidden' : ''} style={fullscreenRotatedStyle}>
+        <div className={isFullscreen ? 'flex-1 overflow-hidden' : ''} style={fullscreenContentStyle}>
       <Card className="w-full" style={isFullscreen ? { borderRadius: 0, border: 'none', height: '100%' } : undefined}>
         <CardHeader className="bg-gray-50 border-b px-4 py-3" style={isFullscreen ? { display: 'none' } : undefined}>
           <div className="flex items-center justify-between">
@@ -726,7 +702,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 <Download className="h-3.5 w-3.5" />
               </Button>
               {showFullscreenButton && (
-                <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={toggleFullscreen} title="ดูเต็มจอ">
+                <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={enterFullscreen} title="ดูเต็มจอ">
                   <Maximize2 className="h-3.5 w-3.5" />
                 </Button>
               )}

@@ -65,6 +65,7 @@ const SessionManagement = () => {
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
+        .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
       if (error) throw error;

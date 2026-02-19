@@ -271,10 +271,8 @@ function formatMessage(payload: NotificationPayload): string {
         }
       }
 
-      // Add document detail link for group notifications too
-      const groupBaseUrl = 'https://fastdoc.rsec6.ac.th'
-      const groupDocType = payload.document_type === 'memo' ? 'memo' : 'doc_receive'
-      message += `\n🔗 <a href="${groupBaseUrl}/document-detail?id=${payload.document_id}&type=${groupDocType}">ดูเอกสาร</a>`
+      // ไม่แสดงลิงก์ดูเอกสารในกลุ่ม เพราะคนอื่นในกลุ่มจะเข้าถึงเอกสารได้
+      message += `\n💡 ผู้รับมอบหมายสามารถดูเอกสารได้ในระบบ`
 
       return message
   }

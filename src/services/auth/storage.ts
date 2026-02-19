@@ -56,7 +56,10 @@ export const updateStoredProfile = (profile: Profile): void => {
 };
 
 /**
- * Clear all authentication data from storage
+ * Clear app-level authentication data from storage
+ * ⚠️ สำคัญ: ไม่ลบ Supabase internal tokens (sb-*-auth-token)
+ * เพราะจะทำให้ Supabase session พังทันที (ทุก query จะ fail)
+ * ให้ใช้ supabase.auth.signOut() แยกต่างหากถ้าต้องการล้าง Supabase session
  */
 export const clearAuthStorage = (): void => {
   const authKeys = [
@@ -65,24 +68,9 @@ export const clearAuthStorage = (): void => {
     STORAGE_KEYS.IS_AUTHENTICATED,
     STORAGE_KEYS.AUTH_SESSION_TIMER
   ];
-  
+
   authKeys.forEach(key => {
     localStorage.removeItem(key);
     sessionStorage.removeItem(key);
   });
-  
-  // Clear any Supabase related storage
-  try {
-    const supabaseKeys = Object.keys(localStorage).filter(key => 
-      key.startsWith('supabase.') || key.includes('auth')
-    );
-    supabaseKeys.forEach(key => localStorage.removeItem(key));
-    
-    const sessionSupabaseKeys = Object.keys(sessionStorage).filter(key => 
-      key.startsWith('supabase.') || key.includes('auth')
-    );
-    sessionSupabaseKeys.forEach(key => sessionStorage.removeItem(key));
-  } catch (clearError) {
-    console.warn('Error clearing additional storage:', clearError);
-  }
 };

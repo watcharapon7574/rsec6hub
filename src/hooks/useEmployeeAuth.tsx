@@ -13,13 +13,14 @@ export const useEmployeeAuth = () => {
   const [loading, setLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
 
-  // Health check: ตรวจสอบว่า Supabase Auth session ยังใช้งานได้จริง
-  // ป้องกัน "zombie state" = localStorage บอกว่า logged in แต่ Supabase Auth ไม่ทำงาน
-  const checkSessionHealth = useCallback(async () => {
+  // Health check: ตรวจแค่ 8-hour session limit เท่านั้น
+  // ไม่ตรวจ Supabase session เพราะ getSession() อาจ return null ชั่วคราว
+  // (ระหว่าง token refresh, lock contention, network ช้า)
+  // ถ้าลบ auth data ตอนนั้น จะทำลาย session ทั้งหมด → เข้าสู่ระบบใหม่
+  const checkSessionHealth = useCallback(() => {
     const storedAuth = getStoredAuthData();
-    if (!storedAuth) return; // ไม่ได้ login
+    if (!storedAuth) return;
 
-    // ตรวจ 8-hour limit
     const currentTime = new Date().getTime();
     if (currentTime > storedAuth.expirationTime) {
       console.log('⏰ Health check: session 8 ชม. หมดอายุ');
@@ -27,32 +28,7 @@ export const useEmployeeAuth = () => {
       setUser(null);
       setIsAuth(false);
       setProfile(null);
-      // ใช้ state change แทน reload เพื่อป้องกัน reload loop
       setTimeout(() => supabase.auth.signOut(), 0);
-      return;
-    }
-
-    // ตรวจว่า Supabase Auth session ยังอยู่จริง (ใช้ timeout ป้องกันค้าง)
-    try {
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
-      const result = await Promise.race([sessionPromise, timeoutPromise]);
-
-      if (result === null) {
-        // getSession() timeout → ข้ามไป ไม่ reload
-        console.warn('⚠️ Health check: getSession() timeout → skip');
-        return;
-      }
-
-      if (!result.data?.session?.user) {
-        console.log('❌ Health check: Supabase Auth session หายไป → sign out');
-        clearAuthStorage();
-        setUser(null);
-        setIsAuth(false);
-        setProfile(null);
-      }
-    } catch (err) {
-      console.warn('⚠️ Health check error (ignored):', err);
     }
   }, []);
 

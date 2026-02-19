@@ -848,6 +848,22 @@ class TaskAssignmentService {
         throw new Error('ไม่สามารถเพิ่มทีมได้ (งานนี้ไม่ได้มอบหมายผ่านหน้าที่)');
       }
 
+      // Check for duplicate: skip if user already has an active assignment for this document
+      const docColumn = parent.document_type === 'memo' ? 'memo_id' : 'doc_receive_id';
+      const docId = parent.document_type === 'memo' ? parent.memo_id : parent.doc_receive_id;
+      const { data: existing } = await (supabase as any)
+        .from('task_assignments')
+        .select('id')
+        .eq(docColumn, docId)
+        .eq('assigned_to', userId)
+        .is('deleted_at', null)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        console.log(`⚠️ User ${userId} already assigned to this document, skipping`);
+        return existing[0].id;
+      }
+
       // Create new team member assignment
       const newAssignment: Record<string, any> = {
         memo_id: parent.memo_id,

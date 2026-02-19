@@ -314,24 +314,6 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
             </div>
           )}
 
-          {/* Leader note */}
-          {isPositionBased && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-pink-500" />
-                หมายเหตุถึงทีม
-              </Label>
-              <Textarea
-                placeholder="พิมพ์หมายเหตุหรือรายละเอียดเพิ่มเติมให้ทุกคนในทีมทราบ..."
-                value={leaderNote}
-                onChange={(e) => setLeaderNote(e.target.value)}
-                className="border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-pink-400 min-h-[80px] resize-none"
-                maxLength={500}
-              />
-              <p className="text-xs text-muted-foreground text-right">{leaderNote.length}/500</p>
-            </div>
-          )}
-
           {/* Team members list */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">
@@ -456,6 +438,24 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Leader note */}
+          {isPositionBased && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-pink-500" />
+                หมายเหตุถึงทีม
+              </Label>
+              <Textarea
+                placeholder="พิมพ์หมายเหตุหรือรายละเอียดเพิ่มเติมให้ทุกคนในทีมทราบ..."
+                value={leaderNote}
+                onChange={(e) => setLeaderNote(e.target.value)}
+                className="border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-pink-400 min-h-[80px] resize-none"
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground text-right">{leaderNote.length}/500</p>
+            </div>
+          )}
 
           {/* Error message */}
           {error && (

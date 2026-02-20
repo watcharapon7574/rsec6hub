@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Disable browser pinch-to-zoom globally (use app's custom zoom instead) */
+html {
+  touch-action: manipulation;
+}
+
 @layer base {
   :root {
     /* Main background & foreground */

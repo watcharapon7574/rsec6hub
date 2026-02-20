@@ -322,15 +322,23 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
       }
     }
 
-    // Set touch-action based on tool: pan allows scrolling, drawing tools block it
-    const canvasEl = fc.getSelectionElement?.() || drawCanvasRef.current;
-    if (canvasEl) {
-      canvasEl.style.touchAction = tool === 'pan' ? 'auto' : 'none';
+    // Set touch-action and pointer-events based on tool
+    // In pan mode: disable pointer-events on Fabric's container so touches pass through for scrolling
+    const fabricContainer = drawCanvasRef.current?.parentElement;
+    const upperCanvas = fabricContainer?.querySelector('.upper-canvas') as HTMLCanvasElement | null;
+    const isPan = tool === 'pan';
+
+    if (fabricContainer) {
+      fabricContainer.style.pointerEvents = isPan ? 'none' : 'auto';
+      fabricContainer.style.touchAction = isPan ? 'auto' : 'none';
     }
-    // Also set on the upper-canvas (Fabric creates its own canvas elements)
-    const upperCanvas = drawCanvasRef.current?.parentElement?.querySelector('.upper-canvas') as HTMLCanvasElement | null;
     if (upperCanvas) {
-      upperCanvas.style.touchAction = tool === 'pan' ? 'auto' : 'none';
+      upperCanvas.style.touchAction = isPan ? 'auto' : 'none';
+      upperCanvas.style.pointerEvents = isPan ? 'none' : 'auto';
+    }
+    const lowerCanvas = drawCanvasRef.current;
+    if (lowerCanvas) {
+      lowerCanvas.style.touchAction = isPan ? 'auto' : 'none';
     }
   }, []);
 
@@ -653,6 +661,7 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
               height: pageSize.height,
               transform: `scale(${zoomScale})`,
               transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+              touchAction: activeTool === 'pan' ? 'manipulation' : 'none',
             }}
             onTouchStart={handleCanvasTouchStart}
             onTouchMove={handleCanvasTouchMove}

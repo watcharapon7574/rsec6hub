@@ -446,7 +446,7 @@ export class MemoService {
           signatures: updatedSignatures as any,
           status: newStatus,
           current_signer_order: nextSignerOrder,
-          device_info: deviceInfo // Store device fingerprint
+          device_info: deviceInfo as any // Store device fingerprint
         })
         .eq('id', memoId);
 

@@ -13,7 +13,7 @@ import { FileText, ArrowLeft, Sparkles, Eye, ChevronDown, ChevronUp, ClipboardCh
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AnimatedProgress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { formatThaiDateFull } from '@/utils/dateUtils';
+import { formatThaiDateFull, convertToThaiNumerals } from '@/utils/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
 
@@ -577,6 +577,7 @@ const CreateReportMemoPage = () => {
       const previewData = {
         ...formData,
         date: formData.date ? formatThaiDateFull(formData.date) : formData.date,
+        doc_number: formData.doc_number ? convertToThaiNumerals(formData.doc_number) : formData.doc_number,
         author_name: formData.author_name || (profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : '') || 'ไม่ระบุชื่อ',
         author_position: formData.author_position || profile?.current_position || profile?.job_position || profile?.position || 'ไม่ระบุตำแหน่ง'
       };

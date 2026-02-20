@@ -3,7 +3,7 @@ import { Canvas as FabricCanvas, PencilBrush, Circle, Line, Textbox, FabricObjec
 import { Button } from '@/components/ui/button';
 import {
   X, Pen, Highlighter, Type, CircleIcon, ArrowRight,
-  Eraser, Undo2, ChevronLeft, ChevronRight, Save, Loader2
+  Eraser, Undo2, ChevronLeft, ChevronRight, Save, Loader2, Hand
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -11,7 +11,7 @@ import { renderPdfPageToCanvas, loadPdfFromUrl, exportAnnotatedPdf } from '@/uti
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-type Tool = 'pen' | 'highlighter' | 'text' | 'circle' | 'arrow' | 'eraser';
+type Tool = 'pen' | 'highlighter' | 'text' | 'circle' | 'arrow' | 'eraser' | 'pan';
 
 const COLORS = [
   { value: '#FF0000', label: 'แดง' },
@@ -79,6 +79,9 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
   const isDrawingShapeRef = useRef(false);
   const shapeStartRef = useRef({ x: 0, y: 0 });
   const currentShapeRef = useRef<FabricObject | null>(null);
+
+  // Multi-touch scroll state (for iPad two-finger scroll)
+  const isTwoFingerRef = useRef(false);
 
   // Loading
   const [loading, setLoading] = useState(true);
@@ -304,6 +307,22 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
         });
         break;
       }
+      case 'pan': {
+        fc.isDrawingMode = false;
+        fc.selection = false;
+        break;
+      }
+    }
+
+    // Set touch-action based on tool: pan allows scrolling, drawing tools block it
+    const canvasEl = fc.getSelectionElement?.() || drawCanvasRef.current;
+    if (canvasEl) {
+      canvasEl.style.touchAction = tool === 'pan' ? 'auto' : 'none';
+    }
+    // Also set on the upper-canvas (Fabric creates its own canvas elements)
+    const upperCanvas = drawCanvasRef.current?.parentElement?.querySelector('.upper-canvas') as HTMLCanvasElement | null;
+    if (upperCanvas) {
+      upperCanvas.style.touchAction = tool === 'pan' ? 'auto' : 'none';
     }
   }, []);
 
@@ -432,9 +451,36 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
     onSave(blob);
   };
 
+  // Two-finger scroll: temporarily allow browser scroll when 2+ fingers detected
+  const handleCanvasTouchStart = useCallback((e: React.TouchEvent) => {
+    if (activeToolRef.current === 'pan') return; // pan mode already allows scroll
+    if (e.touches.length >= 2) {
+      isTwoFingerRef.current = true;
+      const fc = fabricRef.current;
+      if (fc) {
+        fc.isDrawingMode = false;
+        fc.selection = false;
+      }
+      // Allow browser scroll
+      const upperCanvas = drawCanvasRef.current?.parentElement?.querySelector('.upper-canvas') as HTMLCanvasElement | null;
+      if (upperCanvas) upperCanvas.style.touchAction = 'auto';
+      if (drawCanvasRef.current) drawCanvasRef.current.style.touchAction = 'auto';
+    }
+  }, []);
+
+  const handleCanvasTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!isTwoFingerRef.current) return;
+    if (e.touches.length === 0) {
+      isTwoFingerRef.current = false;
+      // Restore tool after multi-touch ends
+      applyCurrentTool();
+    }
+  }, [applyCurrentTool]);
+
   if (!isOpen) return null;
 
   const tools: { id: Tool; icon: React.ReactNode; label: string }[] = [
+    { id: 'pan', icon: <Hand className="h-4 w-4" />, label: 'เลื่อน' },
     { id: 'pen', icon: <Pen className="h-4 w-4" />, label: 'ปากกา' },
     { id: 'highlighter', icon: <Highlighter className="h-4 w-4" />, label: 'ไฮไลท์' },
     { id: 'text', icon: <Type className="h-4 w-4" />, label: 'ข้อความ' },
@@ -543,7 +589,12 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
             <p className="text-sm text-gray-500">กำลังโหลด PDF...</p>
           </div>
         ) : (
-          <div className="relative shadow-lg" style={{ width: pageSize.width, height: pageSize.height }}>
+          <div
+            className="relative shadow-lg"
+            style={{ width: pageSize.width, height: pageSize.height }}
+            onTouchStart={handleCanvasTouchStart}
+            onTouchEnd={handleCanvasTouchEnd}
+          >
             <canvas
               ref={bgCanvasRef}
               className="absolute inset-0"
@@ -552,7 +603,7 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
             <canvas
               ref={drawCanvasRef}
               className="absolute inset-0"
-              style={{ touchAction: 'none' }}
+              style={{ touchAction: activeTool === 'pan' ? 'auto' : 'none' }}
             />
           </div>
         )}

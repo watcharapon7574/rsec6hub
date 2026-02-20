@@ -3,7 +3,7 @@ import { Memo, MemoFormData, SignaturePosition, MemoSignature } from '@/types/me
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDeviceFingerprint } from '@/utils/deviceInfo';
 import { requestQueue, railwayPDFQueue } from '@/utils/requestQueue';
-import { formatThaiDateFull } from '@/utils/dateUtils';
+import { formatThaiDateFull, convertToThaiNumerals } from '@/utils/dateUtils';
 import { calculateNextSignerOrder, calculateRejection, SIGNER_ORDER } from '@/services/approvalWorkflowService';
 
 export class MemoService {
@@ -176,7 +176,8 @@ export class MemoService {
               // Format date to Thai before sending to API
               const formDataWithThaiDate = {
                 ...formData,
-                date: formData.date ? formatThaiDateFull(formData.date) : formData.date
+                date: formData.date ? formatThaiDateFull(formData.date) : formData.date,
+                doc_number: formData.doc_number ? convertToThaiNumerals(formData.doc_number) : formData.doc_number
               };
 
               // Line-wrap disabled - users will manually add line breaks

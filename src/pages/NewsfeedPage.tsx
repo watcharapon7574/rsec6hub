@@ -62,7 +62,7 @@ const NewsfeedPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="container mx-auto px-4 py-6 max-w-2xl">
+      <div className="container mx-auto px-4 py-6 max-w-5xl">
         {/* Header + Stats */}
         <NewsfeedHeader
           displayName={displayName}

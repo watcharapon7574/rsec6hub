@@ -86,8 +86,10 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
 
   // Pinch-to-zoom state
   const [zoomScale, setZoomScale] = useState(1);
+  const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 0 }); // percentage
   const pinchStartDistRef = useRef(0);
   const pinchStartScaleRef = useRef(1);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
   // Loading
   const [loading, setLoading] = useState(true);
@@ -471,6 +473,17 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
       pinchStartDistRef.current = getTouchDistance(e.touches[0], e.touches[1]);
       pinchStartScaleRef.current = zoomScale;
 
+      // Calculate pinch midpoint relative to canvas wrapper (as percentage)
+      const wrapper = canvasWrapperRef.current;
+      if (wrapper) {
+        const rect = wrapper.getBoundingClientRect();
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const pctX = ((midX - rect.left) / rect.width) * 100;
+        const pctY = ((midY - rect.top) / rect.height) * 100;
+        setZoomOrigin({ x: Math.max(0, Math.min(100, pctX)), y: Math.max(0, Math.min(100, pctY)) });
+      }
+
       if (activeToolRef.current !== 'pan') {
         const fc = fabricRef.current;
         if (fc) {
@@ -585,17 +598,17 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
         <div className="w-px h-6 bg-gray-300" />
 
         {/* Zoom */}
-        <Button variant="outline" size="sm" onClick={() => setZoomScale(s => Math.max(0.5, s - 0.25))} disabled={zoomScale <= 0.5} title="ย่อ">
+        <Button variant="outline" size="sm" onClick={() => { setZoomOrigin({ x: 50, y: 50 }); setZoomScale(s => Math.max(0.5, s - 0.25)); }} disabled={zoomScale <= 0.5} title="ย่อ">
           <ZoomOut className="h-4 w-4" />
         </Button>
         <button
-          onClick={() => setZoomScale(1)}
+          onClick={() => { setZoomOrigin({ x: 50, y: 50 }); setZoomScale(1); }}
           className="text-xs px-1.5 py-1 rounded hover:bg-muted transition-colors min-w-[40px] text-center"
           title="รีเซ็ตซูม"
         >
           {Math.round(zoomScale * 100)}%
         </button>
-        <Button variant="outline" size="sm" onClick={() => setZoomScale(s => Math.min(3, s + 0.25))} disabled={zoomScale >= 3} title="ขยาย">
+        <Button variant="outline" size="sm" onClick={() => { setZoomOrigin({ x: 50, y: 50 }); setZoomScale(s => Math.min(3, s + 0.25)); }} disabled={zoomScale >= 3} title="ขยาย">
           <ZoomIn className="h-4 w-4" />
         </Button>
 
@@ -633,12 +646,13 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
           </div>
         ) : (
           <div
+            ref={canvasWrapperRef}
             className="relative shadow-lg"
             style={{
               width: pageSize.width,
               height: pageSize.height,
               transform: `scale(${zoomScale})`,
-              transformOrigin: 'top center',
+              transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
             }}
             onTouchStart={handleCanvasTouchStart}
             onTouchMove={handleCanvasTouchMove}

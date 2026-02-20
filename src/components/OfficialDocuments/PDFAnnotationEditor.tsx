@@ -3,7 +3,8 @@ import { Canvas as FabricCanvas, PencilBrush, Circle, Line, Textbox, FabricObjec
 import { Button } from '@/components/ui/button';
 import {
   X, Pen, Highlighter, Type, CircleIcon, ArrowRight,
-  Eraser, Undo2, ChevronLeft, ChevronRight, Save, Loader2, Hand
+  Eraser, Undo2, ChevronLeft, ChevronRight, Save, Loader2, Hand,
+  ZoomIn, ZoomOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -82,6 +83,11 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
 
   // Multi-touch scroll state (for iPad two-finger scroll)
   const isTwoFingerRef = useRef(false);
+
+  // Pinch-to-zoom state
+  const [zoomScale, setZoomScale] = useState(1);
+  const pinchStartDistRef = useRef(0);
+  const pinchStartScaleRef = useRef(1);
 
   // Loading
   const [loading, setLoading] = useState(true);
@@ -451,29 +457,49 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
     onSave(blob);
   };
 
-  // Two-finger scroll: temporarily allow browser scroll when 2+ fingers detected
+  // Helper: get distance between two touch points
+  const getTouchDistance = (t1: React.Touch, t2: React.Touch) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // Two-finger: scroll + pinch-to-zoom
   const handleCanvasTouchStart = useCallback((e: React.TouchEvent) => {
-    if (activeToolRef.current === 'pan') return; // pan mode already allows scroll
     if (e.touches.length >= 2) {
       isTwoFingerRef.current = true;
-      const fc = fabricRef.current;
-      if (fc) {
-        fc.isDrawingMode = false;
-        fc.selection = false;
+      pinchStartDistRef.current = getTouchDistance(e.touches[0], e.touches[1]);
+      pinchStartScaleRef.current = zoomScale;
+
+      if (activeToolRef.current !== 'pan') {
+        const fc = fabricRef.current;
+        if (fc) {
+          fc.isDrawingMode = false;
+          fc.selection = false;
+        }
       }
-      // Allow browser scroll
-      const upperCanvas = drawCanvasRef.current?.parentElement?.querySelector('.upper-canvas') as HTMLCanvasElement | null;
-      if (upperCanvas) upperCanvas.style.touchAction = 'auto';
-      if (drawCanvasRef.current) drawCanvasRef.current.style.touchAction = 'auto';
+      // Prevent Fabric from drawing during pinch
+      e.stopPropagation();
     }
+  }, [zoomScale]);
+
+  const handleCanvasTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isTwoFingerRef.current || e.touches.length < 2) return;
+    e.preventDefault();
+
+    const currentDist = getTouchDistance(e.touches[0], e.touches[1]);
+    const ratio = currentDist / pinchStartDistRef.current;
+    const newScale = Math.min(3, Math.max(0.5, pinchStartScaleRef.current * ratio));
+    setZoomScale(newScale);
   }, []);
 
   const handleCanvasTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!isTwoFingerRef.current) return;
     if (e.touches.length === 0) {
       isTwoFingerRef.current = false;
-      // Restore tool after multi-touch ends
-      applyCurrentTool();
+      if (activeToolRef.current !== 'pan') {
+        applyCurrentTool();
+      }
     }
   }, [applyCurrentTool]);
 
@@ -556,6 +582,23 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
           <Undo2 className="h-4 w-4" />
         </Button>
 
+        <div className="w-px h-6 bg-gray-300" />
+
+        {/* Zoom */}
+        <Button variant="outline" size="sm" onClick={() => setZoomScale(s => Math.max(0.5, s - 0.25))} disabled={zoomScale <= 0.5} title="ย่อ">
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <button
+          onClick={() => setZoomScale(1)}
+          className="text-xs px-1.5 py-1 rounded hover:bg-muted transition-colors min-w-[40px] text-center"
+          title="รีเซ็ตซูม"
+        >
+          {Math.round(zoomScale * 100)}%
+        </button>
+        <Button variant="outline" size="sm" onClick={() => setZoomScale(s => Math.min(3, s + 0.25))} disabled={zoomScale >= 3} title="ขยาย">
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+
         <div className="flex-1" />
 
         {/* Page navigation */}
@@ -591,8 +634,14 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
         ) : (
           <div
             className="relative shadow-lg"
-            style={{ width: pageSize.width, height: pageSize.height }}
+            style={{
+              width: pageSize.width,
+              height: pageSize.height,
+              transform: `scale(${zoomScale})`,
+              transformOrigin: 'top center',
+            }}
             onTouchStart={handleCanvasTouchStart}
+            onTouchMove={handleCanvasTouchMove}
             onTouchEnd={handleCanvasTouchEnd}
           >
             <canvas

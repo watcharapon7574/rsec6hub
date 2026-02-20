@@ -85,3 +85,34 @@ export const formatThaiDateISO = (date: Date | string | null): string => {
 
   return `${convertToThaiNumerals(year)}-${convertToThaiNumerals(month)}-${convertToThaiNumerals(day)}`;
 };
+
+/**
+ * เดือนภาษาไทยแบบย่อ
+ */
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+];
+
+/**
+ * แสดงเวลาแบบ relative เหมือน Facebook
+ * เช่น "เมื่อสักครู่", "5 นาทีที่แล้ว", "2 ชม.ที่แล้ว", "เมื่อวาน", "3 ก.พ."
+ */
+export const formatRelativeTime = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMinutes < 1) return 'เมื่อสักครู่';
+  if (diffMinutes < 60) return `${diffMinutes} นาทีที่แล้ว`;
+  if (diffHours < 24) return `${diffHours} ชม.ที่แล้ว`;
+  if (diffDays === 1) return 'เมื่อวาน';
+  if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
+
+  return `${date.getDate()} ${THAI_MONTHS_SHORT[date.getMonth()]}`;
+};

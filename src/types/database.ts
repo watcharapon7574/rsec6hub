@@ -136,6 +136,60 @@ export interface DailyReport {
   updated_at: string;
 }
 
+// ==================== Feed Types ====================
+
+export interface FeedPost {
+  id: string;
+  user_id: string;
+  title?: string;
+  description: string;
+  category?: string;
+  tags?: string[];
+  author_name?: string;
+  author_position?: string;
+  author_avatar_url?: string;
+  images?: string[];
+  location?: { name: string; lat?: number; lng?: number };
+  created_at: string;
+  updated_at: string;
+  acknowledged_by?: string | null;
+  acknowledged_at?: string | null;
+  // client-side joined data
+  reaction_counts?: Record<string, number>;
+  user_reaction?: string | null;
+  comment_count?: number;
+  recent_comments?: FeedComment[];
+  reaction_names?: string[];  // ชื่อคนที่กด reaction (แสดง 2-3 ชื่อแรก)
+  total_reactions?: number;
+  acknowledged_by_name?: string | null;
+}
+
+export type ReactionType = 'like' | 'love' | 'haha' | 'wow' | 'sad' | 'angry';
+
+export interface FeedReaction {
+  id: string;
+  post_id: string;
+  user_id: string;
+  reaction_type: ReactionType;
+  created_at: string;
+}
+
+export interface FeedComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  author_name?: string;
+  author_avatar_url?: string;
+  parent_id?: string | null;
+  reply_to_name?: string | null;
+  created_at: string;
+  updated_at: string;
+  // client-side
+  replies?: FeedComment[];
+  reply_count?: number;
+}
+
 export interface OfficialDocument {
   id: string;
   user_id: string;

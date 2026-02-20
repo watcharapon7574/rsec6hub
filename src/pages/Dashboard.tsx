@@ -90,7 +90,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/daily-reports')}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/newsfeed')}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-teal-100">
@@ -186,7 +186,7 @@ const Dashboard = () => {
                 <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900">
                   <p className="text-sm font-medium text-green-800 dark:text-green-200">รายงานสำเร็จ</p>
                   <p className="text-xs text-green-600 dark:text-green-400 dark:text-green-600 mb-2">ส่งรายงานครบถ้วนแล้ว</p>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/daily-reports')}>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/newsfeed')}>
                     ตรวจสอบ
                   </Button>
                 </div>

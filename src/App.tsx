@@ -15,7 +15,7 @@ import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import LeaveRequestsPage from "@/pages/LeaveRequestsPage";
-import DailyReportsPage from "@/pages/DailyReportsPage";
+import NewsfeedPage from "@/pages/NewsfeedPage";
 import OfficialDocumentsPage from "@/pages/OfficialDocumentsPage";
 import CreateDocumentPage from "@/pages/CreateDocumentPage";
 import CreateMemoPage from "@/pages/CreateMemoPage";
@@ -136,11 +136,12 @@ const AppContent = () => {
           <LeaveRequestsPage />
         </ProtectedRoute>
       } />
-      <Route path="/daily-reports" element={
+      <Route path="/newsfeed" element={
         <ProtectedRoute isAuthenticated={isAuthenticated}>
-          <DailyReportsPage />
+          <NewsfeedPage />
         </ProtectedRoute>
       } />
+      <Route path="/daily-reports" element={<Navigate to="/newsfeed" replace />} />
       <Route path="/documents" element={
         <ProtectedRoute isAuthenticated={isAuthenticated}>
           <OfficialDocumentsPage />

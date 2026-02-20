@@ -7,7 +7,7 @@ import {
   User, 
   FileText, 
   Calendar, 
-  ClipboardList, 
+  Newspaper,
   Bell, 
   LogOut,
   Building
@@ -24,7 +24,7 @@ const Navbar = () => {
     { to: '/dashboard', icon: Home, label: 'หน้าหลัก' },
     { to: '/profile', icon: User, label: 'โปรไฟล์' },
     { to: '/leave-requests', icon: Calendar, label: 'ขอลา' },
-    { to: '/daily-reports', icon: ClipboardList, label: 'รายงานประจำวัน' },
+    { to: '/newsfeed', icon: Newspaper, label: 'นิวส์ฟีด' },
     { to: '/documents', icon: FileText, label: 'เอกสารราชการ' },
     { to: '/notifications', icon: Bell, label: 'แจ้งเตือน' },
   ];

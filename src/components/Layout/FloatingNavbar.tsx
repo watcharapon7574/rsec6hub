@@ -5,7 +5,7 @@ import {
   Home, 
   FileText, 
   Calendar, 
-  ClipboardList, 
+  Newspaper,
   Bell,
   ChevronDown,
   ChevronUp
@@ -39,7 +39,7 @@ const FloatingNavbar = () => {
   const navItems = [
     { to: '/dashboard', icon: Home, label: 'หน้าหลัก' },
     { to: '/leave-requests', icon: Calendar, label: 'ขอลา' },
-    { to: '/daily-reports', icon: ClipboardList, label: 'รายงาน' },
+    { to: '/newsfeed', icon: Newspaper, label: 'นิวส์ฟีด' },
     { to: '/documents', icon: FileText, label: 'เอกสาร' },
     { to: '/notifications', icon: Bell, label: 'แจ้งเตือน' },
   ];

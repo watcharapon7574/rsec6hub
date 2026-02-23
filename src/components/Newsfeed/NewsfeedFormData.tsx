@@ -143,23 +143,23 @@ const NewsfeedFormData = ({ reportType, formData }: FormDataProps) => {
 
   return (
     <div className="space-y-2">
-      {/* Report type badge */}
-      <Badge variant="secondary" className="text-xs">
-        {typeLabel}
+      {/* Report type badge — truncate to 20 chars on mobile */}
+      <Badge variant="secondary" className="text-xs max-w-full">
+        <span className="sm:hidden">{typeLabel.length > 20 ? typeLabel.slice(0, 20) + '...' : typeLabel}</span>
+        <span className="hidden sm:inline">{typeLabel}</span>
       </Badge>
 
       {/* Fields */}
       <div className="space-y-1.5 bg-muted/30 rounded-lg p-3">
         {visibleRows}
         {needsCollapse && !expanded && (
-          <div className="text-right mt-1">
-            <button
-              onClick={() => setExpanded(true)}
-              className="text-xs text-blue-500 font-medium"
-            >
-              ... ดูเพิ่มเติม
-            </button>
-          </div>
+          <button
+            onClick={() => setExpanded(true)}
+            className="w-full mt-1 py-1.5 -mx-3 px-3 text-center text-xs text-blue-500 font-medium bg-muted/40 hover:bg-muted/60 transition-colors"
+            style={{ width: 'calc(100% + 1.5rem)' }}
+          >
+            ... ดูเพิ่มเติม
+          </button>
         )}
       </div>
     </div>

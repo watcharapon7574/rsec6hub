@@ -284,3 +284,33 @@ select:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px hsl(215 25% 19%) inset !important;
   -webkit-text-fill-color: #f1f5f9 !important;
 }
+
+/* ========== Reaction Picker Animations ========== */
+@keyframes reactionPickerIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes reactionEmojiBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0) translateY(12px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15) translateY(-2px);
+  }
+  80% {
+    transform: scale(0.95) translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

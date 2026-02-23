@@ -187,8 +187,13 @@ const NewsfeedReactions = ({
         >
           {/* Reaction Picker Popup */}
           {showPicker && (
-            <div className="absolute bottom-full left-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 bg-background border border-border rounded-full shadow-xl px-3 py-2 flex items-center gap-2 z-50 w-max">
-              {REACTIONS.map(r => (
+            <div
+              className="absolute bottom-full left-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 bg-background border border-border rounded-full shadow-xl px-3 py-2 flex items-center gap-2 z-50 w-max"
+              style={{
+                animation: 'reactionPickerIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+              }}
+            >
+              {REACTIONS.map((r, i) => (
                 <button
                   key={r.type}
                   onClick={() => handleReaction(r.type)}
@@ -197,6 +202,10 @@ const NewsfeedReactions = ({
                     handleReaction(r.type);
                   }}
                   className="group relative flex flex-col items-center"
+                  style={{
+                    animation: 'reactionEmojiBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                    animationDelay: `${i * 40}ms`,
+                  }}
                 >
                   <img
                     src={r.img}

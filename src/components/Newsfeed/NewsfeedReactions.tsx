@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 import type { ReactionType } from '@/types/database';
 
@@ -47,6 +47,9 @@ const NewsfeedReactions = ({
 }: Props) => {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTimeout, setPickerTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLongPress = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Top 3 reaction types by count
   const topReactions = Object.entries(reactionCounts)
@@ -54,6 +57,7 @@ const NewsfeedReactions = ({
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
 
+  // Desktop: hover
   const handleMouseEnter = () => {
     if (pickerTimeout) clearTimeout(pickerTimeout);
     setShowPicker(true);
@@ -64,14 +68,62 @@ const NewsfeedReactions = ({
     setPickerTimeout(t);
   };
 
+  // Mobile: long press (touch hold 400ms)
+  const handleTouchStart = useCallback(() => {
+    isLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true;
+      setShowPicker(true);
+    }, 400);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  // Close picker when tapping outside
+  useEffect(() => {
+    if (!showPicker) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showPicker]);
+
   const handleReaction = (type: ReactionType) => {
     onReaction(type);
     setShowPicker(false);
   };
 
+  const handleLikeClick = () => {
+    // If long press opened picker, don't also trigger click
+    if (isLongPress.current) {
+      isLongPress.current = false;
+      return;
+    }
+    handleReaction(userReaction as ReactionType || 'like');
+  };
+
   const userReactionData = userReaction ? REACTIONS.find(r => r.type === userReaction) : null;
 
-  // Build reaction text like Facebook: "สมชาย, สมหญิง และคนอื่นอีก 51 คน"
+  // Build reaction text like Facebook
   const buildReactionText = () => {
     if (totalReactions === 0) return '';
     if (reactionNames.length === 0) return `${totalReactions}`;
@@ -128,33 +180,43 @@ const NewsfeedReactions = ({
       <div className="flex items-center">
         {/* Like button with picker */}
         <div
+          ref={containerRef}
           className="relative flex-[2]"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
           {/* Reaction Picker Popup */}
           {showPicker && (
-            <div className="absolute bottom-full left-0 mb-2 bg-background border border-border rounded-full shadow-xl px-2 py-1.5 flex items-center gap-1 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-background border border-border rounded-full shadow-xl px-3 py-2 flex items-center gap-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
               {REACTIONS.map(r => (
                 <button
                   key={r.type}
                   onClick={() => handleReaction(r.type)}
-                  className="group relative"
-                  title={r.label}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleReaction(r.type);
+                  }}
+                  className="group relative flex flex-col items-center"
                 >
                   <img
                     src={r.img}
                     alt={r.label}
-                    className="h-9 w-9 transition-transform duration-150 hover:scale-125 hover:-translate-y-1"
+                    className="h-10 w-10 sm:h-9 sm:w-9 transition-transform duration-150 hover:scale-125 hover:-translate-y-1 active:scale-110"
                   />
+                  <span className="text-[9px] text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
+                    {r.label}
+                  </span>
                 </button>
               ))}
             </div>
           )}
 
           <button
-            onClick={() => handleReaction(userReaction as ReactionType || 'like')}
-            className={`w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors hover:bg-muted ${
+            onClick={handleLikeClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+            className={`w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors hover:bg-muted select-none ${
               userReaction ? 'text-blue-500' : 'text-muted-foreground'
             }`}
           >

@@ -187,7 +187,7 @@ const NewsfeedReactions = ({
         >
           {/* Reaction Picker Popup */}
           {showPicker && (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-background border border-border rounded-full shadow-xl px-3 py-2 flex items-center gap-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="absolute bottom-full left-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 bg-background border border-border rounded-full shadow-xl px-3 py-2 flex items-center gap-2 z-50 w-max">
               {REACTIONS.map(r => (
                 <button
                   key={r.type}
@@ -216,18 +216,20 @@ const NewsfeedReactions = ({
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             onTouchMove={handleTouchMove}
+            onContextMenu={e => e.preventDefault()}
             className={`w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors hover:bg-muted select-none ${
               userReaction ? 'text-blue-500' : 'text-muted-foreground'
             }`}
+            style={{ WebkitTouchCallout: 'none' }}
           >
             {userReactionData ? (
               <>
-                <img src={userReactionData.img} alt={userReactionData.label} className="h-5 w-5" />
+                <img src={userReactionData.img} alt={userReactionData.label} className="h-5 w-5 pointer-events-none" draggable={false} />
                 <span>{userReactionData.label}</span>
               </>
             ) : (
               <>
-                <img src="/emoji/reaction-like.png" alt="like" className="h-5 w-5 opacity-60" />
+                <img src="/emoji/reaction-like.png" alt="like" className="h-5 w-5 opacity-60 pointer-events-none" draggable={false} />
                 <span>ถูกใจ</span>
               </>
             )}

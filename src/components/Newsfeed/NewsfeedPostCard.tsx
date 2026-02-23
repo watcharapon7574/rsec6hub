@@ -89,10 +89,10 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
   const displayText = expanded || !isLong ? post.description : post.description.slice(0, 300) + '...';
 
   return (
-    <Card className="overflow-hidden">
+    <Card>
       {/* Acknowledged badge */}
       {isAcknowledged && (
-        <div className="flex items-center gap-1.5 px-4 py-2 bg-green-50 dark:bg-green-950/30 border-b border-green-100 dark:border-green-900/50">
+        <div className="flex items-center gap-1.5 px-4 py-2 bg-green-50 dark:bg-green-950/30 border-b border-green-100 dark:border-green-900/50 rounded-t-xl">
           <div className="h-4 w-4 rounded-full bg-green-500 flex items-center justify-center shrink-0">
             <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />

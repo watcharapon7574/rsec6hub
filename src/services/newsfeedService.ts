@@ -62,13 +62,23 @@ export class NewsfeedService {
       result[postId] = { counts: {}, userReaction: null, names: [], total: 0 };
     }
 
-    // Get reaction user names (join with profiles)
-    const { data: reactionProfiles } = await (supabase
-      .from('feed_reactions') as any)
-      .select('post_id, reaction_type, user_id, profiles:user_id(first_name, last_name)')
-      .in('post_id', postIds);
+    // Collect unique user_ids for name lookup
+    const userIds = [...new Set((reactions || []).map((r: any) => r.user_id).filter(Boolean))];
 
-    for (const r of (reactionProfiles || reactions || [])) {
+    // Query profiles separately (no FK join needed)
+    const profileMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds);
+
+      for (const p of profiles || []) {
+        profileMap[p.user_id] = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+      }
+    }
+
+    for (const r of (reactions || [])) {
       if (!result[r.post_id]) continue;
       result[r.post_id].counts[r.reaction_type] = (result[r.post_id].counts[r.reaction_type] || 0) + 1;
       result[r.post_id].total++;
@@ -76,9 +86,9 @@ export class NewsfeedService {
         result[r.post_id].userReaction = r.reaction_type;
       }
       // Collect names (first 3)
-      if (r.profiles && result[r.post_id].names.length < 3) {
-        const name = `${r.profiles.first_name || ''} ${r.profiles.last_name || ''}`.trim();
-        if (name) result[r.post_id].names.push(name);
+      const name = profileMap[r.user_id];
+      if (name && result[r.post_id].names.length < 3) {
+        result[r.post_id].names.push(name);
       }
     }
 
@@ -265,15 +275,31 @@ export class NewsfeedService {
     const result: Record<string, string | null> = {};
     for (const id of postIds) result[id] = null;
 
+    // Get posts with acknowledged_by
     const { data } = await (supabase
       .from('feed_posts') as any)
-      .select('id, acknowledged_by, profiles:acknowledged_by(first_name, last_name)')
+      .select('id, acknowledged_by')
       .in('id', postIds)
       .not('acknowledged_by', 'is', null);
 
-    for (const row of data || []) {
-      if (row.profiles) {
-        result[row.id] = `${row.profiles.first_name || ''} ${row.profiles.last_name || ''}`.trim();
+    const ackUserIds = (data || []).map((r: any) => r.acknowledged_by).filter(Boolean);
+
+    if (ackUserIds.length > 0) {
+      // Query profiles separately (no FK join needed)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', ackUserIds);
+
+      const profileMap: Record<string, string> = {};
+      for (const p of profiles || []) {
+        profileMap[p.user_id] = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+      }
+
+      for (const row of data || []) {
+        if (row.acknowledged_by && profileMap[row.acknowledged_by]) {
+          result[row.id] = profileMap[row.acknowledged_by];
+        }
       }
     }
 

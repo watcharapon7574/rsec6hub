@@ -12,6 +12,7 @@ import type { FeedPost, FeedComment, ReactionType } from '@/types/database';
 import NewsfeedImageGrid from './NewsfeedImageGrid';
 import NewsfeedReactions from './NewsfeedReactions';
 import NewsfeedComments from './NewsfeedComments';
+import EditPostDialog from './EditPostDialog';
 
 interface Props {
   post: FeedPost;
@@ -21,14 +22,17 @@ interface Props {
   onAddComment: (postId: string, content: string, parentId?: string, replyToName?: string) => Promise<FeedComment | null>;
   onDeleteComment: (postId: string, commentId: string, isReply?: boolean, parentId?: string) => void;
   onDeletePost: (postId: string) => void;
+  onEditPost: (postId: string, data: { title?: string; description: string; category?: string; tags?: string[] }) => Promise<void>;
   onAcknowledge: (postId: string) => void;
+  categories: string[];
 }
 
-const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddComment, onDeleteComment, onDeletePost, onAcknowledge }: Props) => {
+const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddComment, onDeleteComment, onDeletePost, onEditPost, onAcknowledge, categories }: Props) => {
   const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
   const [allComments, setAllComments] = useState<FeedComment[]>([]);
   const [allLoaded, setAllLoaded] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const getInitials = (name?: string) => {
     if (!name) return '?';
@@ -88,10 +92,7 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
   };
 
   const handleEdit = () => {
-    toast({
-      title: 'กำลังพัฒนา',
-      description: 'ฟีเจอร์แก้ไขโพสต์จะเปิดให้ใช้เร็วๆ นี้',
-    });
+    setEditDialogOpen(true);
   };
 
   const handleDelete = () => {
@@ -236,6 +237,17 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
           onDeleteComment={handleDeleteComment}
           onLoadAll={handleLoadAll}
           allLoaded={allLoaded}
+        />
+      )}
+
+      {/* Edit dialog */}
+      {isOwner && (
+        <EditPostDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          post={post}
+          categories={categories}
+          onSave={onEditPost}
         />
       )}
     </Card>

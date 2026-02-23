@@ -257,6 +257,29 @@ export class NewsfeedService {
     if (error) throw error;
   }
 
+  // ==================== Update Post ====================
+
+  static async updatePost(
+    postId: string,
+    data: { title?: string; description: string; category?: string; tags?: string[] }
+  ): Promise<FeedPost> {
+    const { data: updated, error } = await (supabase
+      .from('feed_posts') as any)
+      .update({
+        title: data.title || null,
+        description: data.description,
+        category: data.category || null,
+        tags: data.tags || [],
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', postId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NewsfeedService.transformPost(updated);
+  }
+
   // ==================== Delete Post ====================
 
   static async deletePost(postId: string): Promise<void> {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { NewsfeedService } from '@/services/newsfeedService';
 import { supabase } from '@/integrations/supabase/client';
 import type { FeedPost, FeedComment, ReactionType } from '@/types/database';
@@ -22,6 +22,9 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
   }>({ totalPosts: 0, totalReactions: 0, totalComments: 0, acknowledgedPosts: 0, postsThisMonth: [] });
 
   const userId = profile?.user_id || '';
+  // Keep a ref to current posts for realtime handlers (avoid stale closures)
+  const postsRef = useRef(posts);
+  postsRef.current = posts;
 
   const enrichPosts = useCallback(async (rawPosts: FeedPost[]): Promise<FeedPost[]> => {
     if (rawPosts.length === 0 || !userId) return rawPosts;
@@ -82,6 +85,59 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
     }
     setLoadingMore(false);
   }, [posts.length, loadingMore, hasMore, options?.category, options?.search, enrichPosts]);
+
+  // ==================== Realtime helpers ====================
+
+  /** Re-fetch reactions for a single post and update state */
+  const refreshPostReactions = useCallback(async (postId: string) => {
+    if (!userId) return;
+    // Only refresh if this post is in our current list
+    if (!postsRef.current.some(p => p.id === postId)) return;
+
+    try {
+      const reactionsMap = await NewsfeedService.getReactionsForPosts([postId], userId);
+      const r = reactionsMap[postId];
+      if (!r) return;
+
+      setPosts(prev => prev.map(post => {
+        if (post.id !== postId) return post;
+        return {
+          ...post,
+          reaction_counts: r.counts,
+          user_reaction: r.userReaction,
+          reaction_names: r.names,
+          total_reactions: r.total,
+        };
+      }));
+    } catch (err) {
+      console.error('Failed to refresh reactions:', err);
+    }
+  }, [userId]);
+
+  /** Re-fetch comments for a single post and update state */
+  const refreshPostComments = useCallback(async (postId: string) => {
+    // Only refresh if this post is in our current list
+    if (!postsRef.current.some(p => p.id === postId)) return;
+
+    try {
+      const commentsMap = await NewsfeedService.getRecentComments([postId]);
+      const c = commentsMap[postId];
+      if (!c) return;
+
+      setPosts(prev => prev.map(post => {
+        if (post.id !== postId) return post;
+        return {
+          ...post,
+          comment_count: c.total,
+          recent_comments: c.comments,
+        };
+      }));
+    } catch (err) {
+      console.error('Failed to refresh comments:', err);
+    }
+  }, []);
+
+  // ==================== User actions ====================
 
   const toggleReaction = useCallback(async (postId: string, reactionType: ReactionType) => {
     if (!userId) return;
@@ -194,6 +250,14 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
     }));
   }, []);
 
+  const editPost = useCallback(async (
+    postId: string,
+    data: { title?: string; description: string; category?: string; tags?: string[] }
+  ) => {
+    const updated = await NewsfeedService.updatePost(postId, data);
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updated } : p));
+  }, []);
+
   const deletePost = useCallback(async (postId: string) => {
     await NewsfeedService.deletePost(postId);
     setPosts(prev => prev.filter(p => p.id !== postId));
@@ -218,27 +282,103 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
     await NewsfeedService.acknowledgePost(postId, userId);
   }, [userId, profile]);
 
+  // ==================== Init + Realtime ====================
+
   useEffect(() => {
     fetchPosts();
     NewsfeedService.getCategories().then(setCategories);
     NewsfeedService.getMonthlyStats().then(setStats).catch(() => {});
+  }, [fetchPosts]);
 
-    // Realtime subscription
+  useEffect(() => {
+    if (!userId) return;
+
     const channel = supabase
       .channel('feed_realtime')
+      // ---- Posts: INSERT / UPDATE / DELETE ----
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'feed_posts',
-      }, () => {
-        fetchPosts();
+      }, (payload: any) => {
+        // New post from another user → refetch to get it at top
+        if (payload.new?.user_id !== userId) {
+          fetchPosts();
+        }
       })
-      .subscribe();
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'feed_posts',
+      }, (payload: any) => {
+        const updated = payload.new;
+        if (!updated) return;
+        // Skip own edits (already handled optimistically)
+        // But always handle acknowledge updates from others
+        if (updated.user_id === userId && !updated.acknowledged_by) return;
+
+        setPosts(prev => prev.map(post => {
+          if (post.id !== updated.id) return post;
+          return {
+            ...post,
+            title: updated.title,
+            description: updated.description,
+            category: updated.category,
+            tags: Array.isArray(updated.tags) ? updated.tags : [],
+            images: Array.isArray(updated.images) ? updated.images : [],
+            acknowledged_by: updated.acknowledged_by,
+            acknowledged_at: updated.acknowledged_at,
+            updated_at: updated.updated_at,
+          };
+        }));
+
+        // If acknowledged_by changed, refresh the name
+        if (updated.acknowledged_by) {
+          NewsfeedService.getAcknowledgerNames([updated.id]).then(names => {
+            setPosts(prev => prev.map(post => {
+              if (post.id !== updated.id) return post;
+              return { ...post, acknowledged_by_name: names[updated.id] || null };
+            }));
+          });
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'feed_posts',
+      }, (payload: any) => {
+        if (payload.old?.id) {
+          setPosts(prev => prev.filter(p => p.id !== payload.old.id));
+        }
+      })
+      // ---- Reactions: INSERT / UPDATE / DELETE ----
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'feed_reactions',
+      }, (payload: any) => {
+        const record = payload.new || payload.old;
+        if (!record?.post_id) return;
+        refreshPostReactions(record.post_id);
+      })
+      // ---- Comments: INSERT / DELETE ----
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'feed_comments',
+      }, (payload: any) => {
+        const record = payload.new || payload.old;
+        if (!record?.post_id) return;
+        refreshPostComments(record.post_id);
+      })
+      .subscribe((status: string) => {
+        console.log('[Newsfeed Realtime]', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchPosts]);
+  }, [userId, fetchPosts, refreshPostReactions, refreshPostComments]);
 
   return {
     posts,
@@ -252,6 +392,7 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
     toggleReaction,
     addComment,
     deleteComment,
+    editPost,
     deletePost,
     acknowledgePost,
   };

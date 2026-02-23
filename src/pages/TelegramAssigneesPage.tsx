@@ -91,27 +91,54 @@ const TelegramAssigneesPage = () => {
   const [documentType, setDocumentType] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [documentId, setDocumentId] = useState<string | undefined>(routeDocumentId);
 
-  // Get documentId from route params OR from Telegram startapp parameter
-  const tg = (window as any).Telegram?.WebApp;
-  const startParam = tg?.initDataUnsafe?.start_param;
-  const documentId = routeDocumentId || startParam;
-
+  // Wait for Telegram SDK to load (async script) then read start_param
   useEffect(() => {
-    // Initialize Telegram Web App
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      tg.setHeaderColor('#1e3a5f');
-      tg.setBackgroundColor('#f8fafc');
+    if (routeDocumentId) {
+      setDocumentId(routeDocumentId);
+      return;
     }
-  }, []);
+
+    const tryGetStartParam = () => {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#1e3a5f');
+        tg.setBackgroundColor('#f8fafc');
+        const param = tg.initDataUnsafe?.start_param;
+        if (param) {
+          setDocumentId(param);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Try immediately
+    if (tryGetStartParam()) return;
+
+    // Retry in case SDK loads late (async script)
+    let attempts = 0;
+    const interval = setInterval(() => {
+      if (tryGetStartParam() || ++attempts >= 15) {
+        clearInterval(interval);
+        // If still no documentId after retries, trigger fetch to show error
+        if (attempts >= 15) {
+          setDocumentId(undefined);
+          setLoading(false);
+        }
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [routeDocumentId]);
 
   useEffect(() => {
     const fetchAssignees = async () => {
       if (!documentId) {
-        setError('ไม่พบ Document ID');
-        setLoading(false);
+        if (!loading) setError('ไม่พบ Document ID');
         return;
       }
 
@@ -150,8 +177,9 @@ const TelegramAssigneesPage = () => {
   const handleViewDocument = () => {
     if (!documentId || !documentType) return;
     const url = `${window.location.origin}/document-detail?id=${documentId}&type=${documentType}`;
-    if (tg) {
-      tg.openLink(url);
+    const telegram = (window as any).Telegram?.WebApp;
+    if (telegram) {
+      telegram.openLink(url);
     } else {
       window.open(url, '_blank');
     }

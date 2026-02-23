@@ -297,8 +297,8 @@ const NewsfeedReactions = ({
                   >
                     {/* Label tooltip — visible on hover (desktop) or touch-slide (mobile) */}
                     <span
-                      className={`absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-medium text-white bg-black/75 rounded px-1.5 py-0.5 whitespace-nowrap transition-opacity duration-100 pointer-events-none ${
-                        isHovered ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'
+                      className={`absolute -top-10 left-1/2 -translate-x-1/2 text-[11px] font-medium text-white bg-black/75 rounded px-2 py-0.5 whitespace-nowrap transition-all duration-150 pointer-events-none ${
+                        isHovered ? 'opacity-100 -translate-y-1' : 'opacity-0 sm:group-hover:opacity-100'
                       }`}
                     >
                       {r.label}
@@ -308,7 +308,7 @@ const NewsfeedReactions = ({
                       alt={r.label}
                       className={`h-10 w-10 sm:h-9 sm:w-9 transition-transform duration-150 pointer-events-none ${
                         isHovered
-                          ? 'scale-[1.35] -translate-y-2'
+                          ? 'scale-[1.8] -translate-y-5'
                           : 'hover:scale-125 hover:-translate-y-1 active:scale-110'
                       }`}
                     />

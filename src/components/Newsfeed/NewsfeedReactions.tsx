@@ -302,14 +302,6 @@ const NewsfeedReactions = ({
                       transform: isNeighbor ? `translateX(${neighborDir * 6}px)` : undefined,
                     }}
                   >
-                    {/* Label tooltip — visible on hover (desktop) or touch-slide (mobile) */}
-                    <span
-                      className={`absolute -top-10 left-1/2 -translate-x-1/2 text-[11px] font-medium text-white bg-black/75 rounded px-2 py-0.5 whitespace-nowrap transition-all duration-150 pointer-events-none ${
-                        isHovered ? 'opacity-100 -translate-y-6' : 'opacity-0 sm:group-hover:opacity-100'
-                      }`}
-                    >
-                      {r.label}
-                    </span>
                     <img
                       src={r.img}
                       alt={r.label}
@@ -321,6 +313,17 @@ const NewsfeedReactions = ({
                             : 'hover:scale-125 hover:-translate-y-1 active:scale-110'
                       }`}
                     />
+                    {/* Label tooltip — rendered AFTER img so it paints on top of scaled emoji */}
+                    <span
+                      className={`absolute left-1/2 -translate-x-1/2 text-[11px] font-medium text-white bg-black/75 rounded px-2 py-0.5 whitespace-nowrap transition-all duration-150 pointer-events-none z-20 ${
+                        isHovered ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'
+                      }`}
+                      style={{
+                        top: isHovered ? '-6rem' : '-2.5rem',
+                      }}
+                    >
+                      {r.label}
+                    </span>
                   </button>
                 );
               })}

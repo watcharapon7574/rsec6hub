@@ -258,6 +258,15 @@ const CreateDocReceivePage = () => {
 
       console.log('📋 Using document number:', documentNumber);
 
+      // Ensure valid auth session before upload
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          throw new Error('กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)');
+        }
+      }
+
       // Step 2: Upload PDF to Supabase Storage
       console.log('📤 Uploading PDF to storage...');
       const timestamp = Date.now();

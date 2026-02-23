@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MapPin, Clock, MoreHorizontal, FileDown, CheckCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MapPin, Clock, MoreHorizontal, FileDown, Pencil, Trash2 } from 'lucide-react';
 import { formatRelativeTime } from '@/utils/dateUtils';
 import { transformImageUrl, imagePresets } from '@/utils/imageTransform';
 import { useToast } from '@/hooks/use-toast';
@@ -20,10 +20,11 @@ interface Props {
   onReaction: (postId: string, type: ReactionType) => void;
   onAddComment: (postId: string, content: string, parentId?: string, replyToName?: string) => Promise<FeedComment | null>;
   onDeleteComment: (postId: string, commentId: string, isReply?: boolean, parentId?: string) => void;
+  onDeletePost: (postId: string) => void;
   onAcknowledge: (postId: string) => void;
 }
 
-const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddComment, onDeleteComment, onAcknowledge }: Props) => {
+const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddComment, onDeleteComment, onDeletePost, onAcknowledge }: Props) => {
   const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
   const [allComments, setAllComments] = useState<FeedComment[]>([]);
@@ -77,11 +78,25 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
     }
   };
 
+  const isOwner = post.user_id === currentUserId;
+
   const handleExport = () => {
     toast({
       title: 'กำลังพัฒนา',
       description: 'ฟีเจอร์ส่งออก PDF จะเปิดให้ใช้เร็วๆ นี้',
     });
+  };
+
+  const handleEdit = () => {
+    toast({
+      title: 'กำลังพัฒนา',
+      description: 'ฟีเจอร์แก้ไขโพสต์จะเปิดให้ใช้เร็วๆ นี้',
+    });
+  };
+
+  const handleDelete = () => {
+    if (!confirm('ต้องการลบโพสต์นี้?')) return;
+    onDeletePost(post.id);
   };
 
   // Expand long text
@@ -133,19 +148,33 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
                 {post.category}
               </Badge>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-1.5 rounded-full hover:bg-muted transition-colors">
-                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExport}>
-                  <FileDown className="h-4 w-4 mr-2" />
-                  ส่งออก PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button
+              onClick={handleExport}
+              className="p-1.5 rounded-full hover:bg-muted transition-colors"
+              title="ส่งออก PDF"
+            >
+              <FileDown className="h-4 w-4 text-muted-foreground" />
+            </button>
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-1.5 rounded-full hover:bg-muted transition-colors">
+                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleEdit}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    แก้ไข
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    ลบ
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </CardContent>

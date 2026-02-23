@@ -40,6 +40,7 @@ const NewsfeedPage = () => {
     toggleReaction,
     addComment,
     deleteComment,
+    deletePost,
     acknowledgePost,
   } = useNewsfeed({ category: selectedCategory, search: searchQuery || undefined });
 
@@ -121,6 +122,7 @@ const NewsfeedPage = () => {
                 onReaction={toggleReaction}
                 onAddComment={addComment}
                 onDeleteComment={deleteComment}
+                onDeletePost={deletePost}
                 onAcknowledge={acknowledgePost}
               />
             ))

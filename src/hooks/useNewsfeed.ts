@@ -193,6 +193,11 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
     }));
   }, []);
 
+  const deletePost = useCallback(async (postId: string) => {
+    await NewsfeedService.deletePost(postId);
+    setPosts(prev => prev.filter(p => p.id !== postId));
+  }, []);
+
   const acknowledgePost = useCallback(async (postId: string) => {
     if (!userId || !profile) return;
 
@@ -246,6 +251,7 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
     toggleReaction,
     addComment,
     deleteComment,
+    deletePost,
     acknowledgePost,
   };
 };

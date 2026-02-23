@@ -257,6 +257,17 @@ export class NewsfeedService {
     if (error) throw error;
   }
 
+  // ==================== Delete Post ====================
+
+  static async deletePost(postId: string): Promise<void> {
+    const { error } = await (supabase
+      .from('feed_posts') as any)
+      .delete()
+      .eq('id', postId);
+
+    if (error) throw error;
+  }
+
   // ==================== Acknowledge ====================
 
   static async acknowledgePost(postId: string, userId: string): Promise<void> {

@@ -152,12 +152,14 @@ const NewsfeedFormData = ({ reportType, formData }: FormDataProps) => {
       <div className="space-y-1.5 bg-muted/30 rounded-lg p-3">
         {visibleRows}
         {needsCollapse && !expanded && (
-          <button
-            onClick={() => setExpanded(true)}
-            className="text-xs text-blue-500 font-medium mt-1"
-          >
-            ดูเพิ่มเติม...
-          </button>
+          <div className="text-right mt-1">
+            <button
+              onClick={() => setExpanded(true)}
+              className="text-xs text-blue-500 font-medium"
+            >
+              ... ดูเพิ่มเติม
+            </button>
+          </div>
         )}
       </div>
     </div>

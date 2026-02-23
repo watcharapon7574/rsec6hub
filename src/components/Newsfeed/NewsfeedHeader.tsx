@@ -93,73 +93,89 @@ const NewsfeedHeader = ({ displayName, userInfo, stats, onRefresh }: Props) => {
       </Card>
 
       {/* Stats cards */}
-      <div className="space-y-3 mb-4">
-        {/* Total posts card with sparkline */}
-        <Card className="overflow-hidden relative">
-          <div className="absolute right-4 top-3 z-0 pointer-events-none opacity-60">
+      <div className="flex gap-3 items-stretch mb-4 sm:flex-row flex-col">
+        {/* Large card — total posts */}
+        <Card className="flex-[2.5] min-w-0 overflow-hidden flex flex-col relative" style={{ minHeight: 170 }}>
+          <div className="absolute left-[70px] right-[100px] top-[50px] z-0 pointer-events-none flex justify-end">
             {renderLineChart()}
           </div>
-          <CardContent className="pt-4 pb-3 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900">
-                <Newspaper className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <CardContent className="pt-5 flex-1 flex flex-col justify-between relative z-10">
+            <div className="flex items-start justify-between">
+              <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900">
+                <Newspaper className="h-7 w-7 text-blue-600 dark:text-blue-400" />
               </div>
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 leading-none">
-                    {stats.totalPosts}
-                  </span>
-                  <span className="font-semibold text-foreground text-sm">โพสต์</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  เดือน{thaiMonth}
-                </p>
-              </div>
+              <span className="text-5xl font-extrabold text-blue-600 dark:text-blue-400 leading-none tracking-tight">
+                {stats.totalPosts}
+              </span>
+            </div>
+            <div className="mt-3">
+              <h3 className="font-bold text-lg text-foreground">โพสต์ทั้งหมด</h3>
+              <p className="text-sm text-muted-foreground">
+                เดือน<span className="font-bold">{thaiMonth}</span>
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Small stat cards in a row */}
-        <div className="grid grid-cols-3 gap-2">
-          <Card>
-            <CardContent className="pt-3 pb-2 px-3 text-center">
-              <div className="flex items-center justify-center mb-1">
+        {/* Small cards group */}
+        <div className="flex-[1.5] flex flex-row gap-2 w-full overflow-x-auto sm:overflow-visible scrollbar-hide">
+          {/* Reactions */}
+          <Card className="flex-1 min-w-[120px] flex flex-col">
+            <CardContent className="pt-3 pb-2 flex-1 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-1.5">
                 <div className="p-1.5 rounded-lg bg-pink-100 dark:bg-pink-900">
-                  <Heart className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />
+                  <Heart className="h-4 w-4 text-pink-600 dark:text-pink-400" />
                 </div>
+                <span className="text-3xl sm:text-4xl font-bold text-pink-600 dark:text-pink-400">
+                  {stats.totalReactions}
+                </span>
               </div>
-              <span className="text-2xl font-bold text-pink-600 dark:text-pink-400">
-                {stats.totalReactions}
-              </span>
-              <h3 className="font-medium text-foreground text-xs mt-0.5">รีแอคชัน</h3>
+              <div className="mt-1">
+                <h3 className="font-semibold text-foreground text-xs sm:text-sm">รีแอคชัน</h3>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  เดือน<span className="font-bold">{thaiMonth}</span>
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-3 pb-2 px-3 text-center">
-              <div className="flex items-center justify-center mb-1">
+          {/* Comments */}
+          <Card className="flex-1 min-w-[120px] flex flex-col">
+            <CardContent className="pt-3 pb-2 flex-1 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-1.5">
                 <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900">
-                  <MessageCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <MessageCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
+                <span className="text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400">
+                  {stats.totalComments}
+                </span>
               </div>
-              <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                {stats.totalComments}
-              </span>
-              <h3 className="font-medium text-foreground text-xs mt-0.5">ความเห็น</h3>
+              <div className="mt-1">
+                <h3 className="font-semibold text-foreground text-xs sm:text-sm">ความเห็น</h3>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  เดือน<span className="font-bold">{thaiMonth}</span>
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-3 pb-2 px-3 text-center">
-              <div className="flex items-center justify-center mb-1">
+          {/* Acknowledged */}
+          <Card className="flex-1 min-w-[120px] flex flex-col">
+            <CardContent className="pt-3 pb-2 flex-1 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-1.5">
                 <div className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900">
-                  <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
+                <span className="text-3xl sm:text-4xl font-bold text-green-600 dark:text-green-400">
+                  {stats.acknowledgedPosts}
+                </span>
               </div>
-              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {stats.acknowledgedPosts}
-              </span>
-              <h3 className="font-medium text-foreground text-xs mt-0.5">รับทราบ</h3>
+              <div className="mt-1">
+                <h3 className="font-semibold text-foreground text-xs sm:text-sm">รับทราบ</h3>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  เดือน<span className="font-bold">{thaiMonth}</span>
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

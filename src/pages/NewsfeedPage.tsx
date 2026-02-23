@@ -62,15 +62,18 @@ const NewsfeedPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="container mx-auto px-4 py-6 max-w-[680px]">
-        {/* Header + Stats */}
+      {/* Header + Stats — full width */}
+      <div className="container mx-auto px-4 pt-6 max-w-5xl">
         <NewsfeedHeader
           displayName={displayName}
           userInfo={userInfo}
           stats={stats}
           onRefresh={refetch}
         />
+      </div>
 
+      {/* Feed content — Facebook-like narrow width */}
+      <div className="mx-auto px-4 max-w-[680px]">
         {/* Search */}
         <div className="mb-3">
           <NewsfeedSearchBar onSearch={handleSearch} />

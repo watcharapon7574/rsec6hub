@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { transformImageUrl, imagePresets } from '@/utils/imageTransform';
+import { Skeleton } from '@/components/ui/skeleton';
 import NewsfeedImageLightbox from './NewsfeedImageLightbox';
 
 interface Props {
@@ -21,6 +22,11 @@ const NewsfeedImageGrid = ({ images }: Props) => {
   );
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [startIndex, setStartIndex] = useState(0);
+  const [loaded, setLoaded] = useState<Record<number, boolean>>({});
+
+  const handleLoad = useCallback((index: number) => {
+    setLoaded(prev => ({ ...prev, [index]: true }));
+  }, []);
 
   if (images.length === 0) return null;
 
@@ -35,16 +41,31 @@ const NewsfeedImageGrid = ({ images }: Props) => {
 
   const imgClass = 'object-cover w-full h-full min-h-0 cursor-pointer hover:brightness-95 active:brightness-90 transition-all';
 
+  // Render function (NOT a component) to avoid remounting on state changes
+  const renderImg = (src: string, index: number, className?: string) => (
+    <div key={index} className={`relative overflow-hidden ${className || ''}`} onClick={() => openLightbox(index)}>
+      {!loaded[index] && <Skeleton className="absolute inset-0 rounded-none" />}
+      <img
+        src={src} alt="" loading="lazy"
+        className={`${imgClass} ${!loaded[index] ? 'opacity-0' : 'opacity-100'}`}
+        onLoad={() => handleLoad(index)}
+      />
+    </div>
+  );
+
   const renderGrid = () => {
     // 1 image — full width, natural ratio, max height
     if (thumb.length === 1) {
       return (
         <div className="overflow-hidden">
-          <img
-            src={thumb[0]} alt="" loading="lazy"
-            className={`${imgClass} max-h-[500px] w-full`}
-            onClick={() => openLightbox(0)}
-          />
+          <div className="relative min-h-[200px]" onClick={() => openLightbox(0)}>
+            {!loaded[0] && <Skeleton className="absolute inset-0 rounded-none" />}
+            <img
+              src={thumb[0]} alt="" loading="lazy"
+              className={`${imgClass} max-h-[500px] w-full ${!loaded[0] ? 'opacity-0' : 'opacity-100'}`}
+              onLoad={() => handleLoad(0)}
+            />
+          </div>
         </div>
       );
     }
@@ -53,9 +74,7 @@ const NewsfeedImageGrid = ({ images }: Props) => {
     if (thumb.length === 2) {
       return (
         <div className="grid grid-cols-2 gap-[2px] overflow-hidden" style={{ height: '300px' }}>
-          {thumb.map((img, i) => (
-            <img key={i} src={img} alt="" loading="lazy" className={imgClass} onClick={() => openLightbox(i)} />
-          ))}
+          {thumb.map((img, i) => renderImg(img, i))}
         </div>
       );
     }
@@ -64,9 +83,9 @@ const NewsfeedImageGrid = ({ images }: Props) => {
     if (thumb.length === 3) {
       return (
         <div className="grid grid-cols-2 grid-rows-2 gap-[2px] overflow-hidden" style={{ height: '400px' }}>
-          <img src={thumb[0]} alt="" loading="lazy" className={`${imgClass} row-span-2`} onClick={() => openLightbox(0)} />
-          <img src={thumb[1]} alt="" loading="lazy" className={imgClass} onClick={() => openLightbox(1)} />
-          <img src={thumb[2]} alt="" loading="lazy" className={imgClass} onClick={() => openLightbox(2)} />
+          {renderImg(thumb[0], 0, 'row-span-2')}
+          {renderImg(thumb[1], 1)}
+          {renderImg(thumb[2], 2)}
         </div>
       );
     }
@@ -75,10 +94,10 @@ const NewsfeedImageGrid = ({ images }: Props) => {
     if (thumb.length === 4) {
       return (
         <div className="grid grid-cols-2 grid-rows-3 gap-[2px] overflow-hidden" style={{ height: '400px' }}>
-          <img src={thumb[0]} alt="" loading="lazy" className={`${imgClass} row-span-3`} onClick={() => openLightbox(0)} />
-          <img src={thumb[1]} alt="" loading="lazy" className={imgClass} onClick={() => openLightbox(1)} />
-          <img src={thumb[2]} alt="" loading="lazy" className={imgClass} onClick={() => openLightbox(2)} />
-          <img src={thumb[3]} alt="" loading="lazy" className={imgClass} onClick={() => openLightbox(3)} />
+          {renderImg(thumb[0], 0, 'row-span-3')}
+          {renderImg(thumb[1], 1)}
+          {renderImg(thumb[2], 2)}
+          {renderImg(thumb[3], 3)}
         </div>
       );
     }
@@ -87,13 +106,18 @@ const NewsfeedImageGrid = ({ images }: Props) => {
     return (
       <div className="grid grid-cols-6 grid-rows-2 gap-[2px] overflow-hidden" style={{ height: '400px' }}>
         {/* Top row: 2 images */}
-        <img src={thumb[0]} alt="" loading="lazy" className={`${imgClass} col-span-3`} onClick={() => openLightbox(0)} />
-        <img src={thumb[1]} alt="" loading="lazy" className={`${imgClass} col-span-3`} onClick={() => openLightbox(1)} />
+        {renderImg(thumb[0], 0, 'col-span-3')}
+        {renderImg(thumb[1], 1, 'col-span-3')}
         {/* Bottom row: 3 images */}
-        <img src={thumb[2]} alt="" loading="lazy" className={`${imgClass} col-span-2`} onClick={() => openLightbox(2)} />
-        <img src={thumb[3]} alt="" loading="lazy" className={`${imgClass} col-span-2`} onClick={() => openLightbox(3)} />
+        {renderImg(thumb[2], 2, 'col-span-2')}
+        {renderImg(thumb[3], 3, 'col-span-2')}
         <div className="relative col-span-2 cursor-pointer overflow-hidden" onClick={() => openLightbox(4)}>
-          <img src={thumb[4]} alt="" loading="lazy" className={imgClass} />
+          {!loaded[4] && <Skeleton className="absolute inset-0 rounded-none" />}
+          <img
+            src={thumb[4]} alt="" loading="lazy"
+            className={`${imgClass} ${!loaded[4] ? 'opacity-0' : 'opacity-100'}`}
+            onLoad={() => handleLoad(4)}
+          />
           {moreCount > 0 && (
             <div className="absolute inset-0 bg-black/45 flex items-center justify-center">
               <span className="text-white text-3xl font-semibold">+{moreCount}</span>

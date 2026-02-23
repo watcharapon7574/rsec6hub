@@ -47,9 +47,12 @@ const NewsfeedReactions = ({
 }: Props) => {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTimeout, setPickerTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [hoveredReaction, setHoveredReaction] = useState<string | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPress = useRef(false);
+  const isTouchSliding = useRef(false); // true while finger is down and picker is open
   const containerRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   // Top 3 reaction types by count
   const topReactions = Object.entries(reactionCounts)
@@ -64,32 +67,89 @@ const NewsfeedReactions = ({
   };
 
   const handleMouseLeave = () => {
-    const t = setTimeout(() => setShowPicker(false), 300);
+    const t = setTimeout(() => {
+      setShowPicker(false);
+      setHoveredReaction(null);
+    }, 300);
     setPickerTimeout(t);
   };
 
-  // Mobile: long press (touch hold 400ms)
-  const handleTouchStart = useCallback(() => {
+  // Find which emoji is under a touch point
+  const findEmojiAtPoint = useCallback((clientX: number, clientY: number): string | null => {
+    if (!pickerRef.current) return null;
+    const buttons = pickerRef.current.querySelectorAll<HTMLElement>('[data-reaction-type]');
+    for (const btn of buttons) {
+      const rect = btn.getBoundingClientRect();
+      // Expand hit area slightly for easier targeting
+      const padding = 4;
+      if (
+        clientX >= rect.left - padding &&
+        clientX <= rect.right + padding &&
+        clientY >= rect.top - padding &&
+        clientY <= rect.bottom + padding
+      ) {
+        return btn.dataset.reactionType || null;
+      }
+    }
+    return null;
+  }, []);
+
+  // Mobile: long press → open picker, then slide to select
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     isLongPress.current = false;
+    isTouchSliding.current = false;
+
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true;
+      isTouchSliding.current = true;
       setShowPicker(true);
+      // Haptic feedback if available
+      if (navigator.vibrate) navigator.vibrate(20);
     }, 400);
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // If picker not yet shown, cancel long press if finger moved too much
+    if (!isTouchSliding.current) {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      return;
     }
-  }, []);
 
-  const handleTouchMove = useCallback(() => {
+    // Picker is open — find which emoji is under the finger
+    const touch = e.touches[0];
+    const found = findEmojiAtPoint(touch.clientX, touch.clientY);
+    setHoveredReaction(found);
+  }, [findEmojiAtPoint]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    // Clear long press timer
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-  }, []);
+
+    // If we were sliding and have a hovered emoji, select it
+    if (isTouchSliding.current && hoveredReaction) {
+      e.preventDefault();
+      onReaction(hoveredReaction as ReactionType);
+      setShowPicker(false);
+      setHoveredReaction(null);
+      isTouchSliding.current = false;
+      isLongPress.current = false;
+      return;
+    }
+
+    // If we were sliding but no emoji selected, just close
+    if (isTouchSliding.current) {
+      // Don't close immediately — let user tap an emoji normally
+      isTouchSliding.current = false;
+      setHoveredReaction(null);
+      return;
+    }
+  }, [hoveredReaction, onReaction]);
 
   // Close picker when tapping outside
   useEffect(() => {
@@ -97,6 +157,7 @@ const NewsfeedReactions = ({
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowPicker(false);
+        setHoveredReaction(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -110,6 +171,7 @@ const NewsfeedReactions = ({
   const handleReaction = (type: ReactionType) => {
     onReaction(type);
     setShowPicker(false);
+    setHoveredReaction(null);
   };
 
   const handleLikeClick = () => {
@@ -188,35 +250,52 @@ const NewsfeedReactions = ({
           {/* Reaction Picker Popup */}
           {showPicker && (
             <div
+              ref={pickerRef}
               className="absolute bottom-full left-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 bg-background border border-border rounded-full shadow-xl px-3 py-2 flex items-center gap-2 z-50 w-max"
               style={{
                 animation: 'reactionPickerIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both',
               }}
             >
-              {REACTIONS.map((r, i) => (
-                <button
-                  key={r.type}
-                  onClick={() => handleReaction(r.type)}
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    handleReaction(r.type);
-                  }}
-                  className="group relative flex flex-col items-center"
-                  style={{
-                    animation: 'reactionEmojiBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-                    animationDelay: `${i * 40}ms`,
-                  }}
-                >
-                  <img
-                    src={r.img}
-                    alt={r.label}
-                    className="h-10 w-10 sm:h-9 sm:w-9 transition-transform duration-150 hover:scale-125 hover:-translate-y-1 active:scale-110"
-                  />
-                  <span className="text-[9px] text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block">
-                    {r.label}
-                  </span>
-                </button>
-              ))}
+              {REACTIONS.map((r, i) => {
+                const isHovered = hoveredReaction === r.type;
+                return (
+                  <button
+                    key={r.type}
+                    data-reaction-type={r.type}
+                    onClick={() => handleReaction(r.type)}
+                    onTouchEnd={(e) => {
+                      // Only handle direct tap (not slide)
+                      if (!isTouchSliding.current) {
+                        e.preventDefault();
+                        handleReaction(r.type);
+                      }
+                    }}
+                    className="group relative flex flex-col items-center"
+                    style={{
+                      animation: 'reactionEmojiBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                      animationDelay: `${i * 40}ms`,
+                    }}
+                  >
+                    {/* Label tooltip — visible on hover (desktop) or touch-slide (mobile) */}
+                    <span
+                      className={`absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-medium text-white bg-black/75 rounded px-1.5 py-0.5 whitespace-nowrap transition-opacity duration-100 pointer-events-none ${
+                        isHovered ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'
+                      }`}
+                    >
+                      {r.label}
+                    </span>
+                    <img
+                      src={r.img}
+                      alt={r.label}
+                      className={`h-10 w-10 sm:h-9 sm:w-9 transition-transform duration-150 pointer-events-none ${
+                        isHovered
+                          ? 'scale-[1.35] -translate-y-2'
+                          : 'hover:scale-125 hover:-translate-y-1 active:scale-110'
+                      }`}
+                    />
+                  </button>
+                );
+              })}
             </div>
           )}
 

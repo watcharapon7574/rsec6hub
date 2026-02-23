@@ -165,7 +165,16 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
         newReaction = reactionType;
       }
 
-      return { ...post, reaction_counts: counts, user_reaction: newReaction };
+      const totalDelta = newReaction
+        ? (oldReaction ? 0 : 1)   // switching emoji = 0, adding new = +1
+        : (oldReaction ? -1 : 0); // removing = -1
+
+      return {
+        ...post,
+        reaction_counts: counts,
+        user_reaction: newReaction,
+        total_reactions: Math.max(0, (post.total_reactions || 0) + totalDelta),
+      };
     }));
 
     // Server update
@@ -359,6 +368,8 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
       }, (payload: any) => {
         const record = payload.new || payload.old;
         if (!record?.post_id) return;
+        // Skip own reactions — handled optimistically, prevents race condition
+        if (record.user_id === userId) return;
         refreshPostReactions(record.post_id);
       })
       // ---- Comments: INSERT / DELETE ----
@@ -369,6 +380,8 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
       }, (payload: any) => {
         const record = payload.new || payload.old;
         if (!record?.post_id) return;
+        // Skip own comments — handled optimistically
+        if (record.user_id === userId) return;
         refreshPostComments(record.post_id);
       })
       .subscribe((status: string) => {

@@ -47,6 +47,7 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
   }, [userId]);
 
   const fetchPosts = useCallback(async () => {
+    if (!userId) return; // Wait for user profile before fetching
     setLoading(true);
     try {
       const result = await NewsfeedService.getPosts({

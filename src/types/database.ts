@@ -154,6 +154,8 @@ export interface FeedPost {
   updated_at: string;
   acknowledged_by?: string | null;
   acknowledged_at?: string | null;
+  report_type?: string | null;   // e.g. 'duty', 'lunch', 'student_dev'
+  form_data?: Record<string, any> | null; // raw form data for PDF generation
   // client-side joined data
   reaction_counts?: Record<string, number>;
   user_reaction?: string | null;

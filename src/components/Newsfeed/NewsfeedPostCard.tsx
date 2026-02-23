@@ -13,6 +13,7 @@ import NewsfeedImageGrid from './NewsfeedImageGrid';
 import NewsfeedReactions from './NewsfeedReactions';
 import NewsfeedComments from './NewsfeedComments';
 import EditPostDialog from './EditPostDialog';
+import NewsfeedFormData from './NewsfeedFormData';
 
 interface Props {
   post: FeedPost;
@@ -180,7 +181,7 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
         </div>
       </CardContent>
 
-      {/* Body: Title + Description + Tags */}
+      {/* Body: Title + Description + Form Data + Tags */}
       <CardContent className="px-4 py-2">
         {post.title && <h3 className="font-semibold mb-1">{post.title}</h3>}
         <p className="text-sm text-foreground whitespace-pre-wrap break-words">{displayText}</p>
@@ -188,6 +189,12 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
           <button onClick={() => setExpanded(true)} className="text-sm text-blue-500 font-medium mt-0.5">
             ดูเพิ่มเติม
           </button>
+        )}
+        {/* Form data for report posts */}
+        {post.report_type && post.form_data && (
+          <div className="mt-2">
+            <NewsfeedFormData reportType={post.report_type} formData={post.form_data} />
+          </div>
         )}
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">

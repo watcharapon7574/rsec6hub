@@ -53,6 +53,12 @@ const NewsfeedReactions = ({
   const isTouchSliding = useRef(false); // true while finger is down and picker is open
   const containerRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const likeButtonRef = useRef<HTMLButtonElement>(null);
+  // Ref to hold the latest onReaction + hoveredReaction for native event handlers
+  const onReactionRef = useRef(onReaction);
+  onReactionRef.current = onReaction;
+  const hoveredReactionRef = useRef(hoveredReaction);
+  hoveredReactionRef.current = hoveredReaction;
 
   // Top 3 reaction types by count
   const topReactions = Object.entries(reactionCounts)
@@ -95,61 +101,74 @@ const NewsfeedReactions = ({
   }, []);
 
   // Mobile: long press → open picker, then slide to select
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    isLongPress.current = false;
-    isTouchSliding.current = false;
+  // Use native non-passive touch listeners to allow preventDefault (block scrolling)
+  useEffect(() => {
+    const btn = likeButtonRef.current;
+    if (!btn) return;
 
-    longPressTimer.current = setTimeout(() => {
-      isLongPress.current = true;
-      isTouchSliding.current = true;
-      setShowPicker(true);
-      // Haptic feedback if available
-      if (navigator.vibrate) navigator.vibrate(20);
-    }, 400);
-  }, []);
+    const onTouchStart = (e: TouchEvent) => {
+      isLongPress.current = false;
+      isTouchSliding.current = false;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    // If picker not yet shown, cancel long press if finger moved too much
-    if (!isTouchSliding.current) {
+      longPressTimer.current = setTimeout(() => {
+        isLongPress.current = true;
+        isTouchSliding.current = true;
+        setShowPicker(true);
+        if (navigator.vibrate) navigator.vibrate(20);
+      }, 400);
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isTouchSliding.current) {
+        // Cancel long press if finger moved before picker opened
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+        return;
+      }
+
+      // Prevent page scroll while sliding over picker
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      const found = findEmojiAtPoint(touch.clientX, touch.clientY);
+      setHoveredReaction(found);
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
       if (longPressTimer.current) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
       }
-      return;
-    }
 
-    // Picker is open — find which emoji is under the finger
-    const touch = e.touches[0];
-    const found = findEmojiAtPoint(touch.clientX, touch.clientY);
-    setHoveredReaction(found);
+      if (isTouchSliding.current && hoveredReactionRef.current) {
+        e.preventDefault();
+        onReactionRef.current(hoveredReactionRef.current as ReactionType);
+        setShowPicker(false);
+        setHoveredReaction(null);
+        isTouchSliding.current = false;
+        isLongPress.current = false;
+        return;
+      }
+
+      if (isTouchSliding.current) {
+        isTouchSliding.current = false;
+        setHoveredReaction(null);
+        return;
+      }
+    };
+
+    btn.addEventListener('touchstart', onTouchStart, { passive: true });
+    btn.addEventListener('touchmove', onTouchMove, { passive: false });
+    btn.addEventListener('touchend', onTouchEnd, { passive: false });
+
+    return () => {
+      btn.removeEventListener('touchstart', onTouchStart);
+      btn.removeEventListener('touchmove', onTouchMove);
+      btn.removeEventListener('touchend', onTouchEnd);
+    };
   }, [findEmojiAtPoint]);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    // Clear long press timer
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-
-    // If we were sliding and have a hovered emoji, select it
-    if (isTouchSliding.current && hoveredReaction) {
-      e.preventDefault();
-      onReaction(hoveredReaction as ReactionType);
-      setShowPicker(false);
-      setHoveredReaction(null);
-      isTouchSliding.current = false;
-      isLongPress.current = false;
-      return;
-    }
-
-    // If we were sliding but no emoji selected, just close
-    if (isTouchSliding.current) {
-      // Don't close immediately — let user tap an emoji normally
-      isTouchSliding.current = false;
-      setHoveredReaction(null);
-      return;
-    }
-  }, [hoveredReaction, onReaction]);
 
   // Close picker when tapping outside
   useEffect(() => {
@@ -300,15 +319,13 @@ const NewsfeedReactions = ({
           )}
 
           <button
+            ref={likeButtonRef}
             onClick={handleLikeClick}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onTouchMove={handleTouchMove}
             onContextMenu={e => e.preventDefault()}
             className={`w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors hover:bg-muted select-none ${
               userReaction ? 'text-blue-500' : 'text-muted-foreground'
             }`}
-            style={{ WebkitTouchCallout: 'none' }}
+            style={{ WebkitTouchCallout: 'none', touchAction: 'none' }}
           >
             {userReactionData ? (
               <>

@@ -26,6 +26,12 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
   const postsRef = useRef(posts);
   postsRef.current = posts;
 
+  // Cooldown: after an optimistic action, ignore realtime for that post briefly
+  // This prevents the current tab's own realtime event from overwriting optimistic state
+  const reactionCooldown = useRef<Map<string, number>>(new Map());
+  const commentCooldown = useRef<Map<string, number>>(new Map());
+  const COOLDOWN_MS = 2000;
+
   const enrichPosts = useCallback(async (rawPosts: FeedPost[]): Promise<FeedPost[]> => {
     if (rawPosts.length === 0 || !userId) return rawPosts;
 
@@ -142,6 +148,9 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
   const toggleReaction = useCallback(async (postId: string, reactionType: ReactionType) => {
     if (!userId) return;
 
+    // Set cooldown so this tab's own realtime event won't overwrite optimistic state
+    reactionCooldown.current.set(postId, Date.now());
+
     // Optimistic update
     setPosts(prev => prev.map(post => {
       if (post.id !== postId) return post;
@@ -189,6 +198,7 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
   ): Promise<FeedComment | null> => {
     if (!userId || !profile) return null;
 
+    commentCooldown.current.set(postId, Date.now());
     const authorName = `${profile.first_name} ${profile.last_name}`;
     const authorAvatar = profile.profile_picture_url || undefined;
 
@@ -227,6 +237,7 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
   }, [userId, profile]);
 
   const deleteComment = useCallback(async (postId: string, commentId: string, isReply?: boolean, parentId?: string) => {
+    commentCooldown.current.set(postId, Date.now());
     await NewsfeedService.deleteComment(commentId);
 
     setPosts(prev => prev.map(post => {
@@ -368,8 +379,9 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
       }, (payload: any) => {
         const record = payload.new || payload.old;
         if (!record?.post_id) return;
-        // Skip own reactions — handled optimistically, prevents race condition
-        if (record.user_id === userId) return;
+        // Skip if this tab just performed an action on this post (cooldown)
+        const cd = reactionCooldown.current.get(record.post_id);
+        if (cd && Date.now() - cd < COOLDOWN_MS) return;
         refreshPostReactions(record.post_id);
       })
       // ---- Comments: INSERT / DELETE ----
@@ -380,8 +392,9 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
       }, (payload: any) => {
         const record = payload.new || payload.old;
         if (!record?.post_id) return;
-        // Skip own comments — handled optimistically
-        if (record.user_id === userId) return;
+        // Skip if this tab just performed an action on this post (cooldown)
+        const cd = commentCooldown.current.get(record.post_id);
+        if (cd && Date.now() - cd < COOLDOWN_MS) return;
         refreshPostComments(record.post_id);
       })
       .subscribe((status: string) => {

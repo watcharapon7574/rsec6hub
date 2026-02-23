@@ -148,33 +148,33 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
                 {post.category}
               </Badge>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-1.5 rounded-full hover:bg-muted transition-colors">
-                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExport}>
-                  <FileDown className="h-4 w-4 mr-2" />
-                  ส่งออก PDF
-                </DropdownMenuItem>
-                {isOwner && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleEdit}>
-                      <Pencil className="h-4 w-4 mr-2" />
-                      แก้ไข
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      ลบ
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button
+              onClick={handleExport}
+              className="p-1.5 rounded-full hover:bg-muted transition-colors"
+              title="ส่งออก PDF"
+            >
+              <FileDown className="h-4 w-4 text-muted-foreground" />
+            </button>
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-1.5 rounded-full hover:bg-muted transition-colors">
+                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleEdit}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    แก้ไข
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    ลบ
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </CardContent>

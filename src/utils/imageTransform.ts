@@ -19,32 +19,18 @@ interface TransformOptions {
 /**
  * Transform a Supabase Storage public URL to use Image Transformation.
  * Non-Supabase URLs or invalid URLs are returned as-is.
+ *
+ * NOTE: Image Transformation requires Supabase Pro plan.
+ * Currently disabled — returns original URL to avoid broken images.
  */
 export function transformImageUrl(
   url: string | undefined | null,
-  options: TransformOptions
+  _options: TransformOptions
 ): string | undefined {
   if (!url) return undefined;
 
-  // Only transform Supabase Storage public URLs
-  if (!url.includes(SUPABASE_STORAGE_PREFIX)) return url;
-
-  // Replace object path with render path
-  let transformed = url.replace(SUPABASE_STORAGE_PREFIX, SUPABASE_RENDER_PREFIX);
-
-  // Build query params
-  const params = new URLSearchParams();
-  if (options.width) params.set('width', String(options.width));
-  if (options.height) params.set('height', String(options.height));
-  if (options.quality) params.set('quality', String(options.quality));
-  if (options.resize) params.set('resize', options.resize);
-
-  const qs = params.toString();
-  if (qs) {
-    transformed += (transformed.includes('?') ? '&' : '?') + qs;
-  }
-
-  return transformed;
+  // Return original URL (Image Transformation requires Pro plan)
+  return url;
 }
 
 // Preset transforms for common use cases

@@ -306,8 +306,8 @@ const PDFReceiveManagePage: React.FC = () => {
       );
       console.log('✅ Stamp successful, blob size:', stampedPdfBlob.size);
 
-      // Upload stamped PDF back to storage
-      const oldFilePath = extractedPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
+      // Upload stamped PDF back to storage (ตัด query string ?t=xxx ออกก่อน)
+      const oldFilePath = extractedPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '').split('?')[0];
       const newFileName = `stamped_${Date.now()}_${oldFilePath.split('/').pop()}`;
       const newFilePath = oldFilePath.replace(/[^/]+$/, newFileName);
 

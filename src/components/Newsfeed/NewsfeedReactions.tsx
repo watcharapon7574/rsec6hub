@@ -277,13 +277,18 @@ const NewsfeedReactions = ({
             >
               {REACTIONS.map((r, i) => {
                 const isHovered = hoveredReaction === r.type;
+                // Check if neighbor is hovered → push away
+                const hovIdx = hoveredReaction ? REACTIONS.findIndex(x => x.type === hoveredReaction) : -1;
+                const myIdx = i;
+                const isNeighbor = hovIdx >= 0 && Math.abs(myIdx - hovIdx) === 1;
+                const neighborDir = isNeighbor ? (myIdx < hovIdx ? -1 : 1) : 0;
+
                 return (
                   <button
                     key={r.type}
                     data-reaction-type={r.type}
                     onClick={() => handleReaction(r.type)}
                     onTouchEnd={(e) => {
-                      // Only handle direct tap (not slide)
                       if (!isTouchSliding.current) {
                         e.preventDefault();
                         handleReaction(r.type);
@@ -293,12 +298,14 @@ const NewsfeedReactions = ({
                     style={{
                       animation: 'reactionEmojiBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both',
                       animationDelay: `${i * 40}ms`,
+                      transition: 'transform 0.15s ease-out',
+                      transform: isNeighbor ? `translateX(${neighborDir * 6}px)` : undefined,
                     }}
                   >
                     {/* Label tooltip — visible on hover (desktop) or touch-slide (mobile) */}
                     <span
                       className={`absolute -top-10 left-1/2 -translate-x-1/2 text-[11px] font-medium text-white bg-black/75 rounded px-2 py-0.5 whitespace-nowrap transition-all duration-150 pointer-events-none ${
-                        isHovered ? 'opacity-100 -translate-y-1' : 'opacity-0 sm:group-hover:opacity-100'
+                        isHovered ? 'opacity-100 -translate-y-6' : 'opacity-0 sm:group-hover:opacity-100'
                       }`}
                     >
                       {r.label}
@@ -309,7 +316,9 @@ const NewsfeedReactions = ({
                       className={`h-10 w-10 sm:h-9 sm:w-9 transition-transform duration-150 pointer-events-none ${
                         isHovered
                           ? 'scale-[1.8] -translate-y-5'
-                          : 'hover:scale-125 hover:-translate-y-1 active:scale-110'
+                          : isNeighbor
+                            ? 'scale-[0.85]'
+                            : 'hover:scale-125 hover:-translate-y-1 active:scale-110'
                       }`}
                     />
                   </button>

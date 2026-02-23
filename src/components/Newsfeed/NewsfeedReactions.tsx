@@ -270,7 +270,7 @@ const NewsfeedReactions = ({
           {showPicker && (
             <div
               ref={pickerRef}
-              className="absolute bottom-full left-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 bg-background border border-border rounded-full shadow-xl px-3 py-2 flex items-center gap-2 z-50 w-max"
+              className="absolute bottom-full left-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 bg-background border border-border rounded-full shadow-xl px-3 py-2 flex items-center gap-1 z-50 w-max"
               style={{
                 animation: 'reactionPickerIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both',
               }}
@@ -299,7 +299,7 @@ const NewsfeedReactions = ({
                       animation: 'reactionEmojiBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both',
                       animationDelay: `${i * 40}ms`,
                       transition: 'transform 0.15s ease-out',
-                      transform: isNeighbor ? `translateX(${neighborDir * 6}px)` : undefined,
+                      transform: isNeighbor ? `translateX(${neighborDir * 10}px)` : undefined,
                     }}
                   >
                     <img
@@ -319,7 +319,7 @@ const NewsfeedReactions = ({
                         isHovered ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'
                       }`}
                       style={{
-                        top: isHovered ? '-6rem' : '-2.5rem',
+                        top: isHovered ? '-4rem' : '-2.5rem',
                       }}
                     >
                       {r.label}

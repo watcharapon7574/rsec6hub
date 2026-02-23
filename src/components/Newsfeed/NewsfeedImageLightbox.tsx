@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { transformImageUrl, imagePresets } from '@/utils/imageTransform';
 
 interface Props {
   images: string[];
@@ -10,6 +11,10 @@ interface Props {
 
 const NewsfeedImageLightbox = ({ images, startIndex, onClose }: Props) => {
   const [current, setCurrent] = useState(startIndex);
+  const fullImages = useMemo(
+    () => images.map(url => transformImageUrl(url, imagePresets.postFull) || url),
+    [images]
+  );
 
   const prev = useCallback(() => {
     setCurrent(c => (c > 0 ? c - 1 : images.length - 1));
@@ -69,7 +74,7 @@ const NewsfeedImageLightbox = ({ images, startIndex, onClose }: Props) => {
         {/* Image */}
         <div className="flex items-center justify-center h-full">
           <img
-            src={images[current]}
+            src={fullImages[current]}
             alt=""
             className="max-h-[90dvh] max-w-[95vw] object-contain"
           />

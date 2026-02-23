@@ -13,6 +13,7 @@ export interface RailwayService {
 
 export interface RailwaySchedule {
   id?: string;
+  name?: string;
   service_id: string;
   service_name: string;
   environment_id: string;
@@ -339,7 +340,19 @@ class RailwayService {
     if (error) throw error;
   }
 
-  async toggleSchedule(id: string, enabled: boolean): Promise<void> {
+  async toggleSchedule(id: string, enabled: boolean, serviceId?: string): Promise<void> {
+    if (enabled && serviceId) {
+      // Disable all other schedules for the same service
+      const { error } = await supabase
+        .from('railway_schedules')
+        .update({ enabled: false, updated_at: new Date().toISOString() })
+        .eq('service_id', serviceId)
+        .neq('id', id);
+
+      if (error) {
+        console.warn('Failed to disable other schedules:', error);
+      }
+    }
     await this.updateSchedule(id, { enabled });
   }
 

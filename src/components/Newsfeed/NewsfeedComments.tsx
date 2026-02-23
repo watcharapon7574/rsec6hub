@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Send } from 'lucide-react';
 import { formatRelativeTime } from '@/utils/dateUtils';
+import { transformImageUrl, imagePresets } from '@/utils/imageTransform';
 import type { FeedComment } from '@/types/database';
 
 interface Props {
@@ -100,7 +101,7 @@ const NewsfeedComments = ({
             {/* Root comment */}
             <div className="flex gap-2 group">
               <Avatar className="h-8 w-8 shrink-0">
-                <AvatarImage src={comment.author_avatar_url || undefined} />
+                <AvatarImage src={transformImageUrl(comment.author_avatar_url, imagePresets.avatarSmall)} loading="lazy" />
                 <AvatarFallback className="text-xs bg-muted">
                   {getInitials(comment.author_name)}
                 </AvatarFallback>
@@ -154,7 +155,7 @@ const NewsfeedComments = ({
                   {(expandedReplies.has(comment.id) ? comment.replies : comment.replies?.slice(0, 1))?.map(reply => (
                     <div key={reply.id} className="flex gap-2 group">
                       <Avatar className="h-7 w-7 shrink-0">
-                        <AvatarImage src={reply.author_avatar_url || undefined} />
+                        <AvatarImage src={transformImageUrl(reply.author_avatar_url, imagePresets.avatarTiny)} loading="lazy" />
                         <AvatarFallback className="text-[10px] bg-muted">
                           {getInitials(reply.author_name)}
                         </AvatarFallback>

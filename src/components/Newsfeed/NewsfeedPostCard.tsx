@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MapPin, Clock, MoreHorizontal, FileDown, CheckCircle } from 'lucide-react';
 import { formatRelativeTime } from '@/utils/dateUtils';
+import { transformImageUrl, imagePresets } from '@/utils/imageTransform';
 import { useToast } from '@/hooks/use-toast';
 import { NewsfeedService } from '@/services/newsfeedService';
 import type { FeedPost, FeedComment, ReactionType } from '@/types/database';
@@ -108,7 +109,7 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
       <CardContent className="p-4 pb-0">
         <div className="flex items-start gap-3">
           <Avatar className="h-10 w-10 shrink-0">
-            <AvatarImage src={post.author_avatar_url || undefined} />
+            <AvatarImage src={transformImageUrl(post.author_avatar_url, imagePresets.avatar)} loading="lazy" />
             <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm font-semibold">
               {getInitials(post.author_name)}
             </AvatarFallback>

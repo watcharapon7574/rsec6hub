@@ -22,7 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Power, PowerOff, Clock, Settings, Plus, Trash2, RefreshCw, Layers, CircleCheckBig, CircleX, Circle, Loader2, Globe, Train, Package, Lightbulb, Moon, Sparkles } from "lucide-react";
+import { Power, PowerOff, Clock, Settings, Plus, Trash2, RefreshCw, Layers, CircleCheckBig, CircleX, Circle, Loader2, Globe, Train, Package, Lightbulb, Moon, Sparkles, Tag } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const RailwayManagementPage = () => {
@@ -41,6 +41,7 @@ const RailwayManagementPage = () => {
 
   // Schedule form state
   const [newSchedule, setNewSchedule] = useState({
+    name: "",
     service_id: "",
     service_name: "",
     environment_id: "",
@@ -246,6 +247,7 @@ const RailwayManagementPage = () => {
       });
       // Reset form
       setNewSchedule({
+        name: "",
         service_id: "",
         service_name: "",
         environment_id: "",
@@ -279,12 +281,13 @@ const RailwayManagementPage = () => {
     }
   };
 
-  const handleToggleSchedule = async (id: string, enabled: boolean) => {
+  const handleToggleSchedule = async (id: string, enabled: boolean, serviceId?: string) => {
     try {
-      await railwayService.toggleSchedule(id, enabled);
+      await railwayService.toggleSchedule(id, enabled, serviceId);
       await loadSchedules();
       toast({
-        title: enabled ? "เปิดใช้งานตารางเวลา" : "ปิดใช้งานตารางเวลา"
+        title: enabled ? "เปิดใช้งานตารางเวลา" : "ปิดใช้งานตารางเวลา",
+        description: enabled ? "ตารางเวลาอื่นของ Service เดียวกันถูกปิดอัตโนมัติ" : undefined
       });
     } catch (error: any) {
       toast({
@@ -570,6 +573,22 @@ const RailwayManagementPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
+              <div className="space-y-2">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <Tag className="h-5 w-5" />
+                  ชื่อตารางเวลา
+                </Label>
+                <Input
+                  value={newSchedule.name}
+                  onChange={(e) =>
+                    setNewSchedule({ ...newSchedule, name: e.target.value })
+                  }
+                  placeholder="เช่น วันจันทร์-ศุกร์, วันหยุด, ทุกวัน"
+                  className="h-12 text-base"
+                />
+                <p className="text-xs text-muted-foreground">ตั้งชื่อเพื่อแยกแยะตารางเวลาแต่ละรายการ</p>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-base font-semibold flex items-center gap-2">
@@ -712,16 +731,18 @@ const RailwayManagementPage = () => {
                 </div>
                 <Button
                   onClick={handleCreateSchedule}
-                  disabled={!newSchedule.service_id || !newSchedule.environment_id}
+                  disabled={!newSchedule.name.trim() || !newSchedule.service_id || !newSchedule.environment_id}
                   className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-7 text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500"
                   size="lg"
                 >
-                  {(!newSchedule.service_id || !newSchedule.environment_id) ? (
+                  {(!newSchedule.name.trim() || !newSchedule.service_id || !newSchedule.environment_id) ? (
                     <Clock className="mr-2 h-6 w-6" />
                   ) : (
                     <Sparkles className="mr-2 h-6 w-6" />
                   )}
-                  {(!newSchedule.service_id || !newSchedule.environment_id)
+                  {!newSchedule.name.trim()
+                    ? "กรุณาตั้งชื่อตารางเวลาก่อน"
+                    : (!newSchedule.service_id || !newSchedule.environment_id)
                     ? "กรุณาเลือก Service และ Environment ก่อน"
                     : "สร้างตารางเวลา"
                   }
@@ -742,11 +763,17 @@ const RailwayManagementPage = () => {
                 </p>
               ) : (
                 schedules.map(schedule => (
-                  <Card key={schedule.id}>
+                  <Card key={schedule.id} className={`border-2 ${schedule.enabled ? 'border-green-300 dark:border-green-700' : 'border-border'}`}>
                     <CardContent className="pt-6">
                       <div className="flex justify-between items-start">
                         <div className="space-y-2">
-                          <div className="font-semibold">{schedule.service_name}</div>
+                          {schedule.name && (
+                            <div className="font-bold text-lg flex items-center gap-2">
+                              <Tag className="h-4 w-4 text-primary" />
+                              {schedule.name}
+                            </div>
+                          )}
+                          <div className="text-sm text-muted-foreground">{schedule.service_name}</div>
                           <div className="text-sm text-muted-foreground">
                             <Clock className="inline h-3 w-3 mr-1" />
                             เปิด {schedule.start_time} - ปิด {schedule.stop_time}
@@ -763,7 +790,7 @@ const RailwayManagementPage = () => {
                           <Switch
                             checked={schedule.enabled}
                             onCheckedChange={(checked) =>
-                              handleToggleSchedule(schedule.id!, checked)
+                              handleToggleSchedule(schedule.id!, checked, schedule.service_id)
                             }
                           />
                           <Button

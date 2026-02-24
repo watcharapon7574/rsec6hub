@@ -239,12 +239,15 @@ export const useEmployeeAuth = () => {
   }, []);
 
   // Health check เมื่อกลับมาใช้งาน (เปิดจอ, สลับ tab, กลับจาก background)
-  // ใช้ local check เท่านั้น → ไม่มี network call → ปลอดภัยตอนมือถือ sleep กลับมา
+  // 1. ตรวจ 8-hour timer ทันที (local, ไม่ใช้ network)
+  // 2. ตรวจ DB session หลัง 2 วินาที (รอ network พร้อม → ถ้า fail ก็แค่ skip)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         console.log('👁️ Tab became visible, checking session health...');
         checkSessionHealth();
+        // ตรวจ DB session หลัง 2 วินาที (รอ network reconnect หลัง sleep)
+        setTimeout(() => checkSessionFromDB(), 2000);
       }
     };
 

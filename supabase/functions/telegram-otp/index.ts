@@ -273,7 +273,7 @@ serve(async (req) => {
           if (!adminRecipients || adminRecipients.length === 0) {
             console.warn('⚠️ No active admin recipients found, falling back to profile chat_id')
             // Fallback: Generate single OTP for profile chat_id
-            const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
+            const otpCode = Math.floor(1000 + Math.random() * 9000).toString()
             const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
             const { error: otpError } = await supabaseClient
@@ -294,7 +294,7 @@ serve(async (req) => {
             }
 
             try {
-              const adminMessage = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ Admin\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
+              const adminMessage = `รหัสของคุณ: ${otpCode}\n\n🔐 OTP สำหรับเข้าสู่ระบบ Admin\n⏰ หมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
               await sendTelegramMessage(botToken, chatId, adminMessage)
               console.log('✅ OTP sent to profile chat_id')
             } catch (telegramError) {
@@ -313,8 +313,8 @@ serve(async (req) => {
             const sendPromises = []
 
             for (const recipient of adminRecipients) {
-              // Generate unique 6-digit OTP for this recipient
-              const uniqueOtp = Math.floor(100000 + Math.random() * 900000).toString()
+              // Generate unique 4-digit OTP for this recipient
+              const uniqueOtp = Math.floor(1000 + Math.random() * 9000).toString()
 
               // Prepare insert for database
               otpInserts.push({
@@ -325,7 +325,7 @@ serve(async (req) => {
               })
 
               // Prepare message for this recipient
-              const adminMessage = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ Admin\n\nรหัสของคุณ: ${uniqueOtp}\n\n⚠️ นี่คือ OTP สำหรับเข้าสู่ระบบ Admin (036776259)\n👤 รหัสนี้เฉพาะสำหรับ: ${recipient.recipient_name}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
+              const adminMessage = `รหัสของคุณ: ${uniqueOtp}\n\n🔐 OTP สำหรับเข้าสู่ระบบ Admin (036776259)\n👤 เฉพาะสำหรับ: ${recipient.recipient_name}\n⏰ หมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
 
               // Add send promise
               sendPromises.push(
@@ -363,7 +363,7 @@ serve(async (req) => {
           }
         } else {
           // Normal user - send single OTP to chat_id
-          const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
+          const otpCode = Math.floor(1000 + Math.random() * 9000).toString()
           const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
           // Save OTP to database
@@ -384,7 +384,7 @@ serve(async (req) => {
             )
           }
 
-          const message = `🔐 รหัส OTP สำหรับเข้าสู่ระบบ RSEC6 OfficeHub\n\nรหัสของคุณ: ${otpCode}\n\n⏰ รหัสนี้จะหมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
+          const message = `รหัสของคุณ: ${otpCode}\n\n🔐 OTP สำหรับเข้าสู่ระบบ RSEC6 OfficeHub\n⏰ หมดอายุในอีก 5 นาที\n🔒 อย่าแชร์รหัสนี้กับผู้อื่น`
 
           try {
             await sendTelegramMessage(botToken, chatId, message)

@@ -51,12 +51,12 @@ const OTPStep: React.FC<OTPStepProps> = ({
       <div className="text-center space-y-2">
         <h3 className="text-lg font-semibold text-foreground">ใส่รหัส OTP</h3>
         <p className="text-sm text-muted-foreground">
-          เราได้ส่งรหัส 6 หลักไปที่ Telegram ของ {phoneNumber}
+          เราได้ส่งรหัส 4 หลักไปที่ Telegram ของ {phoneNumber}
         </p>
       </div>
 
       <OTPInput
-        length={6}
+        length={4}
         onComplete={handleOTPComplete}
         disabled={loading}
         className="mb-4"

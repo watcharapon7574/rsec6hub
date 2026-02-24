@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/database';
 import { signIn, signOut, getCurrentProfile, isAuthenticated, refreshProfile, sendOTP, getSessionTimeRemaining } from '@/services/authService';
 import { getStoredAuthData, clearAuthStorage } from '@/services/auth/storage';
+import { validateSession, getCurrentSessionToken } from '@/services/sessionService';
 import { getPermissions } from '@/utils/permissionUtils';
 
 // ลบ Supabase session จาก localStorage ตรงๆ โดยไม่ call server
@@ -26,10 +27,8 @@ export const useEmployeeAuth = () => {
   const [loading, setLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
 
-  // Health check: ตรวจแค่ 8-hour session limit เท่านั้น
-  // ไม่ตรวจ Supabase session เพราะ getSession() อาจ return null ชั่วคราว
-  // (ระหว่าง token refresh, lock contention, network ช้า)
-  // ถ้าลบ auth data ตอนนั้น จะทำลาย session ทั้งหมด → เข้าสู่ระบบใหม่
+  // Health check (local only): ตรวจแค่ 8-hour session limit
+  // ใช้ตอน visibility/focus เพราะไม่ต้องรอ network (มือถือ sleep → กลับมา network อาจยังไม่พร้อม)
   const checkSessionHealth = useCallback(() => {
     const storedAuth = getStoredAuthData();
     if (!storedAuth) return;
@@ -42,6 +41,30 @@ export const useEmployeeAuth = () => {
       setIsAuth(false);
       setProfile(null);
       clearSupabaseSession();
+    }
+  }, []);
+
+  // DB session check: ตรวจว่าถูก kill จากเครื่องอื่นหรือไม่
+  // ใช้ใน interval เท่านั้น (ไม่ใช้ตอน visibility/focus เพราะต้องใช้ network)
+  const checkSessionFromDB = useCallback(() => {
+    const storedAuth = getStoredAuthData();
+    if (!storedAuth) return;
+
+    const sessionToken = getCurrentSessionToken();
+    if (sessionToken) {
+      validateSession(sessionToken).then(({ valid, reason }) => {
+        if (!valid && (reason === 'invalidated' || reason === 'expired')) {
+          console.log('🔒 Session ถูกยกเลิกจากเครื่องอื่น (reason:', reason, ')');
+          clearAuthStorage();
+          setUser(null);
+          setIsAuth(false);
+          setProfile(null);
+          clearSupabaseSession();
+          window.location.reload();
+        }
+      }).catch(() => {
+        // ไม่ kick ออกถ้า network error
+      });
     }
   }, []);
 
@@ -216,7 +239,7 @@ export const useEmployeeAuth = () => {
   }, []);
 
   // Health check เมื่อกลับมาใช้งาน (เปิดจอ, สลับ tab, กลับจาก background)
-  // ป้องกันปัญหา: มือถือ sleep แล้ว session หมดอายุแต่ไม่เด้งออก
+  // ใช้ local check เท่านั้น → ไม่มี network call → ปลอดภัยตอนมือถือ sleep กลับมา
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -238,6 +261,16 @@ export const useEmployeeAuth = () => {
       window.removeEventListener('focus', handleFocus);
     };
   }, [checkSessionHealth]);
+
+  // ตรวจ DB session ทุก 60 วินาที เพื่อให้ kill session จากเครื่องอื่นทำงานได้
+  // แยกจาก visibility/focus เพราะอันนี้ต้องใช้ network
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkSessionFromDB();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [checkSessionFromDB]);
 
   const handleSendOTP = async (phone: string, telegramChatId?: string) => {
     try {

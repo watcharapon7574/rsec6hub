@@ -77,13 +77,10 @@ export const createSession = async (userId: string): Promise<{ sessionToken: str
 //          { valid: false, reason: 'invalidated' } - session was explicitly invalidated (kicked)
 export const validateSession = async (sessionToken: string): Promise<{ valid: boolean; userId?: string; reason?: string }> => {
   try {
-    const deviceFingerprint = generateDeviceFingerprint();
-    const storedFingerprint = localStorage.getItem('device_fingerprint');
-
     // Check if session exists (regardless of is_active status)
     const { data: anySession, error: anyError } = await supabase
       .from('user_sessions')
-      .select('user_id, expires_at, is_active, device_fingerprint')
+      .select('user_id, expires_at, is_active')
       .eq('session_token', sessionToken)
       .maybeSingle();
 
@@ -94,10 +91,9 @@ export const validateSession = async (sessionToken: string): Promise<{ valid: bo
       return { valid: true, reason: 'no_record' };
     }
 
-    // Session was explicitly invalidated (single device restriction triggered)
-    // This is the ONLY case where we should kick the user out
+    // Session was explicitly invalidated (killed from session management)
     if (!anySession.is_active) {
-      console.log('Session was invalidated by another login');
+      console.log('Session was invalidated (killed remotely)');
       return { valid: false, reason: 'invalidated', userId: anySession.user_id };
     }
 
@@ -107,31 +103,7 @@ export const validateSession = async (sessionToken: string): Promise<{ valid: bo
       return { valid: false, reason: 'expired', userId: anySession.user_id };
     }
 
-    // Check if user is admin (admins can use multiple devices)
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('user_id', anySession.user_id)
-      .single();
-
-    const isAdmin = profileData?.is_admin === true;
-
-    // For admins: skip fingerprint validation (allow multi-device)
-    if (isAdmin) {
-      return { valid: true, userId: anySession.user_id };
-    }
-
-    // For non-admins: validate device fingerprint
-    if (storedFingerprint && storedFingerprint !== deviceFingerprint) {
-      console.warn('Device fingerprint mismatch (local)');
-      return { valid: false, reason: 'fingerprint', userId: anySession.user_id };
-    }
-
-    if (anySession.device_fingerprint && anySession.device_fingerprint !== deviceFingerprint) {
-      console.warn('Device fingerprint mismatch (database)');
-      return { valid: false, reason: 'fingerprint', userId: anySession.user_id };
-    }
-
+    // All users can use multiple devices — skip fingerprint validation
     return { valid: true, userId: anySession.user_id };
   } catch (error) {
     console.error('Error validating session:', error);

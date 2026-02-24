@@ -7,6 +7,19 @@ import { signIn, signOut, getCurrentProfile, isAuthenticated, refreshProfile, se
 import { getStoredAuthData, clearAuthStorage } from '@/services/auth/storage';
 import { getPermissions } from '@/utils/permissionUtils';
 
+// ลบ Supabase session จาก localStorage ตรงๆ โดยไม่ call server
+// ใช้แทน signOut() ในกรณี cleanup session เก่า → ป้องกัน 403
+const SUPABASE_STORAGE_KEY = 'sb-ikfioqvjrhquiyeylmsv-auth-token';
+function clearSupabaseSession() {
+  try {
+    localStorage.removeItem(SUPABASE_STORAGE_KEY);
+    // Supabase อาจเก็บ code-verifier ด้วย
+    localStorage.removeItem(`${SUPABASE_STORAGE_KEY}-code-verifier`);
+  } catch (e) {
+    // ป้องกัน error ถ้า localStorage ไม่พร้อมใช้งาน
+  }
+}
+
 export const useEmployeeAuth = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -28,7 +41,7 @@ export const useEmployeeAuth = () => {
       setUser(null);
       setIsAuth(false);
       setProfile(null);
-      setTimeout(() => supabase.auth.signOut({ scope: 'local' }), 0);
+      clearSupabaseSession();
     }
   }, []);
 
@@ -89,7 +102,7 @@ export const useEmployeeAuth = () => {
                 setProfile(null);
                 setLoading(false);
                 // Defer signOut เพื่อไม่ให้ขัดกับ onAuthStateChange
-                setTimeout(() => supabase.auth.signOut({ scope: 'local' }), 0);
+                clearSupabaseSession();
                 return;
               }
             }
@@ -105,7 +118,7 @@ export const useEmployeeAuth = () => {
               setIsAuth(false);
               setProfile(null);
               setLoading(false);
-              setTimeout(() => supabase.auth.signOut({ scope: 'local' }), 0);
+              clearSupabaseSession();
               return;
             }
           }

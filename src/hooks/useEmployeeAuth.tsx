@@ -28,7 +28,7 @@ export const useEmployeeAuth = () => {
       setUser(null);
       setIsAuth(false);
       setProfile(null);
-      setTimeout(() => supabase.auth.signOut(), 0);
+      setTimeout(() => supabase.auth.signOut({ scope: 'local' }), 0);
     }
   }, []);
 
@@ -81,7 +81,7 @@ export const useEmployeeAuth = () => {
                 // กำลังลงนามอยู่ → ข้ามการบังคับ signOut ไว้ก่อน
                 console.log('⏰ Session 8 ชม. หมดอายุ แต่กำลังลงนามอยู่ → ข้ามไปก่อน');
               } else {
-                // Session 8 ชม. หมดอายุแล้ว → บังคับ sign out
+                // Session 8 ชม. หมดอายุแล้ว → บังคับ sign out (local only เพื่อป้องกัน 403 loop)
                 console.log('⏰ Session 8 ชม. หมดอายุแล้ว (เข้าตั้งแต่', new Date(storedAuth.loginTime).toLocaleString(), ')');
                 clearAuthStorage();
                 setUser(null);
@@ -89,7 +89,7 @@ export const useEmployeeAuth = () => {
                 setProfile(null);
                 setLoading(false);
                 // Defer signOut เพื่อไม่ให้ขัดกับ onAuthStateChange
-                setTimeout(() => supabase.auth.signOut(), 0);
+                setTimeout(() => supabase.auth.signOut({ scope: 'local' }), 0);
                 return;
               }
             }
@@ -98,12 +98,14 @@ export const useEmployeeAuth = () => {
               console.log('⚠️ ไม่มี auth data แต่กำลังลงนามอยู่ → ข้ามไปก่อน');
             } else {
               // ไม่มี auth data แต่มี Supabase session (อาจถูกเคลียร์ไปแล้วเพราะหมดอายุ)
-              console.log('❌ ไม่มี auth data แต่มี Supabase session → บังคับ sign out');
+              // ใช้ scope: 'local' เพื่อเคลียร์ session ใน browser เท่านั้น
+              // ไม่ call server (ป้องกัน 403 ถ้า session หมดอายุแล้ว → วนลูป)
+              console.log('❌ ไม่มี auth data แต่มี Supabase session → เคลียร์ local session');
               setUser(null);
               setIsAuth(false);
               setProfile(null);
               setLoading(false);
-              setTimeout(() => supabase.auth.signOut(), 0);
+              setTimeout(() => supabase.auth.signOut({ scope: 'local' }), 0);
               return;
             }
           }

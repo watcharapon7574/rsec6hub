@@ -28,6 +28,33 @@ interface Props {
   categories: string[];
 }
 
+const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const REPORT_TYPE_MAP: Record<string, string> = {
+  duty: 'เวรประจำวัน', service: 'บริการ', lunch: 'อาหารกลางวัน',
+  early_intervention: 'ระยะแรกเริ่ม', student_dev: 'พัฒนาผู้เรียน', other: 'อื่นๆ',
+};
+
+const formatTag = (tag: string): string => {
+  const idx = tag.indexOf(':');
+  if (idx === -1) return `#${tag}`;
+  const key = tag.substring(0, idx);
+  const val = tag.substring(idx + 1);
+  switch (key) {
+    case 'report_date': {
+      const parts = val.split('-');
+      if (parts.length !== 3) return tag;
+      const [y, m, d] = parts.map(Number);
+      return `${d} ${THAI_MONTHS[m - 1]} ${String(y + 543).slice(-2)}`;
+    }
+    case 'duty_time':
+      return `${val} น.`;
+    case 'report_type':
+      return REPORT_TYPE_MAP[val] || val;
+    default:
+      return `#${tag}`;
+  }
+};
+
 const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddComment, onDeleteComment, onDeletePost, onEditPost, onAcknowledge, categories }: Props) => {
   const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
@@ -200,7 +227,7 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
           <div className="flex flex-wrap gap-1 mt-2">
             {post.tags.map(tag => (
               <Badge key={tag} variant="outline" className="text-[11px] h-5 font-normal">
-                #{tag}
+                {formatTag(tag)}
               </Badge>
             ))}
           </div>

@@ -130,8 +130,9 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
 
   // Expand long text
   const [expanded, setExpanded] = useState(false);
-  const isLong = post.description.length > 300;
-  const displayText = expanded || !isLong ? post.description : post.description.slice(0, 300) + '...';
+  const desc = post.description || '';
+  const isLong = desc.length > 300;
+  const displayText = expanded || !isLong ? desc : desc.slice(0, 300) + '...';
 
   return (
     <Card>

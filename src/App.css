@@ -27,3 +27,12 @@
   z-index: 10;
   display: block;
 }
+
+/* Lightweight scrollbar hide for floating navbar (no clip-path/::after side effects) */
+.scrollbar-hide-navbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide-navbar::-webkit-scrollbar {
+  display: none;
+}

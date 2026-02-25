@@ -187,7 +187,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ profile, setProfile, editing 
               />
             </div>
             <div>
-              <Label htmlFor="workplace">สถานที่ทำงาน</Label>
+              <Label htmlFor="workplace">สถานที่ทำงาน(ห้องเรียน/หน่วยฯ)</Label>
               <Input
                 id="workplace"
                 value={profile.workplace || ''}

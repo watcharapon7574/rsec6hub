@@ -38,6 +38,8 @@ import AdminProfileManagementPage from "@/pages/AdminProfileManagementPage";
 import AdminOtpManagementPage from "@/pages/AdminOtpManagementPage";
 import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import TelegramAssigneesPage from "@/pages/TelegramAssigneesPage";
+import OcrUploadPage from "@/pages/OcrUploadPage";
+import OcrSearchPage from "@/pages/OcrSearchPage";
 import RegisterInternalPage from "@/pages/RegisterInternalPage";
 import RegisterExternalPage from "@/pages/RegisterExternalPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
@@ -260,6 +262,16 @@ const AppContent = () => {
       <Route path="/railway" element={
         <ProtectedRoute isAuthenticated={isAuthenticated}>
           <RailwayManagementPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/ocr" element={
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
+          <OcrUploadPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/ocr-search" element={
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
+          <OcrSearchPage />
         </ProtectedRoute>
       } />
       <Route path="/" element={

@@ -433,6 +433,196 @@ export type Database = {
         }
         Relationships: []
       }
+      external_auth_tokens: {
+        Row: {
+          created_at: string | null
+          device_name: string | null
+          employee_id: string
+          id: string
+          is_revoked: boolean | null
+          last_used_at: string | null
+          phone: string
+          profile_id: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_name?: string | null
+          employee_id: string
+          id?: string
+          is_revoked?: boolean | null
+          last_used_at?: string | null
+          phone: string
+          profile_id?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string | null
+          device_name?: string | null
+          employee_id?: string
+          id?: string
+          is_revoked?: boolean | null
+          last_used_at?: string | null
+          phone?: string
+          profile_id?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_auth_tokens_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_comments: {
+        Row: {
+          author_avatar_url: string | null
+          author_name: string | null
+          content: string
+          created_at: string | null
+          id: string
+          parent_id: string | null
+          post_id: string
+          reply_to_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          author_avatar_url?: string | null
+          author_name?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          parent_id?: string | null
+          post_id: string
+          reply_to_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          author_avatar_url?: string | null
+          author_name?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          parent_id?: string | null
+          post_id?: string
+          reply_to_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "feed_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_posts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          author_avatar_url: string | null
+          author_name: string | null
+          author_position: string | null
+          category: string | null
+          created_at: string | null
+          description: string
+          form_data: Json | null
+          id: string
+          images: Json | null
+          location: Json | null
+          report_type: string | null
+          tags: Json | null
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          author_avatar_url?: string | null
+          author_name?: string | null
+          author_position?: string | null
+          category?: string | null
+          created_at?: string | null
+          description: string
+          form_data?: Json | null
+          id?: string
+          images?: Json | null
+          location?: Json | null
+          report_type?: string | null
+          tags?: Json | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          author_avatar_url?: string | null
+          author_name?: string | null
+          author_position?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string
+          form_data?: Json | null
+          id?: string
+          images?: Json | null
+          location?: Json | null
+          report_type?: string | null
+          tags?: Json | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      feed_reactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null
@@ -755,6 +945,214 @@ export type Database = {
         }
         Relationships: []
       }
+      ocr_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          content_segmented: string | null
+          content_segmented_tsv: unknown
+          context_summary: string | null
+          created_at: string | null
+          document_id: string
+          embedding: string | null
+          id: string
+          page_number: number
+        }
+        Insert: {
+          chunk_index?: number
+          content: string
+          content_segmented?: string | null
+          content_segmented_tsv?: unknown
+          context_summary?: string | null
+          created_at?: string | null
+          document_id: string
+          embedding?: string | null
+          id?: string
+          page_number: number
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          content_segmented?: string | null
+          content_segmented_tsv?: unknown
+          context_summary?: string | null
+          created_at?: string | null
+          document_id?: string
+          embedding?: string | null
+          id?: string
+          page_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ocr_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "ocr_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ocr_delete_logs: {
+        Row: {
+          deleted_at: string
+          deleted_by: string
+          deleted_by_name: string | null
+          document_id: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          page_count: number | null
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by: string
+          deleted_by_name?: string | null
+          document_id: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          page_count?: number | null
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string
+          deleted_by_name?: string | null
+          document_id?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          page_count?: number | null
+        }
+        Relationships: []
+      }
+      ocr_documents: {
+        Row: {
+          created_at: string
+          embedding: string | null
+          error_message: string | null
+          extracted_text: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string | null
+          fts: unknown
+          id: string
+          notes: string | null
+          page_count: number | null
+          status: string
+          storage_path: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          embedding?: string | null
+          error_message?: string | null
+          extracted_text?: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url?: string | null
+          fts?: unknown
+          id?: string
+          notes?: string | null
+          page_count?: number | null
+          status?: string
+          storage_path?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          embedding?: string | null
+          error_message?: string | null
+          extracted_text?: string | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string | null
+          fts?: unknown
+          id?: string
+          notes?: string | null
+          page_count?: number | null
+          status?: string
+          storage_path?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ocr_pages: {
+        Row: {
+          created_at: string
+          document_id: string
+          embedding: string | null
+          extracted_text: string | null
+          fts: unknown
+          id: string
+          page_number: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          embedding?: string | null
+          extracted_text?: string | null
+          fts?: unknown
+          id?: string
+          page_number: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          embedding?: string | null
+          extracted_text?: string | null
+          fts?: unknown
+          id?: string
+          page_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ocr_pages_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "ocr_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ocr_search_history: {
+        Row: {
+          created_at: string
+          id: string
+          mode: string
+          query: string
+          result_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mode?: string
+          query: string
+          result_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mode?: string
+          query?: string
+          result_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       official_documents: {
         Row: {
           assistant_approved_at: string | null
@@ -1045,6 +1443,7 @@ export type Database = {
           id: string
           last_run_at: string | null
           manual_override_until: string | null
+          name: string | null
           next_run_at: string | null
           service_id: string
           service_name: string
@@ -1060,6 +1459,7 @@ export type Database = {
           id?: string
           last_run_at?: string | null
           manual_override_until?: string | null
+          name?: string | null
           next_run_at?: string | null
           service_id: string
           service_name: string
@@ -1075,6 +1475,7 @@ export type Database = {
           id?: string
           last_run_at?: string | null
           manual_override_until?: string | null
+          name?: string | null
           next_run_at?: string | null
           service_id?: string
           service_name?: string
@@ -1108,6 +1509,42 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_categories: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          name?: string
+        }
+        Relationships: []
+      }
+      shared_tags: {
+        Row: {
+          created_at: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          name?: string
+        }
+        Relationships: []
+      }
       task_assignments: {
         Row: {
           assigned_at: string | null
@@ -1125,6 +1562,7 @@ export type Database = {
           id: string
           is_reporter: boolean | null
           is_team_leader: boolean | null
+          leader_note: string | null
           location: string | null
           memo_id: string | null
           note: string | null
@@ -1152,6 +1590,7 @@ export type Database = {
           id?: string
           is_reporter?: boolean | null
           is_team_leader?: boolean | null
+          leader_note?: string | null
           location?: string | null
           memo_id?: string | null
           note?: string | null
@@ -1179,6 +1618,7 @@ export type Database = {
           id?: string
           is_reporter?: boolean | null
           is_team_leader?: boolean | null
+          leader_note?: string | null
           location?: string | null
           memo_id?: string | null
           note?: string | null
@@ -1234,6 +1674,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      upload_sessions: {
+        Row: {
+          committed: boolean | null
+          created_at: string | null
+          files: string[] | null
+          id: string
+        }
+        Insert: {
+          committed?: boolean | null
+          created_at?: string | null
+          files?: string[] | null
+          id?: string
+        }
+        Update: {
+          committed?: boolean | null
+          created_at?: string | null
+          files?: string[] | null
+          id?: string
+        }
+        Relationships: []
       }
       user_groups: {
         Row: {
@@ -1453,6 +1914,7 @@ export type Database = {
           has_reporter_assigned: boolean
           is_reporter: boolean
           is_team_leader: boolean
+          leader_note: string
           location: string
           note: string
           parent_assignment_id: string
@@ -1472,6 +1934,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_clerk_or_admin: { Args: never; Returns: boolean }
       is_team_leader_for_document:
         | {
             Args: { p_doc_receive_id: string; p_memo_id: string }
@@ -1494,13 +1957,93 @@ export type Database = {
         }
         Returns: undefined
       }
+      ocr_chunk_hybrid_search: {
+        Args: {
+          full_text_weight?: number
+          match_count?: number
+          query_embedding: string
+          query_text: string
+          rrf_k?: number
+          semantic_weight?: number
+        }
+        Returns: {
+          chunk_id: string
+          chunk_index: number
+          content: string
+          context_summary: string
+          created_at: string
+          document_id: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          fts_rank: number
+          page_number: number
+          rrf_score: number
+          semantic_rank: number
+          tags: string[]
+        }[]
+      }
+      ocr_hybrid_search: {
+        Args: {
+          full_text_weight?: number
+          match_count?: number
+          query_embedding: string
+          query_text: string
+          rrf_k?: number
+          semantic_weight?: number
+        }
+        Returns: {
+          created_at: string
+          extracted_text: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          fts_rank: number
+          id: string
+          notes: string
+          page_count: number
+          rrf_score: number
+          semantic_rank: number
+          status: string
+          tags: string[]
+          user_id: string
+        }[]
+      }
+      ocr_insert_chunk: {
+        Args: {
+          p_chunk_index: number
+          p_content: string
+          p_content_segmented: string
+          p_context_summary: string
+          p_document_id: string
+          p_embedding: string
+          p_page_number: number
+        }
+        Returns: string
+      }
+      ocr_update_document_vectors: {
+        Args: { doc_embedding: string; doc_id: string; doc_text: string }
+        Returns: undefined
+      }
+      ocr_update_page_vectors: {
+        Args: { page_embedding: string; page_id: string; page_text: string }
+        Returns: undefined
+      }
       send_telegram_notification: {
         Args: { payload: Json }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       soft_delete_task_assignment: {
         Args: { p_assignment_id: string }
         Returns: boolean
+      }
+      update_document_reporters: {
+        Args: { p_assignment_id: string; p_reporter_user_ids: string[] }
+        Returns: undefined
       }
       update_task_status:
         | {

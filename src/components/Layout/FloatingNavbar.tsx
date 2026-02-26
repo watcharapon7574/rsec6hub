@@ -22,7 +22,8 @@ const navItems = [
 ];
 
 const docSubItems = [
-  { to: '/documents', icon: PenLine, label: 'เขียน' },
+  { to: '/create-document', icon: PenLine, label: 'เขียน' },
+  { to: '/documents', icon: FileText, label: 'จัดการ' },
   { to: '/ocr-search', icon: Search, label: 'ค้นหา' },
 ];
 
@@ -34,7 +35,7 @@ const FloatingNavbar = () => {
   const [fanOpen, setFanOpen] = useState(false);
   const fanRef = useRef<HTMLDivElement>(null);
 
-  const isDocActive = currentPath === '/documents' || currentPath === '/ocr-search';
+  const isDocActive = currentPath === '/create-document' || currentPath === '/documents' || currentPath === '/ocr-search';
 
   // Close fan on outside click
   useEffect(() => {
@@ -140,9 +141,13 @@ const FloatingNavbar = () => {
             {/* Fan-out items */}
             {docSubItems.map((sub, i) => {
               const isSubActive = currentPath === sub.to;
-              // 2 items: fan left (-34px) and right (+34px), up -60px
-              const tx = i === 0 ? -34 : 34;
-              const ty = -60;
+              // 3 items in arc: wider spread + higher
+              const positions = [
+                { tx: -50, ty: -68 },
+                { tx: 0, ty: -88 },
+                { tx: 50, ty: -68 },
+              ];
+              const { tx, ty } = positions[i];
 
               return (
                 <button

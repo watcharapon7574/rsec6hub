@@ -1,7 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useNewsfeed } from '@/hooks/useNewsfeed';
-import { Button } from '@/components/ui/button';
 import { Newspaper, Loader2 } from 'lucide-react';
 import NewsfeedHeader from '@/components/Newsfeed/NewsfeedHeader';
 import NewsfeedPostCard from '@/components/Newsfeed/NewsfeedPostCard';
@@ -46,10 +45,29 @@ const NewsfeedPage = () => {
   } = useNewsfeed({ category: selectedCategory, search: searchQuery || undefined });
 
   const isDirector = profile?.position === 'director';
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
+
+  // Infinite scroll: โหลดเพิ่มเมื่อเลื่อนถึง sentinel element
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          fetchMore();
+        }
+      },
+      { rootMargin: '200px' } // เริ่มโหลดก่อนถึงล่างสุด 200px
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, fetchMore]);
 
   if (!profile) {
     return (
@@ -132,18 +150,10 @@ const NewsfeedPage = () => {
           )}
         </div>
 
-        {/* Load more */}
+        {/* Lazy load sentinel */}
         {hasMore && !loading && (
-          <div className="flex justify-center mt-6">
-            <Button
-              variant="outline"
-              onClick={fetchMore}
-              disabled={loadingMore}
-              className="gap-2"
-            >
-              {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
-              {loadingMore ? 'กำลังโหลด...' : 'โหลดเพิ่มเติม'}
-            </Button>
+          <div ref={loadMoreRef} className="flex justify-center py-6">
+            {loadingMore && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
           </div>
         )}
       </div>

@@ -448,13 +448,43 @@ const CreateReportMemoPage = () => {
       };
 
       if (isEditMode && originalMemo) {
+        // Delete old PDF and attached files from storage
+        try {
+          const pathsToDelete: string[] = [];
+
+          if (originalMemo.pdf_draft_path) {
+            const oldPdfPath = originalMemo.pdf_draft_path.split('/documents/')[1];
+            if (oldPdfPath) pathsToDelete.push(oldPdfPath);
+          }
+
+          if (originalMemo.attached_files) {
+            let oldFiles: string[] = [];
+            if (typeof originalMemo.attached_files === 'string') {
+              try { oldFiles = JSON.parse(originalMemo.attached_files); } catch { oldFiles = []; }
+            } else if (Array.isArray(originalMemo.attached_files)) {
+              oldFiles = originalMemo.attached_files;
+            }
+            for (const f of oldFiles) {
+              const p = f?.split('/documents/')[1];
+              if (p) pathsToDelete.push(p);
+            }
+          }
+
+          if (pathsToDelete.length > 0) {
+            console.log('🗑️ Deleting old files before re-upload:', pathsToDelete);
+            await supabase.storage.from('documents').remove(pathsToDelete);
+          }
+        } catch (err) {
+          console.warn('Could not delete old files:', err);
+        }
+
         const { error } = await supabase
           .from('memos')
           .update(memoDataToInsert)
           .eq('id', originalMemo.id);
-          
+
         if (error) throw error;
-        
+
         toast({
           title: 'อัพเดตสำเร็จ',
           description: 'บันทึกข้อความถูกอัพเดตเรียบร้อยแล้ว',
@@ -901,7 +931,15 @@ const CreateReportMemoPage = () => {
           <div className="mb-6">
             <Button
               variant="outline"
-              onClick={() => navigate('/documents')}
+              onClick={() => {
+                if (isEditMode) {
+                  navigate('/documents');
+                } else if (creationMode && !taskId) {
+                  setCreationMode(null);
+                } else {
+                  navigate('/documents');
+                }
+              }}
               className="flex items-center gap-2 hover:bg-muted border-border"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -987,6 +1025,11 @@ const CreateReportMemoPage = () => {
 
           {/* Mode Selection - แสดงเฉพาะตอนสร้างใหม่ (ไม่ใช่ edit mode และไม่มี taskId) */}
           {!isEditMode && !creationMode && !taskId && (
+            <>
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-foreground mb-2">เขียนบันทึกข้อความรายงานผล</h1>
+              <p className="text-muted-foreground">เลือกวิธีการสร้างบันทึกข้อความ</p>
+            </div>
             <Card className="mb-8 shadow-xl border-0 overflow-hidden">
               <CardContent className="p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1028,6 +1071,7 @@ const CreateReportMemoPage = () => {
                 </div>
               </CardContent>
             </Card>
+            </>
           )}
 
           {/* Upload Mode Form - แสดงเมื่อเลือก upload mode */}

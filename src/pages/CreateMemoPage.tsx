@@ -789,7 +789,15 @@ const CreateMemoPage = () => {
           <div className="mb-6">
             <Button
               variant="outline"
-              onClick={() => navigate(isEditMode ? '/documents' : '/create-document')}
+              onClick={() => {
+                if (isEditMode) {
+                  navigate('/documents');
+                } else if (creationMode) {
+                  setCreationMode(null);
+                } else {
+                  navigate('/create-document');
+                }
+              }}
               className="flex items-center gap-2 hover:bg-muted border-border text-muted-foreground bg-card shadow-sm"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -955,6 +963,11 @@ const CreateMemoPage = () => {
 
           {/* Mode Selection - แสดงเฉพาะตอนสร้างใหม่ (ไม่ใช่ edit mode) */}
           {!isEditMode && !creationMode && (
+            <>
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-foreground mb-2">เขียนบันทึกข้อความ</h1>
+              <p className="text-muted-foreground">เลือกวิธีการสร้างบันทึกข้อความ</p>
+            </div>
             <Card className="mb-8 shadow-xl border-0 overflow-hidden">
               <CardContent className="p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -996,6 +1009,7 @@ const CreateMemoPage = () => {
                 </div>
               </CardContent>
             </Card>
+            </>
           )}
 
           {/* Upload Mode Form - แสดงเมื่อเลือก upload mode */}

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Signature, BookOpen, BookMarked } from 'lucide-react';
+import { FileText, Upload, Signature, BookOpen, BookMarked } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 
@@ -11,12 +11,20 @@ const CreateDocumentPage = () => {
 
   const documentOptions = [
     {
-      id: 'memo',
+      id: 'memo-form',
       title: 'สร้างบันทึกข้อความ',
-      description: 'สร้างบันทึกข้อความใหม่จากแบบฟอร์ม',
+      description: 'ระบุข้อมูลในแบบฟอร์มและระบบจะช่วยสร้างเอกสาร PDF ให้อัตโนมัติ',
       icon: FileText,
       color: 'bg-blue-500 hover:bg-blue-600',
-      path: '/create-memo'
+      path: '/create-memo?mode=form'
+    },
+    {
+      id: 'memo-upload',
+      title: 'อัพโหลดบันทึกข้อความ',
+      description: 'อัพโหลดไฟล์ PDF บันทึกข้อความที่คุณจัดทำไว้แล้ว',
+      icon: Upload,
+      color: 'bg-teal-500 hover:bg-teal-600',
+      path: '/create-memo?mode=upload'
     },
     // แสดงหนังสือรับเฉพาะ Admin หรือธุรการเท่านั้น
     ...((permissions.isAdmin || permissions.isClerk) ? [

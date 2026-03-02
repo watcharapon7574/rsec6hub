@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ScanText, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import OcrGoogleSearchBar from '@/components/OCR/OcrGoogleSearchBar';
@@ -37,13 +37,8 @@ const OcrSearchPage = () => {
         {/* Logo/Title — only visible before search */}
         {!hasSearched && (
           <div className="text-center mb-8">
-            <ScanText className="h-16 w-16 mx-auto mb-4 text-blue-500/60" />
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              ค้นหาเอกสาร OCR
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              ค้นหาจากข้อความที่ดึงจากเอกสาร
-            </p>
+            <img src="/fastS.png" alt="FastSearch" className="h-40 mx-auto mb-4" />
+            <img src="/fastS1.png" alt="FASTSEARCH" className="h-16 mx-auto" />
           </div>
         )}
 

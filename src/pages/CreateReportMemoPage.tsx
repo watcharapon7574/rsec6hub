@@ -9,7 +9,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useAllMemos } from '@/hooks/useAllMemos';
 import { MemoFormData } from '@/types/memo';
-import { FileText, ArrowLeft, Sparkles, Eye, ChevronDown, ChevronUp, ClipboardCheck, AlertCircle, XCircle } from 'lucide-react';
+import { FileText, ArrowLeft, Sparkles, Eye, ChevronDown, ChevronUp, ClipboardCheck, AlertCircle, XCircle, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AnimatedProgress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -78,6 +78,12 @@ const CreateReportMemoPage = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewFormDataHash, setPreviewFormDataHash] = useState<string>('');
+
+  // Mode Selection State
+  const [creationMode, setCreationMode] = useState<'form' | 'upload' | null>(null);
+  const [isUploadedMemo, setIsUploadedMemo] = useState(false);
+  const [uploadedPdfFile, setUploadedPdfFile] = useState<File | null>(null);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
 
   const [formData, setFormData] = useState<MemoFormData>({
     doc_number: '',
@@ -152,9 +158,20 @@ const CreateReportMemoPage = () => {
           attached_files: parsedAttachedFiles
         });
 
+        // Set creation mode based on how memo was originally created
+        const memoFormData = memo.form_data;
+        const isUploadMode = memoFormData && typeof memoFormData === 'object' && memoFormData.type === 'upload_report_memo';
+        if (isUploadMode) {
+          setCreationMode('upload');
+          setIsUploadedMemo(true);
+        } else {
+          setCreationMode('form');
+          setIsUploadedMemo(false);
+        }
+
         // Load annotated PDF path if any
-        if (memo.annotated_pdf_path) {
-          setAnnotatedPdfPath(memo.annotated_pdf_path);
+        if ((memo as any).annotated_pdf_path) {
+          setAnnotatedPdfPath((memo as any).annotated_pdf_path);
         }
         // Load annotated attachment paths if any
         if ((memo as any).annotated_attachment_paths) {
@@ -252,11 +269,11 @@ const CreateReportMemoPage = () => {
           documentSubject = memo?.subject || '';
         } else if (task.document_type === 'doc_receive' && task.doc_receive_id) {
           const { data: docReceive } = await supabase
-            .from('doc_receives')
+            .from('doc_receive')
             .select('subject')
             .eq('id', task.doc_receive_id)
             .single();
-          documentSubject = docReceive?.subject || '';
+          documentSubject = (docReceive as any)?.subject || '';
         }
 
         // Fetch assigned_by name
@@ -317,6 +334,173 @@ const CreateReportMemoPage = () => {
       }));
     }
   }, [profile]);
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: 'ไฟล์ไม่ถูกต้อง',
+        description: 'กรุณาอัพโหลดไฟล์ PDF เท่านั้น',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (file.size > 30 * 1024 * 1024) {
+      toast({
+        title: 'ไฟล์ใหญ่เกินไป',
+        description: 'ขนาดไฟล์ต้องไม่เกิน 30MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setUploadedPdfFile(file);
+  };
+
+  const handleUploadSubmit = async () => {
+    if (!uploadedPdfFile || !profile?.user_id) {
+      toast({
+        title: 'กรุณาเลือกไฟล์ PDF',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!formData.subject) {
+      toast({
+        title: 'กรุณากรอกเรื่อง',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setUploadingPdf(true);
+    try {
+      // Upload PDF to Supabase Storage
+      const fileName = `report_memo_${Date.now()}_${uploadedPdfFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+      const filePath = `memos/${profile.user_id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, uploadedPdfFile, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      // Handle attached files upload
+      let attachedFileUrls: string[] = [];
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          try {
+            const fileExtension = file.name.split('.').pop();
+            const attachmentFileName = `attachment_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+            const attachmentFilePath = `memos/${profile.user_id}/${attachmentFileName}`;
+
+            const { error: attachmentError } = await supabase.storage
+              .from('documents')
+              .upload(attachmentFilePath, file, {
+                contentType: file.type,
+                upsert: false
+              });
+
+            if (!attachmentError) {
+              const { data: { publicUrl: attachmentUrl } } = supabase.storage
+                .from('documents')
+                .getPublicUrl(attachmentFilePath);
+              attachedFileUrls.push(attachmentUrl);
+            }
+          } catch (err) {
+            console.error('Error uploading attachment:', err);
+          }
+        }
+      }
+
+      // Prepare memo data
+      const memoDataToInsert = {
+        doc_number: '',
+        subject: formData.subject,
+        date: formData.date,
+        attachment_title: formData.attachment_title || '',
+        user_id: profile.user_id,
+        form_data: { 
+          type: 'upload_report_memo', 
+          originalFileName: uploadedPdfFile.name,
+          taskInfo: (taskInfo as any) || undefined
+        },
+        pdf_draft_path: publicUrl,
+        status: 'draft',
+        current_signer_order: 1,
+        author_name: formData.author_name || (profile ? `${profile.first_name} ${profile.last_name}`.trim() : ''),
+        author_position: formData.author_position || profile?.current_position || profile?.job_position || profile?.position || '',
+        attached_files: attachedFileUrls.length > 0 ? JSON.stringify(attachedFileUrls) : null
+      };
+
+      if (isEditMode && originalMemo) {
+        const { error } = await supabase
+          .from('memos')
+          .update(memoDataToInsert)
+          .eq('id', originalMemo.id);
+          
+        if (error) throw error;
+        
+        toast({
+          title: 'อัพเดตสำเร็จ',
+          description: 'บันทึกข้อความถูกอัพเดตเรียบร้อยแล้ว',
+        });
+      } else {
+        const { data: insertedMemo, error } = await supabase
+          .from('memos')
+          .insert(memoDataToInsert)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        // If created from task, update task status
+        if (taskId && taskInfo && insertedMemo) {
+          try {
+            const { taskAssignmentService } = await import('@/services/taskAssignmentService');
+            await taskAssignmentService.updateTaskStatus(
+              taskId,
+              'completed',
+              insertedMemo.id,
+              insertedMemo.pdf_draft_path || ''
+            );
+          } catch (err) {
+            console.error('Error updating task status:', err);
+          }
+        }
+        
+        toast({
+          title: 'อัพโหลดสำเร็จ',
+          description: 'บันทึกข้อความรายงานผลถูกสร้างเรียบร้อยแล้ว',
+        });
+      }
+      
+      navigate('/documents');
+    } catch (error: any) {
+      console.error('Error uploading PDF:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: error.message || 'ไม่สามารถอัพโหลดไฟล์ได้',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploadingPdf(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -801,7 +985,230 @@ const CreateReportMemoPage = () => {
             </Card>
           )}
 
-          {/* Header Card */}
+          {/* Mode Selection - แสดงเฉพาะตอนสร้างใหม่ (ไม่ใช่ edit mode และไม่มี taskId) */}
+          {!isEditMode && !creationMode && !taskId && (
+            <Card className="mb-8 shadow-xl border-0 overflow-hidden">
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Option 1: ช่วยสร้างบันทึกข้อความ */}
+                  <div 
+                    onClick={() => setCreationMode('form')}
+                    className="cursor-pointer group"
+                  >
+                    <Card className="h-full border-2 border-transparent hover:border-teal-500 transition-all duration-200 shadow-lg hover:shadow-xl bg-card">
+                      <CardContent className="p-6 text-center">
+                        <div className="w-16 h-16 bg-teal-100 dark:bg-teal-900 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                          <FileText className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">ช่วยสร้างบันทึกข้อความ</h3>
+                        <p className="text-sm text-muted-foreground">
+                          ระบุข้อมูลในแบบฟอร์มและระบบจะช่วยสร้างเอกสาร PDF ให้อัตโนมัติ
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Option 2: อัพโหลดบันทึกข้อความที่มี */}
+                  <div 
+                    onClick={() => setCreationMode('upload')}
+                    className="cursor-pointer group"
+                  >
+                    <Card className="h-full border-2 border-transparent hover:border-green-500 transition-all duration-200 shadow-lg hover:shadow-xl bg-card">
+                      <CardContent className="p-6 text-center">
+                        <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                          <Upload className="w-8 h-8 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">อัพโหลดบันทึกข้อความที่มี</h3>
+                        <p className="text-sm text-muted-foreground">
+                          อัพโหลดไฟล์ PDF ที่คุณได้จัดทำไว้แล้วโดยตรง
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Upload Mode Form - แสดงเมื่อเลือก upload mode */}
+          {(creationMode === 'upload' || isUploadedMemo) && (
+            <form onSubmit={(e) => { e.preventDefault(); handleUploadSubmit(); }}>
+              <Card className="mb-8 shadow-xl border-0 overflow-hidden">
+                <CardHeader className="bg-gradient-to-br from-green-400 via-green-500 to-green-600 text-white py-8">
+                  <div className="text-center">
+                    <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/20">
+                      <Upload className="w-7 h-7 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-1">อัพโหลดบันทึกข้อความรายงานผล</h2>
+                    <p className="text-green-100 text-sm">กรอกข้อมูลและเลือกไฟล์ PDF ที่จัดทำไว้แล้ว</p>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                  {/* PDF File Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-foreground font-medium">ไฟล์ PDF บันทึกข้อความ *</Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-green-500 transition-colors">
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handlePdfUpload}
+                        className="hidden"
+                        id="report-pdf-upload-input"
+                      />
+                      <label htmlFor="report-pdf-upload-input" className="cursor-pointer">
+                        {uploadedPdfFile ? (
+                          <div className="flex items-center justify-center gap-2 text-green-600">
+                            <Upload className="w-5 h-5" />
+                            <span className="font-medium">{uploadedPdfFile.name}</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
+                            <p className="text-muted-foreground">คลิกเพื่อเลือกไฟล์ PDF</p>
+                            <p className="text-xs text-muted-foreground">ขนาดไม่เกิน 30MB</p>
+                          </div>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Date */}
+                  <div className="space-y-2">
+                    <Label htmlFor="report-upload-date" className="text-foreground font-medium">วันที่ *</Label>
+                    <Input
+                      id="report-upload-date"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => handleInputChange('date', e.target.value)}
+                      required
+                      className="bg-background border-border"
+                    />
+                  </div>
+
+                  {/* Subject */}
+                  <div className="space-y-2">
+                    <Label htmlFor="report-upload-subject" className="text-foreground font-medium">เรื่อง *</Label>
+                    <Input
+                      id="report-upload-subject"
+                      value={formData.subject}
+                      onChange={(e) => handleInputChange('subject', e.target.value)}
+                      placeholder="ระบุเรื่องของบันทึกข้อความ"
+                      required
+                      className="bg-background border-border"
+                    />
+                  </div>
+
+                  {/* Attachment Title + File Upload */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="report-upload-attachment-title" className="text-sm font-medium text-foreground">
+                        สิ่งที่ส่งมาด้วย
+                      </Label>
+                      <Input
+                        id="report-upload-attachment-title"
+                        value={formData.attachment_title}
+                        onChange={(e) => handleInputChange('attachment_title', e.target.value)}
+                        placeholder="ระบุเอกสารหรือสิ่งที่แนบมาด้วย (ถ้ามี)"
+                        className="border-border focus:border-teal-500 focus:ring-teal-500/20 transition-all duration-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="report-upload-attached-files" className="text-sm font-medium text-foreground">
+                        อัปโหลดไฟล์แนบ
+                      </Label>
+                      <input
+                        id="report-upload-attached-files"
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setSelectedFiles(files);
+                          setFormData(prev => ({ ...prev, attached_files: files.map(f => f.name) }));
+                        }}
+                        className="block w-full text-sm text-muted-foreground
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-lg file:border-0
+                          file:text-sm file:font-medium
+                          file:cursor-pointer
+                          file:bg-green-500 file:text-white
+                          hover:file:bg-green-600
+                          cursor-pointer
+                          border border-border rounded-lg p-2
+                          focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        รองรับไฟล์: PDF, Word, รูปภาพ (JPG, PNG) ขนาดไม่เกิน 30MB ต่อไฟล์
+                      </p>
+                    </div>
+                  </div>
+
+                  {formData.attached_files && formData.attached_files.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">ไฟล์ที่เลือก:</p>
+                      {formData.attached_files.map((fileName, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                          <span className="flex-1">{fileName}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newFiles = selectedFiles.filter((_, i) => i !== index);
+                              setSelectedFiles(newFiles);
+                              setFormData(prev => ({ ...prev, attached_files: prev.attached_files?.filter((_, i) => i !== index) || [] }));
+                            }}
+                            className="text-destructive hover:text-destructive/80 font-bold"
+                          >×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Author Name + Position (side by side, disabled) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">ชื่อผู้เขียน</Label>
+                      <Input
+                        value={formData.author_name}
+                        disabled
+                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">ตำแหน่งผู้เขียน</Label>
+                      <Input
+                        value={formData.author_position}
+                        disabled
+                        className="bg-muted text-muted-foreground cursor-not-allowed border-border"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit */}
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      type="submit"
+                      disabled={uploadingPdf}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {uploadingPdf ? 'กำลังอัพโหลด...' : (isEditMode ? 'บันทึกการแก้ไข' : 'สร้างบันทึกข้อความ')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate('/documents')}
+                      className="border-border"
+                    >
+                      ยกเลิก
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
+          )}
+
+          {/* Header Card + Form - แสดงเฉพาะเมื่อเลือก form mode หรือแก้ไขเอกสาร */}
+          {(creationMode === 'form' || (isEditMode && !isUploadedMemo) || taskId) && (
+          <>
           <Card className="mb-8 overflow-hidden shadow-xl border-0">
             <CardHeader className="relative bg-gradient-to-br from-teal-400 via-teal-500 to-teal-600 text-white py-12">
               <div className="absolute inset-0 opacity-10">
@@ -1087,6 +1494,8 @@ const CreateReportMemoPage = () => {
               </CardContent>
             </Card>
           </form>
+          </>
+          )}
 
           {/* PDF Preview */}
           {previewUrl && (

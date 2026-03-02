@@ -125,33 +125,34 @@ export class MemoService {
             console.log('📎 Only attached files changed - skipping PDF regeneration');
             shouldGenerateNewPdf = false;
             publicUrl = existingMemo.pdf_draft_path; // Keep existing PDF
-            
-            // Delete old attached files if new files are uploaded
-            if (existingMemo?.attached_files) {
-              try {
-                let oldFiles: string[] = [];
-                if (typeof existingMemo.attached_files === 'string') {
-                  try {
-                    oldFiles = JSON.parse(existingMemo.attached_files);
-                  } catch {
-                    oldFiles = existingMemo.attached_files ? [existingMemo.attached_files] : [];
-                  }
-                } else if (Array.isArray(existingMemo.attached_files)) {
-                  oldFiles = existingMemo.attached_files;
-                }
+          }
 
-                const oldFilePaths = oldFiles
-                  .filter((fileUrl: string) => fileUrl && fileUrl.includes('/documents/'))
-                  .map((fileUrl: string) => fileUrl.split('/documents/')[1]);
-                
-                if (oldFilePaths.length > 0) {
-                  await supabase.storage
-                    .from('documents')
-                    .remove(oldFilePaths);
+          // Delete old attached files when new files are uploaded (regardless of content changes)
+          if (attachedFileUrls.length > 0 && existingMemo?.attached_files) {
+            try {
+              let oldFiles: string[] = [];
+              if (typeof existingMemo.attached_files === 'string') {
+                try {
+                  oldFiles = JSON.parse(existingMemo.attached_files);
+                } catch {
+                  oldFiles = existingMemo.attached_files ? [existingMemo.attached_files] : [];
                 }
-              } catch (error) {
-                console.warn('Could not delete old attached files:', error);
+              } else if (Array.isArray(existingMemo.attached_files)) {
+                oldFiles = existingMemo.attached_files;
               }
+
+              const oldFilePaths = oldFiles
+                .filter((fileUrl: string) => fileUrl && fileUrl.includes('/documents/'))
+                .map((fileUrl: string) => fileUrl.split('/documents/')[1]);
+
+              if (oldFilePaths.length > 0) {
+                console.log('🗑️ Deleting old attached files:', oldFilePaths);
+                await supabase.storage
+                  .from('documents')
+                  .remove(oldFilePaths);
+              }
+            } catch (error) {
+              console.warn('Could not delete old attached files:', error);
             }
           }
         }

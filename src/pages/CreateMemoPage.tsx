@@ -354,13 +354,45 @@ const CreateMemoPage = () => {
       };
 
       if (isEditMode && originalMemo) {
+        // Delete old PDF and attached files from storage
+        try {
+          const pathsToDelete: string[] = [];
+
+          // Old PDF
+          if (originalMemo.pdf_draft_path) {
+            const oldPdfPath = originalMemo.pdf_draft_path.split('/documents/')[1];
+            if (oldPdfPath) pathsToDelete.push(oldPdfPath);
+          }
+
+          // Old attached files
+          if (originalMemo.attached_files) {
+            let oldFiles: string[] = [];
+            if (typeof originalMemo.attached_files === 'string') {
+              try { oldFiles = JSON.parse(originalMemo.attached_files); } catch { oldFiles = []; }
+            } else if (Array.isArray(originalMemo.attached_files)) {
+              oldFiles = originalMemo.attached_files;
+            }
+            for (const f of oldFiles) {
+              const p = f?.split('/documents/')[1];
+              if (p) pathsToDelete.push(p);
+            }
+          }
+
+          if (pathsToDelete.length > 0) {
+            console.log('🗑️ Deleting old files before re-upload:', pathsToDelete);
+            await supabase.storage.from('documents').remove(pathsToDelete);
+          }
+        } catch (err) {
+          console.warn('Could not delete old files:', err);
+        }
+
         const { error } = await supabase
           .from('memos')
           .update(memoDataToInsert)
           .eq('id', originalMemo.id);
-          
+
         if (error) throw error;
-        
+
         toast({
           title: 'อัพเดตสำเร็จ',
           description: 'บันทึกข้อความถูกอัพเดตเรียบร้อยแล้ว',

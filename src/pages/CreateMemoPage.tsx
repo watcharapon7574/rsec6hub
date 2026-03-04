@@ -9,7 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useMemoErrorHandler } from '@/hooks/useMemoErrorHandler';
 import { MemoFormData } from '@/types/memo';
-import { Upload, FileText, FileCheck, ArrowLeft, AlertCircle, Sparkles, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, FileText, FileCheck, ArrowLeft, AlertCircle, Sparkles, Eye, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AnimatedProgress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -68,6 +68,10 @@ const CreateMemoPage = () => {
   const [isUploadedMemo, setIsUploadedMemo] = useState(false);
   const [uploadedPdfFile, setUploadedPdfFile] = useState<File | null>(null);
   const [uploadingPdf, setUploadingPdf] = useState(false);
+
+  // Modal for large text editing
+  const [textModalField, setTextModalField] = useState<'introduction' | 'fact' | 'proposal' | null>(null);
+  const [textModalValue, setTextModalValue] = useState('');
 
   const [formData, setFormData] = useState<MemoFormData>({
     doc_number: '', // ธุรการจะเป็นคนใส่
@@ -1425,14 +1429,17 @@ const CreateMemoPage = () => {
                       <Label htmlFor="introduction" className="text-sm font-medium text-foreground">
                         ต้นเรื่อง
                       </Label>
-                      <Textarea
-                        id="introduction"
-                        value={formData.introduction}
-                        onChange={(e) => handleInputChange('introduction', e.target.value)}
-                        rows={3}
-                        placeholder="ข้อความเปิดหรือบริบทของเรื่อง"
-                        className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
-                      />
+                      <div
+                        onClick={() => { setTextModalField('introduction'); setTextModalValue(formData.introduction || ''); }}
+                        className="min-h-[80px] p-3 rounded-md border border-border bg-background cursor-pointer hover:border-blue-400 transition-colors relative group"
+                      >
+                        {formData.introduction ? (
+                          <p className="text-sm whitespace-pre-wrap line-clamp-3">{formData.introduction}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">ข้อความเปิดหรือบริบทของเรื่อง</p>
+                        )}
+                        <Maximize2 className="absolute top-2 right-2 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1478,28 +1485,34 @@ const CreateMemoPage = () => {
                       <Label htmlFor="fact" className="text-sm font-medium text-foreground">
                         ข้อเท็จจริง
                       </Label>
-                      <Textarea
-                        id="fact"
-                        value={formData.fact}
-                        onChange={(e) => handleInputChange('fact', e.target.value)}
-                        rows={4}
-                        placeholder="ระบุข้อเท็จจริงที่เกิดขึ้น"
-                        className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
-                      />
+                      <div
+                        onClick={() => { setTextModalField('fact'); setTextModalValue(formData.fact || ''); }}
+                        className="min-h-[100px] p-3 rounded-md border border-border bg-background cursor-pointer hover:border-blue-400 transition-colors relative group"
+                      >
+                        {formData.fact ? (
+                          <p className="text-sm whitespace-pre-wrap line-clamp-4">{formData.fact}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">ระบุข้อเท็จจริงที่เกิดขึ้น</p>
+                        )}
+                        <Maximize2 className="absolute top-2 right-2 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="proposal" className="text-sm font-medium text-foreground">
                         ข้อเสนอและพิจารณา
                       </Label>
-                      <Textarea
-                        id="proposal"
-                        value={formData.proposal}
-                        onChange={(e) => handleInputChange('proposal', e.target.value)}
-                        rows={4}
-                        placeholder="ระบุข้อเสนอแนะหรือแนวทางดำเนินการ"
-                        className="border-border focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200 resize-none"
-                      />
+                      <div
+                        onClick={() => { setTextModalField('proposal'); setTextModalValue(formData.proposal || ''); }}
+                        className="min-h-[100px] p-3 rounded-md border border-border bg-background cursor-pointer hover:border-blue-400 transition-colors relative group"
+                      >
+                        {formData.proposal ? (
+                          <p className="text-sm whitespace-pre-wrap line-clamp-4">{formData.proposal}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">ระบุข้อเสนอแนะหรือแนวทางดำเนินการ</p>
+                        )}
+                        <Maximize2 className="absolute top-2 right-2 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </div>
 
                     {/* Special Character Help (Collapsible) */}
@@ -1649,6 +1662,46 @@ const CreateMemoPage = () => {
       <div className="h-32" />
         </>
       )}
+
+      {/* Modal for large text editing */}
+      <Dialog open={textModalField !== null} onOpenChange={(open) => { if (!open) setTextModalField(null); }}>
+        <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0">
+          <div className="flex items-center justify-between px-6 pt-6 pb-2">
+            <DialogTitle className="text-lg font-semibold">
+              {textModalField === 'introduction' && 'ต้นเรื่อง'}
+              {textModalField === 'fact' && 'ข้อเท็จจริง'}
+              {textModalField === 'proposal' && 'ข้อเสนอและพิจารณา'}
+            </DialogTitle>
+            <DialogDescription className="sr-only">กรอกเนื้อหา</DialogDescription>
+          </div>
+          <div className="flex-1 px-6 pb-2 min-h-0">
+            <Textarea
+              autoFocus
+              value={textModalValue}
+              onChange={(e) => setTextModalValue(e.target.value)}
+              className="w-full h-full resize-none border-border focus:border-blue-500 focus:ring-blue-500/20 text-base leading-relaxed"
+              placeholder={
+                textModalField === 'introduction' ? 'ข้อความเปิดหรือบริบทของเรื่อง' :
+                textModalField === 'fact' ? 'ระบุข้อเท็จจริงที่เกิดขึ้น' :
+                'ระบุข้อเสนอแนะหรือแนวทางดำเนินการ'
+              }
+            />
+          </div>
+          <div className="flex justify-end gap-2 px-6 pb-6 pt-2 border-t">
+            <Button variant="outline" onClick={() => setTextModalField(null)}>
+              ยกเลิก
+            </Button>
+            <Button onClick={() => {
+              if (textModalField) {
+                handleInputChange(textModalField, textModalValue);
+              }
+              setTextModalField(null);
+            }}>
+              บันทึก
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

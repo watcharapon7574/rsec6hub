@@ -63,7 +63,7 @@ export class NewsfeedService {
     }
 
     // Collect unique user_ids for name lookup
-    const userIds = [...new Set((reactions || []).map((r: any) => r.user_id).filter(Boolean))];
+    const userIds = [...new Set((reactions || []).map((r: any) => r.user_id).filter(Boolean))] as string[];
 
     // Query profiles separately (no FK join needed)
     const profileMap: Record<string, string> = {};
@@ -257,11 +257,60 @@ export class NewsfeedService {
     if (error) throw error;
   }
 
+  // ==================== Create Post ====================
+
+  static async createPost(data: {
+    userId: string;
+    authorName: string;
+    authorPosition?: string;
+    authorAvatarUrl?: string;
+    title?: string;
+    description: string;
+    category?: string;
+    tags?: string[];
+    images?: string[];
+    youtubeUrl?: string | null;
+  }): Promise<FeedPost> {
+    const { data: created, error } = await (supabase
+      .from('feed_posts') as any)
+      .insert({
+        user_id: data.userId,
+        author_name: data.authorName,
+        author_position: data.authorPosition || null,
+        author_avatar_url: data.authorAvatarUrl || null,
+        title: data.title || null,
+        description: data.description,
+        category: data.category || null,
+        tags: data.tags || [],
+        images: data.images || [],
+        youtube_url: data.youtubeUrl || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NewsfeedService.transformPost(created);
+  }
+
+  static async uploadPostImage(file: File, userId: string): Promise<string> {
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `newsfeed/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('documents').upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+    if (error) throw error;
+    const { data } = supabase.storage.from('documents').getPublicUrl(path);
+    return data.publicUrl;
+  }
+
   // ==================== Update Post ====================
 
   static async updatePost(
     postId: string,
-    data: { title?: string; description: string; category?: string; tags?: string[] }
+    data: { title?: string; description: string; category?: string; tags?: string[]; youtube_url?: string | null }
   ): Promise<FeedPost> {
     const { data: updated, error } = await (supabase
       .from('feed_posts') as any)
@@ -270,6 +319,7 @@ export class NewsfeedService {
         description: data.description,
         category: data.category || null,
         tags: data.tags || [],
+        youtube_url: data.youtube_url !== undefined ? data.youtube_url : null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', postId)

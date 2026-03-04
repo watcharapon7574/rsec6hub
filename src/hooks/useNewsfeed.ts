@@ -270,6 +270,10 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
     }));
   }, []);
 
+  const addPost = useCallback((post: FeedPost) => {
+    setPosts(prev => [post, ...prev]);
+  }, []);
+
   const editPost = useCallback(async (
     postId: string,
     data: { title?: string; description: string; category?: string; tags?: string[] }
@@ -415,6 +419,7 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
     stats,
     fetchMore,
     refetch: fetchPosts,
+    addPost,
     toggleReaction,
     addComment,
     deleteComment,

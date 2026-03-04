@@ -539,14 +539,14 @@ const ApproveDocumentPage: React.FC = () => {
                 { type: "comment", value: `- ${commentPrefix}${comment.trim()}` },
                 { type: "image", file_key: "sig1" },
                 { type: "name", value: fullName },
-                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
-                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
+                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || signerProfile.job_position || ""}` },
+                { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
               ];
               linesWithoutComment = [
                 { type: "image", file_key: "sig1" },
                 { type: "name", value: fullName },
-                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
-                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
+                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || signerProfile.job_position || ""}` },
+                { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
               ];
             } else {
               // ถ้าไม่มี comment แต่เป็น admin ให้แสดง [admin] เท่านั้น
@@ -555,22 +555,22 @@ const ApproveDocumentPage: React.FC = () => {
                   { type: "comment", value: `- ${commentPrefix.trim()}` },
                   { type: "image", file_key: "sig1" },
                   { type: "name", value: fullName },
-                  { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
-                  { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
+                  { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || signerProfile.job_position || ""}` },
+                  { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
                 ];
               } else {
                 linesWithComment = [
                   { type: "image", file_key: "sig1" },
                   { type: "name", value: fullName },
-                  { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
-                  { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
+                  { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || signerProfile.job_position || ""}` },
+                  { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
                 ];
               }
               linesWithoutComment = [
                 { type: "image", file_key: "sig1" },
                 { type: "name", value: fullName },
-                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || ""}` },
-                { type: "org_structure_role", value: `ปฏิบัติหน้าที่${signerProfile.org_structure_role || ""}` }
+                { type: "academic_rank", value: `ตำแหน่ง ${signerProfile.academic_rank || signerProfile.job_position || ""}` },
+                { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
               ];
             }
           } else if (signingPosition === 'deputy_director') {

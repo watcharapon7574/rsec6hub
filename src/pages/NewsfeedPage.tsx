@@ -7,6 +7,7 @@ import NewsfeedPostCard from '@/components/Newsfeed/NewsfeedPostCard';
 import NewsfeedSkeleton from '@/components/Newsfeed/NewsfeedSkeleton';
 import NewsfeedCategoryFilter from '@/components/Newsfeed/NewsfeedCategoryFilter';
 import NewsfeedSearchBar from '@/components/Newsfeed/NewsfeedSearchBar';
+import NewsfeedCreatePost from '@/components/Newsfeed/NewsfeedCreatePost';
 
 const getPositionText = (position: string) => {
   const positions: Record<string, string> = {
@@ -36,6 +37,7 @@ const NewsfeedPage = () => {
     stats,
     fetchMore,
     refetch,
+    addPost,
     toggleReaction,
     addComment,
     deleteComment,
@@ -94,6 +96,17 @@ const NewsfeedPage = () => {
 
       {/* Feed content — Facebook-like narrow width */}
       <div className="mx-auto px-4 max-w-[680px]">
+        {/* Create Post */}
+        {!searchQuery && !selectedCategory && (
+          <NewsfeedCreatePost
+            userId={profile.user_id}
+            authorName={displayName}
+            authorPosition={userInfo}
+            authorAvatarUrl={profile.profile_picture_url || undefined}
+            onPostCreated={addPost}
+          />
+        )}
+
         {/* Search */}
         <div className="mb-3">
           <NewsfeedSearchBar onSearch={handleSearch} />

@@ -240,6 +240,25 @@ const NewsfeedPostCard = ({ post, currentUserId, isDirector, onReaction, onAddCo
         <NewsfeedImageGrid images={post.images} />
       )}
 
+      {/* YouTube Embed */}
+      {post.youtube_url && (() => {
+        const match = post.youtube_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+        const videoId = match?.[1];
+        if (!videoId) return null;
+        return (
+          <div className="mx-0 mt-0 aspect-video bg-black overflow-hidden">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+              title="YouTube video"
+            />
+          </div>
+        );
+      })()}
+
       {/* Location */}
       {post.location?.name && (
         <div className="flex items-center gap-1 text-xs text-muted-foreground px-4 py-1.5">

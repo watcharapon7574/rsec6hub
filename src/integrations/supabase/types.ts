@@ -550,6 +550,7 @@ export type Database = {
           title: string | null
           updated_at: string | null
           user_id: string | null
+          youtube_url: string | null
         }
         Insert: {
           acknowledged_at?: string | null
@@ -569,6 +570,7 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           user_id?: string | null
+          youtube_url?: string | null
         }
         Update: {
           acknowledged_at?: string | null
@@ -588,6 +590,7 @@ export type Database = {
           title?: string | null
           updated_at?: string | null
           user_id?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }

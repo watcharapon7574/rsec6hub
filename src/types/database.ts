@@ -149,6 +149,7 @@ export interface FeedPost {
   author_position?: string;
   author_avatar_url?: string;
   images?: string[];
+  youtube_url?: string | null;
   location?: { name: string; lat?: number; lng?: number };
   created_at: string;
   updated_at: string;

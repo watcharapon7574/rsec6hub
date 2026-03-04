@@ -489,6 +489,105 @@ const DocumentManagePage: React.FC = () => {
     }
   };
 
+  // Function to stamp existing PDF with document number (for uploaded memos)
+  const stampPdfWithDocNumber = async (docSuffix: string) => {
+    if (!memo || !profile?.user_id) return null;
+
+    try {
+      const pdfUrl = extractPdfUrl(memo.pdf_draft_path);
+      if (!pdfUrl) throw new Error('ไม่พบไฟล์ PDF ของเอกสาร');
+
+      console.log('🎨 Stamping uploaded PDF with doc number:', docSuffix);
+
+      // Fetch existing PDF
+      const pdfRes = await fetch(pdfUrl);
+      if (!pdfRes.ok) throw new Error('ไม่สามารถดาวน์โหลด PDF ต้นฉบับ');
+      const pdfBlob = await pdfRes.blob();
+
+      // Prepare stamp payload
+      const now = new Date();
+      const thaiDate = now.toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'short',
+        year: '2-digit'
+      });
+      const thaiTime = now.toLocaleTimeString('th-TH', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }) + ' น.';
+
+      const clerkName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+
+      const receiveNumFormData = new FormData();
+      receiveNumFormData.append('pdf', pdfBlob, 'document.pdf');
+      receiveNumFormData.append('payload', JSON.stringify({
+        page: 0,
+        color: [2, 53, 139],
+        register_no: docSuffix,
+        date: thaiDate,
+        time: thaiTime,
+        receiver: clerkName
+      }));
+
+      // Call /receive_num API with queue + retry logic
+      const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const stampRes = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num', {
+            method: 'POST',
+            body: receiveNumFormData
+          });
+
+          if (!stampRes.ok) {
+            const errorText = await stampRes.text();
+            throw new Error(`Stamp API Error: ${stampRes.status} - ${errorText}`);
+          }
+
+          const blob = await stampRes.blob();
+          if (blob.size === 0) throw new Error('Received empty stamped PDF');
+          return blob;
+        },
+        'Memo Stamp (Document Number)',
+        3,
+        1000
+      );
+
+      // Ensure valid auth session before upload
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          throw new Error('กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)');
+        }
+      }
+
+      // Upload stamped PDF
+      const fileName = `memo_stamped_${Date.now()}_${docSuffix.replace(/[^\w]/g, '_')}.pdf`;
+      const filePath = `memos/${profile.user_id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, stampedPdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Failed to upload stamped PDF: ${uploadError.message}`);
+      }
+
+      // Get public URL with cache-busting
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      return `${publicUrl}?t=${Date.now()}`;
+    } catch (error) {
+      console.error('Error stamping PDF:', error);
+      throw error;
+    }
+  };
+
   // Function to assign document number
   const handleAssignNumber = async () => {
     // ใช้ค่าจาก input หรือใช้ค่า suggested ถ้าไม่ได้กรอกอะไร
@@ -523,8 +622,20 @@ const DocumentManagePage: React.FC = () => {
         assigned_at: now
       };
 
-      // Regenerate PDF with document number
-      const newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
+      // ตรวจสอบว่าเป็น memo ที่สร้างจากการอัพโหลด PDF หรือไม่
+      const formDataType = (memo?.form_data as any)?.type;
+      const isUploadedMemo = formDataType === 'upload_memo' || formDataType === 'upload_report_memo';
+
+      let newPdfUrl: string | null = null;
+      if (isUploadedMemo) {
+        // อัพโหลด PDF → ใช้ stamp API ปั๊มตราเลขหนังสือมุมกระดาษ
+        console.log('📌 Uploaded memo detected — using stamp API');
+        newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix);
+      } else {
+        // สร้างจากฟอร์ม → regenerate PDF ใหม่ทั้งฉบับพร้อมเลขหนังสือ
+        console.log('📄 Form memo detected — regenerating PDF');
+        newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
+      }
 
       // Update memo with document number, status, clerk_id, and new PDF URL
       const updateData: any = {
@@ -536,7 +647,7 @@ const DocumentManagePage: React.FC = () => {
 
       console.log('📝 Step 1 - Recording clerk_id:', profile?.user_id, 'for memo:', memoId);
 
-      // Update PDF path if regeneration was successful
+      // Update PDF path if new PDF was generated/stamped successfully
       if (newPdfUrl) {
         updateData.pdf_draft_path = newPdfUrl;
       }
@@ -556,7 +667,9 @@ const DocumentManagePage: React.FC = () => {
       setIsNumberAssigned(true);
       toast({
         title: "ลงเลขหนังสือสำเร็จ",
-        description: `เลขหนังสือ ${fullDocNumber} ถูกบันทึกและสร้าง PDF ใหม่แล้ว`,
+        description: isUploadedMemo
+          ? `เลขหนังสือ ${fullDocNumber} ถูกปั๊มตราลงบน PDF แล้ว`
+          : `เลขหนังสือ ${fullDocNumber} ถูกบันทึกและสร้าง PDF ใหม่แล้ว`,
       });
     } catch (error) {
       console.error('Error assigning document number:', error);
@@ -591,8 +704,30 @@ const DocumentManagePage: React.FC = () => {
         description: "ระบบกำลังรวมไฟล์เอกสารหลักกับไฟล์แนบ กรุณารอสักครู่..."
       });
       setShowLoadingModal(true); // เริ่มแสดง loading modal
-      
+
       try {
+        // สำหรับ uploaded memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิม
+        const formDataType = (memo.form_data as any)?.type;
+        const isUploadedMemo = formDataType === 'upload_memo' || formDataType === 'upload_report_memo';
+        const revisionCount = (memo as any).revision_count || 0;
+
+        if (isUploadedMemo && isNumberAssigned && revisionCount > 0 && docNumberSuffix) {
+          console.log('🔄 Re-stamping uploaded memo after rejection, revision:', revisionCount);
+          setLoadingMessage({
+            title: "กำลังปั๊มตราเลขหนังสือใหม่",
+            description: "ระบบกำลังลงตราเลขหนังสือบน PDF ที่อัพโหลดใหม่..."
+          });
+
+          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix);
+          if (stampedUrl) {
+            await supabase
+              .from('memos')
+              .update({ pdf_draft_path: stampedUrl, updated_at: new Date().toISOString() })
+              .eq('id', memo.id);
+            await refetch();
+            console.log('✅ Re-stamped PDF saved:', stampedUrl);
+          }
+        }
         // Get attached files
         let attachedFiles = [];
         if (memo.attached_files) {

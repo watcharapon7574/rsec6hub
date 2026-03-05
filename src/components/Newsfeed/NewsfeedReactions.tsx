@@ -373,7 +373,7 @@ const NewsfeedReactions = ({
             <button
               onClick={onAcknowledge}
               disabled={isAcknowledged}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex-[2] sm:flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors ${
                 isAcknowledged
                   ? 'text-green-500 cursor-default'
                   : 'text-muted-foreground hover:bg-muted'
@@ -386,7 +386,7 @@ const NewsfeedReactions = ({
                   </svg>
                 </div>
               ) : (
-                <CheckCircle className="h-5 w-5" />
+                <CheckCircle className="h-5 w-5 shrink-0" />
               )}
               <span>{isAcknowledged ? 'รับทราบแล้ว' : 'รับทราบ'}</span>
             </button>

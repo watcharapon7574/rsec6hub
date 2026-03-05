@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Play } from 'lucide-react';
 import { transformImageUrl, imagePresets } from '@/utils/imageTransform';
+import type { MediaItem } from './NewsfeedImageGrid';
 
 interface Props {
-  images: string[];
+  items: MediaItem[];
   startIndex: number;
   onClose: () => void;
 }
 
-const NewsfeedImageLightbox = ({ images, startIndex, onClose }: Props) => {
+const NewsfeedImageLightbox = ({ items, startIndex, onClose }: Props) => {
   const [current, setCurrent] = useState(startIndex);
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -17,17 +18,21 @@ const NewsfeedImageLightbox = ({ images, startIndex, onClose }: Props) => {
   const touchStartY = useRef(0);
 
   const fullImages = useMemo(
-    () => images.map(url => transformImageUrl(url, imagePresets.postFull) || url),
-    [images]
+    () => items.map(item =>
+      item.type === 'image'
+        ? (transformImageUrl(item.url, imagePresets.postFull) || item.url)
+        : item.thumbnail
+    ),
+    [items]
   );
 
   const prev = useCallback(() => {
-    setCurrent(c => (c > 0 ? c - 1 : images.length - 1));
-  }, [images.length]);
+    setCurrent(c => (c > 0 ? c - 1 : items.length - 1));
+  }, [items.length]);
 
   const next = useCallback(() => {
-    setCurrent(c => (c < images.length - 1 ? c + 1 : 0));
-  }, [images.length]);
+    setCurrent(c => (c < items.length - 1 ? c + 1 : 0));
+  }, [items.length]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -70,6 +75,8 @@ const NewsfeedImageLightbox = ({ images, startIndex, onClose }: Props) => {
     if (e.target === backdropRef.current) onClose();
   };
 
+  const currentItem = items[current];
+
   const content = (
     <div
       ref={backdropRef}
@@ -81,7 +88,7 @@ const NewsfeedImageLightbox = ({ images, startIndex, onClose }: Props) => {
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <span className="text-white/80 text-sm font-medium">
-          {current + 1} / {images.length}
+          {current + 1} / {items.length}
         </span>
         <button
           onClick={onClose}
@@ -91,27 +98,42 @@ const NewsfeedImageLightbox = ({ images, startIndex, onClose }: Props) => {
         </button>
       </div>
 
-      {/* Image area */}
+      {/* Media area */}
       <div className="flex-1 min-h-0 flex items-center justify-center relative px-2">
-        {/* Loading spinner */}
-        {!loaded[current] && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        {currentItem.type === 'youtube' ? (
+          /* YouTube iframe player */
+          <div className="w-full max-w-4xl aspect-video">
+            <iframe
+              key={`yt-${currentItem.videoId}`}
+              src={`https://www.youtube.com/embed/${currentItem.videoId}?autoplay=1`}
+              className="w-full h-full rounded-lg"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="YouTube video"
+            />
           </div>
+        ) : (
+          /* Image viewer */
+          <>
+            {!loaded[current] && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
+            )}
+            <img
+              key={current}
+              src={fullImages[current]}
+              alt=""
+              className="max-h-full max-w-full object-contain select-none"
+              style={{ opacity: loaded[current] ? 1 : 0, transition: 'opacity 0.2s' }}
+              draggable={false}
+              onLoad={() => setLoaded(prev => ({ ...prev, [current]: true }))}
+            />
+          </>
         )}
 
-        <img
-          key={current}
-          src={fullImages[current]}
-          alt=""
-          className="max-h-full max-w-full object-contain select-none"
-          style={{ opacity: loaded[current] ? 1 : 0, transition: 'opacity 0.2s' }}
-          draggable={false}
-          onLoad={() => setLoaded(prev => ({ ...prev, [current]: true }))}
-        />
-
         {/* Nav arrows — desktop only */}
-        {images.length > 1 && (
+        {items.length > 1 && (
           <>
             <button
               onClick={(e) => { e.stopPropagation(); prev(); }}
@@ -130,24 +152,29 @@ const NewsfeedImageLightbox = ({ images, startIndex, onClose }: Props) => {
       </div>
 
       {/* Thumbnail strip */}
-      {images.length > 1 && (
+      {items.length > 1 && (
         <div className="flex items-center justify-center gap-1.5 px-4 py-3 shrink-0 overflow-x-auto">
-          {images.map((url, i) => (
+          {items.map((item, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
-              className={`shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+              className={`relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
                 i === current
                   ? 'border-white opacity-100 scale-105'
                   : 'border-transparent opacity-50 hover:opacity-80'
               }`}
             >
               <img
-                src={url}
+                src={item.type === 'image' ? item.url : item.thumbnail}
                 alt=""
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
+              {item.type === 'youtube' && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Play className="h-4 w-4 text-white fill-white drop-shadow" />
+                </div>
+              )}
             </button>
           ))}
         </div>

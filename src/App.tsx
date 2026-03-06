@@ -40,6 +40,7 @@ import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import TelegramAssigneesPage from "@/pages/TelegramAssigneesPage";
 import OcrUploadPage from "@/pages/OcrUploadPage";
 import OcrSearchPage from "@/pages/OcrSearchPage";
+import PayslipPage from "@/pages/PayslipPage";
 import RegisterInternalPage from "@/pages/RegisterInternalPage";
 import RegisterExternalPage from "@/pages/RegisterExternalPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
@@ -272,6 +273,11 @@ const AppContent = () => {
       <Route path="/ocr-search" element={
         <ProtectedRoute isAuthenticated={isAuthenticated}>
           <OcrSearchPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/payslips" element={
+        <ProtectedRoute isAuthenticated={isAuthenticated}>
+          <PayslipPage />
         </ProtectedRoute>
       } />
       <Route path="/" element={

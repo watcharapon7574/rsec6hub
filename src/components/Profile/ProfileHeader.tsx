@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Shield, Download, Edit, Save, KeyRound, Settings } from 'lucide-react';
+import { User, Shield, Download, Edit, Save, KeyRound, Settings, Banknote } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AdminSettingsButton from './AdminSettingsButton';
@@ -52,6 +52,16 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       </div>
 
       <div className="flex items-center space-x-2">
+        <Button
+          onClick={() => navigate('/payslips')}
+          variant="outline"
+          size="sm"
+          className="text-blue-600 dark:text-blue-400 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
+        >
+          <Banknote className="h-4 w-4 mr-2" />
+          สลิปเงินเดือน
+        </Button>
+
         {onOpenSettings && (
           <Button
             onClick={onOpenSettings}

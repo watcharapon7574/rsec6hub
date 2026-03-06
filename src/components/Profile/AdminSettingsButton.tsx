@@ -9,6 +9,7 @@ import {
   Power,
   ChevronDown,
   Shield,
+  Banknote,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -53,6 +54,12 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
           icon: KeyRound,
           path: '/admin/otp-management',
           description: 'จัดการผู้รับ OTP และดู Login Logs',
+        },
+        {
+          label: 'ผู้นำเข้าสลิปเงินเดือน',
+          icon: Banknote,
+          path: '/payslips',
+          description: 'ตั้งค่าพนักงานผู้มีสิทธิ์อัพโหลดสลิปเงินเดือน',
         },
       ],
     },

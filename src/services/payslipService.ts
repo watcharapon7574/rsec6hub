@@ -110,32 +110,8 @@ async function callProxy(model: string, method: string, body: any): Promise<any>
 async function callGenerate(model: string, parts: any[]): Promise<string> {
   const data = await callProxy(model, 'generateContent', {
     contents: [{ role: 'user', parts }],
-    generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
   });
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-}
-
-async function withRetry<T>(fn: (model: string) => Promise<T>, models = ['gemini-2.5-flash'], maxRetries = 2): Promise<T> {
-  for (const model of models) {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await fn(model);
-      } catch (err: any) {
-        const status = err?.status;
-        const msg = err?.message || '';
-        const is429 = status === 429 || msg.includes('429') || msg.includes('quota');
-        const isRetryable = status === 503 || status === 504 || msg.includes('network') || msg.includes('timeout') || msg.includes('overloaded');
-        if (is429) break;
-        if (isRetryable && attempt < maxRetries) {
-          await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
-          continue;
-        }
-        if (isRetryable) break;
-        throw err;
-      }
-    }
-  }
-  throw new Error('Gemini models unavailable. Please try again later.');
 }
 
 // ==================== PDF utilities ====================
@@ -146,88 +122,229 @@ async function loadPdf(data: ArrayBuffer): Promise<pdfjsLib.PDFDocumentProxy> {
 
 async function extractPageText(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<string> {
   const page = await pdf.getPage(pageNum);
-  const viewport = page.getViewport({ scale: 1 });
-  const pageWidth = viewport.width;
   const textContent = await page.getTextContent();
-
-  const items = (textContent.items as any[])
-    .filter(item => item.str?.trim())
-    .map(item => ({
-      str: item.str as string,
-      x: item.transform[4] as number,
-      y: item.transform[5] as number,
-    }));
-
-  const midX = pageWidth / 2;
-  const left = items.filter(it => it.x < midX).sort((a, b) => b.y - a.y || a.x - b.x);
-  const right = items.filter(it => it.x >= midX).sort((a, b) => b.y - a.y || a.x - b.x);
-
-  const toText = (col: typeof left) => col.map(it => it.str).join(' ');
-  return `[LEFT COLUMN]
-${toText(left)}
-
-[RIGHT COLUMN]
-${toText(right)}`;
+  return (textContent.items as any[])
+    .filter(it => it.str?.trim())
+    .map(it => it.str as string)
+    .join(' ');
 }
 
-// ==================== OCR ====================
+// ==================== Gemini OCR ====================
 
-const PAYSLIP_PROMPT = `Extract payslip data from this Thai government salary slip page.
-This page contains TWO payslips side by side: LEFT column and RIGHT column.
+const PAYSLIP_PROMPT = `สลิปเงินเดือนราชการไทย 1 หน้า มี 2 สลิปเรียงซ้าย-ขวา แต่ละสลิปมีโครงสร้างตายตัว:
+- ชื่อ-นามสกุล (มีคำนำหน้า เช่น นาย/นาง/นางสาว)
+- ตำแหน่ง/หน่วยงาน
+- รายรับ 10 รายการ (income_items):
+  1. เงินเดือน
+  2. เงินเดือน (ตกเบิก)
+  3. เงินปจต. / วิชาชีพ / วิทยฐานะ
+  4. เงินปจต. / วิชาชีพ / วิทยฐานะ (ตกเบิก)
+  5. ต.ข.ท.ปจต./ ต.ข.8-8ว./ ต.ด.ข.1-7
+  6. ต.ข.ท.ปจต./ ต.ข.8-8ว./ ต.ด.ข.1-7(ตกเบิก)
+  7. เงินช่วยเหลือบุตร
+  8. เงิน พ.ส.ร./ พ.ต.ก.
+  9. เงินตอบแทนพิเศษ
+  10. อื่น ๆ
+- รวมรายรับ (total_income)
+- รายจ่าย 10 รายการ (deduction_items):
+  1. ภาษี
+  2. ค่าทุนเรือนหุ้น - เงินกู้สหกรณ์
+  3. กบข./กสจ. (รายเดือน)
+  4. เงินกู้เพื่อที่อยู่อาศัย
+  5. เงินกู้เพื่อการศึกษา
+  6. เงินกู้ยานพาหนะ
+  7. ค่าฌาปนกิจ / เงินช่วยเหลืองานศพ
+  8. เงินบำรุง / เงินทุน /กู้สวัสดิการ / สงเคราะห์
+  9. เงินบำรุงเรียกคืน / ชดใช้ทางแพ่ง / อายัดเงิน
+  10. อื่น ๆ
+- รวมรายจ่าย (total_deductions)
+- รับสุทธิ (net_pay)
 
-IMPORTANT rules for income_items and deduction_items:
-- Include ALL line items listed in the document, even if the amount cell is blank or zero.
-- If an item has no amount, set "amount": null.
-- Do NOT skip any item from the list.
-
-For EACH person extract as JSON exactly:
+ตอบ JSON เท่านั้น ห้ามมี markdown:
 {
   "left": {
     "name": "ชื่อ-นามสกุล",
-    "position": "ตำแหน่ง/ตำแหน่งงาน",
-    "income_items": [{"label": "เงินเดือน", "amount": 25350.00}, {"label": "เงินเดือน (ตกเบิก)", "amount": null}],
-    "deduction_items": [{"label": "ภาษี", "amount": null}, {"label": "กบข./กสจ. (รายเดือน)", "amount": 760.50}],
+    "position": "ตำแหน่ง/หน่วยงาน",
+    "income_items": [
+      {"label": "เงินเดือน", "amount": 25350.00},
+      {"label": "เงินเดือน (ตกเบิก)", "amount": null},
+      {"label": "เงินปจต. / วิชาชีพ / วิทยฐานะ", "amount": null},
+      {"label": "เงินปจต. / วิชาชีพ / วิทยฐานะ (ตกเบิก)", "amount": null},
+      {"label": "ต.ข.ท.ปจต./ ต.ข.8-8ว./ ต.ด.ข.1-7", "amount": null},
+      {"label": "ต.ข.ท.ปจต./ ต.ข.8-8ว./ ต.ด.ข.1-7(ตกเบิก)", "amount": null},
+      {"label": "เงินช่วยเหลือบุตร", "amount": null},
+      {"label": "เงิน พ.ส.ร./ พ.ต.ก.", "amount": null},
+      {"label": "เงินตอบแทนพิเศษ", "amount": null},
+      {"label": "อื่น ๆ", "amount": 2500.00}
+    ],
+    "deduction_items": [
+      {"label": "ภาษี", "amount": null},
+      {"label": "ค่าทุนเรือนหุ้น - เงินกู้สหกรณ์", "amount": null},
+      {"label": "กบข./กสจ. (รายเดือน)", "amount": 760.50},
+      {"label": "เงินกู้เพื่อที่อยู่อาศัย", "amount": null},
+      {"label": "เงินกู้เพื่อการศึกษา", "amount": null},
+      {"label": "เงินกู้ยานพาหนะ", "amount": null},
+      {"label": "ค่าฌาปนกิจ / เงินช่วยเหลืองานศพ", "amount": null},
+      {"label": "เงินบำรุง / เงินทุน /กู้สวัสดิการ / สงเคราะห์", "amount": null},
+      {"label": "เงินบำรุงเรียกคืน / ชดใช้ทางแพ่ง / อายัดเงิน", "amount": null},
+      {"label": "อื่น ๆ", "amount": 750.00}
+    ],
     "total_income": 27850.00,
     "total_deductions": 1510.50,
     "net_pay": 26339.50
   },
-  "right": { "name": "", "position": "", "income_items": [], "deduction_items": [], "total_income": 0, "total_deductions": 0, "net_pay": 0 }
+  "right": { ... }
 }
 
-Return ONLY valid JSON, no markdown, no explanation.`;
+กฎสำคัญ:
+- income_items ต้องมีครบ 10 รายการเสมอ
+- deduction_items ต้องมีครบ 10 รายการเสมอ
+- ถ้ารายการใดไม่มีจำนวนเงิน → "amount": null
+- name ต้องไม่ว่างเปล่า ทั้ง 2 คน
+- ตอบ JSON เท่านั้น ห้าม markdown หรือคำอธิบาย`;
 
-export async function ocrPayslipPage(pageText: string, pageNum: number): Promise<PageOcrResult> {
-  return withRetry(async model => {
-    const raw = await callGenerate(model, [
-      { text: `${PAYSLIP_PROMPT}
+const OCR_MODEL = 'gemini-2.5-flash';
 
-Page text content:
-${pageText}` },
-    ]);
+function validateOcr(result: PageOcrResult): boolean {
+  for (const side of ['left', 'right'] as const) {
+    const d = result[side];
+    if (!d.name) return false;
+    if (d.income_items.length < 10) return false;
+    if (d.deduction_items.length < 10) return false;
+  }
+  return true;
+}
 
-    const cleaned = raw.replace(/```json[\s\S]*?```|```/g, s =>
-      s.startsWith('```json') ? s.slice(7, -3).trim() : ''
-    ).trim();
+function scoreOcr(result: PageOcrResult): number {
+  let s = 0;
+  for (const side of ['left', 'right'] as const) {
+    const d = result[side];
+    if (d.name) s += 10;
+    s += d.income_items.length;
+    s += d.deduction_items.length;
+    if (d.total_income > 0) s += 5;
+    if (d.total_deductions > 0) s += 5;
+    if (d.net_pay > 0) s += 5;
+  }
+  return s;
+}
 
-    const parsed = JSON.parse(cleaned);
-    // Gemini sometimes wraps result in an array: [{"top":...,"bottom":...}]
-    const obj = Array.isArray(parsed) ? parsed[0] : parsed;
+async function ocrPayslipPage(pageText: string): Promise<PageOcrResult> {
+  const raw = await callGenerate(OCR_MODEL, [
+    { text: `${PAYSLIP_PROMPT}\n\nข้อความในหน้า:\n${pageText}` },
+  ]);
+  const cleaned = raw.replace(/```json\s*/g, '').replace(/```/g, '').trim();
+  const parsed = JSON.parse(cleaned);
+  const obj = Array.isArray(parsed) ? parsed[0] : parsed;
 
-    const normalizeItems = (arr: any[]): PayslipItem[] =>
-      arr.map(it => ({ label: String(it?.label || ''), amount: it?.amount == null ? null : Number(it.amount) }));
-
-    const normalize = (d: any): PayslipData => ({
-      name: d?.name || '',
-      position: d?.position || '',
-      income_items: Array.isArray(d?.income_items) ? normalizeItems(d.income_items) : [],
-      deduction_items: Array.isArray(d?.deduction_items) ? normalizeItems(d.deduction_items) : [],
-      total_income: Number(d?.total_income) || 0,
-      total_deductions: Number(d?.total_deductions) || 0,
-      net_pay: Number(d?.net_pay) || 0,
-    });
-
-    return { left: normalize(obj.left), right: normalize(obj.right), raw_text: raw };
+  const normalizeItems = (arr: any[]): PayslipItem[] =>
+    (arr || []).map(it => ({ label: String(it?.label || ''), amount: it?.amount == null ? null : Number(it.amount) }));
+  const normalize = (d: any): PayslipData => ({
+    name: String(d?.name || '').trim(),
+    position: String(d?.position || '').trim(),
+    income_items: normalizeItems(d?.income_items),
+    deduction_items: normalizeItems(d?.deduction_items),
+    total_income: Number(d?.total_income) || 0,
+    total_deductions: Number(d?.total_deductions) || 0,
+    net_pay: Number(d?.net_pay) || 0,
   });
+  return { left: normalize(obj.left), right: normalize(obj.right), raw_text: raw };
+}
+
+// ==================== Deterministic payslip parser ==
+
+const AMOUNT_RE = /^[\d,]+\.\d{2}$/;
+const NAME_RE = /^(นาย|นาง(?:สาว)?|ด\.ต\.|ว่าที่|ร\.ต\.อ\.|ร\.ต\.|จ\.ส\.[อตท]\.)/u;
+const FOOTER_RE = /ลงชื่อ|ผู้มีหน้าที่จ่ายเงิน|วัน เดือน ปี ที่ออก/;
+const ROW_Y_THRESHOLD = 4;
+const SKIP_LABELS = new Set(['รายรับ', 'รายจ่าย', 'รายการ', 'ลำดับ', 'จำนวนเงิน(บาท)', 'จำนวนเงิน (บาท)', 'หลักเกณฑ์']);
+
+interface TItem { str: string; x: number; y: number; }
+interface TRow  { y: number; tokens: string[]; }
+
+function groupRows(items: TItem[]): TRow[] {
+  const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
+  const rows: TRow[] = [];
+  for (const it of sorted) {
+    const last = rows[rows.length - 1];
+    if (last && Math.abs(last.y - it.y) <= ROW_Y_THRESHOLD) last.tokens.push(it.str);
+    else rows.push({ y: it.y, tokens: [it.str] });
+  }
+  return rows;
+}
+
+function rowAmount(tokens: string[]): number {
+  for (let i = tokens.length - 1; i >= 0; i--)
+    if (AMOUNT_RE.test(tokens[i])) return parseFloat(tokens[i].replace(/,/g, ''));
+  return 0;
+}
+
+function rowLabel(tokens: string[]): string {
+  const t = [...tokens];
+  if (t.length && AMOUNT_RE.test(t[t.length - 1])) t.pop();
+  if (t.length && /^\d+\.$/.test(t[0])) t.shift();
+  return t.join(' ').trim();
+}
+
+function parseColumn(items: TItem[]): PayslipData {
+  const rows = groupRows(items);
+  let name = '', position = '';
+  const incomeItems: PayslipItem[] = [];
+  const deductionItems: PayslipItem[] = [];
+  let totalIncome = 0, totalDeductions = 0, netPay = 0;
+  let phase = 0; // 0=find name, 1=position, 2=income items, 3=deduction items
+  let incomeTotalFound = false;
+
+  for (const row of rows) {
+    const text = row.tokens.join(' ').trim();
+    if (!text || SKIP_LABELS.has(text)) continue;
+
+    if (FOOTER_RE.test(text)) break;
+
+    if (phase === 0) {
+      if (NAME_RE.test(text)) { name = text; phase = 1; }
+      continue;
+    }
+    if (phase === 1) {
+      if (!AMOUNT_RE.test(text)) { position = text; }
+      phase = 2;
+      continue;
+    }
+
+    if (/^รวม/.test(text)) {
+      if (!incomeTotalFound) { totalIncome = rowAmount(row.tokens); incomeTotalFound = true; phase = 3; }
+      else { totalDeductions = rowAmount(row.tokens); phase = 4; }
+      continue;
+    }
+    if (text.includes('รับสุทธิ')) { netPay = rowAmount(row.tokens); continue; }
+
+    if (phase === 2 || phase === 3) {
+      const label = rowLabel(row.tokens);
+      if (!label) continue;
+      const hasAmt = AMOUNT_RE.test(row.tokens[row.tokens.length - 1]);
+      const item: PayslipItem = { label, amount: hasAmt ? rowAmount(row.tokens) : null };
+      if (phase === 2) incomeItems.push(item); else deductionItems.push(item);
+    }
+  }
+
+  return { name, position, income_items: incomeItems, deduction_items: deductionItems, total_income: totalIncome, total_deductions: totalDeductions, net_pay: netPay };
+}
+
+export async function parsePayslipPage(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<PageOcrResult> {
+  const page = await pdf.getPage(pageNum);
+  const viewport = page.getViewport({ scale: 1 });
+  const textContent = await page.getTextContent();
+  const allItems: TItem[] = (textContent.items as any[])
+    .filter(it => it.str?.trim())
+    .map(it => ({ str: it.str as string, x: it.transform[4] as number, y: it.transform[5] as number }));
+
+  const midX = viewport.width / 2;
+  const rawText = allItems.map(it => it.str).join(' ');
+  return {
+    left:  parseColumn(allItems.filter(it => it.x < midX)),
+    right: parseColumn(allItems.filter(it => it.x >= midX)),
+    raw_text: rawText,
+  };
 }
 
 // ==================== Name matching ====================
@@ -373,6 +490,8 @@ export async function insertPayslips(
     net_pay: r.netPay,
     raw_ocr_text: r.rawOcrText || null,
   }));
+  console.log('[payslip] insertPayslips:', records.length, 'records, matched:', records.filter(r => r.profile_id).length);
+  records.forEach((r, i) => console.log(`  [${i}] name=${r.employee_name}, profile_id=${r.profile_id}, half=${r.half}`));
   const { error } = await (supabase as any).from('payslips').insert(records);
   if (error) throw error;
 }
@@ -388,12 +507,12 @@ export async function updateBatchStatus(
 }
 
 export async function getMyPayslips(profileId: string): Promise<PayslipWithBatch[]> {
-  const { data, error } = await (supabase as any).from('payslips')
-    .select('*, batch:payslip_batches(*)')
-    .eq('profile_id', profileId)
-    .order('created_at', { ascending: false });
+  // Use RPC with SECURITY DEFINER to bypass RLS for legacy auth users
+  const { data, error } = await (supabase as any).rpc('get_payslips_by_profile', {
+    p_profile_id: profileId,
+  });
   if (error) throw error;
-  return data || [];
+  return (data || []) as PayslipWithBatch[];
 }
 
 export async function getPayslipBatches(): Promise<PayslipBatch[]> {
@@ -434,10 +553,6 @@ export async function uploadPayslipPdf(
 
 // ==================== Full OCR pipeline ====================
 
-const hasOcrData = (left: PayslipData, right: PayslipData) =>
-  left.name.trim() !== '' || left.net_pay > 0 || left.income_items.length > 0 ||
-  right.name.trim() !== '' || right.net_pay > 0 || right.income_items.length > 0;
-
 export async function processPayslipPdf(
   file: File,
   batchId: string,
@@ -446,37 +561,33 @@ export async function processPayslipPdf(
   const buffer = await file.arrayBuffer();
   const pdf = await loadPdf(buffer);
   const totalPages = pdf.numPages;
-
   const empty: PayslipData = { name: '', position: '', income_items: [], deduction_items: [], total_income: 0, total_deductions: 0, net_pay: 0 };
   let doneCount = 0;
 
   const tasks = Array.from({ length: totalPages }, (_, i) => {
     const pageNum = i + 1;
     return async () => {
+      let best: PageOcrResult | null = null;
       const pageText = await extractPageText(pdf, pageNum);
-      let entry: { left: PayslipData; right: PayslipData; pageNumber: number; rawText: string } =
-        { left: { ...empty }, right: { ...empty }, pageNumber: pageNum, rawText: '' };
-
-      const maxAttempts = 3;
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const MAX_ATTEMPTS = 3;
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         try {
-          const ocr = await ocrPayslipPage(pageText, pageNum);
-          entry = { left: ocr.left, right: ocr.right, pageNumber: pageNum, rawText: ocr.raw_text || '' };
-          if (hasOcrData(ocr.left, ocr.right)) break;
-          if (attempt < maxAttempts) await new Promise(r => setTimeout(r, 1000 * attempt));
-        } catch {
-          if (attempt < maxAttempts) await new Promise(r => setTimeout(r, 1000 * attempt));
-        }
+          const result = await ocrPayslipPage(pageText);
+          if (!best || scoreOcr(result) > scoreOcr(best)) best = result;
+          if (validateOcr(result)) break;
+        } catch { /* retry */ }
+        if (attempt < MAX_ATTEMPTS - 1) await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
       }
-
+      const entry = best
+        ? { left: best.left, right: best.right, pageNumber: pageNum, rawText: best.raw_text || '' }
+        : { left: { ...empty }, right: { ...empty }, pageNumber: pageNum, rawText: '' };
       doneCount++;
       onPageDone(doneCount, totalPages);
       return entry;
     };
   });
 
-  const results = await runPool(tasks, 5);
-  return results;
+  return runPool(tasks, 5);
 }
 
 // ==================== Admin settings ====================
@@ -486,7 +597,7 @@ export async function getPayslipUploader(): Promise<string> {
     .from('app_settings')
     .select('value')
     .eq('key', 'payslip_uploader_employee_id')
-    .single();
+    .maybeSingle();
   return (data as any)?.value || '';
 }
 

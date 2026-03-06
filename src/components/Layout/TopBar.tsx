@@ -128,7 +128,7 @@ const TopBar = () => {
 
             {/* Mobile Profile Avatar - Only shown on small screens */}
             {profile && (
-              <div className="sm:hidden flex items-center space-x-2 min-w-0">
+              <Link to="/profile" className="sm:hidden flex items-center space-x-2 min-w-0" style={{ textDecoration: 'none' }}>
                 <Avatar className="h-8 w-8 flex-shrink-0">
                   <AvatarImage src={profile.profile_picture_url || undefined} />
                   <AvatarFallback className="bg-gradient-primary text-white text-xs font-semibold shadow-primary">
@@ -140,7 +140,7 @@ const TopBar = () => {
                     {profile.first_name}
                   </div>
                 </div>
-              </div>
+              </Link>
             )}
           </div>
 

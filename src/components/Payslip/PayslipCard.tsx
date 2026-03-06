@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Banknote, TrendingUp, TrendingDown } from 'lucide-react';
+import { Download, Loader2, Banknote, TrendingUp, TrendingDown } from 'lucide-react';
 import type { PayslipWithBatch, PayslipItem } from '@/services/payslipService';
 import { cropPayslipPDF } from '@/services/payslipService';
 import { useToast } from '@/hooks/use-toast';
@@ -87,7 +87,7 @@ const PayslipCard = ({ payslip }: Props) => {
           disabled={downloading}
           className="bg-white/15 text-white border-0 hover:bg-white/25 gap-1.5"
         >
-          <Download className="h-3.5 w-3.5" />
+          {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
           PDF
         </Button>
       </div>

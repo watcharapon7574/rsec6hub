@@ -608,12 +608,20 @@ export async function setPayslipUploader(employeeId: string): Promise<void> {
   if (error) throw error;
 }
 
-// ==================== PDF crop (Railway placeholder) ====================
+// ==================== PDF crop via Edge Function ====================
 
 export async function cropPayslipPDF(
-  _fileUrl: string,
-  _page: number,
-  _half: 'left' | 'right'
+  fileUrl: string,
+  page: number,
+  half: 'left' | 'right',
+  centerOffset = 0
 ): Promise<Blob> {
-  throw new Error('Railway crop endpoint ยังไม่ได้ configure — กรุณาตั้งค่า Railway API ก่อน');
+  const { data, error } = await supabase.functions.invoke('crop-payslip', {
+    body: { file_url: fileUrl, page, half, center_offset: centerOffset },
+  });
+  if (error) throw new Error(error.message || 'Crop failed');
+  // supabase.functions.invoke returns data as Blob when Content-Type is not JSON
+  if (data instanceof Blob) return data;
+  // fallback: if returned as ArrayBuffer or other
+  return new Blob([data], { type: 'application/pdf' });
 }

@@ -14,8 +14,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Loader2, ExternalLink, ChevronLeft, ChevronRight,
-  Save, X, Pencil, ArrowUpDown, Search, FileText, PenLine, Hash, FileSpreadsheet, CalendarRange
+  Save, X, Pencil, ArrowUpDown, Search, FileText, PenLine, Hash, FileSpreadsheet, CalendarRange, Trash2
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -65,6 +75,10 @@ const RegisterTable: React.FC<RegisterTableProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState({ action_taken: '', remarks: '' });
   const [saving, setSaving] = useState(false);
+
+  // Delete state
+  const [deleteEntry, setDeleteEntry] = useState<RegisterEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Year filter
   const currentBuddhistYear = new Date().getFullYear() + 543;
@@ -217,6 +231,57 @@ const RegisterTable: React.FC<RegisterTableProps> = ({
   };
 
   const cancelEdit = () => setEditingId(null);
+
+  const handleDelete = async () => {
+    if (!deleteEntry) return;
+    setDeleting(true);
+    try {
+      if (deleteEntry.source_type === 'manual') {
+        // Hard delete manual entry
+        const { error } = await (supabase as any)
+          .from('document_register_manual')
+          .delete()
+          .eq('id', deleteEntry.source_id);
+        if (error) throw error;
+      } else {
+        // For system entries, delete the extra record and soft-remove from register
+        // by inserting a doc_del marker on the source
+        const sourceTable = deleteEntry.source_type === 'memo' ? 'memos' : 'doc_receive';
+        const { error } = await (supabase as any)
+          .from(sourceTable)
+          .update({
+            doc_del: {
+              deleted_at: new Date().toISOString(),
+              deleted_from: 'register',
+            },
+          })
+          .eq('id', deleteEntry.source_id);
+        if (error) throw error;
+
+        // Also delete extra record if exists
+        if (deleteEntry.extra_id) {
+          await (supabase as any)
+            .from('document_register_extra')
+            .delete()
+            .eq('id', deleteEntry.extra_id);
+        }
+      }
+
+      toast({ title: 'ลบรายการสำเร็จ' });
+      setDeleteEntry(null);
+      fetchData();
+      onDataChange?.();
+    } catch (err: any) {
+      console.error('Error deleting:', err);
+      toast({
+        title: 'ลบไม่สำเร็จ',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const getEditKey = (entry: RegisterEntry) => entry.extra_id || entry.source_id;
 
@@ -465,7 +530,7 @@ const RegisterTable: React.FC<RegisterTableProps> = ({
               <TableHead className="min-w-[160px] text-xs font-semibold">เรื่อง</TableHead>
               <TableHead className="min-w-[100px] text-xs font-semibold">การปฏิบัติ</TableHead>
               <TableHead className="min-w-[100px] text-xs font-semibold">หมายเหตุ</TableHead>
-              <TableHead className="w-[60px] text-center text-xs font-semibold">ดู</TableHead>
+              <TableHead className="w-[90px] text-center text-xs font-semibold">จัดการ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -561,20 +626,28 @@ const RegisterTable: React.FC<RegisterTableProps> = ({
                       )}
                     </TableCell>
 
-                    {/* ดูเอกสาร */}
+                    {/* จัดการ */}
                     <TableCell className="text-center">
-                      {entry.source_type !== 'manual' ? (
+                      <div className="flex items-center justify-center gap-0.5">
+                        {entry.source_type !== 'manual' && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950"
+                            onClick={() => viewDocument(entry)}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950"
-                          onClick={() => viewDocument(entry)}
+                          className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                          onClick={() => setDeleteEntry(entry)}
                         >
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                      ) : (
-                        <span className="text-muted-foreground/30">-</span>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -612,6 +685,37 @@ const RegisterTable: React.FC<RegisterTableProps> = ({
           </Button>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteEntry} onOpenChange={(open) => !open && setDeleteEntry(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันการลบรายการ</AlertDialogTitle>
+            <AlertDialogDescription>
+              ต้องการลบรายการลำดับที่ <span className="font-semibold">{deleteEntry?.register_number}</span>
+              {deleteEntry?.subject && (
+                <> เรื่อง "<span className="font-semibold">{deleteEntry.subject}</span>"</>
+              )} หรือไม่?
+              {deleteEntry?.source_type !== 'manual' && (
+                <span className="block mt-2 text-red-500 text-xs">
+                  หมายเหตุ: รายการนี้มาจากระบบ การลบจะทำให้เอกสารต้นฉบับถูกลบด้วย
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              ลบรายการ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

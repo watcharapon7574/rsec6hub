@@ -50,6 +50,7 @@ const DocumentManagePage: React.FC = () => {
   });
   const [isAssigningNumber, setIsAssigningNumber] = useState(false);
   const [isNumberAssigned, setIsNumberAssigned] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
 
   // Calculate current year dynamically
   const currentBuddhistYear = new Date().getFullYear() + 543;
@@ -274,6 +275,18 @@ const DocumentManagePage: React.FC = () => {
   const directors = profiles.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
   const authorProfile = memo ? profiles.find(p => p.user_id === memo.user_id) : null;
 
+  // Auto-select assistant_director based on selected group
+  const handleGroupChange = (group: string) => {
+    setSelectedGroup(group);
+    // Match group name to assistant_director's org_structure_role (หัวหน้า + ฝ่ายXxx)
+    const matched = assistantDirectors.find(p =>
+      p.org_structure_role?.includes(group)
+    );
+    if (matched) {
+      setSelectedAssistant(matched.user_id || matched.id);
+    }
+  };
+
   // Build signers list
   const signers = React.useMemo(() => {
     const list = [];
@@ -490,50 +503,42 @@ const DocumentManagePage: React.FC = () => {
   };
 
   // Function to stamp existing PDF with document number (for uploaded memos)
-  const stampPdfWithDocNumber = async (docSuffix: string) => {
+  const stampPdfWithDocNumber = async (docSuffix: string, groupName?: string, pdfUrlOverride?: string) => {
     if (!memo || !profile?.user_id) return null;
 
     try {
-      const pdfUrl = extractPdfUrl(memo.pdf_draft_path);
+      const pdfUrl = pdfUrlOverride || extractPdfUrl(memo.pdf_draft_path);
       if (!pdfUrl) throw new Error('ไม่พบไฟล์ PDF ของเอกสาร');
 
-      console.log('🎨 Stamping uploaded PDF with doc number:', docSuffix);
+      console.log('🎨 Stamping PDF with doc number:', docSuffix, 'group:', groupName);
 
       // Fetch existing PDF
       const pdfRes = await fetch(pdfUrl);
       if (!pdfRes.ok) throw new Error('ไม่สามารถดาวน์โหลด PDF ต้นฉบับ');
       const pdfBlob = await pdfRes.blob();
 
-      // Prepare stamp payload
+      // Prepare stamp payload for /receive_num2
       const now = new Date();
       const thaiDate = now.toLocaleDateString('th-TH', {
         day: 'numeric',
         month: 'short',
         year: '2-digit'
       });
-      const thaiTime = now.toLocaleTimeString('th-TH', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }) + ' น.';
-
-      const clerkName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
 
       const receiveNumFormData = new FormData();
       receiveNumFormData.append('pdf', pdfBlob, 'document.pdf');
       receiveNumFormData.append('payload', JSON.stringify({
         page: 0,
         color: [2, 53, 139],
+        group_name: groupName || '',
         register_no: docSuffix,
-        date: thaiDate,
-        time: thaiTime,
-        receiver: clerkName
+        date: thaiDate
       }));
 
-      // Call /receive_num API with queue + retry logic
+      // Call /receive_num2 API with queue + retry logic
       const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const stampRes = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num', {
+          const stampRes = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num2', {
             method: 'POST',
             body: receiveNumFormData
           });
@@ -628,13 +633,17 @@ const DocumentManagePage: React.FC = () => {
 
       let newPdfUrl: string | null = null;
       if (isUploadedMemo) {
-        // อัพโหลด PDF → ใช้ stamp API ปั๊มตราเลขหนังสือมุมกระดาษ
+        // อัพโหลด PDF → ใช้ stamp API ปั๊มตราเลขหนังสือมุมขวาบน
         console.log('📌 Uploaded memo detected — using stamp API');
-        newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix);
+        newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup);
       } else {
-        // สร้างจากฟอร์ม → regenerate PDF ใหม่ทั้งฉบับพร้อมเลขหนังสือ
-        console.log('📄 Form memo detected — regenerating PDF');
+        // สร้างจากฟอร์ม → regenerate PDF ใหม่ทั้งฉบับ แล้วปั๊มตราเลขหนังสือมุมขวาบน
+        console.log('📄 Form memo detected — regenerating PDF then stamping');
         newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
+        if (newPdfUrl) {
+          const stampedUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup, newPdfUrl);
+          if (stampedUrl) newPdfUrl = stampedUrl;
+        }
       }
 
       // Update memo with document number, status, clerk_id, and new PDF URL
@@ -718,7 +727,7 @@ const DocumentManagePage: React.FC = () => {
             description: "ระบบกำลังลงตราเลขหนังสือบน PDF ที่อัพโหลดใหม่..."
           });
 
-          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix);
+          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, selectedGroup);
           if (stampedUrl) {
             await supabase
               .from('memos')
@@ -1406,6 +1415,8 @@ const DocumentManagePage: React.FC = () => {
               isNumberAssigned={isNumberAssigned}
               isAssigningNumber={isAssigningNumber}
               memo={memo}
+              selectedGroup={selectedGroup}
+              onSelectedGroupChange={handleGroupChange}
               onDocNumberSuffixChange={setDocNumberSuffix}
               onAssignNumber={handleAssignNumber}
               onNext={handleNext}

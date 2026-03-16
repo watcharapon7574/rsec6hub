@@ -9,7 +9,8 @@ import {
   CheckCircle,
   FileText,
   Eye,
-  ClipboardCheck
+  ClipboardCheck,
+  Building2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAllMemos } from '@/hooks/useAllMemos';
@@ -23,8 +24,10 @@ import { mergeMemoWithAttachments } from '@/services/memoManageAPIcall';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
 import Step4Review from '@/components/DocumentManage/Step4Review';
+import { DEPARTMENT_OPTIONS } from '@/components/DocumentManage/Step1DocumentNumber';
 
 interface SignerInfo {
   order: number;
@@ -71,6 +74,8 @@ const ManageReportMemoPage: React.FC = () => {
   const [isNumberAssigned, setIsNumberAssigned] = useState(false);
   const [isAssigningNumber, setIsAssigningNumber] = useState(false);
   const [suggestedDocNumber, setSuggestedDocNumber] = useState('');
+
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
 
   // Reject state (ใช้กับ RejectionCard)
   const [isRejecting, setIsRejecting] = useState(false);
@@ -401,6 +406,66 @@ const ManageReportMemoPage: React.FC = () => {
   };
 
   // Handle assign document number
+  const stampPdfWithDocNumber = async (docSuffix: string, groupName: string, pdfUrlOverride?: string) => {
+    if (!reportMemo || !profile?.user_id) return null;
+    try {
+      const pdfUrl = pdfUrlOverride || extractPdfUrl(reportMemo.pdf_draft_path);
+      if (!pdfUrl) throw new Error('ไม่พบไฟล์ PDF ของเอกสาร');
+
+      const pdfRes = await fetch(pdfUrl);
+      if (!pdfRes.ok) throw new Error('ไม่สามารถดาวน์โหลด PDF ต้นฉบับ');
+      const pdfBlob = await pdfRes.blob();
+
+      const now = new Date();
+      const thaiDate = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+
+      const formData = new FormData();
+      formData.append('pdf', pdfBlob, 'document.pdf');
+      formData.append('payload', JSON.stringify({
+        page: 0,
+        color: [2, 53, 139],
+        group_name: groupName,
+        register_no: docSuffix,
+        date: thaiDate
+      }));
+
+      const stampedBlob = await railwayPDFQueue.enqueueWithRetry(
+        async () => {
+          const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num2', {
+            method: 'POST',
+            body: formData
+          });
+          if (!res.ok) throw new Error(`Stamp API Error: ${res.status} - ${await res.text()}`);
+          const blob = await res.blob();
+          if (blob.size === 0) throw new Error('Received empty stamped PDF');
+          return blob;
+        },
+        'Report Memo Stamp',
+        3,
+        1000
+      );
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) throw new Error('กรุณาเข้าสู่ระบบใหม่ (Session หมดอายุ)');
+      }
+
+      const fileName = `memo_stamped_${Date.now()}_${docSuffix.replace(/[^\w]/g, '_')}.pdf`;
+      const filePath = `memos/${profile.user_id}/${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, stampedBlob, { contentType: 'application/pdf', upsert: true });
+      if (uploadError) throw new Error(`Failed to upload: ${uploadError.message}`);
+
+      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath);
+      return `${publicUrl}?t=${Date.now()}`;
+    } catch (error) {
+      console.error('Error stamping PDF:', error);
+      throw error;
+    }
+  };
+
   const handleAssignNumber = async () => {
     // ใช้ค่าจาก input หรือใช้ค่า suggested ถ้าไม่ได้กรอกอะไร
     let finalDocSuffix = docNumberSuffix.trim() || suggestedDocNumber;
@@ -434,8 +499,20 @@ const ManageReportMemoPage: React.FC = () => {
         clerk_id: profile?.user_id || null
       };
 
-      // Regenerate PDF with document number
-      const newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
+      // Detect if uploaded or form-based
+      const formDataType = (reportMemo?.form_data as any)?.type;
+      const isUploadedMemo = formDataType === 'upload_report_memo';
+
+      let newPdfUrl: string | null = null;
+      if (isUploadedMemo) {
+        newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup);
+      } else {
+        newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
+        if (newPdfUrl) {
+          const stampedUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup, newPdfUrl);
+          if (stampedUrl) newPdfUrl = stampedUrl;
+        }
+      }
 
       // Update memo with document number, status, clerk_id, and new PDF URL
       const updateData: any = {
@@ -1183,12 +1260,33 @@ const ManageReportMemoPage: React.FC = () => {
                     </p>
                   )}
                 </div>
+
+                {/* Department/Group Selection */}
+                <div>
+                  <Label className="flex items-center gap-2 mb-1">
+                    <Building2 className="h-4 w-4" />
+                    เลือกฝ่าย (สำหรับตราปั๊ม)
+                  </Label>
+                  <Select value={selectedGroup} onValueChange={setSelectedGroup} disabled={isNumberAssigned}>
+                    <SelectTrigger className={isNumberAssigned ? 'bg-muted cursor-not-allowed' : ''}>
+                      <SelectValue placeholder="เลือกฝ่าย..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border z-50 shadow-lg">
+                      {DEPARTMENT_OPTIONS.map((dept) => (
+                        <SelectItem key={dept} value={dept} className="cursor-pointer">
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex flex-wrap justify-between gap-2">
                   <div /> {/* Empty div for spacing */}
                   <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={handleAssignNumber}
-                      disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || isNumberAssigned || isAssigningNumber}
+                      disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || !selectedGroup || isNumberAssigned || isAssigningNumber}
                       className={isNumberAssigned
                         ? "bg-muted dark:bg-card text-muted-foreground border-border cursor-not-allowed"
                         : "bg-green-600 text-white hover:bg-green-700 transition-colors"

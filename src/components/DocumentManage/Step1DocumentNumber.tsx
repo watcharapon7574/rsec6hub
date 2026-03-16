@@ -3,11 +3,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, FileText } from 'lucide-react';
+import { CheckCircle, FileText, Building2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { extractPdfUrl } from '@/utils/fileUpload';
+
+export const DEPARTMENT_OPTIONS = [
+  'ฝ่ายบริหารวิชาการ',
+  'ฝ่ายบริหารงานบุคคล',
+  'ฝ่ายบริหารกิจการพิเศษ',
+  'ฝ่ายบริหารงบประมาณ',
+  'ฝ่ายบริหารทั่วไป',
+] as const;
 
 interface Step1Props {
   documentNumber: string;
@@ -16,6 +25,8 @@ interface Step1Props {
   isNumberAssigned: boolean;
   isAssigningNumber: boolean;
   memo: any;
+  selectedGroup: string;
+  onSelectedGroupChange: (value: string) => void;
   onDocNumberSuffixChange: (value: string) => void;
   onAssignNumber: () => void;
   onNext: () => void;
@@ -33,6 +44,8 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
   isNumberAssigned,
   isAssigningNumber,
   memo,
+  selectedGroup,
+  onSelectedGroupChange,
   onDocNumberSuffixChange,
   onAssignNumber,
   onNext,
@@ -103,12 +116,37 @@ const Step1DocumentNumber: React.FC<Step1Props> = ({
               </p>
             )}
           </div>
+
+          {/* Department/Group Selection */}
+          <div>
+            <Label className="flex items-center gap-2 mb-1">
+              <Building2 className="h-4 w-4" />
+              เลือกฝ่าย (สำหรับตราปั๊ม)
+            </Label>
+            <Select
+              value={selectedGroup}
+              onValueChange={onSelectedGroupChange}
+              disabled={isNumberAssigned}
+            >
+              <SelectTrigger className={isNumberAssigned ? 'bg-muted cursor-not-allowed' : ''}>
+                <SelectValue placeholder="เลือกฝ่าย..." />
+              </SelectTrigger>
+              <SelectContent className="bg-card border z-50 shadow-lg">
+                {DEPARTMENT_OPTIONS.map((dept) => (
+                  <SelectItem key={dept} value={dept} className="cursor-pointer">
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex justify-between">
             <div /> {/* Empty div for spacing */}
             <div className="flex gap-2">
               <Button 
                 onClick={onAssignNumber}
-                disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || isNumberAssigned || isAssigningNumber}
+                disabled={(!docNumberSuffix.trim() && !suggestedDocNumber) || !selectedGroup || isNumberAssigned || isAssigningNumber}
                 className={isNumberAssigned 
                   ? "bg-muted dark:bg-card text-muted-foreground border-border cursor-not-allowed" 
                   : "bg-green-600 text-white hover:bg-green-700 transition-colors"

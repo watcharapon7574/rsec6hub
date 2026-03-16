@@ -19,6 +19,7 @@ interface Step4ReviewProps {
   note: string;
   taskDescription?: string;
   eventDate?: Date | null;
+  eventEndDate?: Date | null;
   eventTime?: string;
   location?: string;
 }
@@ -30,6 +31,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
   note,
   taskDescription,
   eventDate,
+  eventEndDate,
   eventTime,
   location
 }) => {
@@ -126,6 +128,7 @@ const Step4Review: React.FC<Step4ReviewProps> = ({
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-3.5 w-3.5 text-pink-500" />
                           {formatDisplayDate(eventDate)}
+                          {eventEndDate && ` — ${formatDisplayDate(eventEndDate)}`}
                         </div>
                       )}
                       {eventTime && (

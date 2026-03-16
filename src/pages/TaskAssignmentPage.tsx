@@ -50,6 +50,7 @@ const TaskAssignmentPage = () => {
   // New states for Step3 task details
   const [taskDescription, setTaskDescription] = useState('');
   const [eventDate, setEventDate] = useState<Date | null>(new Date()); // Default to today
+  const [eventEndDate, setEventEndDate] = useState<Date | null>(null);
   const [eventTime, setEventTime] = useState('');
   const [location, setLocation] = useState('');
 
@@ -200,6 +201,7 @@ const TaskAssignmentPage = () => {
           note: note || undefined,
           taskDescription: taskDescription || undefined,
           eventDate: eventDate,
+          eventEndDate: eventEndDate,
           eventTime: eventTime || undefined,
           location: location || undefined,
           selectionInfo: selectionInfo
@@ -305,6 +307,8 @@ const TaskAssignmentPage = () => {
               onTaskDescriptionChange={setTaskDescription}
               eventDate={eventDate}
               onEventDateChange={setEventDate}
+              eventEndDate={eventEndDate}
+              onEventEndDateChange={setEventEndDate}
               eventTime={eventTime}
               onEventTimeChange={setEventTime}
               location={location}
@@ -322,6 +326,7 @@ const TaskAssignmentPage = () => {
               note={note}
               taskDescription={taskDescription}
               eventDate={eventDate}
+              eventEndDate={eventEndDate}
               eventTime={eventTime}
               location={location}
             />

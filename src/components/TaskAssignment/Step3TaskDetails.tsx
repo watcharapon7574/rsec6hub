@@ -61,6 +61,8 @@ interface Step3TaskDetailsProps {
   // When - Event date and time
   eventDate: Date | null;
   onEventDateChange: (date: Date | null) => void;
+  eventEndDate: Date | null;
+  onEventEndDateChange: (date: Date | null) => void;
   eventTime: string;
   onEventTimeChange: (time: string) => void;
 
@@ -79,6 +81,8 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
   onTaskDescriptionChange,
   eventDate,
   onEventDateChange,
+  eventEndDate,
+  onEventEndDateChange,
   eventTime,
   onEventTimeChange,
   location,
@@ -174,6 +178,32 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
                   mode="single"
                   selected={eventDate || undefined}
                   onSelect={(date) => onEventDateChange(date || null)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* End Date */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
+                >
+                  <Calendar className="mr-2 h-4 w-4 text-pink-500" />
+                  {eventEndDate ? (
+                    <span>ถึง {formatDisplayDate(eventEndDate)}</span>
+                  ) : (
+                    <span className="text-muted-foreground">ถึงวันที่... (ไม่จำเป็น)</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-card" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={eventEndDate || undefined}
+                  onSelect={(date) => onEventEndDateChange(date || null)}
+                  disabled={(date) => eventDate ? date < eventDate : false}
                   initialFocus
                 />
               </PopoverContent>

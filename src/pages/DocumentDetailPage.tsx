@@ -37,6 +37,7 @@ interface DocumentDetail {
     // New task detail fields
     task_description: string | null;
     event_date: string | null;
+    event_end_date: string | null;
     event_time: string | null;
     location: string | null;
     leader_note: string | null;
@@ -149,6 +150,7 @@ const DocumentDetailPage: React.FC = () => {
           assigned_to,
           task_description,
           event_date,
+          event_end_date,
           event_time,
           location,
           leader_note
@@ -200,6 +202,7 @@ const DocumentDetailPage: React.FC = () => {
           completion_note: task.completion_note,
           task_description: task.task_description,
           event_date: task.event_date,
+          event_end_date: task.event_end_date,
           event_time: task.event_time,
           location: task.location,
           leader_note: task.leader_note
@@ -447,6 +450,7 @@ const DocumentDetailPage: React.FC = () => {
                                   <label className="text-xs font-medium text-pink-700 dark:text-pink-300">วันที่/เวลา</label>
                                   <p className="text-sm text-foreground">
                                     {task.event_date && new Date(task.event_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                    {task.event_end_date && ` — ${new Date(task.event_end_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`}
                                     {task.event_date && task.event_time && ' '}
                                     {task.event_time && `เวลา ${task.event_time} น.`}
                                   </p>

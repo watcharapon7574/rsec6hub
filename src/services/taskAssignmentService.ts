@@ -21,6 +21,7 @@ export interface TaskAssignment {
   note: string | null;
   task_description: string | null;
   event_date: string | null;
+  event_end_date: string | null;
   event_time: string | null;
   location: string | null;
   completion_note: string | null;
@@ -62,6 +63,7 @@ export interface TaskDetailsOptions {
   note?: string;
   taskDescription?: string;
   eventDate?: Date | null;
+  eventEndDate?: Date | null;
   eventTime?: string;
   location?: string;
   // Team management
@@ -89,6 +91,7 @@ export interface TaskAssignmentWithDetails {
   // New task detail fields
   task_description: string | null;
   event_date: string | null;
+  event_end_date: string | null;
   event_time: string | null;
   location: string | null;
   // Team management fields
@@ -165,6 +168,9 @@ class TaskAssignmentService {
       }
       if (options?.eventDate) {
         updateData.event_date = options.eventDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      }
+      if (options?.eventEndDate) {
+        updateData.event_end_date = options.eventEndDate.toISOString().split('T')[0];
       }
       if (options?.eventTime) {
         updateData.event_time = options.eventTime;
@@ -282,15 +288,17 @@ class TaskAssignmentService {
       }
 
       // Format event date for Thai display
-      let formattedDate = '';
-      if (options?.eventDate) {
-        const date = options.eventDate;
+      const formatThaiDate = (d: Date) => {
         const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
                            'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-        const day = date.getDate();
-        const month = thaiMonths[date.getMonth()];
-        const year = date.getFullYear() + 543;
-        formattedDate = `${day} ${month} ${year}`;
+        return `${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+      };
+      let formattedDate = '';
+      if (options?.eventDate) {
+        formattedDate = formatThaiDate(options.eventDate);
+        if (options?.eventEndDate) {
+          formattedDate += ` — ${formatThaiDate(options.eventEndDate)}`;
+        }
       }
 
       // Send notification to Edge Function
@@ -875,6 +883,7 @@ class TaskAssignmentService {
         note: parent.note,
         task_description: parent.task_description,
         event_date: parent.event_date,
+        event_end_date: parent.event_end_date,
         event_time: parent.event_time,
         location: parent.location,
         assignment_source: 'name', // Team members are added by name

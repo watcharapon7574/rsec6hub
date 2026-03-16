@@ -1071,13 +1071,15 @@ const DocumentManagePage: React.FC = () => {
           
           if (authorPositions.length > 0) {
             // สร้าง signatures payload สำหรับ /add_signature_v2 (format ใหม่)
-            const signaturesPayload = authorPositions.map(pos => ({
+            // จุดแรก: แสดงครบ (ลายเซ็น, ชื่อ, ตำแหน่ง) / จุดที่ 2+: แค่รูปลายเซ็น PNG
+            const linesImageOnly = [{ type: "image", file_key: "sig1" }];
+            const signaturesPayload = authorPositions.map((pos, index) => ({
               page: pos.page - 1, // ปรับจาก 1-based (frontend) เป็น 0-based (API)
               x: Math.round(pos.x), // ส่งพิกัด X โดยตรง
               y: Math.round(pos.y), // ส่งพิกัด Y โดยตรง
               width: 120,
               height: 60,
-              lines
+              lines: index === 0 ? lines : linesImageOnly
             }));
             
             formData.append('signatures', JSON.stringify(signaturesPayload));

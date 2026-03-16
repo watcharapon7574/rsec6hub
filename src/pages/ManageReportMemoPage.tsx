@@ -896,13 +896,15 @@ const ManageReportMemoPage: React.FC = () => {
             formData.append('pdf', pdfBlob, 'document.pdf');
             formData.append('sig1', sigBlob, 'signature.png');
 
-            const signaturesPayload = signerPositions.map(pos => ({
+            // จุดแรก: แสดงครบ (ลายเซ็น, ชื่อ, ตำแหน่ง) / จุดที่ 2+: แค่รูปลายเซ็น PNG
+            const linesImageOnly = [{ type: "image", file_key: "sig1" }];
+            const signaturesPayload = signerPositions.map((pos, index) => ({
               page: pos.page - 1,
               x: Math.round(pos.x),
               y: Math.round(pos.y),
               width: 120,
               height: 60,
-              lines
+              lines: index === 0 ? lines : linesImageOnly
             }));
             formData.append('signatures', JSON.stringify(signaturesPayload));
 

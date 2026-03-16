@@ -437,13 +437,15 @@ const PDFDocumentManagePage: React.FC = () => {
           console.log('✍️ Author positions found:', authorPositions.length);
 
           if (authorPositions.length > 0) {
-            const signaturesPayload = authorPositions.map(pos => ({
+            // จุดแรก: แสดงครบ (ลายเซ็น, ชื่อ, ตำแหน่ง) / จุดที่ 2+: แค่รูปลายเซ็น PNG
+            const linesImageOnly = [{ type: "image", file_key: "sig1" }];
+            const signaturesPayload = authorPositions.map((pos, index) => ({
               page: pos.page - 1,
               x: Math.round(pos.x),
               y: Math.round(pos.y),
               width: 120,
               height: 60,
-              lines
+              lines: index === 0 ? lines : linesImageOnly
             }));
 
             console.log('📝 Signatures payload:', signaturesPayload);

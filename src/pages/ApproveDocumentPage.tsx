@@ -696,13 +696,16 @@ const ApproveDocumentPage: React.FC = () => {
           }
           
           // สร้าง signatures payload สำหรับ Edge Function
+          // จุดแรก: แสดงครบ (comment, ลายเซ็น, ชื่อ, ตำแหน่ง)
+          // จุดที่ 2+: แสดงแค่รูปลายเซ็น PNG อย่างเดียว
+          const linesImageOnly = [{ type: "image", file_key: "sig1" }];
           const signaturesPayload = userSignaturePositions.map((pos, index) => ({
             page: pos.page - 1,
             x: Math.round(pos.x),
             y: Math.round(pos.y),
             width: 120,
             height: 60,
-            lines: index === 0 ? linesWithComment : linesWithoutComment
+            lines: index === 0 ? linesWithComment : linesImageOnly
           }));
 
           console.log(`📝 Signatures payload (${userSignaturePositions.length} positions)`);

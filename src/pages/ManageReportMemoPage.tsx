@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { railwayPDFQueue } from '@/utils/requestQueue';
+import { railwayFetch } from '@/utils/railwayFetch';
 import { mergeMemoWithAttachments } from '@/services/memoManageAPIcall';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import Accordion from '@/components/OfficialDocuments/Accordion';
@@ -344,14 +345,12 @@ const ManageReportMemoPage: React.FC = () => {
       // Call Railway PDF API with queue + retry logic
       const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+          const response = await railwayFetch('/pdf', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/pdf',
             },
-            mode: 'cors',
-            credentials: 'omit',
             body: JSON.stringify(formData),
           });
 
@@ -435,7 +434,7 @@ const ManageReportMemoPage: React.FC = () => {
 
       const stampedBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num2', {
+          const res = await railwayFetch('/receive_num2', {
             method: 'POST',
             body: formData
           });
@@ -719,15 +718,13 @@ const ManageReportMemoPage: React.FC = () => {
   const handleNext = async () => {
     // If moving from step 1 to step 2, call PDFmerge API if there are attachments
     if (currentStep === 1 && reportMemo) {
-      // สำหรับ uploaded memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิม
-      const formDataType = (reportMemo.form_data as any)?.type;
-      const isUploadedMemo = formDataType === 'upload_report_memo';
+      // สำหรับ memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิมและฝ่ายเดิม
       const revisionCount = (reportMemo as any).revision_count || 0;
 
-      if (isUploadedMemo && isNumberAssigned && revisionCount > 0 && docNumberSuffix) {
+      if (isNumberAssigned && revisionCount > 0 && docNumberSuffix) {
         setLoadingMessage({
           title: 'กำลังปั๊มตราเลขหนังสือใหม่',
-          description: 'ระบบกำลังลงตราเลขหนังสือบน PDF ที่อัพโหลดใหม่...'
+          description: 'ระบบกำลังลงตราเลขหนังสือบน PDF ที่ส่งมาใหม่...'
         });
         setShowLoadingModal(true);
 
@@ -1031,7 +1028,7 @@ const ManageReportMemoPage: React.FC = () => {
             // Call signature API
             const signedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
               async () => {
-                const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
+                const res = await railwayFetch('/add_signature_v2', {
                   method: 'POST',
                   body: formData
                 });

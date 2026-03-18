@@ -135,6 +135,10 @@ const ManageReportMemoPage: React.FC = () => {
             setDocNumberSuffix(memo.doc_number);
           }
         }
+        // โหลดฝ่ายที่เลือกตอนลงเลขจาก DB
+        if ((memo as any).stamp_department) {
+          setSelectedGroup((memo as any).stamp_department);
+        }
 
         // 2. Find task_assignment with this report_memo_id (use RPC to bypass RLS)
         const { data: assignments, error: assignmentError } = await (supabase as any)
@@ -514,11 +518,12 @@ const ManageReportMemoPage: React.FC = () => {
         }
       }
 
-      // Update memo with document number, status, clerk_id, and new PDF URL
+      // Update memo with document number, status, clerk_id, department, and new PDF URL
       const updateData: any = {
         doc_number: finalDocSuffix, // บันทึกแค่ส่วน suffix เช่น 4571/68
         doc_number_status: docNumberStatus,
         clerk_id: profile?.user_id,
+        stamp_department: selectedGroup, // บันทึกฝ่ายที่เลือกสำหรับตราปั๊ม
         updated_at: now
       };
 
@@ -714,6 +719,44 @@ const ManageReportMemoPage: React.FC = () => {
   const handleNext = async () => {
     // If moving from step 1 to step 2, call PDFmerge API if there are attachments
     if (currentStep === 1 && reportMemo) {
+      // สำหรับ uploaded memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิม
+      const formDataType = (reportMemo.form_data as any)?.type;
+      const isUploadedMemo = formDataType === 'upload_report_memo';
+      const revisionCount = (reportMemo as any).revision_count || 0;
+
+      if (isUploadedMemo && isNumberAssigned && revisionCount > 0 && docNumberSuffix) {
+        setLoadingMessage({
+          title: 'กำลังปั๊มตราเลขหนังสือใหม่',
+          description: 'ระบบกำลังลงตราเลขหนังสือบน PDF ที่อัพโหลดใหม่...'
+        });
+        setShowLoadingModal(true);
+
+        try {
+          const groupForStamp = selectedGroup || (reportMemo as any).stamp_department || '';
+          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, groupForStamp);
+          if (stampedUrl) {
+            await supabase
+              .from('memos')
+              .update({ pdf_draft_path: stampedUrl, updated_at: new Date().toISOString() })
+              .eq('id', reportMemo.id);
+            setReportMemo((prev: any) => ({ ...prev, pdf_draft_path: stampedUrl }));
+            await refetch();
+            console.log('✅ Re-stamped report memo PDF saved:', stampedUrl);
+          }
+        } catch (error) {
+          console.error('Error re-stamping report memo:', error);
+          toast({
+            title: 'เกิดข้อผิดพลาด',
+            description: 'ไม่สามารถปั๊มตราเลขหนังสือใหม่ได้',
+            variant: 'destructive'
+          });
+          setShowLoadingModal(false);
+          return;
+        } finally {
+          setShowLoadingModal(false);
+        }
+      }
+
       const attachedFiles = getAttachedFiles(reportMemo);
 
       if (attachedFiles.length > 0) {

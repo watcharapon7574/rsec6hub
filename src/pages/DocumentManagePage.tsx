@@ -148,7 +148,7 @@ const DocumentManagePage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('memos')
-        .select('doc_number, doc_number_status')
+        .select('doc_number, doc_number_status, stamp_department')
         .eq('id', memoId)
         .single();
 
@@ -174,6 +174,10 @@ const DocumentManagePage: React.FC = () => {
         
         // Only consider as assigned if both status says so AND doc_number actually exists
         setIsNumberAssigned(statusAssigned && !!(data as any).doc_number);
+        // โหลดฝ่ายที่เลือกตอนลงเลขจาก DB
+        if ((data as any).stamp_department) {
+          setSelectedGroup((data as any).stamp_department);
+        }
         if ((data as any).doc_number) {
           const docNumber = (data as any).doc_number;
 
@@ -233,6 +237,10 @@ const DocumentManagePage: React.FC = () => {
       
       if (isAssigned && memo.doc_number) {
         setIsNumberAssigned(true);
+        // โหลดฝ่ายจาก memo data เป็น backup
+        if ((memo as any).stamp_department && !selectedGroup) {
+          setSelectedGroup((memo as any).stamp_department);
+        }
         if (memo.doc_number) {
           const docNumber = memo.doc_number;
 
@@ -647,11 +655,12 @@ const DocumentManagePage: React.FC = () => {
         }
       }
 
-      // Update memo with document number, status, clerk_id, and new PDF URL
+      // Update memo with document number, status, clerk_id, department, and new PDF URL
       const updateData: any = {
         doc_number: finalDocSuffix, // บันทึกแค่ส่วน suffix เช่น 4571/68
         doc_number_status: docNumberStatusData,
         clerk_id: profile?.user_id, // บันทึก user_id ของ clerk_teacher ที่ลงเลขหนังสือ
+        stamp_department: selectedGroup, // บันทึกฝ่ายที่เลือกสำหรับตราปั๊ม
         updated_at: now
       };
 
@@ -728,7 +737,9 @@ const DocumentManagePage: React.FC = () => {
             description: "ระบบกำลังลงตราเลขหนังสือบน PDF ที่อัพโหลดใหม่..."
           });
 
-          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, selectedGroup);
+          // ใช้ฝ่ายจาก state หรือ fallback จาก DB
+          const groupForStamp = selectedGroup || (memo as any).stamp_department || '';
+          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, groupForStamp);
           if (stampedUrl) {
             await supabase
               .from('memos')

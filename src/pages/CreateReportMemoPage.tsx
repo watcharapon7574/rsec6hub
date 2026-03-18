@@ -15,6 +15,7 @@ import { AnimatedProgress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { formatThaiDateFull, convertToThaiNumerals } from '@/utils/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { railwayFetch } from '@/utils/railwayFetch';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
 
 interface TaskInfo {
@@ -796,11 +797,9 @@ const CreateReportMemoPage = () => {
         author_position: formData.author_position || profile?.current_position || profile?.job_position || profile?.position || 'ไม่ระบุตำแหน่ง'
       };
 
-      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+      const response = await railwayFetch('/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/pdf' },
-        mode: 'cors',
-        credentials: 'omit',
         body: JSON.stringify(previewData),
       });
 

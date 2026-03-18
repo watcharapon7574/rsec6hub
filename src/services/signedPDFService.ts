@@ -1,6 +1,5 @@
 import { railwayPDFQueue } from '@/utils/requestQueue';
-
-const API_BASE_URL = 'https://pdf-memo-docx-production-25de.up.railway.app';
+import { railwayFetch } from '@/utils/railwayFetch';
 
 export interface SignedPDFRequest {
   name: string;
@@ -36,7 +35,7 @@ export const generateSignedPDF = async (data: SignedPDFRequest): Promise<Blob> =
   // Call Railway generate_signed_pdf API with queue + retry logic
   const pdfBlob = await railwayPDFQueue.enqueueWithRetry(
     async () => {
-      const response = await fetch(`${API_BASE_URL}/generate_signed_pdf`, {
+      const response = await railwayFetch('/generate_signed_pdf', {
         method: 'POST',
         body: formData,
         // ไม่ต้องตั้ง Content-Type เพราะ browser จะตั้งค่า boundary ให้เอง

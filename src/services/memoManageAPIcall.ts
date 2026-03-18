@@ -1,4 +1,5 @@
 import { railwayPDFQueue } from '@/utils/requestQueue';
+import { railwayFetch } from '@/utils/railwayFetch';
 
 // types.ts
 interface MergeResponse {
@@ -54,10 +55,8 @@ export async function mergeMemoWithAttachments(memoData: MemoMergeRequest): Prom
       // Call Railway PDFmerge API with queue + retry logic
       currentPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const response: Response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/PDFmerge', {
+          const response: Response = await railwayFetch('/PDFmerge', {
             method: 'POST',
-            mode: 'cors',
-            credentials: 'omit',
             body: formData
           });
 

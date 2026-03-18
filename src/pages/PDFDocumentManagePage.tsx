@@ -13,6 +13,7 @@ import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { SignerProgress } from '@/types/memo';
 import { railwayPDFQueue } from '@/utils/requestQueue';
+import { railwayFetch } from '@/utils/railwayFetch';
 
 // Import step components for doc_receive (3 steps)
 import Step1DocReceive, { DepartmentOption, trimDepartmentPrefix } from '@/components/DocumentManage/Step1DocReceive';
@@ -454,7 +455,7 @@ const PDFDocumentManagePage: React.FC = () => {
             // Call Railway add_signature_v2 API with queue + retry logic
             signedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
               async () => {
-                const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature_v2', {
+                const res = await railwayFetch('/add_signature_v2', {
                   method: 'POST',
                   body: formData
                 });

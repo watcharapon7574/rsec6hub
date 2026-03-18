@@ -10,6 +10,7 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { railwayPDFQueue } from '@/utils/requestQueue';
+import { railwayFetch } from '@/utils/railwayFetch';
 
 // Import step components for doc_receive (3 steps)
 import Step1DocReceive, { DepartmentOption } from '@/components/DocumentManage/Step1DocReceive';
@@ -287,7 +288,7 @@ const PDFReceiveManagePage: React.FC = () => {
       console.log('🚀 Calling /stamp_summary API...');
       const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const res = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/stamp_summary', {
+          const res = await railwayFetch('/stamp_summary', {
             method: 'POST',
             body: formData
           });

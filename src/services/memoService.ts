@@ -3,6 +3,7 @@ import { Memo, MemoFormData, SignaturePosition, MemoSignature } from '@/types/me
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDeviceFingerprint } from '@/utils/deviceInfo';
 import { requestQueue, railwayPDFQueue } from '@/utils/requestQueue';
+import { railwayFetch } from '@/utils/railwayFetch';
 import { formatThaiDateFull, convertToThaiNumerals } from '@/utils/dateUtils';
 import { calculateNextSignerOrder, calculateRejection, SIGNER_ORDER } from '@/services/approvalWorkflowService';
 
@@ -184,14 +185,12 @@ export class MemoService {
               // Line-wrap disabled - users will manually add line breaks
               // const processedFormData = await MemoService.preprocessMemoText(formDataWithThaiDate);
 
-              const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+              const response = await railwayFetch('/pdf', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   'Accept': 'application/pdf',
                 },
-                mode: 'cors',
-                credentials: 'omit',
                 body: JSON.stringify(formDataWithThaiDate),
               });
 
@@ -511,7 +510,7 @@ export class MemoService {
       // Call Railway add_signature API with queue + retry logic
       const finalPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/add_signature', {
+          const response = await railwayFetch('/add_signature', {
             method: 'POST',
             body: formData
           });

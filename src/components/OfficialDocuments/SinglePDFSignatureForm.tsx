@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Download, Loader2, Zap, Plus, Trash2 } from 'lucide-react';
 import { railwayPDFQueue } from '@/utils/requestQueue';
+import { railwayFetch } from '@/utils/railwayFetch';
 
 interface SignatureFile {
   key: string;
@@ -191,7 +192,7 @@ const SinglePDFSignatureForm: React.FC = () => {
       // Call Railway generate_signed_pdf API with queue + retry logic
       const signedBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/generate_signed_pdf', {
+          const response = await railwayFetch('/generate_signed_pdf', {
             method: 'POST',
             body: formData,
           });

@@ -12,6 +12,7 @@ import { AnimatedProgress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { railwayPDFQueue } from '@/utils/requestQueue';
+import { railwayFetch } from '@/utils/railwayFetch';
 
 interface PDFFormData {
   date: string;
@@ -322,7 +323,7 @@ const CreateDocReceivePage = () => {
       // Call Railway receive_num2 API with queue + retry logic
       const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const stampRes = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/receive_num2', {
+          const stampRes = await railwayFetch('/receive_num2', {
             method: 'POST',
             body: receiveNumFormData
           });

@@ -1,7 +1,6 @@
 import { SignatureBlock } from '@/types/pdfSignature';
 import { railwayPDFQueue } from '@/utils/requestQueue';
-
-const API_BASE_URL = 'https://pdf-memo-docx-production-25de.up.railway.app';
+import { railwayFetch } from '@/utils/railwayFetch';
 
 export const submitPDFSignature = async (
   uploadedPdf: File,
@@ -65,7 +64,7 @@ export const submitPDFSignature = async (
   // Call Railway add_signature API with queue + retry logic
   const signedBlob = await railwayPDFQueue.enqueueWithRetry(
     async () => {
-      const response = await fetch(`${API_BASE_URL}/add_signature`, {
+      const response = await railwayFetch('/add_signature', {
         method: 'POST',
         body: formData,
         // Don't set Content-Type for FormData, let browser set it with boundary

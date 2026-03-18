@@ -17,6 +17,7 @@ import { useAllMemos } from '@/hooks/useAllMemos';
 import { useToast } from '@/hooks/use-toast';
 import { formatThaiDateFull, convertToThaiNumerals } from '@/utils/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { railwayFetch } from '@/utils/railwayFetch';
 
 const CreateMemoPage = () => {
   const navigate = useNavigate();
@@ -723,14 +724,12 @@ const CreateMemoPage = () => {
 
       console.log('📄 Preview data:', previewData);
 
-      const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+      const response = await railwayFetch('/pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/pdf',
         },
-        mode: 'cors',
-        credentials: 'omit',
         body: JSON.stringify(previewData),
       });
 

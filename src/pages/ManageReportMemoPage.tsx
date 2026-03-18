@@ -720,6 +720,7 @@ const ManageReportMemoPage: React.FC = () => {
     if (currentStep === 1 && reportMemo) {
       // สำหรับ memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิมและฝ่ายเดิม
       // ดึง revision_count จาก DB โดยตรง เพราะ memo cache อาจยังไม่อัปเดต
+      let currentPdfPath = reportMemo.pdf_draft_path; // track PDF ล่าสุด
       let revisionCount = (reportMemo as any).revision_count || 0;
       let freshStampDepartment = '';
       if (isNumberAssigned && docNumberSuffix) {
@@ -750,6 +751,7 @@ const ManageReportMemoPage: React.FC = () => {
               .update({ pdf_draft_path: stampedUrl, updated_at: new Date().toISOString() })
               .eq('id', reportMemo.id);
             setReportMemo((prev: any) => ({ ...prev, pdf_draft_path: stampedUrl }));
+            currentPdfPath = stampedUrl; // อัปเดต path เพื่อให้ merge ใช้ PDF ที่ปั้มตราแล้ว
             await refetch();
             console.log('✅ Re-stamped report memo PDF saved:', stampedUrl);
           }
@@ -781,7 +783,7 @@ const ManageReportMemoPage: React.FC = () => {
 
           const mergeResult = await mergeMemoWithAttachments({
             memoId: reportMemo.id,
-            mainPdfPath: reportMemo.pdf_draft_path,
+            mainPdfPath: currentPdfPath,
             attachedFiles: attachedFiles
           });
 

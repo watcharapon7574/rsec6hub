@@ -726,6 +726,7 @@ const DocumentManagePage: React.FC = () => {
       try {
         // สำหรับ memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิมและฝ่ายเดิม
         // ดึง revision_count จาก DB โดยตรง เพราะ memo cache อาจยังไม่อัปเดต
+        let currentPdfPath = memo.pdf_draft_path; // ใช้ track PDF ล่าสุด (อาจถูกอัปเดตโดย re-stamp)
         let revisionCount = (memo as any).revision_count || 0;
         let freshStampDepartment = '';
         if (isNumberAssigned && docNumberSuffix) {
@@ -757,6 +758,8 @@ const DocumentManagePage: React.FC = () => {
               .eq('id', memo.id);
             await refetch();
             console.log('✅ Re-stamped PDF saved:', stampedUrl);
+            // อัปเดต currentPdfPath เพื่อให้ merge ใช้ PDF ที่ปั้มตราแล้ว
+            currentPdfPath = stampedUrl;
           }
         }
         // Get attached files
@@ -777,10 +780,10 @@ const DocumentManagePage: React.FC = () => {
         // Only call merge API if there are attached files
         if (attachedFiles.length > 0) {
           console.log('🔄 Starting PDF merge with attached files:', attachedFiles);
-          
+
           const mergeResult = await mergeMemoWithAttachments({
             memoId: memo.id,
-            mainPdfPath: memo.pdf_draft_path,
+            mainPdfPath: currentPdfPath,
             attachedFiles: attachedFiles
           });
 

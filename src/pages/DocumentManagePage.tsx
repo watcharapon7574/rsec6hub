@@ -297,9 +297,9 @@ const DocumentManagePage: React.FC = () => {
     }
   };
 
-  // Auto-select assistant_director เมื่อ selectedGroup โหลดจาก DB (เช่น ตีกลับแล้วส่งใหม่)
+  // Auto-select assistant_director เมื่อ selectedGroup เปลี่ยน (ทั้งเลือกเองและโหลดจาก DB)
   React.useEffect(() => {
-    if (selectedGroup && assistantDirectors.length > 0 && !selectedAssistant) {
+    if (selectedGroup && assistantDirectors.length > 0) {
       const matched = assistantDirectors.find(p =>
         p.org_structure_role?.includes(selectedGroup)
       );

@@ -429,7 +429,7 @@ const CreateReportMemoPage = () => {
 
       // Prepare memo data
       const memoDataToInsert = {
-        doc_number: '',
+        doc_number: (isEditMode && originalMemo?.doc_number) ? originalMemo.doc_number : '',
         subject: formData.subject,
         date: formData.date,
         attachment_title: formData.attachment_title || '',

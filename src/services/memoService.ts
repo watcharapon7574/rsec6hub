@@ -276,7 +276,7 @@ export class MemoService {
           await supabase
             .from('memos')
             .update({
-              doc_number: formData.doc_number,
+              doc_number: formData.doc_number || undefined,
               subject: formData.subject,
               date: formData.date,
               attachment_title: formData.attachment_title,

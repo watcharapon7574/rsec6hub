@@ -343,7 +343,7 @@ const CreateMemoPage = () => {
 
       // Create memo record with uploaded PDF and form data
       const memoDataToInsert = {
-        doc_number: '',
+        doc_number: (isEditMode && originalMemo?.doc_number) ? originalMemo.doc_number : '',
         subject: formData.subject,
         date: formData.date,
         attachment_title: formData.attachment_title || '',

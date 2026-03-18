@@ -719,7 +719,20 @@ const ManageReportMemoPage: React.FC = () => {
     // If moving from step 1 to step 2, call PDFmerge API if there are attachments
     if (currentStep === 1 && reportMemo) {
       // สำหรับ memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิมและฝ่ายเดิม
-      const revisionCount = (reportMemo as any).revision_count || 0;
+      // ดึง revision_count จาก DB โดยตรง เพราะ memo cache อาจยังไม่อัปเดต
+      let revisionCount = (reportMemo as any).revision_count || 0;
+      let freshStampDepartment = '';
+      if (isNumberAssigned && docNumberSuffix) {
+        const { data: freshMemo } = await supabase
+          .from('memos')
+          .select('revision_count, stamp_department')
+          .eq('id', reportMemo.id)
+          .single();
+        if (freshMemo) {
+          revisionCount = (freshMemo as any).revision_count || 0;
+          freshStampDepartment = (freshMemo as any).stamp_department || '';
+        }
+      }
 
       if (isNumberAssigned && revisionCount > 0 && docNumberSuffix) {
         setLoadingMessage({
@@ -729,7 +742,7 @@ const ManageReportMemoPage: React.FC = () => {
         setShowLoadingModal(true);
 
         try {
-          const groupForStamp = selectedGroup || (reportMemo as any).stamp_department || '';
+          const groupForStamp = selectedGroup || freshStampDepartment || (reportMemo as any).stamp_department || '';
           const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, groupForStamp);
           if (stampedUrl) {
             await supabase

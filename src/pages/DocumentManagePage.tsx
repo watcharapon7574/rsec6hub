@@ -725,7 +725,20 @@ const DocumentManagePage: React.FC = () => {
 
       try {
         // สำหรับ memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิมและฝ่ายเดิม
-        const revisionCount = (memo as any).revision_count || 0;
+        // ดึง revision_count จาก DB โดยตรง เพราะ memo cache อาจยังไม่อัปเดต
+        let revisionCount = (memo as any).revision_count || 0;
+        let freshStampDepartment = '';
+        if (isNumberAssigned && docNumberSuffix) {
+          const { data: freshMemo } = await supabase
+            .from('memos')
+            .select('revision_count, stamp_department')
+            .eq('id', memo.id)
+            .single();
+          if (freshMemo) {
+            revisionCount = (freshMemo as any).revision_count || 0;
+            freshStampDepartment = (freshMemo as any).stamp_department || '';
+          }
+        }
 
         if (isNumberAssigned && revisionCount > 0 && docNumberSuffix) {
           console.log('🔄 Re-stamping memo after rejection, revision:', revisionCount);
@@ -735,7 +748,7 @@ const DocumentManagePage: React.FC = () => {
           });
 
           // ใช้ฝ่ายจาก state หรือ fallback จาก DB
-          const groupForStamp = selectedGroup || (memo as any).stamp_department || '';
+          const groupForStamp = selectedGroup || freshStampDepartment || (memo as any).stamp_department || '';
           const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, groupForStamp);
           if (stampedUrl) {
             await supabase

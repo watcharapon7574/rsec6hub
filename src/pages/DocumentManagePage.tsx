@@ -278,8 +278,8 @@ const DocumentManagePage: React.FC = () => {
     }
   }, [memo]);
 
-  // Get profiles by position
-  const assistantDirectors = profiles.filter(p => p.position === 'assistant_director');
+  // Get profiles by org_structure_role (ใช้ org_structure_role แทน position เพื่อรองรับการเปลี่ยนคนรับผิดชอบ)
+  const assistantDirectors = profiles.filter(p => p.org_structure_role?.includes('หัวหน้าฝ่าย'));
   const deputyDirectors = profiles.filter(p => p.position === 'deputy_director');
   // ผอ. ต้องเป็น user_id นี้เท่านั้น
   const directors = profiles.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');

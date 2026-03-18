@@ -292,45 +292,51 @@ const CreateDocReceivePage = () => {
         .getPublicUrl(filePath);
       console.log('✅ PDF uploaded to:', publicUrl);
 
-      // Step 3: Call /receive_num2 API to stamp PDF
-      console.log('🎨 Calling /receive_num2 API to stamp PDF...');
+      // Step 3: Call /receive_num API to stamp PDF (หนังสือรับภายนอก)
+      console.log('🎨 Calling /receive_num API to stamp PDF...');
       const now = new Date();
       const thaiDate = now.toLocaleDateString('th-TH', {
         day: 'numeric',
         month: 'short',
         year: '2-digit'
       });
+      const thaiTime = now.toLocaleTimeString('th-TH', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' น.';
+      const receiverName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : '';
 
       // Fetch the uploaded PDF
       const pdfRes = await fetch(publicUrl);
       const pdfBlob = await pdfRes.blob();
 
-      // Prepare FormData for /receive_num2 API
+      // Prepare FormData for /receive_num API
       const receiveNumFormData = new FormData();
       receiveNumFormData.append('pdf', pdfBlob, 'document.pdf');
 
       const payload = {
         page: 0,
         color: [2, 53, 139],
-        group_name: '',
         register_no: documentNumber,
-        date: thaiDate
+        date: thaiDate,
+        time: thaiTime,
+        receiver: receiverName
       };
       receiveNumFormData.append('payload', JSON.stringify(payload));
 
       console.log('📝 Stamp payload:', payload);
 
-      // Call Railway receive_num2 API with queue + retry logic
+      // Call Railway receive_num API with queue + retry logic
       const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
-          const stampRes = await railwayFetch('/receive_num2', {
+          const stampRes = await railwayFetch('/receive_num', {
             method: 'POST',
             body: receiveNumFormData
           });
 
           if (!stampRes.ok) {
             const errorText = await stampRes.text();
-            console.error('❌ /receive_num2 API error:', errorText);
+            console.error('❌ /receive_num API error:', errorText);
             throw new Error(`Failed to stamp PDF: ${errorText}`);
           }
 

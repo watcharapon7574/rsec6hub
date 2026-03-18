@@ -231,7 +231,7 @@ const DocumentManagePage: React.FC = () => {
         isAssigned = statusData === 'ลงเลขหนังสือแล้ว';
       }
       
-      if (isAssigned) {
+      if (isAssigned && memo.doc_number) {
         setIsNumberAssigned(true);
         if (memo.doc_number) {
           const docNumber = memo.doc_number;

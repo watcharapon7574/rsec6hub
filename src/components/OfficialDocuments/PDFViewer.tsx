@@ -908,13 +908,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 // Use the smaller dimension to maintain square pins
                 const pdfSizeScale = Math.min(currentPageWidth, currentPageHeight) / 500; // Normalize against 500px base
                 
-                const calculatedSize = basePinSizePt * pdfSizeScale;
-                
+                // ตำแหน่งที่ 2+ แสดงแค่ลายเซ็น → ใช้ pin เล็กลง
+                const isImageOnly = (pos.signer as any).positionIndex > 1 && pos.signer.role !== 'clerk';
+                const effectivePinSizePt = isImageOnly ? 80 : basePinSizePt; // 80pt สำหรับแค่ลายเซ็น
+                const calculatedSize = effectivePinSizePt * pdfSizeScale;
+
                 // Apply min/max constraints
                 const minPinSize = 30; // Minimum size in pixels
                 const maxPinSize = 200; // Maximum size in pixels
                 const basePinSize = Math.max(minPinSize, Math.min(maxPinSize, calculatedSize));
-                const pinWidth = basePinSize;
+                const pinWidth = isImageOnly ? basePinSize * 1.5 : basePinSize; // ลายเซ็นอย่างเดียวให้กว้างขึ้น
                 const pinHeight = basePinSize;
                 
                 // Calculate position that sticks to the PDF page
@@ -1049,7 +1052,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                     >
                       {/* ลบ ปุ่ม X ที่เคยอยู่ที่นี่ */}
 
-                      {/* แสดงเนื้อหาต่างกันตาม role */}
+                      {/* แสดงเนื้อหาต่างกันตาม role และ positionIndex */}
                       {isClerk ? (
                         /* สำหรับธุรการ - แสดงไอคอนตราประทับแทนลายเซ็น */
                         <>
@@ -1079,8 +1082,33 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             ธุรการ
                           </div>
                         </>
+                      ) : (pos.signer as any).positionIndex > 1 ? (
+                        /* ตำแหน่งที่ 2+ ของคนเดียวกัน - แสดงเฉพาะลายเซ็น PNG (ตรงกับ API ที่ส่งแค่ image) */
+                        <>
+                          {pos.signer.signature_url ? (
+                            <div className="flex justify-center items-center" style={{ padding: '4px 0' }}>
+                              <img
+                                src={pos.signer.signature_url}
+                                alt="ลายเซ็น"
+                                style={{
+                                  maxWidth: '95%',
+                                  maxHeight: `${Math.max(30, basePinSize * 0.5)}px`,
+                                  width: 'auto',
+                                  height: 'auto',
+                                  objectFit: 'contain',
+                                  opacity: 0.9,
+                                  margin: '0 auto'
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="font-semibold truncate leading-tight text-blue-600" style={{ fontSize: '12px' }}>
+                              ลายเซ็น ({(pos.signer as any).positionIndex})
+                            </div>
+                          )}
+                        </>
                       ) : (
-                        /* สำหรับผู้ลงนามทั่วไป - แสดงลายเซ็นและชื่อ */
+                        /* ตำแหน่งแรก - แสดงลายเซ็น + ชื่อ + ตำแหน่ง ครบ */
                         <>
                           {/* ลายเซ็น - อยู่บนสุดขนาดใหญ่พอดีกรอบ */}
                           {pos.signer.signature_url && (
@@ -1101,20 +1129,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             </div>
                           )}
 
-                          {/* ชื่อ - แสดงตามที่มีอยู่พร้อมหมายเลขตำแหน่ง */}
+                          {/* ชื่อ */}
                           <div className="font-semibold truncate leading-tight text-gray-800" style={{ fontSize: '14px' }}>
                             {pos.signer.name}
-                            {(pos.signer as any).positionIndex && (pos.signer as any).positionIndex > 1 && (
-                              <span className="ml-1 text-blue-600 font-bold">
-                                ({(pos.signer as any).positionIndex})
-                              </span>
-                            )}
                           </div>
 
                           {/* ตำแหน่ง - แตกต่างตามบทบาท */}
                           <div
                             className="truncate leading-tight text-gray-600"
-                            style={{ fontSize: '12px' }} // Fixed font size for position
+                            style={{ fontSize: '12px' }}
                           >
                             {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.job_position || pos.signer.position || ''}`}
                             {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
@@ -1125,7 +1148,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                           {/* บรรทัดเพิ่มเติม - แตกต่างตามบทบาท */}
                           <div
                             className="leading-tight text-gray-500"
-                            style={{ fontSize: '12px' }} // Fixed font size for additional info
+                            style={{ fontSize: '12px' }}
                           >
                             {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'หัวหน้าฝ่าย'}`}
                             {pos.signer.role === 'deputy_director' && (memo?.updated_at ? formatThaiDate(memo.updated_at) : '๑๑ กรกฎาคม ๒๕๖๘')}

@@ -172,7 +172,8 @@ const DocumentManagePage: React.FC = () => {
           }
         }
         
-        setIsNumberAssigned(statusAssigned);
+        // Only consider as assigned if both status says so AND doc_number actually exists
+        setIsNumberAssigned(statusAssigned && !!(data as any).doc_number);
         if ((data as any).doc_number) {
           const docNumber = (data as any).doc_number;
 

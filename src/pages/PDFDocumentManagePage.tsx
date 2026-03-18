@@ -340,7 +340,6 @@ const PDFDocumentManagePage: React.FC = () => {
         .from('doc_receive')
         .update({
           signature_positions: updatedSignaturePositions,
-          status: 'pending_sign',
           current_signer_order: 1,
           updated_at: new Date().toISOString()
         })

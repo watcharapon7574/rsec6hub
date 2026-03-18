@@ -923,7 +923,7 @@ const ManageReportMemoPage: React.FC = () => {
         .update({
           signature_positions: updatedSignaturePositions,
           status: 'pending_sign',
-          current_signer_order: firstOrder,
+          current_signer_order: firstOrder + 1,
           clerk_id: clerkId,
           updated_at: new Date().toISOString()
         })
@@ -1027,8 +1027,7 @@ const ManageReportMemoPage: React.FC = () => {
                   await supabase
                     .from('memos')
                     .update({
-                      pdf_draft_path: urlData.publicUrl,
-                      current_signer_order: firstOrder + 1
+                      pdf_draft_path: urlData.publicUrl
                     })
                     .eq('id', memoId);
                 }

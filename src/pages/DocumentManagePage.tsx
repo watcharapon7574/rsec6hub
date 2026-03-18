@@ -297,6 +297,18 @@ const DocumentManagePage: React.FC = () => {
     }
   };
 
+  // Auto-select assistant_director เมื่อ selectedGroup โหลดจาก DB (เช่น ตีกลับแล้วส่งใหม่)
+  React.useEffect(() => {
+    if (selectedGroup && assistantDirectors.length > 0 && !selectedAssistant) {
+      const matched = assistantDirectors.find(p =>
+        p.org_structure_role?.includes(selectedGroup)
+      );
+      if (matched) {
+        setSelectedAssistant(matched.user_id || matched.id);
+      }
+    }
+  }, [selectedGroup, assistantDirectors]);
+
   // Build signers list
   const signers = React.useMemo(() => {
     const list = [];

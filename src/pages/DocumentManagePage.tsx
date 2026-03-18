@@ -737,23 +737,30 @@ const DocumentManagePage: React.FC = () => {
 
       try {
         // สำหรับ memo ที่ถูกตีกลับ → re-stamp PDF ใหม่ด้วยเลขหนังสือเดิมและฝ่ายเดิม
-        // ดึง revision_count จาก DB โดยตรง เพราะ memo cache อาจยังไม่อัปเดต
-        let currentPdfPath = memo.pdf_draft_path; // ใช้ track PDF ล่าสุด (อาจถูกอัปเดตโดย re-stamp)
+        // ดึง revision_count และ pdf_draft_path จาก DB โดยตรง เพราะ memo cache อาจยังไม่อัปเดต
+        let currentPdfPath = memo.pdf_draft_path;
         let revisionCount = (memo as any).revision_count || 0;
         let freshStampDepartment = '';
         if (isNumberAssigned && docNumberSuffix) {
           const { data: freshMemo } = await supabase
             .from('memos')
-            .select('revision_count, stamp_department')
+            .select('revision_count, stamp_department, pdf_draft_path')
             .eq('id', memo.id)
             .single();
           if (freshMemo) {
             revisionCount = (freshMemo as any).revision_count || 0;
             freshStampDepartment = (freshMemo as any).stamp_department || '';
+            currentPdfPath = (freshMemo as any).pdf_draft_path || currentPdfPath;
           }
         }
 
-        if (isNumberAssigned && revisionCount > 0 && docNumberSuffix) {
+        // ข้ามการปั้มตราถ้า PDF มีตราปั้มอยู่แล้ว (ชื่อไฟล์มี "memo_stamped_")
+        const alreadyStamped = currentPdfPath?.includes('memo_stamped_');
+        if (alreadyStamped) {
+          console.log('ℹ️ PDF already stamped, skipping re-stamp');
+        }
+
+        if (isNumberAssigned && revisionCount > 0 && docNumberSuffix && !alreadyStamped) {
           console.log('🔄 Re-stamping memo after rejection, revision:', revisionCount);
           setLoadingMessage({
             title: "กำลังปั๊มตราเลขหนังสือใหม่",

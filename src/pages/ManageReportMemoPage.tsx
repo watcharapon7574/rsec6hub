@@ -726,16 +726,23 @@ const ManageReportMemoPage: React.FC = () => {
       if (isNumberAssigned && docNumberSuffix) {
         const { data: freshMemo } = await supabase
           .from('memos')
-          .select('revision_count, stamp_department')
+          .select('revision_count, stamp_department, pdf_draft_path')
           .eq('id', reportMemo.id)
           .single();
         if (freshMemo) {
           revisionCount = (freshMemo as any).revision_count || 0;
           freshStampDepartment = (freshMemo as any).stamp_department || '';
+          currentPdfPath = (freshMemo as any).pdf_draft_path || currentPdfPath;
         }
       }
 
-      if (isNumberAssigned && revisionCount > 0 && docNumberSuffix) {
+      // ข้ามการปั้มตราถ้า PDF มีตราปั้มอยู่แล้ว
+      const alreadyStamped = currentPdfPath?.includes('memo_stamped_');
+      if (alreadyStamped) {
+        console.log('ℹ️ PDF already stamped, skipping re-stamp');
+      }
+
+      if (isNumberAssigned && revisionCount > 0 && docNumberSuffix && !alreadyStamped) {
         setLoadingMessage({
           title: 'กำลังปั๊มตราเลขหนังสือใหม่',
           description: 'ระบบกำลังลงตราเลขหนังสือบน PDF ที่ส่งมาใหม่...'

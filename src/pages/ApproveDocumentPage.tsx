@@ -960,9 +960,10 @@ const ApproveDocumentPage: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('❌ handleSubmit error:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถดำเนินการได้ กรุณาลองใหม่",
+        description: error instanceof Error ? error.message : "ไม่สามารถดำเนินการได้ กรุณาลองใหม่",
         variant: "destructive",
       });
     } finally {

@@ -89,14 +89,11 @@ function formatMessage(payload: NotificationPayload): string {
 
   switch (payload.type) {
     case 'document_pending':
-      message += `<b>เอกสารใหม่รอการพิจารณา</b>\n`
+      message += `<b>คุณมีเอกสารรอลงนาม</b>\n`
       message += `เรื่อง: ${payload.subject}\n`
       message += `ผู้สร้าง: ${payload.author_name}\n`
-      if (payload.current_signer_name) {
-        message += `รอการพิจารณาจาก: ${payload.current_signer_name}\n`
-        if (payload.current_signer_position) {
-          message += `ตำแหน่ง: ${payload.current_signer_position}\n`
-        }
+      if (payload.additional_signers && payload.additional_signers > 0) {
+        message += `ผู้ลงนามเพิ่มเติม: ${payload.additional_signers} คน\n`
       }
       message += `\nกรุณาเข้าระบบเพื่อพิจารณาเอกสาร`
       break

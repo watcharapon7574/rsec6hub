@@ -828,7 +828,10 @@ const ApproveDocumentPage: React.FC = () => {
           );
 
           // คำนวณ file paths
-          const oldFilePath = extractedPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
+          // ตัด query string (?t=...) ออกจาก URL ก่อนคำนวณ path
+          const cleanPdfUrl = extractedPdfUrl.split('?')[0];
+          console.log('📄 PDF URL sent to edge function:', cleanPdfUrl);
+          const oldFilePath = cleanPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
           const newFileName = `signed_${Date.now()}_${oldFilePath.split('/').pop()}`;
           const newFilePath = oldFilePath.replace(/[^/]+$/, newFileName);
 
@@ -857,7 +860,7 @@ const ApproveDocumentPage: React.FC = () => {
                 'Authorization': `Bearer ${accessToken}`,
               },
               body: JSON.stringify({
-                pdfUrl: extractedPdfUrl,
+                pdfUrl: cleanPdfUrl,
                 signatureUrl,
                 signatures: signaturesPayload,
                 oldFilePath,

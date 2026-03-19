@@ -1691,11 +1691,11 @@ const CreateMemoPage = () => {
                           <PenTool className="h-3.5 w-3.5 text-orange-500" />
                           บังคับขีดเขียน
                         </Label>
-                        <div className="space-y-1">
+                        <div className="flex flex-wrap gap-2">
                           {selectedParallelSigners.map((user) => (
                             <div
                               key={user.user_id}
-                              className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-muted"
+                              className="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full border hover:bg-muted transition-colors"
                               onClick={() => {
                                 if (annotationRequiredUserIds.includes(user.user_id)) {
                                   setAnnotationRequiredUserIds(prev => prev.filter(id => id !== user.user_id));

@@ -29,7 +29,7 @@ import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
-import { calculateNextSignerOrder, isInParallelGroup, isCurrentSignerWithParallel } from '@/services/approvalWorkflowService';
+import { calculateNextSignerOrder, calculateNextSignerOrderWithParallel, isInParallelGroup, isCurrentSignerWithParallel } from '@/services/approvalWorkflowService';
 import { ParallelSignerConfig } from '@/types/memo';
 
 const ApproveDocumentPage: React.FC = () => {
@@ -586,7 +586,16 @@ const ApproveDocumentPage: React.FC = () => {
           // สร้างชื่อเต็มพร้อม prefix ของผู้ลงนามจริง
           const fullName = `${signerProfile.prefix || ''}${signerProfile.first_name} ${signerProfile.last_name}`.trim();
 
-          if (signingPosition === 'assistant_director') {
+          // ตรวจสอบว่าเป็น parallel_signer หรือไม่
+          const isParallelSigner = userSignaturePositions.some(pos => pos.signer?.role === 'parallel_signer');
+
+          if (isParallelSigner) {
+            // parallel_signer ส่งแค่ลายเซ็น PNG เท่านั้น (ไม่มีชื่อ/ตำแหน่ง)
+            linesWithComment = [
+              { type: "image", file_key: "sig1" }
+            ];
+            linesWithoutComment = [...linesWithComment];
+          } else if (signingPosition === 'assistant_director') {
             // ถ้ามี comment ให้แสดง comment ในตำแหน่งแรก
             if (comment && comment.trim()) {
               linesWithComment = [
@@ -766,9 +775,13 @@ const ApproveDocumentPage: React.FC = () => {
 
           console.log(`📝 Signatures payload (${userSignaturePositions.length} positions)`);
 
-          // คำนวณ next signer order และ status
+          // คำนวณ next signer order และ status (รองรับ parallel group)
           const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;
-          const approvalResult = calculateNextSignerOrder(currentOrder, signaturePositions, signingPosition);
+          const parallelConfig = (memo as any)?.parallel_signers || null;
+          const effectiveUserId = signOnBehalfUserId || profile?.user_id || '';
+          const approvalResult = calculateNextSignerOrderWithParallel(
+            currentOrder, signaturePositions, signingPosition, parallelConfig, effectiveUserId
+          );
 
           // คำนวณ file paths
           const oldFilePath = extractedPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
@@ -809,6 +822,12 @@ const ApproveDocumentPage: React.FC = () => {
                 tableName: isDocReceive ? 'doc_receive' : 'memos',
                 newStatus: approvalResult.newStatus,
                 nextSignerOrder: approvalResult.nextSignerOrder,
+                ...('parallelUpdate' in approvalResult && approvalResult.parallelUpdate && parallelConfig && {
+                  parallelSignersUpdate: {
+                    ...parallelConfig,
+                    completed_user_ids: approvalResult.parallelUpdate.completed_user_ids,
+                  }
+                }),
               }),
             }
           );
@@ -824,9 +843,18 @@ const ApproveDocumentPage: React.FC = () => {
             throw new Error(edgeResult.error || edgeResult.msg || 'ไม่สามารถเซ็นเอกสารได้');
           }
 
+          // อัปเดต parallel_signers.completed_user_ids หลัง edge function สำเร็จ
+          if ('parallelUpdate' in approvalResult && approvalResult.parallelUpdate && parallelConfig) {
+            await supabase.from('memos').update({
+              parallel_signers: {
+                ...parallelConfig,
+                completed_user_ids: approvalResult.parallelUpdate.completed_user_ids,
+              }
+            } as any).eq('id', memoId);
+            console.log('✅ Updated parallel_signers.completed_user_ids:', approvalResult.parallelUpdate.completed_user_ids);
+          }
+
           setShowLoadingModal(false);
-          // ⚠️ ยังคง __signingInProgress = true ไว้จนกว่า navigate จะเสร็จ
-          // เพื่อป้องกัน auth listener ตรวจ 8-hour limit แล้วบังคับ signOut ก่อน navigate
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });
           navigate('/documents');
           // Clear signing flag หลัง navigate แล้ว + apply pending SW update

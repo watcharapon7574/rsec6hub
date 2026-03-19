@@ -428,6 +428,39 @@ const DocumentManagePage: React.FC = () => {
     return list;
   }, [authorProfile, selectedAssistant, selectedDeputy, assistantDirectors, deputyDirectors, directors]);
 
+  // allSigners = signers + parallel signers (แทรกหลัง author, ก่อน assistant_director)
+  const allSigners = React.useMemo(() => {
+    if (parallelSigners.length === 0) return signers;
+
+    const result: any[] = [];
+    let orderCounter = 1;
+    for (const signer of signers) {
+      result.push({ ...signer, order: orderCounter++ });
+
+      // แทรก parallel signers หลัง author
+      if (signer.role === 'author') {
+        const parallelOrder = orderCounter; // ใช้ order เดียวกัน
+        for (const ps of parallelSigners) {
+          const p = profiles.find(pr => pr.user_id === ps.user_id);
+          result.push({
+            order: parallelOrder,
+            user_id: ps.user_id,
+            name: ps.name,
+            position: p?.current_position || p?.position || ps.position || '',
+            job_position: p?.job_position || p?.current_position || ps.position || '',
+            role: 'parallel_signer',
+            academic_rank: p?.academic_rank,
+            org_structure_role: p?.org_structure_role || ps.org_structure_role || '',
+            prefix: p?.prefix,
+            signature_url: p?.signature_url
+          });
+        }
+        orderCounter++; // parallel group ใช้ 1 order
+      }
+    }
+    return result;
+  }, [signers, parallelSigners, profiles]);
+
   // Debug: Log signers with prefix information
   React.useEffect(() => {
     if (signers.length > 0) {
@@ -1551,7 +1584,7 @@ const DocumentManagePage: React.FC = () => {
 
           {currentStep === 3 && (
             <Step3SignaturePositions
-              signers={signers}
+              signers={allSigners}
               signaturePositions={signaturePositions}
               comment={comment}
               documentSummary={documentSummary}

@@ -84,20 +84,26 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                 <div
                   key={signer.order}
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                    isSelected 
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 shadow-md' 
-                      : positionsCount > 0 
-                        ? 'border-green-500 bg-green-50 dark:bg-green-950' 
-                        : 'border-border hover:border-border hover:bg-muted'
+                    isSelected
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 shadow-md'
+                      : positionsCount > 0
+                        ? 'border-green-500 bg-green-50 dark:bg-green-950'
+                        : signer.role === 'parallel_signer'
+                          ? 'border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/50 hover:bg-blue-50 dark:hover:bg-blue-950'
+                          : 'border-border hover:border-border hover:bg-muted'
                   }`}
                   onClick={() => onSelectedSignerIndexChange(index)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="font-semibold text-foreground">{signer.name}</p>
+                      <p className="font-semibold text-foreground">
+                        {signer.role === 'parallel_signer' && <span className="mr-1">👥</span>}
+                        {signer.name}
+                      </p>
                       {/* job_position (เล็กสุด) */}
                       <p className="text-xs text-muted-foreground">
                         {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                        {signer.role === 'parallel_signer' && `${signer.job_position || signer.position || 'ผู้ลงนามเพิ่มเติม'}`}
                         {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                         {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
                         {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}

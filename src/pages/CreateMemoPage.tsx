@@ -304,13 +304,16 @@ const CreateMemoPage = () => {
   };
 
   const handleUploadSubmit = async () => {
-    if (!uploadedPdfFile || !profile?.user_id) {
+    // Edit mode ที่ตีกลับ ไม่ต้อง require PDF ใหม่ (ใช้ PDF เก่าได้)
+    const needsNewPdf = !isEditMode || !originalMemo?.pdf_draft_path;
+    if (needsNewPdf && (!uploadedPdfFile || !profile?.user_id)) {
       toast({
         title: 'กรุณาเลือกไฟล์ PDF',
         variant: 'destructive'
       });
       return;
     }
+    if (!profile?.user_id) return;
 
     if (!formData.subject) {
       toast({
@@ -322,25 +325,30 @@ const CreateMemoPage = () => {
 
     setUploadingPdf(true);
     try {
-      // Upload PDF to Supabase Storage
-      const fileName = `memo_${Date.now()}_${uploadedPdfFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
-      const filePath = `memos/${profile.user_id}/${fileName}`;
+      let publicUrl = originalMemo?.pdf_draft_path || ''; // ใช้ PDF เก่าเป็น default (edit mode)
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, uploadedPdfFile, {
-          contentType: 'application/pdf',
-          upsert: false
-        });
+      // Upload PDF ใหม่เฉพาะเมื่อมีไฟล์ใหม่
+      if (uploadedPdfFile) {
+        const fileName = `memo_${Date.now()}_${uploadedPdfFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+        const filePath = `memos/${profile.user_id}/${fileName}`;
 
-      if (uploadError) {
-        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, uploadedPdfFile, {
+            contentType: 'application/pdf',
+            upsert: false
+          });
+
+        if (uploadError) {
+          throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+        }
+
+        // Get public URL
+        const result = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+        publicUrl = result.data.publicUrl;
       }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
 
       // Handle attached files upload
       let attachedFileUrls: string[] = [];
@@ -379,7 +387,7 @@ const CreateMemoPage = () => {
         user_id: profile.user_id,
         form_data: {
           type: 'upload_memo',
-          originalFileName: uploadedPdfFile.name,
+          originalFileName: uploadedPdfFile?.name || (originalMemo?.form_data as any)?.originalFileName || '',
           ...(enableParallelSigners && selectedParallelSigners.length > 0 && {
             parallel_signer_config: {
               enabled: true,

@@ -69,6 +69,19 @@ const ApproveDocumentPage: React.FC = () => {
   // Sync ref กับ state
   useEffect(() => { originalPdfPathRef.current = originalPdfPath; }, [originalPdfPath]);
 
+  // Set signing_lock เมื่อเปิดหน้า approve (parallel signer)
+  useEffect(() => {
+    if (memoId && profile?.user_id && memo?.parallel_signers && memo.current_signer_order === memo.parallel_signers.order) {
+      supabase.rpc('acquire_signing_lock', { p_memo_id: memoId, p_user_id: profile.user_id });
+    }
+    return () => {
+      // Release lock เมื่อออกจากหน้า
+      if (memoId) {
+        supabase.from('memos').update({ signing_lock: null } as any).eq('id', memoId);
+      }
+    };
+  }, [memoId, profile?.user_id, memo?.parallel_signers, memo?.current_signer_order]);
+
   // Revert PDF ถ้าขีดเขียนแล้วแต่ไม่ได้อนุมัติ (ออกจากหน้า)
   useEffect(() => {
     const currentMemoId = memoId;

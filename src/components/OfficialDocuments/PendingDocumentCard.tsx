@@ -742,8 +742,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                     // Logic ใหม่ใช้ signer_list_progress แทน signature_positions
                     const signerList = Array.isArray(memo.signer_list_progress) ? memo.signer_list_progress : [];
                     const userSigner = signerList.find((signer: any) => signer.user_id === profile?.user_id);
+                    // เช็ค signing_lock — ถ้ามีคนอื่นกำลังทำอยู่ → disable
+                    const lockData = (memo as any)?.signing_lock;
+                    const isLockedByOther = lockData && lockData.locked_by !== profile?.user_id;
+
                     // Admin สามารถลงนามแทนได้ทุกเอกสารที่รอลงนาม
-                    const canSign = isAdmin || (!!userSigner && userSigner.order === memo.current_signer_order);
+                    const canSign = !isLockedByOther && (isAdmin || (!!userSigner && userSigner.order === memo.current_signer_order));
                     const canView = isAdmin || !!userSigner;
                     const showViewOnly = !canSign;
                     if (!userSigner && !isAdmin) {
@@ -781,10 +785,11 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                           <Button
                             onClick={() => handleManageDocument(memo)}
                             size="sm"
-                            className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center"
+                            className={`${isLockedByOther ? 'bg-gray-400' : 'bg-amber-500 hover:bg-amber-600'} text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center`}
                             disabled={!canSign}
+                            title={isLockedByOther ? 'มีผู้ลงนามกำลังดำเนินการ' : ''}
                           >
-                            <PenTool className="h-4 w-4" />
+                            {isLockedByOther ? <Clock className="h-4 w-4" /> : <PenTool className="h-4 w-4" />}
                           </Button>
                           {canSign && (
                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 py-0.5 rounded-full font-bold">

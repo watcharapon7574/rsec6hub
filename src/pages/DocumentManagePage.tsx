@@ -943,8 +943,8 @@ const DocumentManagePage: React.FC = () => {
     // If moving from step 2 to step 3, save signer_list_progress
     if (currentStep === 2 && memo && memoId) {
       try {
-        // Create signer_list_progress data with order, position, name, first_name, last_name
-        const signerListProgress: SignerProgress[] = signers.map(signer => {
+        // Create signer_list_progress data (รวม parallel signers)
+        const signerListProgress: SignerProgress[] = allSigners.map(signer => {
           // Find profile for first_name and last_name
           const signerProfile = profiles.find(p => p.user_id === signer.user_id);
 
@@ -1001,7 +1001,7 @@ const DocumentManagePage: React.FC = () => {
         console.log('✅ Signer list progress saved successfully');
         toast({
           title: "บันทึกข้อมูลผู้ลงนามสำเร็จ",
-          description: `บันทึกรายชื่อผู้ลงนาม ${signers.length} คน เรียบร้อยแล้ว`,
+          description: `บันทึกรายชื่อผู้ลงนาม ${allSigners.length} คน เรียบร้อยแล้ว`,
         });
 
       } catch (error) {

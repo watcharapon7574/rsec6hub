@@ -893,7 +893,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       </div>
                       <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
 
-                      {/* Parallel signers step (ถ้ามี) — กดดูรายชื่อได้ */}
+                      {/* Parallel signers step (ถ้ามี) — กดดูรายชื่อ fixed popup */}
                       {(memo as any)?.parallel_signers?.signers?.length > 0 && (() => {
                         const pc = (memo as any).parallel_signers;
                         const completedCount = (pc.completed_user_ids || []).length;
@@ -902,14 +902,36 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         const isDone = completedCount >= totalCount;
                         return (
                           <>
-                            <div className="relative flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
+                            <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                               <button
                                 type="button"
                                 className="flex flex-col items-center focus:outline-none"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const el = e.currentTarget.parentElement?.querySelector('[data-parallel-popup]');
-                                  if (el) el.classList.toggle('hidden');
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  const existingPopup = document.getElementById(`parallel-popup-doc-${memo.id}`);
+                                  if (existingPopup) { existingPopup.remove(); return; }
+                                  document.querySelectorAll('[data-parallel-fixed-popup]').forEach(el => el.remove());
+                                  const popup = document.createElement('div');
+                                  popup.id = `parallel-popup-doc-${memo.id}`;
+                                  popup.setAttribute('data-parallel-fixed-popup', 'true');
+                                  popup.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;z-index:9999;`;
+                                  popup.className = 'bg-card border border-border rounded-lg shadow-xl p-3 min-w-[180px]';
+                                  popup.innerHTML = `
+                                    <p class="text-xs font-semibold text-muted-foreground mb-2">ผู้ลงนามเพิ่มเติม</p>
+                                    ${pc.signers.map((s: any) => {
+                                      const done = (pc.completed_user_ids || []).includes(s.user_id);
+                                      return `<div class="flex items-center gap-2 py-1">
+                                        <span class="text-xs ${done ? 'text-green-600' : 'text-amber-600'}">${done ? '✓' : '○'}</span>
+                                        <span class="text-xs text-foreground">${s.name}</span>
+                                      </div>`;
+                                    }).join('')}
+                                  `;
+                                  document.body.appendChild(popup);
+                                  const close = (ev: MouseEvent) => {
+                                    if (!popup.contains(ev.target as Node)) { popup.remove(); document.removeEventListener('click', close); }
+                                  };
+                                  setTimeout(() => document.addEventListener('click', close), 0);
                                 }}
                               >
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
@@ -932,21 +954,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     : 'bg-purple-200 dark:bg-purple-800'
                                 }`}></div>
                               </button>
-                              {/* Popup รายชื่อ */}
-                              <div data-parallel-popup className="hidden absolute top-full mt-1 left-1/2 -translate-x-1/2 z-50 bg-card border border-border rounded-lg shadow-lg p-2 min-w-[160px]">
-                                <p className="text-[10px] font-semibold text-muted-foreground mb-1">ผู้ลงนามเพิ่มเติม</p>
-                                {pc.signers.map((s: any) => {
-                                  const done = (pc.completed_user_ids || []).includes(s.user_id);
-                                  return (
-                                    <div key={s.user_id} className="flex items-center gap-1.5 py-0.5">
-                                      <span className={`text-[10px] ${done ? 'text-green-600' : 'text-amber-600'}`}>
-                                        {done ? '✓' : '○'}
-                                      </span>
-                                      <span className="text-[10px] text-foreground">{s.name}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
                             </div>
                             <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                           </>

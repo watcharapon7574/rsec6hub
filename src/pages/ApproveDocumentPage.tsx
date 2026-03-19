@@ -565,7 +565,19 @@ const ApproveDocumentPage: React.FC = () => {
           return;
         }
 
-        const extractedPdfUrl = extractPdfUrl(memo.pdf_draft_path);
+        // ดึง pdf_draft_path ล่าสุดจาก DB (อาจถูกอัปเดตโดย annotation)
+        let latestPdfPath = memo.pdf_draft_path;
+        if (hasCompletedAnnotation && memoId) {
+          const { data: freshMemo } = await supabase
+            .from('memos')
+            .select('pdf_draft_path')
+            .eq('id', memoId)
+            .single();
+          if (freshMemo?.pdf_draft_path) {
+            latestPdfPath = freshMemo.pdf_draft_path;
+          }
+        }
+        const extractedPdfUrl = extractPdfUrl(latestPdfPath);
         if (!extractedPdfUrl) {
           toast({
             title: "ข้อผิดพลาด",

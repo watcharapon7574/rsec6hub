@@ -1316,7 +1316,6 @@ const ApproveDocumentPage: React.FC = () => {
           onSave={async (annotatedPdfBlob: Blob) => {
             setShowAnnotationEditor(false);
 
-            setLoadingMessage({ title: "กำลังบันทึกรอยขีดเขียน", description: "กรุณารอสักครู่..." });
             setShowLoadingModal(true);
 
             // จำ PDF เดิมไว้เผื่อต้อง revert

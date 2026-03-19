@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Users, PenTool, Plus, X, UserPlus } from 'lucide-react';
+
+interface ParallelSignerInfo {
+  user_id: string;
+  name: string;
+  position?: string;
+  org_structure_role?: string;
+  require_annotation: boolean;
+}
 
 interface Step2Props {
   selectedAssistant: string;
@@ -17,6 +26,12 @@ interface Step2Props {
   onPrevious: () => void;
   onNext: () => void;
   isStepComplete: boolean;
+  // Parallel signers props
+  parallelSigners: ParallelSignerInfo[];
+  onParallelSignersChange: (signers: ParallelSignerInfo[]) => void;
+  annotationRequiredUserIds: string[];
+  onAnnotationRequiredChange: (userIds: string[]) => void;
+  availableProfiles: any[]; // profiles ที่สามารถเพิ่มเป็น parallel signer
 }
 
 const Step2SelectSigners: React.FC<Step2Props> = ({
@@ -29,8 +44,49 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
   onSelectedDeputyChange,
   onPrevious,
   onNext,
-  isStepComplete
+  isStepComplete,
+  parallelSigners,
+  onParallelSignersChange,
+  annotationRequiredUserIds,
+  onAnnotationRequiredChange,
+  availableProfiles
 }) => {
+  const [showAddSigner, setShowAddSigner] = useState(false);
+
+  const handleAddParallelSigner = (profile: any) => {
+    const newSigner: ParallelSignerInfo = {
+      user_id: profile.user_id,
+      name: `${profile.prefix || ''}${profile.first_name} ${profile.last_name}`.trim(),
+      position: profile.job_position || profile.current_position || '',
+      org_structure_role: profile.org_structure_role || '',
+      require_annotation: false,
+    };
+    onParallelSignersChange([...parallelSigners, newSigner]);
+    setShowAddSigner(false);
+  };
+
+  const handleRemoveParallelSigner = (userId: string) => {
+    onParallelSignersChange(parallelSigners.filter(s => s.user_id !== userId));
+    onAnnotationRequiredChange(annotationRequiredUserIds.filter(id => id !== userId));
+  };
+
+  const toggleAnnotation = (userId: string) => {
+    if (annotationRequiredUserIds.includes(userId)) {
+      onAnnotationRequiredChange(annotationRequiredUserIds.filter(id => id !== userId));
+    } else {
+      onAnnotationRequiredChange([...annotationRequiredUserIds, userId]);
+    }
+  };
+
+  // กรอง profiles ที่เพิ่มได้ (ยังไม่ได้เลือก + ไม่ใช่ signers ปัจจุบัน)
+  const existingUserIds = [
+    ...parallelSigners.map(s => s.user_id),
+    ...signers.map((s: any) => s.user_id),
+  ];
+  const addableProfiles = availableProfiles.filter(
+    p => !existingUserIds.includes(p.user_id)
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -40,6 +96,95 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* ผู้ลงนามเพิ่มเติม (Parallel) */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              ผู้ลงนามเพิ่มเติม (ลงนามพร้อมกันได้)
+            </Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddSigner(!showAddSigner)}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-3 w-3" />
+              เพิ่ม
+            </Button>
+          </div>
+
+          {/* Dropdown เลือกเพิ่มคน */}
+          {showAddSigner && addableProfiles.length > 0 && (
+            <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1 bg-card">
+              {addableProfiles.map((p: any) => (
+                <div
+                  key={p.user_id}
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
+                  onClick={() => handleAddParallelSigner(p)}
+                >
+                  <div>
+                    <p className="font-medium text-sm">{p.prefix || ''}{p.first_name} {p.last_name}</p>
+                    <p className="text-xs text-muted-foreground">{p.org_structure_role || p.job_position || ''}</p>
+                  </div>
+                  <Plus className="h-4 w-4 text-blue-500" />
+                </div>
+              ))}
+            </div>
+          )}
+          {showAddSigner && addableProfiles.length === 0 && (
+            <p className="text-sm text-muted-foreground p-2">ไม่มีรายชื่อที่สามารถเพิ่มได้</p>
+          )}
+
+          {/* รายชื่อ parallel signers ที่เลือกแล้ว */}
+          {parallelSigners.length > 0 ? (
+            <div className="space-y-2">
+              {parallelSigners.map((signer) => (
+                <div
+                  key={signer.user_id}
+                  className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                      👥
+                    </Badge>
+                    <div>
+                      <p className="font-semibold text-sm">{signer.name}</p>
+                      <p className="text-xs text-muted-foreground">{signer.org_structure_role || signer.position || ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* Checkbox ขีดเขียน */}
+                    <div
+                      className="flex items-center gap-1.5 cursor-pointer"
+                      onClick={() => toggleAnnotation(signer.user_id)}
+                    >
+                      <Checkbox checked={annotationRequiredUserIds.includes(signer.user_id)} />
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <PenTool className="h-3 w-3" />
+                        ขีดเขียน
+                      </span>
+                    </div>
+                    {/* ปุ่มลบ */}
+                    <button
+                      onClick={() => handleRemoveParallelSigner(signer.user_id)}
+                      className="text-red-400 hover:text-red-600 p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+              ยังไม่มีผู้ลงนามเพิ่มเติม (ไม่บังคับ)
+            </p>
+          )}
+        </div>
+
+        {/* หัวหน้าฝ่าย + รองผอ. (เดิม) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>หัวหน้าฝ่าย (เลือก 1 คน หรือไม่ระบุ)</Label>
@@ -55,21 +200,30 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                   <SelectItem
                     key={`assistant-${profile.id}`}
                     value={profile.user_id || profile.id}
-                    className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:focus:bg-blue-950 dark:bg-blue-950 cursor-pointer"
+                    className="hover:bg-blue-50 dark:hover:bg-blue-950 focus:bg-blue-50 dark:focus:bg-blue-950 cursor-pointer"
                     textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
                   >
                     <div className="flex flex-col">
-                      <span className="font-semibold">
-                        {profile.prefix || ''}{profile.first_name} {profile.last_name}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {profile.org_structure_role || ''}
-                      </span>
+                      <span className="font-semibold">{profile.prefix || ''}{profile.first_name} {profile.last_name}</span>
+                      <span className="text-sm text-muted-foreground">{profile.org_structure_role || ''}</span>
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {/* Annotation checkbox สำหรับหัวหน้าฝ่าย */}
+            {selectedAssistant && selectedAssistant !== 'skip' && (
+              <div
+                className="flex items-center gap-1.5 mt-2 cursor-pointer"
+                onClick={() => toggleAnnotation(selectedAssistant)}
+              >
+                <Checkbox checked={annotationRequiredUserIds.includes(selectedAssistant)} />
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <PenTool className="h-3 w-3" />
+                  ต้องขีดเขียน
+                </span>
+              </div>
+            )}
           </div>
 
           <div>
@@ -86,57 +240,117 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                   <SelectItem
                     key={`deputy-${profile.id}`}
                     value={profile.user_id || profile.id}
-                    className="hover:bg-blue-50 dark:hover:bg-blue-950 dark:bg-blue-950 focus:bg-blue-50 dark:focus:bg-blue-950 dark:bg-blue-950 cursor-pointer"
+                    className="hover:bg-blue-50 dark:hover:bg-blue-950 focus:bg-blue-50 dark:focus:bg-blue-950 cursor-pointer"
                     textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
                   >
                     <div className="flex flex-col">
-                      <span className="font-semibold">
-                        {profile.prefix || ''}{profile.first_name} {profile.last_name}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {profile.org_structure_role || ''}
-                      </span>
+                      <span className="font-semibold">{profile.prefix || ''}{profile.first_name} {profile.last_name}</span>
+                      <span className="text-sm text-muted-foreground">{profile.org_structure_role || ''}</span>
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {/* Annotation checkbox สำหรับรองผอ. */}
+            {selectedDeputy && selectedDeputy !== 'skip' && (
+              <div
+                className="flex items-center gap-1.5 mt-2 cursor-pointer"
+                onClick={() => toggleAnnotation(selectedDeputy)}
+              >
+                <Checkbox checked={annotationRequiredUserIds.includes(selectedDeputy)} />
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <PenTool className="h-3 w-3" />
+                  ต้องขีดเขียน
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* คำอธิบายการข้าม */}
+        {/* Annotation checkbox สำหรับ ผอ. */}
+        {signers.some((s: any) => s.role === 'director') && (
+          <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => {
+            const director = signers.find((s: any) => s.role === 'director');
+            if (director) toggleAnnotation(director.user_id);
+          }}>
+            <Checkbox checked={
+              annotationRequiredUserIds.includes(signers.find((s: any) => s.role === 'director')?.user_id || '')
+            } />
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <PenTool className="h-3 w-3" />
+              ผู้อำนวยการต้องขีดเขียน
+            </span>
+          </div>
+        )}
+
+        {/* คำอธิบาย */}
         <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
           <p className="font-medium mb-1">หมายเหตุ:</p>
+          <p>• ผู้ลงนามเพิ่มเติม (👥) จะลงนามพร้อมกันได้ ก่อนหัวหน้าฝ่าย</p>
+          <p>• ✏️ ขีดเขียน = ผู้ลงนามต้องเปิดเอกสารและขีดเขียนก่อนเซ็น</p>
           <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามหัวหน้าฝ่ายหรือรองผู้อำนวยการได้</p>
-          <p>• หมายเลขลำดับจะปรับให้ต่อเนื่องตามคนที่เลือกจริง</p>
-          <p>• ตัวอย่าง: ข้ามทั้งคู่ → 1(ผู้เขียน), 2(ผอ.) หรือข้ามหัวหน้าฝ่าย → 1(ผู้เขียน), 2(รองผอ.), 3(ผอ.)</p>
           <p>• ผู้เขียนและผู้อำนวยการจะอยู่เสมอ</p>
         </div>
 
+        {/* ลำดับการลงนาม (preview) */}
         <div>
-          <Label>ลำดับการลงนาม ({signers.length} คน)</Label>
+          <Label>ลำดับการลงนาม ({signers.length + parallelSigners.length} คน)</Label>
           <div className="mt-2 space-y-2">
-            {signers.map((signer, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
-                <div className="flex-1">
-                  <p className="font-semibold">{signer.name}</p>
-                  {/* บรรทัดที่ 1 - job_position (เล็กสุด) */}
-                  <p className="text-xs text-muted-foreground">
-                    {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
-                    {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
-                    {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
-                    {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
-                  </p>
-                  {/* บรรทัดที่ 2 - org_structure_role (เด่นรอง) */}
-                  {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                    <p className="text-sm text-muted-foreground">
-                      {signer.org_structure_role}
-                    </p>
+            {signers.map((signer: any, index: number) => {
+              const isAnnotationRequired = annotationRequiredUserIds.includes(signer.user_id);
+              // แทรก parallel signers หลังผู้เขียน (order 1)
+              const showParallelAfter = signer.role === 'author' && parallelSigners.length > 0;
+
+              return (
+                <React.Fragment key={index}>
+                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
+                    <div className="flex-1">
+                      <p className="font-semibold">
+                        {signer.name}
+                        {isAnnotationRequired && (
+                          <span className="ml-2 text-orange-500" title="ต้องขีดเขียน">✏️</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                        {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                        {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
+                        {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
+                      </p>
+                      {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
+                        <p className="text-sm text-muted-foreground">{signer.org_structure_role}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* แสดง parallel signers หลังผู้เขียน */}
+                  {showParallelAfter && (
+                    <div className="ml-4 space-y-2 border-l-2 border-blue-300 dark:border-blue-700 pl-3">
+                      <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                        👥 ลงนามพร้อมกัน ({parallelSigners.length} คน)
+                      </p>
+                      {parallelSigners.map((ps) => (
+                        <div key={ps.user_id} className="flex items-center gap-3 p-2 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                          <Badge variant="outline" className="min-w-[30px] text-center bg-blue-100 dark:bg-blue-900">
+                            {signer.order + 1}
+                          </Badge>
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm">
+                              {ps.name}
+                              {annotationRequiredUserIds.includes(ps.user_id) && (
+                                <span className="ml-2 text-orange-500" title="ต้องขีดเขียน">✏️</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{ps.org_structure_role || ps.position || ''}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </div>
-              </div>
-            ))}
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
 
@@ -144,7 +358,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
           <Button variant="outline" onClick={onPrevious}>
             ก่อนหน้า
           </Button>
-          <Button 
+          <Button
             onClick={onNext}
             disabled={!isStepComplete}
             className="bg-blue-600 text-white hover:bg-blue-700 transition-colors"

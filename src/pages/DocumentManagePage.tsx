@@ -53,6 +53,16 @@ const DocumentManagePage: React.FC = () => {
   const [isNumberAssigned, setIsNumberAssigned] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
 
+  // Parallel signers state
+  const [parallelSigners, setParallelSigners] = useState<Array<{
+    user_id: string;
+    name: string;
+    position?: string;
+    org_structure_role?: string;
+    require_annotation: boolean;
+  }>>([]);
+  const [annotationRequiredUserIds, setAnnotationRequiredUserIds] = useState<string[]>([]);
+
   // Calculate current year dynamically
   const currentBuddhistYear = new Date().getFullYear() + 543;
   const yearShort = currentBuddhistYear.toString().slice(-2); // เอา 2 ตัวท้าย เช่น 69
@@ -277,6 +287,32 @@ const DocumentManagePage: React.FC = () => {
       }
     }
   }, [memo]);
+
+  // Auto-populate parallel signers จาก form_data ของผู้เขียน
+  React.useEffect(() => {
+    if (memo && parallelSigners.length === 0) {
+      const config = (memo.form_data as any)?.parallel_signer_config;
+      if (config?.enabled && config.signer_user_ids?.length > 0) {
+        const autoSigners = config.signer_user_ids
+          .map((uid: string) => {
+            const p = profiles.find(pr => pr.user_id === uid);
+            if (!p) return null;
+            return {
+              user_id: uid,
+              name: `${p.prefix || ''}${p.first_name} ${p.last_name}`.trim(),
+              position: p.job_position || p.current_position || '',
+              org_structure_role: p.org_structure_role || '',
+              require_annotation: (config.annotation_required_for || []).includes(uid),
+            };
+          })
+          .filter(Boolean);
+        if (autoSigners.length > 0) {
+          setParallelSigners(autoSigners);
+          setAnnotationRequiredUserIds(config.annotation_required_for || []);
+        }
+      }
+    }
+  }, [memo, profiles]);
 
   // Get profiles by org_structure_role (ใช้ org_structure_role แทน position เพื่อรองรับการเปลี่ยนคนรับผิดชอบ)
   const assistantDirectors = profiles.filter(p => p.org_structure_role?.includes('หัวหน้าฝ่าย'));
@@ -897,11 +933,29 @@ const DocumentManagePage: React.FC = () => {
 
         console.log('📊 Saving signer_list_progress:', signerListProgress);
 
-        // Update memo with signer_list_progress (using type assertion for database compatibility)
+        // สร้าง parallel_signers config ถ้ามี
+        const parallelSignersConfig = parallelSigners.length > 0
+          ? {
+              order: 2, // parallel signers อยู่ order 2 (หลังผู้เขียน)
+              signers: parallelSigners.map(ps => ({
+                user_id: ps.user_id,
+                name: ps.name,
+                require_annotation: annotationRequiredUserIds.includes(ps.user_id),
+              })),
+              completed_user_ids: [],
+            }
+          : null;
+
+        console.log('📊 Parallel signers config:', parallelSignersConfig);
+        console.log('📊 Annotation required for:', annotationRequiredUserIds);
+
+        // Update memo with signer_list_progress + parallel config
         const { error: updateError } = await supabase
           .from('memos')
           .update({
-            signer_list_progress: signerListProgress
+            signer_list_progress: signerListProgress,
+            parallel_signers: parallelSignersConfig,
+            annotation_required_for: annotationRequiredUserIds.length > 0 ? annotationRequiredUserIds : null,
           } as any)
           .eq('id', memoId);
 
@@ -1484,6 +1538,14 @@ const DocumentManagePage: React.FC = () => {
               onPrevious={handlePrevious}
               onNext={handleNext}
               isStepComplete={isStepComplete(2)}
+              parallelSigners={parallelSigners}
+              onParallelSignersChange={setParallelSigners}
+              annotationRequiredUserIds={annotationRequiredUserIds}
+              onAnnotationRequiredChange={setAnnotationRequiredUserIds}
+              availableProfiles={profiles.filter(p =>
+                p.user_id !== memo?.user_id &&
+                !['director', 'deputy_director'].includes(p.position || '')
+              )}
             />
           )}
 

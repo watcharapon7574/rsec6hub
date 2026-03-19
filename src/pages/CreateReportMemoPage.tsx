@@ -358,7 +358,45 @@ const CreateReportMemoPage = () => {
       return;
     }
 
+    // ตรวจสอบขนาด A4
+    const { validatePdfA4, formatA4ValidationError } = await import('@/utils/validatePdfA4');
+    const result = await validatePdfA4(file);
+    if (!result.valid) {
+      toast({
+        title: 'ขนาด PDF ไม่ถูกต้อง',
+        description: formatA4ValidationError(result),
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setUploadedPdfFile(file);
+  };
+
+  const handleAttachedFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // ตรวจสอบไฟล์ PDF ที่แนบมาว่าเป็น A4 หรือไม่
+    const pdfFiles = files.filter(f => f.type === 'application/pdf');
+    if (pdfFiles.length > 0) {
+      const { validatePdfA4, formatA4ValidationError } = await import('@/utils/validatePdfA4');
+      for (const pdfFile of pdfFiles) {
+        const result = await validatePdfA4(pdfFile);
+        if (!result.valid) {
+          toast({
+            title: `ไฟล์แนบ "${pdfFile.name}" ขนาดไม่ถูกต้อง`,
+            description: formatA4ValidationError(result),
+            variant: 'destructive'
+          });
+          e.target.value = '';
+          return;
+        }
+      }
+    }
+
+    setSelectedFiles(files);
+    setFormData(prev => ({ ...prev, attached_files: files.map(f => f.name) }));
   };
 
   const handleUploadSubmit = async () => {
@@ -1164,11 +1202,7 @@ const CreateReportMemoPage = () => {
                         type="file"
                         multiple
                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          setSelectedFiles(files);
-                          setFormData(prev => ({ ...prev, attached_files: files.map(f => f.name) }));
-                        }}
+                        onChange={handleAttachedFiles}
                         className="block w-full text-sm text-muted-foreground
                           file:mr-4 file:py-2 file:px-4
                           file:rounded-lg file:border-0
@@ -1363,11 +1397,7 @@ const CreateReportMemoPage = () => {
                           type="file"
                           multiple
                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files || []);
-                            setSelectedFiles(files);
-                            setFormData(prev => ({ ...prev, attached_files: files.map(f => f.name) }));
-                          }}
+                          onChange={handleAttachedFiles}
                           className="block w-full text-sm text-muted-foreground
                             file:mr-4 file:py-2 file:px-4
                             file:rounded-lg file:border-0

@@ -185,7 +185,7 @@ const CreateDocReceivePage = () => {
     return match ? match[1] : '';
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.type !== 'application/pdf') {
@@ -201,6 +201,17 @@ const CreateDocReceivePage = () => {
           title: "ไฟล์ขนาดใหญ่เกินไป",
           description: "กรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 30MB",
           variant: "destructive",
+        });
+        return;
+      }
+      // ตรวจสอบขนาด A4
+      const { validatePdfA4, formatA4ValidationError } = await import('@/utils/validatePdfA4');
+      const result = await validatePdfA4(file);
+      if (!result.valid) {
+        toast({
+          title: 'ขนาด PDF ไม่ถูกต้อง',
+          description: formatA4ValidationError(result),
+          variant: 'destructive',
         });
         return;
       }

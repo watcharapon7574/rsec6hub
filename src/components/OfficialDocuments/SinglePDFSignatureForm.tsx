@@ -39,9 +39,20 @@ const SinglePDFSignatureForm: React.FC = () => {
   const [signaturePositions, setSignaturePositions] = useState<SignaturePosition[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
+      // ตรวจสอบขนาด A4
+      const { validatePdfA4, formatA4ValidationError } = await import('@/utils/validatePdfA4');
+      const result = await validatePdfA4(file);
+      if (!result.valid) {
+        toast({
+          title: 'ขนาด PDF ไม่ถูกต้อง',
+          description: formatA4ValidationError(result),
+          variant: 'destructive',
+        });
+        return;
+      }
       setPdfFile(file);
       toast({
         title: "อัปโหลด PDF สำเร็จ",

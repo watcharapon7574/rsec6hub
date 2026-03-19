@@ -388,7 +388,7 @@ export const useAllMemos = () => {
     }
   };
 
-  const updateMemoApproval = async (memoId: string, action: 'approve' | 'reject', comment?: string) => {
+  const updateMemoApproval = async (memoId: string, action: 'approve' | 'reject', comment?: string, signOnBehalfUserId?: string) => {
     try {
       setLoading(true);
 
@@ -423,7 +423,7 @@ export const useAllMemos = () => {
       // ใช้ centralized logic จาก approvalWorkflowService (รองรับ parallel group)
       const parallelSigners = memo.parallel_signers || null;
       const { data: { session } } = await supabase.auth.getSession();
-      const currentUserId = session?.user?.id || '';
+      const currentUserId = signOnBehalfUserId || session?.user?.id || '';
 
       const result = action === 'approve'
         ? calculateNextSignerOrderWithParallel(currentOrder, signaturePositions, undefined, parallelSigners, currentUserId)

@@ -286,43 +286,10 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     navigate(`/approve-document/${memo.id}`);
   };
 
-  const handleAdminSignOnBehalf = async (memo: any, signerUserId: string) => {
-    // ลงนามแทน: อัปเดต completed_user_ids
-    const pc = memo.parallel_signers;
-    const newCompleted = [...(pc.completed_user_ids || []), signerUserId];
-    const allDone = pc.signers.every((s: any) => newCompleted.includes(s.user_id));
-
-    const updateData: any = {
-      parallel_signers: { ...pc, completed_user_ids: newCompleted },
-      updated_at: new Date().toISOString(),
-    };
-    // ถ้าครบทุกคน → advance ไป order ถัดไป
-    if (allDone) {
-      // หา next order จาก signer_list_progress
-      const signerList = memo.signer_list_progress || [];
-      const nextSigner = signerList
-        .filter((s: any) => s.order > pc.order && s.role !== 'parallel_signer')
-        .sort((a: any, b: any) => a.order - b.order)[0];
-      if (nextSigner) {
-        updateData.current_signer_order = nextSigner.order;
-      } else {
-        updateData.current_signer_order = 5; // completed
-        updateData.status = 'completed';
-      }
-    }
-
-    const { error } = await supabase
-      .from('memos')
-      .update(updateData)
-      .eq('id', memo.id);
-
-    if (error) {
-      console.error('Error signing on behalf:', error);
-      return;
-    }
-
+  const handleAdminSignOnBehalf = (memo: any, signerUserId: string) => {
+    // Navigate ไปหน้า approve พร้อมบอกว่าลงนามแทนใคร
     setParallelSignModal({ open: false, memo: null });
-    onRefresh?.();
+    navigate(`/approve-document/${memo.id}?signOnBehalf=${signerUserId}`);
   };
 
   // ฟังก์ชันสำหรับข้อความสถานะ (แปลไทย)
@@ -912,31 +879,13 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   </div>
                 );
               })}
-              <div className="flex gap-2 pt-2">
+              <div className="pt-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="w-full"
                   onClick={() => setParallelSignModal({ open: false, memo: null })}
                 >
                   ปิด
-                </Button>
-                <Button
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={() => {
-                    // ลงนามแทนทุกคนที่ยังรอ
-                    const pending = pc.signers.filter((s: any) => !(pc.completed_user_ids || []).includes(s.user_id));
-                    if (pending.length > 0) {
-                      // ลงนามทีละคนตาม sequence
-                      const signAll = async () => {
-                        for (const s of pending) {
-                          await handleAdminSignOnBehalf(parallelSignModal.memo, s.user_id);
-                        }
-                      };
-                      signAll();
-                    }
-                  }}
-                >
-                  ลงนามแทนทั้งหมด
                 </Button>
               </div>
             </div>

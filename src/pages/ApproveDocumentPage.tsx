@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +35,8 @@ import { ParallelSignerConfig } from '@/types/memo';
 const ApproveDocumentPage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const signOnBehalfUserId = searchParams.get('signOnBehalf'); // admin ลงนามแทน
   const { toast } = useToast();
   const { getMemoById, updateMemoApproval, updateMemoStatus, refetch } = useAllMemos();
   const { profile } = useEmployeeAuth();
@@ -52,11 +54,25 @@ const ApproveDocumentPage: React.FC = () => {
   const [isReportMemo, setIsReportMemo] = useState(false); // flag ว่าเป็น report memo หรือไม่
   const [hasCompletedAnnotation, setHasCompletedAnnotation] = useState(false); // ขีดเขียนเสร็จแล้ว
   const [signingLockWaiting, setSigningLockWaiting] = useState(false); // กำลังรอ FIFO lock
+  const [signOnBehalfProfile, setSignOnBehalfProfile] = useState<any>(null); // profile ของคนที่ลงนามแทน
 
-  // Scroll to top on mount - ทำทันทีเมื่อเปิดหน้า
+  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [memoId]);
+
+  // โหลด profile ของคนที่ admin ลงนามแทน
+  useEffect(() => {
+    if (signOnBehalfUserId) {
+      supabase.from('profiles')
+        .select('*')
+        .eq('user_id', signOnBehalfUserId)
+        .single()
+        .then(({ data }) => {
+          if (data) setSignOnBehalfProfile(data);
+        });
+    }
+  }, [signOnBehalfUserId]);
 
   // Try to get memo from memos table first (from cache)
   let memoFromMemosTable = memoId ? getMemoById(memoId) : null;
@@ -271,7 +287,7 @@ const ApproveDocumentPage: React.FC = () => {
       }
     } else {
       // Use existing updateMemoApproval for memos table
-      return await updateMemoApproval(docId, action, rejectionReason);
+      return await updateMemoApproval(docId, action, rejectionReason, signOnBehalfUserId || undefined);
     }
   };
 
@@ -496,13 +512,14 @@ const ApproveDocumentPage: React.FC = () => {
         return;
       }
       setSigningLockWaiting(false);
-      // Admin สามารถลงนามแทนได้โดยใช้ลายเซ็นของผู้ลงนามจริง
-      const isAdminSigningOnBehalf = isAdminUser && !currentUserSigner && !currentUserSignature;
-      const hasSignatureAccess = profile.signature_url || isAdminSigningOnBehalf;
+      // Admin ลงนามแทน: ใช้ profile ของคนที่ลงนามแทน
+      const effectiveProfile = signOnBehalfProfile || profile;
+      const isAdminSigningOnBehalf = isAdminUser && (signOnBehalfProfile || (!currentUserSigner && !currentUserSignature));
+      const hasSignatureAccess = effectiveProfile.signature_url || isAdminSigningOnBehalf;
 
       if (approvalAction === 'approve' && memo.pdf_draft_path && hasSignatureAccess) {
         // ตรวจสอบว่ามีลายเซ็นหรือไม่ (ข้ามสำหรับ admin ที่ลงนามแทน)
-        if (!profile.signature_url && !isAdminSigningOnBehalf) {
+        if (!effectiveProfile.signature_url && !isAdminSigningOnBehalf) {
           toast({
             title: "ไม่มีลายเซ็น",
             description: "กรุณาอัปโหลดลายเซ็นในโปรไฟล์ของคุณก่อน",
@@ -550,9 +567,9 @@ const ApproveDocumentPage: React.FC = () => {
           let linesWithoutComment: any[] = [];
 
           // ถ้าเป็น admin ลงนามแทน ให้ใช้ข้อมูลของผู้ลงนามจริง ไม่ใช่ข้อมูล admin
-          let signerProfile: any = profile; // default ใช้ profile ของผู้ใช้ปัจจุบัน
+          let signerProfile: any = signOnBehalfProfile || profile; // ใช้ signOnBehalf ก่อน
 
-          if (isAdminSigning && currentSignerInfo?.user_id) {
+          if (isAdminSigning && !signOnBehalfProfile && currentSignerInfo?.user_id) {
             // ดึงข้อมูล profile ของผู้ลงนามจริงจาก database
             const { data: actualSignerProfile } = await supabase
               .from('profiles')
@@ -673,12 +690,14 @@ const ApproveDocumentPage: React.FC = () => {
             ? memo.current_signer_order
             : (currentUserSigner?.order || currentUserSignature?.signer?.order);
 
-          console.log('🔍 Signing with order:', signerOrder, 'isAdminSigning:', isAdminSigning);
+          console.log('🔍 Signing with order:', signerOrder, 'isAdminSigning:', isAdminSigning, 'signOnBehalf:', signOnBehalfUserId);
 
-          // ค้นหาตำแหน่งลายเซ็นทั้งหมดที่ตรงกับ order ของผู้ใช้ (เหมือน DocumentManagePage)
-          let userSignaturePositions = signaturePositions.filter(pos => pos.signer?.order === signerOrder);
-          
-          // หากไม่เจอจาก order ให้ลองค้นหาจาก user_id (ข้ามถ้าเป็น admin ลงนามแทน)
+          // ค้นหาตำแหน่งลายเซ็น — signOnBehalf ใช้ user_id ของคนที่ลงนามแทน
+          let userSignaturePositions = signOnBehalfUserId
+            ? signaturePositions.filter(pos => pos.signer?.user_id === signOnBehalfUserId)
+            : signaturePositions.filter(pos => pos.signer?.order === signerOrder);
+
+          // หากไม่เจอจาก order/user_id ให้ลองค้นหาจาก user_id ของตัวเอง
           if (userSignaturePositions.length === 0 && profile?.user_id && !isAdminSigning) {
             userSignaturePositions = signaturePositions.filter(pos => pos.signer?.user_id === profile.user_id);
           }
@@ -1121,6 +1140,23 @@ const ApproveDocumentPage: React.FC = () => {
                       rows={4}
                     />
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Admin ลงนามแทน banner */}
+            {signOnBehalfProfile && (
+              <Card className="border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                    <Badge className="bg-blue-600 text-white">Admin</Badge>
+                    <span className="font-semibold">
+                      ลงนามแทน: {signOnBehalfProfile.prefix || ''}{signOnBehalfProfile.first_name} {signOnBehalfProfile.last_name}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    ระบบจะใช้ลายเซ็นของ {signOnBehalfProfile.first_name} ในการลงนาม
+                  </p>
                 </CardContent>
               </Card>
             )}

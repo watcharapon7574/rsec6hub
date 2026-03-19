@@ -710,6 +710,24 @@ const DocumentManagePage: React.FC = () => {
 
     if (!memoId) return;
 
+    // ตรวจสอบเลขซ้ำ (เช็คทั้ง memos และ document_register_manual)
+    const { data: existingMemos } = await supabase
+      .from('memos')
+      .select('id, doc_number')
+      .eq('doc_number', finalDocSuffix)
+      .neq('id', memoId)
+      .is('doc_del', null)
+      .limit(1);
+
+    if (existingMemos && existingMemos.length > 0) {
+      toast({
+        title: "เลขหนังสือซ้ำ",
+        description: `เลขหนังสือ ${finalDocSuffix} ถูกใช้แล้ว กรุณาใช้เลขอื่น`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${finalDocSuffix}`;
     setDocumentNumber(fullDocNumber);
     setDocNumberSuffix(finalDocSuffix); // อัปเดตให้แสดงในช่องกรอก

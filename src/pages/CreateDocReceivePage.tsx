@@ -278,6 +278,26 @@ const CreateDocReceivePage = () => {
         return;
       }
 
+      // ตรวจสอบเลขซ้ำใน doc_receive
+      const editId = editDocId || null;
+      const { data: existingDocs } = await supabase
+        .from('doc_receive')
+        .select('id, doc_number')
+        .eq('doc_number', documentNumber)
+        .is('doc_del', null)
+        .limit(1);
+
+      const isDuplicate = existingDocs && existingDocs.some((d: any) => d.id !== editId);
+      if (isDuplicate) {
+        toast({
+          title: "เลขรับซ้ำ",
+          description: `เลขรับ ${documentNumber} ถูกใช้แล้ว กรุณาใช้เลขอื่น`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       console.log('📋 Using document number:', documentNumber);
 
       // Ensure valid auth session before upload

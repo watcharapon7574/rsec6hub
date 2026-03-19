@@ -124,6 +124,62 @@ function extractStoragePath(url: string): string | null {
  * Call this when annotations are no longer needed (e.g. author resubmits, or new rejection replaces old).
  * Supports both memos and doc_receive tables.
  */
+/**
+ * Merge annotation layers (PNG) จาก memo_annotation_layers ลง PDF
+ * ดึง layers จาก DB → embed แต่ละ layer ลงหน้าที่ตรงกัน → return PDF blob
+ */
+export async function mergeAnnotationLayers(
+  pdfUrl: string,
+  memoId: string
+): Promise<Blob | null> {
+  try {
+    // ดึง layers จาก DB
+    const { data: layers, error } = await supabase
+      .from('memo_annotation_layers')
+      .select('*')
+      .eq('memo_id', memoId)
+      .order('created_at', { ascending: true });
+
+    if (error || !layers || layers.length === 0) {
+      console.log('ℹ️ No annotation layers to merge');
+      return null;
+    }
+
+    console.log(`🎨 Merging ${layers.length} annotation layers into PDF`);
+
+    // โหลด PDF ต้นฉบับ
+    const pdfBytes = await loadPdfFromUrl(pdfUrl);
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const pages = pdfDoc.getPages();
+
+    // Embed แต่ละ layer ลงหน้าที่ตรงกัน
+    for (const layer of layers) {
+      const pageIndex = layer.page_number - 1;
+      if (pageIndex < 0 || pageIndex >= pages.length) continue;
+
+      const page = pages[pageIndex];
+      const { width, height } = page.getSize();
+
+      // Fetch PNG layer
+      const response = await fetch(layer.layer_url);
+      if (!response.ok) {
+        console.warn(`⚠️ Failed to fetch layer: ${layer.layer_url}`);
+        continue;
+      }
+      const pngBytes = new Uint8Array(await response.arrayBuffer());
+      const pngImage = await pdfDoc.embedPng(pngBytes);
+
+      page.drawImage(pngImage, { x: 0, y: 0, width, height });
+    }
+
+    const resultBytes = await pdfDoc.save();
+    return new Blob([resultBytes], { type: 'application/pdf' });
+  } catch (error) {
+    console.error('Error merging annotation layers:', error);
+    return null;
+  }
+}
+
 export async function cleanupAnnotatedFiles(documentId: string): Promise<void> {
   try {
     // Try memos table first, then doc_receive

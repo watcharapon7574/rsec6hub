@@ -348,7 +348,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           })
           .catch((error) => {
             console.error('❌ Failed to fetch Supabase file:', error);
-            setError('ไม่สามารถโหลดไฟล์จาก storage ได้ กรุณาลองใหม่อีกครั้ง');
+            // ไฟล์อาจถูกลบแล้ว (เช่น เอกสารถูกตีกลับ)
+            const is4xx = error?.message?.includes('status: 4');
+            setError(is4xx
+              ? 'ไฟล์ PDF ถูกลบแล้ว (เอกสารอาจถูกตีกลับหรืออยู่ระหว่างแก้ไข)'
+              : 'ไม่สามารถโหลดไฟล์จาก storage ได้ กรุณาลองใหม่อีกครั้ง');
             setLoading(false);
           });
       } else {
@@ -1068,7 +1072,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                               style={{
                                 width: `${Math.max(40, basePinSize * 0.5)}px`,
                                 height: `${Math.max(40, basePinSize * 0.5)}px`,
-                                color: '#9333ea' // Purple color for clerk
+                                color: '#9333ea'
                               }}
                             >
                               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -1082,8 +1086,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             ธุรการ
                           </div>
                         </>
-                      ) : (pos.signer as any).positionIndex > 1 ? (
-                        /* ตำแหน่งที่ 2+ ของคนเดียวกัน - แสดงเฉพาะลายเซ็น PNG (ตรงกับ API ที่ส่งแค่ image) */
+                      ) : (pos.signer.role === 'parallel_signer' || (pos.signer as any).positionIndex > 1) ? (
+                        /* parallel_signer ทุกจุด + ตำแหน่งที่ 2+ ของคนอื่น - แสดงเฉพาะลายเซ็น PNG */
                         <>
                           {pos.signer.signature_url ? (
                             <div className="flex justify-center items-center" style={{ padding: '4px 0' }}>
@@ -1103,7 +1107,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             </div>
                           ) : (
                             <div className="font-semibold truncate leading-tight text-blue-600" style={{ fontSize: '12px' }}>
-                              ลายเซ็น ({(pos.signer as any).positionIndex})
+                              {pos.signer.role === 'parallel_signer' ? pos.signer.name : `ลายเซ็น (${(pos.signer as any).positionIndex})`}
                             </div>
                           )}
                         </>

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { MapPin } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { extractPdfUrl } from '@/utils/fileUpload';
@@ -97,7 +97,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">
-                        {signer.role === 'parallel_signer' && <span className="mr-1">👥</span>}
+                        {signer.role === 'parallel_signer' && <Users className="inline h-4 w-4 mr-1 text-blue-500" />}
                         {signer.name}
                       </p>
                       {/* job_position (เล็กสุด) */}

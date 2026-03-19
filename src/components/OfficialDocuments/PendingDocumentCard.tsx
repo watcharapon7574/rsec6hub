@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Clock, AlertCircle, PenTool, Eye, Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, ArrowUpDown, RotateCcw, FileCheck, FileInput } from 'lucide-react';
+import { FileText, Clock, AlertCircle, PenTool, Eye, Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, ArrowUpDown, RotateCcw, FileCheck, FileInput, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -567,7 +567,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                     : isDone ? 'text-green-600 dark:text-green-400'
                                     : 'text-amber-400 dark:text-amber-600'
                                 }`}>
-                                  👥 {completedCount}/{totalCount}
+                                  <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] ${
                                   isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'

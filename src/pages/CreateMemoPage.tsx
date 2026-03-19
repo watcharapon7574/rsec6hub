@@ -304,6 +304,14 @@ const CreateMemoPage = () => {
   };
 
   const handleUploadSubmit = async () => {
+    console.log('🔍 handleUploadSubmit called:', {
+      isEditMode,
+      hasOriginalMemo: !!originalMemo,
+      hasUploadedPdf: !!uploadedPdfFile,
+      enableParallelSigners,
+      selectedParallelSigners: selectedParallelSigners.map(s => s.user_id),
+      annotationRequiredUserIds,
+    });
     // Edit mode ที่ตีกลับ ไม่ต้อง require PDF ใหม่ (ใช้ PDF เก่าได้)
     const needsNewPdf = !isEditMode || !originalMemo?.pdf_draft_path;
     if (needsNewPdf && (!uploadedPdfFile || !profile?.user_id)) {
@@ -478,6 +486,11 @@ const CreateMemoPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔍 handleSubmit (form mode) called:', {
+      isEditMode,
+      enableParallelSigners,
+      selectedCount: selectedParallelSigners.length,
+    });
 
     // Use the doc_number as is, without auto-generation
     // เพิ่ม parallel signer config เข้า form_data
@@ -1740,7 +1753,7 @@ const CreateMemoPage = () => {
                               <Checkbox checked={annotationRequiredUserIds.includes(user.user_id)} />
                               <span className="text-sm">{user.first_name} {user.last_name}</span>
                               {annotationRequiredUserIds.includes(user.user_id) && (
-                                <span className="text-orange-500 text-xs">✏️</span>
+                                <PenTool className="inline h-3 w-3 text-orange-500" />
                               )}
                             </div>
                           ))}

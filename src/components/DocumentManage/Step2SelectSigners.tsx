@@ -178,8 +178,8 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
         {/* คำอธิบาย */}
         <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
           <p className="font-medium mb-1">หมายเหตุ:</p>
-          <p>• ผู้ลงนามเพิ่มเติม (👥) จะลงนามพร้อมกันได้ ก่อนหัวหน้าฝ่าย</p>
-          <p>• กดที่ชื่อในลำดับการลงนาม เพื่อ toggle ✏️ ขีดเขียน</p>
+          <p>• ผู้ลงนามเพิ่มเติม จะลงนามพร้อมกันได้ ก่อนหัวหน้าฝ่าย</p>
+          <p>• กดที่ชื่อในลำดับการลงนาม เพื่อ toggle ขีดเขียน</p>
           <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามหัวหน้าฝ่ายหรือรองผู้อำนวยการได้</p>
           <p>• ผู้เขียนและผู้อำนวยการจะอยู่เสมอ</p>
         </div>
@@ -206,7 +206,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <p className="font-semibold">
                         {signer.name}
                         {isAnnotationRequired && (
-                          <span className="ml-2 text-orange-500" title="ต้องขีดเขียน">✏️</span>
+                          <PenTool className="inline h-3.5 w-3.5 ml-2 text-orange-500" />
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -231,7 +231,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                   {showParallelAfter && (
                     <div className="ml-4 space-y-2 border-l-2 border-blue-300 dark:border-blue-700 pl-3">
                       <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                        👥 ลงนามพร้อมกัน ({parallelSigners.length} คน)
+                        <Users className="inline h-3 w-3 mr-1" /> ลงนามพร้อมกัน ({parallelSigners.length} คน)
                       </p>
                       {parallelSigners.map((ps) => {
                         const psAnnotation = annotationRequiredUserIds.includes(ps.user_id);
@@ -249,7 +249,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                             <div className="flex-1">
                               <p className="font-semibold text-sm">
                                 {ps.name}
-                                {psAnnotation && <span className="ml-2 text-orange-500">✏️</span>}
+                                {psAnnotation && <PenTool className="inline h-3.5 w-3.5 ml-2 text-orange-500" />}
                               </p>
                               <p className="text-xs text-muted-foreground">{ps.org_structure_role || ps.position || ''}</p>
                             </div>

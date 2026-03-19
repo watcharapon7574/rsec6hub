@@ -111,9 +111,19 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
   const pendingSignMemos = realMemos.filter(memo => memo.status === 'pending_sign');
   
   // เช็คสิทธิ์ - เฉพาะผู้ช่วยผอ รองผอ และผอ เท่านั้น
-  const canAccessApproval = permissions.position === 'assistant_director' || 
-                           permissions.position === 'deputy_director' || 
-                           permissions.position === 'director';
+  // เช็คว่า user อยู่ใน parallel group ของเอกสารใดๆ หรือไม่
+  const hasParallelPending = pendingSignMemos.some((memo: any) => {
+    const pc = memo?.parallel_signers;
+    return pc && pc.signers?.some((s: any) => s.user_id === profile?.user_id)
+      && !(pc.completed_user_ids || []).includes(profile?.user_id)
+      && memo.current_signer_order === pc.order;
+  });
+
+  const canAccessApproval = permissions.position === 'assistant_director' ||
+                           permissions.position === 'deputy_director' ||
+                           permissions.position === 'director' ||
+                           permissions.isAdmin ||
+                           hasParallelPending;
 
   // Debug logging
   console.log('🔍 Debug DocumentCards:', {

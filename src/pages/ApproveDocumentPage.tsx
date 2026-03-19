@@ -1286,44 +1286,54 @@ const ApproveDocumentPage: React.FC = () => {
             // ปิด editor ก่อนเพื่อป้องกัน canvas unmount error
             setShowAnnotationEditor(false);
 
-            const annotatorUserId = signOnBehalfUserId || profile?.user_id;
-            if (!annotatorUserId || !memoId) return;
+            // แสดง loading modal
+            setLoadingMessage({ title: "กำลังบันทึกรอยขีดเขียน", description: "กรุณารอสักครู่..." });
+            setShowLoadingModal(true);
 
-            const fileName = `annotated_${memoId}_${Date.now()}.pdf`;
-            const filePath = `memos/${annotatorUserId}/${fileName}`;
+            try {
+              const annotatorUserId = signOnBehalfUserId || profile?.user_id;
+              if (!annotatorUserId || !memoId) return;
 
-            const { error: uploadError } = await supabase.storage
-              .from('documents')
-              .upload(filePath, annotatedPdfBlob, { contentType: 'application/pdf', upsert: true });
+              const fileName = `annotated_${memoId}_${Date.now()}.pdf`;
+              const filePath = `memos/${annotatorUserId}/${fileName}`;
 
-            if (uploadError) {
+              const { error: uploadError } = await supabase.storage
+                .from('documents')
+                .upload(filePath, annotatedPdfBlob, { contentType: 'application/pdf', upsert: true });
+
+              if (uploadError) {
+                toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถบันทึกรอยขีดเขียนได้', variant: 'destructive' });
+                return;
+              }
+
+              const { data: { publicUrl } } = supabase.storage
+                .from('documents')
+                .getPublicUrl(filePath);
+
+              await supabase.from('memos').update({
+                pdf_draft_path: `${publicUrl}?t=${Date.now()}`,
+                updated_at: new Date().toISOString(),
+              }).eq('id', memoId);
+
+              await supabase.from('memo_annotation_layers').insert({
+                memo_id: memoId,
+                user_id: annotatorUserId,
+                page_number: 0,
+                layer_url: publicUrl,
+              });
+
+              setHasCompletedAnnotation(true);
+              toast({
+                title: "ขีดเขียนเสร็จแล้ว",
+                description: "รอยขีดเขียนถูกบันทึกลงเอกสารแล้ว คุณสามารถลงนามได้",
+              });
+              setTimeout(() => refetch(), 500);
+            } catch (error) {
+              console.error('Error saving annotation:', error);
               toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถบันทึกรอยขีดเขียนได้', variant: 'destructive' });
-              return;
+            } finally {
+              setShowLoadingModal(false);
             }
-
-            const { data: { publicUrl } } = supabase.storage
-              .from('documents')
-              .getPublicUrl(filePath);
-
-            await supabase.from('memos').update({
-              pdf_draft_path: `${publicUrl}?t=${Date.now()}`,
-              updated_at: new Date().toISOString(),
-            }).eq('id', memoId);
-
-            await supabase.from('memo_annotation_layers').insert({
-              memo_id: memoId,
-              user_id: annotatorUserId,
-              page_number: 0,
-              layer_url: publicUrl,
-            });
-
-            setHasCompletedAnnotation(true);
-            toast({
-              title: "ขีดเขียนเสร็จแล้ว",
-              description: "รอยขีดเขียนถูกบันทึกลงเอกสารแล้ว คุณสามารถลงนามได้",
-            });
-            // refetch หลัง delay เพื่อให้ canvas cleanup เสร็จก่อน
-            setTimeout(() => refetch(), 500);
           }}
         />
       )}

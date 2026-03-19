@@ -294,10 +294,16 @@ const ApproveDocumentPage: React.FC = () => {
   };
 
   // Check if user can comment (assistant_director, deputy_director, director, or admin)
-  const canComment = profile?.is_admin === true ||
-                     profile?.position === 'assistant_director' ||
-                     profile?.position === 'deputy_director' ||
-                     profile?.position === 'director';
+  // ผู้ลงนามเพิ่มเติม (parallel_signer) ไม่ต้องแสดง comment
+  const isSigningForParallel = signOnBehalfProfile && signaturePositions.some(
+    (pos: any) => pos.signer?.user_id === signOnBehalfUserId && pos.signer?.role === 'parallel_signer'
+  );
+  const canComment = !isSigningForParallel && (
+    profile?.is_admin === true ||
+    profile?.position === 'assistant_director' ||
+    profile?.position === 'deputy_director' ||
+    profile?.position === 'director'
+  );
 
   // Debug: แสดงข้อมูลสำหรับการ debug (ลบออกได้หลังจากแก้ไขเสร็จ)
   useEffect(() => {

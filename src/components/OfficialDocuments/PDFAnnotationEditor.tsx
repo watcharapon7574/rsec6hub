@@ -15,6 +15,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 type Tool = 'pen' | 'highlighter' | 'text' | 'circle' | 'arrow' | 'eraser' | 'pan';
 
 const COLORS = [
+  { value: '#02358B', label: 'น้ำเงินเข้ม' },
   { value: '#FF0000', label: 'แดง' },
   { value: '#0066FF', label: 'น้ำเงิน' },
   { value: '#00AA00', label: 'เขียว' },
@@ -52,11 +53,11 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
 
   // Tool state (both state for UI + ref for canvas handlers)
   const [activeTool, setActiveTool] = useState<Tool>('pen');
-  const [penColor, setPenColor] = useState('#FF0000');
-  const [penWidth, setPenWidth] = useState(4);
+  const [penColor, setPenColor] = useState('#02358B'); // สีเดียวกับตราปั๊ม
+  const [penWidth, setPenWidth] = useState(2); // เส้นเล็กสุด
   const activeToolRef = useRef<Tool>('pen');
-  const penColorRef = useRef('#FF0000');
-  const penWidthRef = useRef(4);
+  const penColorRef = useRef('#02358B');
+  const penWidthRef = useRef(2);
 
   // Keep refs in sync with state
   useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);

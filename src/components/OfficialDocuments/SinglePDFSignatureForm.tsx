@@ -7,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Upload, FileText, Download, Loader2, Zap, Plus, Trash2 } from 'lucide-react';
 import { railwayPDFQueue } from '@/utils/requestQueue';
 import { railwayFetch } from '@/utils/railwayFetch';
+import { A4WarningDialog } from '@/components/ui/A4WarningDialog';
+import { PdfValidationResult } from '@/utils/validatePdfA4';
 
 interface SignatureFile {
   key: string;
@@ -39,17 +41,26 @@ const SinglePDFSignatureForm: React.FC = () => {
   const [signaturePositions, setSignaturePositions] = useState<SignaturePosition[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // A4 warning modal state
+  const [a4Warning, setA4Warning] = useState<PdfValidationResult | null>(null);
+  const [a4WarningFileName, setA4WarningFileName] = useState('');
+  const [a4PendingCallback, setA4PendingCallback] = useState<(() => void) | null>(null);
+
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
       // ตรวจสอบขนาด A4
-      const { validatePdfA4, formatA4ValidationError } = await import('@/utils/validatePdfA4');
+      const { validatePdfA4 } = await import('@/utils/validatePdfA4');
       const result = await validatePdfA4(file);
       if (!result.valid) {
-        toast({
-          title: 'ขนาด PDF ไม่ถูกต้อง',
-          description: formatA4ValidationError(result),
-          variant: 'destructive',
+        setA4Warning(result);
+        setA4WarningFileName(file.name);
+        setA4PendingCallback(() => () => {
+          setPdfFile(file);
+          toast({
+            title: "อัปโหลด PDF สำเร็จ",
+            description: `ไฟล์: ${file.name}`,
+          });
         });
         return;
       }
@@ -494,6 +505,20 @@ const SinglePDFSignatureForm: React.FC = () => {
           </form>
         </CardContent>
       </Card>
+      <A4WarningDialog
+        open={!!a4Warning}
+        result={a4Warning}
+        fileName={a4WarningFileName}
+        onConfirm={() => {
+          a4PendingCallback?.();
+          setA4Warning(null);
+          setA4PendingCallback(null);
+        }}
+        onCancel={() => {
+          setA4Warning(null);
+          setA4PendingCallback(null);
+        }}
+      />
     </div>
   );
 };

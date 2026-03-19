@@ -17,6 +17,8 @@ import { formatThaiDateFull, convertToThaiNumerals } from '@/utils/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { railwayFetch } from '@/utils/railwayFetch';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
+import { A4WarningDialog } from '@/components/ui/A4WarningDialog';
+import { PdfValidationResult } from '@/utils/validatePdfA4';
 
 interface TaskInfo {
   assignment_id: string;
@@ -85,6 +87,11 @@ const CreateReportMemoPage = () => {
   const [isUploadedMemo, setIsUploadedMemo] = useState(false);
   const [uploadedPdfFile, setUploadedPdfFile] = useState<File | null>(null);
   const [uploadingPdf, setUploadingPdf] = useState(false);
+
+  // A4 warning modal state
+  const [a4Warning, setA4Warning] = useState<PdfValidationResult | null>(null);
+  const [a4WarningFileName, setA4WarningFileName] = useState('');
+  const [a4PendingCallback, setA4PendingCallback] = useState<(() => void) | null>(null);
 
   const [formData, setFormData] = useState<MemoFormData>({
     doc_number: '',
@@ -359,13 +366,13 @@ const CreateReportMemoPage = () => {
     }
 
     // ตรวจสอบขนาด A4
-    const { validatePdfA4, formatA4ValidationError } = await import('@/utils/validatePdfA4');
+    const { validatePdfA4 } = await import('@/utils/validatePdfA4');
     const result = await validatePdfA4(file);
     if (!result.valid) {
-      toast({
-        title: 'ขนาด PDF ไม่ถูกต้อง',
-        description: formatA4ValidationError(result),
-        variant: 'destructive'
+      setA4Warning(result);
+      setA4WarningFileName(file.name);
+      setA4PendingCallback(() => () => {
+        setUploadedPdfFile(file);
       });
       return;
     }
@@ -380,14 +387,15 @@ const CreateReportMemoPage = () => {
     // ตรวจสอบไฟล์ PDF ที่แนบมาว่าเป็น A4 หรือไม่
     const pdfFiles = files.filter(f => f.type === 'application/pdf');
     if (pdfFiles.length > 0) {
-      const { validatePdfA4, formatA4ValidationError } = await import('@/utils/validatePdfA4');
+      const { validatePdfA4 } = await import('@/utils/validatePdfA4');
       for (const pdfFile of pdfFiles) {
         const result = await validatePdfA4(pdfFile);
         if (!result.valid) {
-          toast({
-            title: `ไฟล์แนบ "${pdfFile.name}" ขนาดไม่ถูกต้อง`,
-            description: formatA4ValidationError(result),
-            variant: 'destructive'
+          setA4Warning(result);
+          setA4WarningFileName(pdfFile.name);
+          setA4PendingCallback(() => () => {
+            setSelectedFiles(files);
+            setFormData(prev => ({ ...prev, attached_files: files.map(f => f.name) }));
           });
           e.target.value = '';
           return;
@@ -1603,6 +1611,21 @@ const CreateReportMemoPage = () => {
       </div>
 
       <div className="h-32" />
+
+      <A4WarningDialog
+        open={!!a4Warning}
+        result={a4Warning}
+        fileName={a4WarningFileName}
+        onConfirm={() => {
+          a4PendingCallback?.();
+          setA4Warning(null);
+          setA4PendingCallback(null);
+        }}
+        onCancel={() => {
+          setA4Warning(null);
+          setA4PendingCallback(null);
+        }}
+      />
     </div>
   );
 };

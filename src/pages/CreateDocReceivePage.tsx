@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { railwayPDFQueue } from '@/utils/requestQueue';
 import { railwayFetch } from '@/utils/railwayFetch';
+import { A4WarningDialog } from '@/components/ui/A4WarningDialog';
+import { PdfValidationResult } from '@/utils/validatePdfA4';
 
 interface PDFFormData {
   date: string;
@@ -39,6 +41,11 @@ const CreateDocReceivePage = () => {
     pdfFile: null
   });
   const [suggestedDocNumber, setSuggestedDocNumber] = useState<string>('');
+
+  // A4 warning modal state
+  const [a4Warning, setA4Warning] = useState<PdfValidationResult | null>(null);
+  const [a4WarningFileName, setA4WarningFileName] = useState('');
+  const [a4PendingCallback, setA4PendingCallback] = useState<(() => void) | null>(null);
 
   // ตรวจสอบสิทธิ์ - เฉพาะธุรการเท่านั้น
   const permissions = getPermissions();
@@ -205,13 +212,16 @@ const CreateDocReceivePage = () => {
         return;
       }
       // ตรวจสอบขนาด A4
-      const { validatePdfA4, formatA4ValidationError } = await import('@/utils/validatePdfA4');
+      const { validatePdfA4 } = await import('@/utils/validatePdfA4');
       const result = await validatePdfA4(file);
       if (!result.valid) {
-        toast({
-          title: 'ขนาด PDF ไม่ถูกต้อง',
-          description: formatA4ValidationError(result),
-          variant: 'destructive',
+        setA4Warning(result);
+        setA4WarningFileName(file.name);
+        setA4PendingCallback(() => () => {
+          setFormData(prev => ({
+            ...prev,
+            pdfFile: file
+          }));
         });
         return;
       }
@@ -818,6 +828,20 @@ const CreateDocReceivePage = () => {
       {/* Spacer for FloatingNavbar */}
       <div className="h-32" />
 
+      <A4WarningDialog
+        open={!!a4Warning}
+        result={a4Warning}
+        fileName={a4WarningFileName}
+        onConfirm={() => {
+          a4PendingCallback?.();
+          setA4Warning(null);
+          setA4PendingCallback(null);
+        }}
+        onCancel={() => {
+          setA4Warning(null);
+          setA4PendingCallback(null);
+        }}
+      />
     </div>
   );
 };

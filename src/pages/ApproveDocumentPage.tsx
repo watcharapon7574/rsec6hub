@@ -1276,37 +1276,30 @@ const ApproveDocumentPage: React.FC = () => {
           pdfUrl={extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path}
           isOpen={showAnnotationEditor}
           onClose={() => setShowAnnotationEditor(false)}
-          onSave={async (pageCanvasImages) => {
-            // Save annotation layers ลง DB (memo_annotation_layers)
+          onSave={async (annotatedPdfBlob: Blob) => {
+            // onSave ได้รับ annotated PDF blob — upload เป็น layer
             const annotatorUserId = signOnBehalfUserId || profile?.user_id;
             if (!annotatorUserId || !memoId) return;
 
-            for (const [pageNumber, dataUrl] of pageCanvasImages) {
-              const base64 = dataUrl.split(',')[1];
-              const binaryStr = atob(base64);
-              const bytes = new Uint8Array(binaryStr.length);
-              for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-              const blob = new Blob([bytes], { type: 'image/png' });
+            const fileName = `annotation_${memoId}_${annotatorUserId}_${Date.now()}.pdf`;
+            const filePath = `annotations/${memoId}/${fileName}`;
 
-              const fileName = `annotation_${memoId}_${annotatorUserId}_p${pageNumber}_${Date.now()}.png`;
-              const filePath = `annotations/${memoId}/${fileName}`;
+            const { error: uploadError } = await supabase.storage
+              .from('documents')
+              .upload(filePath, annotatedPdfBlob, { contentType: 'application/pdf', upsert: true });
 
-              const { error: uploadError } = await supabase.storage
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
                 .from('documents')
-                .upload(filePath, blob, { contentType: 'image/png', upsert: true });
+                .getPublicUrl(filePath);
 
-              if (!uploadError) {
-                const { data: { publicUrl } } = supabase.storage
-                  .from('documents')
-                  .getPublicUrl(filePath);
-
-                await supabase.from('memo_annotation_layers').insert({
-                  memo_id: memoId,
-                  user_id: annotatorUserId,
-                  page_number: pageNumber,
-                  layer_url: publicUrl,
-                });
-              }
+              // บันทึก layer (page 0 = ทุกหน้า เพราะ annotated PDF รวมทุกหน้าแล้ว)
+              await supabase.from('memo_annotation_layers').insert({
+                memo_id: memoId,
+                user_id: annotatorUserId,
+                page_number: 0,
+                layer_url: publicUrl,
+              });
             }
 
             setShowAnnotationEditor(false);

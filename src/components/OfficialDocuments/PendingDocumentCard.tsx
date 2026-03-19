@@ -551,7 +551,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                           return null;
                         })()}
 
-                        {/* Parallel signers step (ถ้ามี) */}
+                        {/* Parallel signers step (ถ้ามี) — กดดูรายชื่อได้ */}
                         {(memo as any)?.parallel_signers?.signers?.length > 0 && (() => {
                           const pc = (memo as any).parallel_signers;
                           const completedCount = (pc.completed_user_ids || []).length;
@@ -560,26 +560,51 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                           const isDone = completedCount >= totalCount;
                           return (
                             <>
-                              <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                                  memo.current_signer_order === 5 ? 'text-muted-foreground'
-                                    : isCurrentStep ? 'text-amber-700 dark:text-amber-300'
-                                    : isDone ? 'text-green-600 dark:text-green-400'
-                                    : 'text-amber-400 dark:text-amber-600'
-                                }`}>
-                                  <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
-                                </span>
-                                <span className={`sm:text-[10px] text-[9px] ${
-                                  isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'
-                                }`}>
-                                  ผู้ลงนาม
-                                </span>
-                                <div className={`w-2 h-2 rounded-full mt-1 ${
-                                  memo.current_signer_order === 5 ? 'bg-muted'
-                                    : isDone ? 'bg-green-500'
-                                    : isCurrentStep ? 'bg-amber-500'
-                                    : 'bg-amber-200 dark:bg-amber-800'
-                                }`}></div>
+                              <div className="relative flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
+                                <button
+                                  type="button"
+                                  className="flex flex-col items-center focus:outline-none"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const el = e.currentTarget.parentElement?.querySelector('[data-parallel-popup]');
+                                    if (el) el.classList.toggle('hidden');
+                                  }}
+                                >
+                                  <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                    memo.current_signer_order === 5 ? 'text-muted-foreground'
+                                      : isCurrentStep ? 'text-amber-700 dark:text-amber-300'
+                                      : isDone ? 'text-green-600 dark:text-green-400'
+                                      : 'text-amber-400 dark:text-amber-600'
+                                  }`}>
+                                    <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
+                                  </span>
+                                  <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${
+                                    isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'
+                                  }`}>
+                                    ผู้ลงนาม
+                                  </span>
+                                  <div className={`w-2 h-2 rounded-full mt-1 ${
+                                    memo.current_signer_order === 5 ? 'bg-muted'
+                                      : isDone ? 'bg-green-500'
+                                      : isCurrentStep ? 'bg-amber-500'
+                                      : 'bg-amber-200 dark:bg-amber-800'
+                                  }`}></div>
+                                </button>
+                                {/* Popup รายชื่อ */}
+                                <div data-parallel-popup className="hidden absolute top-full mt-1 left-1/2 -translate-x-1/2 z-50 bg-card border border-border rounded-lg shadow-lg p-2 min-w-[160px]">
+                                  <p className="text-[10px] font-semibold text-muted-foreground mb-1">ผู้ลงนามเพิ่มเติม</p>
+                                  {pc.signers.map((s: any) => {
+                                    const done = (pc.completed_user_ids || []).includes(s.user_id);
+                                    return (
+                                      <div key={s.user_id} className="flex items-center gap-1.5 py-0.5">
+                                        <span className={`text-[10px] ${done ? 'text-green-600' : 'text-amber-600'}`}>
+                                          {done ? '✓' : '○'}
+                                        </span>
+                                        <span className="text-[10px] text-foreground">{s.name}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                               <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800'}`} />
                             </>

@@ -1567,86 +1567,6 @@ const CreateMemoPage = () => {
                   </div>
                 </div>
 
-                {/* ผู้ลงนามเพิ่มเติม — การ์ดแยก */}
-                <Card className="border-blue-200 dark:border-blue-800">
-                  <CardContent className="pt-5 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        id="enable-parallel-signers"
-                        checked={enableParallelSigners}
-                        onCheckedChange={(checked) => {
-                          setEnableParallelSigners(!!checked);
-                          if (!checked) {
-                            setSelectedParallelSigners([]);
-                            setAnnotationRequiredUserIds([]);
-                          }
-                        }}
-                      />
-                      <Label htmlFor="enable-parallel-signers" className="flex items-center gap-2 cursor-pointer font-semibold">
-                        <Users className="h-4 w-4 text-blue-600" />
-                        เพิ่มผู้ลงนามเพิ่มเติม (ก่อนหัวหน้าฝ่าย)
-                      </Label>
-                    </div>
-
-                    {enableParallelSigners && (
-                      <div className="space-y-3">
-                        <p className="text-sm text-muted-foreground">
-                          ค้นหาและเลือกผู้ลงนาม — กลุ่มนี้จะลงนามพร้อมกันได้ ธุรการสามารถปรับแก้ภายหลังได้
-                        </p>
-
-                        <UserSearchInput
-                          selectedUsers={selectedParallelSigners}
-                          onUsersChange={(users) => {
-                            setSelectedParallelSigners(users);
-                            // ลบ annotation requirement ของคนที่ถูกลบออก
-                            const userIds = users.map(u => u.user_id);
-                            setAnnotationRequiredUserIds(prev => prev.filter(id => userIds.includes(id)));
-                          }}
-                          placeholder="พิมพ์ชื่อเพื่อค้นหาผู้ลงนาม..."
-                          excludeUserIds={[profile?.user_id || '']}
-                          onClearAll={() => {
-                            setSelectedParallelSigners([]);
-                            setAnnotationRequiredUserIds([]);
-                          }}
-                        />
-
-                        {/* Annotation checkboxes สำหรับคนที่เลือกแล้ว */}
-                        {selectedParallelSigners.length > 0 && (
-                          <div className="space-y-2">
-                            <Label className="flex items-center gap-2 text-sm">
-                              <PenTool className="h-3.5 w-3.5 text-orange-500" />
-                              บังคับขีดเขียน
-                            </Label>
-                            <div className="space-y-1">
-                              {selectedParallelSigners.map((user) => (
-                                <div
-                                  key={user.user_id}
-                                  className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-muted"
-                                  onClick={() => {
-                                    if (annotationRequiredUserIds.includes(user.user_id)) {
-                                      setAnnotationRequiredUserIds(prev => prev.filter(id => id !== user.user_id));
-                                    } else {
-                                      setAnnotationRequiredUserIds(prev => [...prev, user.user_id]);
-                                    }
-                                  }}
-                                >
-                                  <Checkbox checked={annotationRequiredUserIds.includes(user.user_id)} />
-                                  <span className="text-sm">
-                                    {user.first_name} {user.last_name}
-                                  </span>
-                                  {annotationRequiredUserIds.includes(user.user_id) && (
-                                    <span className="text-orange-500 text-xs">✏️</span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-3 pt-6 border-t border-border">
                   <Button
@@ -1715,6 +1635,89 @@ const CreateMemoPage = () => {
             </Card>
           </form>
           </>
+          )}
+
+          {/* ผู้ลงนามเพิ่มเติม — การ์ดแยกนอก form */}
+          {creationMode && (
+            <Card className="border-blue-200 dark:border-blue-800 mt-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  ผู้ลงนามเพิ่มเติม
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="enable-parallel-signers"
+                    checked={enableParallelSigners}
+                    onCheckedChange={(checked) => {
+                      setEnableParallelSigners(!!checked);
+                      if (!checked) {
+                        setSelectedParallelSigners([]);
+                        setAnnotationRequiredUserIds([]);
+                      }
+                    }}
+                  />
+                  <Label htmlFor="enable-parallel-signers" className="cursor-pointer">
+                    เพิ่มผู้ลงนามเพิ่มเติม (ก่อนหัวหน้าฝ่าย — ลงนามพร้อมกันได้)
+                  </Label>
+                </div>
+
+                {enableParallelSigners && (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      ค้นหาและเลือกผู้ลงนาม ธุรการสามารถปรับแก้ภายหลังได้
+                    </p>
+
+                    <UserSearchInput
+                      selectedUsers={selectedParallelSigners}
+                      onUsersChange={(users) => {
+                        setSelectedParallelSigners(users);
+                        const userIds = users.map(u => u.user_id);
+                        setAnnotationRequiredUserIds(prev => prev.filter(id => userIds.includes(id)));
+                      }}
+                      placeholder="พิมพ์ชื่อเพื่อค้นหาผู้ลงนาม..."
+                      excludeUserIds={[profile?.user_id || '']}
+                      onClearAll={() => {
+                        setSelectedParallelSigners([]);
+                        setAnnotationRequiredUserIds([]);
+                      }}
+                    />
+
+                    {selectedParallelSigners.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-sm">
+                          <PenTool className="h-3.5 w-3.5 text-orange-500" />
+                          บังคับขีดเขียน
+                        </Label>
+                        <div className="space-y-1">
+                          {selectedParallelSigners.map((user) => (
+                            <div
+                              key={user.user_id}
+                              className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-muted"
+                              onClick={() => {
+                                if (annotationRequiredUserIds.includes(user.user_id)) {
+                                  setAnnotationRequiredUserIds(prev => prev.filter(id => id !== user.user_id));
+                                } else {
+                                  setAnnotationRequiredUserIds(prev => [...prev, user.user_id]);
+                                }
+                              }}
+                            >
+                              <Checkbox checked={annotationRequiredUserIds.includes(user.user_id)} />
+                              <span className="text-sm">{user.first_name} {user.last_name}</span>
+                              {annotationRequiredUserIds.includes(user.user_id) && (
+                                <span className="text-orange-500 text-xs">✏️</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {/* PDF Preview Section */}

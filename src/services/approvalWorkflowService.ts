@@ -121,6 +121,94 @@ export function calculateRejection(): SignerOrderResult {
   };
 }
 
+// === Parallel Signing Support ===
+
+import { ParallelSignerConfig } from '@/types/memo';
+
+export interface ParallelSignerOrderResult extends SignerOrderResult {
+  parallelUpdate?: { completed_user_ids: string[] };
+}
+
+/**
+ * คำนวณ nextSignerOrder สำหรับระบบที่มี parallel group
+ * - ถ้าอยู่ใน parallel group → อัปเดต completed_user_ids, คง order เดิมจนครบ
+ * - ถ้าไม่มี parallel → fallback ไปฟังก์ชันเดิม
+ */
+export function calculateNextSignerOrderWithParallel(
+  currentOrder: number,
+  signaturePositions: SignaturePositionLike[],
+  signingPosition: string | undefined,
+  parallelSigners: ParallelSignerConfig | null | undefined,
+  currentUserId: string
+): ParallelSignerOrderResult {
+  // ถ้ามี parallel config และ order ตรงกับ parallel group
+  if (parallelSigners && currentOrder === parallelSigners.order) {
+    const completedIds = [...(parallelSigners.completed_user_ids || [])];
+    if (!completedIds.includes(currentUserId)) {
+      completedIds.push(currentUserId);
+    }
+
+    const allSignerIds = parallelSigners.signers.map(s => s.user_id);
+    const allComplete = allSignerIds.every(id => completedIds.includes(id));
+
+    if (!allComplete) {
+      // ยังไม่ครบ → คง order เดิม, อัปเดต completed list
+      return {
+        nextSignerOrder: currentOrder,
+        newStatus: 'pending_sign',
+        parallelUpdate: { completed_user_ids: completedIds },
+      };
+    }
+    // ครบทุกคนแล้ว → หาคนถัดไป (sequential)
+  }
+
+  // Fallback ไปฟังก์ชันเดิม
+  const result = calculateNextSignerOrder(currentOrder, signaturePositions, signingPosition);
+  return { ...result };
+}
+
+/**
+ * ตรวจสอบว่า parallel group เสร็จครบหรือยัง
+ */
+export function isParallelGroupComplete(
+  parallelSigners: ParallelSignerConfig | null | undefined
+): boolean {
+  if (!parallelSigners) return true;
+  const allIds = parallelSigners.signers.map(s => s.user_id);
+  return allIds.every(id => (parallelSigners.completed_user_ids || []).includes(id));
+}
+
+/**
+ * ตรวจสอบว่า user อยู่ใน parallel group หรือไม่
+ */
+export function isInParallelGroup(
+  userId: string,
+  parallelSigners: ParallelSignerConfig | null | undefined
+): boolean {
+  if (!parallelSigners) return false;
+  return parallelSigners.signers.some(s => s.user_id === userId);
+}
+
+/**
+ * ตรวจสอบว่า user เป็นผู้ลงนามคนปัจจุบันหรือไม่ (รองรับ parallel)
+ */
+export function isCurrentSignerWithParallel(
+  userId: string,
+  userOrder: number,
+  currentSignerOrder: number,
+  parallelSigners: ParallelSignerConfig | null | undefined
+): boolean {
+  // เช็ค parallel group ก่อน
+  if (parallelSigners
+    && currentSignerOrder === parallelSigners.order
+    && isInParallelGroup(userId, parallelSigners)
+    && !(parallelSigners.completed_user_ids || []).includes(userId)) {
+    return true; // อยู่ใน parallel group และยังไม่ได้เซ็น
+  }
+  // Fallback เดิม
+  return isCurrentSigner(userOrder, currentSignerOrder);
+}
+
 /**
  * ตรวจสอบว่า user เป็นผู้ลงนามคนปัจจุบันหรือไม่
  */

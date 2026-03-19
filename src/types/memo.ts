@@ -78,6 +78,31 @@ export interface Memo {
   signer_list_progress?: SignerProgress[]; // รายการผู้ลงนาม progress
   clerk_id?: string; // user_id ของธุรการที่จัดการเอกสาร
   is_report_memo?: boolean; // Flag บอกว่าเป็น report memo
+  parallel_signers?: ParallelSignerConfig | null; // กลุ่มผู้ลงนาม parallel
+  signing_lock?: { locked_by: string; locked_at: string } | null; // FIFO lock
+  annotation_required_for?: string[] | null; // user_ids ที่ต้องขีดเขียน
+}
+
+// Parallel signing types
+export interface ParallelSigner {
+  user_id: string;
+  name: string;
+  require_annotation: boolean;
+}
+
+export interface ParallelSignerConfig {
+  order: number;                    // shared order number (เช่น 2)
+  signers: ParallelSigner[];
+  completed_user_ids: string[];     // user_ids ที่เซ็นแล้ว
+}
+
+export interface AnnotationLayer {
+  id: string;
+  memo_id: string;
+  user_id: string;
+  page_number: number;
+  layer_url: string;
+  created_at: string;
 }
 
 export interface MemoNotification {

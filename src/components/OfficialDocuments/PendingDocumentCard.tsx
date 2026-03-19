@@ -596,9 +596,11 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                       if (!popup.contains(ev.target as Node)) {
                                         popup.remove();
                                         document.removeEventListener('click', close);
+                                        window.removeEventListener('scroll', scrollClose, true);
                                       }
                                     };
-                                    setTimeout(() => document.addEventListener('click', close), 0);
+                                    const scrollClose = () => { popup.remove(); document.removeEventListener('click', close); window.removeEventListener('scroll', scrollClose, true); };
+                                    setTimeout(() => { document.addEventListener('click', close); window.addEventListener('scroll', scrollClose, true); }, 0);
                                   }}
                                 >
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${

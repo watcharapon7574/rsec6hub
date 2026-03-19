@@ -667,13 +667,55 @@ const MemoList: React.FC<MemoListProps> = ({
                       </div>
                       <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
 
-                      {/* ผู้ลงนามทั้งหมด */}
+                      {/* Parallel signers step — กดดูรายชื่อ */}
+                      {(memo as any)?.parallel_signers?.signers?.length > 0 && (() => {
+                        const pc = (memo as any).parallel_signers;
+                        const completedCount = (pc.completed_user_ids || []).length;
+                        const totalCount = pc.signers.length;
+                        const isCurrentStep = memo.current_signer_order === pc.order;
+                        const isDone = completedCount >= totalCount;
+                        return (
+                          <>
+                            <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
+                              <button type="button" className="flex flex-col items-center focus:outline-none" onClick={(e) => {
+                                e.stopPropagation();
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const existingPopup = document.getElementById(`parallel-popup-memo-${memo.id}`);
+                                if (existingPopup) { existingPopup.remove(); return; }
+                                document.querySelectorAll('[data-parallel-fixed-popup]').forEach(el => el.remove());
+                                const popup = document.createElement('div');
+                                popup.id = `parallel-popup-memo-${memo.id}`;
+                                popup.setAttribute('data-parallel-fixed-popup', 'true');
+                                popup.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;z-index:9999;`;
+                                popup.className = 'bg-card border border-border rounded-lg shadow-xl p-3 min-w-[180px]';
+                                popup.innerHTML = `<p class="text-xs font-semibold text-muted-foreground mb-2">ผู้ลงนามเพิ่มเติม</p>${pc.signers.map((s: any) => {
+                                  const done = (pc.completed_user_ids || []).includes(s.user_id);
+                                  return `<div class="flex items-center gap-2 py-1"><span class="text-xs ${done ? 'text-green-600' : 'text-amber-600'}">${done ? '✓' : '○'}</span><span class="text-xs text-foreground">${s.name}</span></div>`;
+                                }).join('')}`;
+                                document.body.appendChild(popup);
+                                const close = (ev: MouseEvent) => { if (!popup.contains(ev.target as Node)) { popup.remove(); document.removeEventListener('click', close); window.removeEventListener('scroll', scrollClose, true); } };
+                                const scrollClose = () => { popup.remove(); document.removeEventListener('click', close); window.removeEventListener('scroll', scrollClose, true); };
+                                setTimeout(() => { document.addEventListener('click', close); window.addEventListener('scroll', scrollClose, true); }, 0);
+                              }}>
+                                <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : isCurrentStep ? 'text-amber-700 dark:text-amber-300' : isDone ? 'text-green-600 dark:text-green-400' : 'text-amber-400 dark:text-amber-600'}`}>
+                                  <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
+                                </span>
+                                <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'}`}>ผู้ลงนาม</span>
+                                <div className={`w-2 h-2 rounded-full mt-1 ${memo.current_signer_order === 5 ? 'bg-muted' : isDone ? 'bg-green-500' : isCurrentStep ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800'}`}></div>
+                              </button>
+                            </div>
+                            <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800'}`} />
+                          </>
+                        );
+                      })()}
+
+                      {/* ผู้ลงนามทั้งหมด (ข้าม parallel_signer) */}
                       {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
                         memo.signer_list_progress
-                          .filter(signer => signer.role !== 'author' && signer.role !== 'clerk')
+                          .filter(signer => signer.role !== 'author' && signer.role !== 'clerk' && signer.role !== 'parallel_signer')
                           .sort((a, b) => a.order - b.order)
                           .map((signer, idx, arr) => (
-                            <React.Fragment key={signer.order}>
+                            <React.Fragment key={signer.user_id || `signer-${idx}`}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5

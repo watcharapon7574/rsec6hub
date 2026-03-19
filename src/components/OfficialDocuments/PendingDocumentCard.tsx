@@ -314,6 +314,9 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     }
   };
 
+  // ซ่อน card ถ้าไม่มีเอกสารรอพิจารณา
+  if (initialFilteredMemos.length === 0) return null;
+
   return (
     <>
     <Card>

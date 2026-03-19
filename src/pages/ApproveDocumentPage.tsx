@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,6 +56,8 @@ const ApproveDocumentPage: React.FC = () => {
   const [hasCompletedAnnotation, setHasCompletedAnnotation] = useState(false); // ขีดเขียนเสร็จแล้ว
   const [showAnnotationEditor, setShowAnnotationEditor] = useState(false); // แสดง annotation editor
   const [originalPdfPath, setOriginalPdfPath] = useState<string | null>(null); // PDF เดิมก่อนขีดเขียน
+  const originalPdfPathRef = useRef<string | null>(null);
+  const approvedRef = useRef(false); // track ว่าอนุมัติแล้วหรือยัง
   const [signingLockWaiting, setSigningLockWaiting] = useState(false); // กำลังรอ FIFO lock
   const [signOnBehalfProfile, setSignOnBehalfProfile] = useState<any>(null); // profile ของคนที่ลงนามแทน
 
@@ -64,23 +66,26 @@ const ApproveDocumentPage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [memoId]);
 
+  // Sync ref กับ state
+  useEffect(() => { originalPdfPathRef.current = originalPdfPath; }, [originalPdfPath]);
+
   // Revert PDF ถ้าขีดเขียนแล้วแต่ไม่ได้อนุมัติ (ออกจากหน้า)
   useEffect(() => {
+    const currentMemoId = memoId;
+    const userId = signOnBehalfUserId || profile?.user_id;
     return () => {
-      if (originalPdfPath && hasCompletedAnnotation && memoId) {
-        // ถ้ายังไม่ได้ submit (isSubmitting = false) → revert PDF กลับ
+      // ใช้ ref เพื่อดูค่าล่าสุด (ไม่ใช่ closure เก่า)
+      if (originalPdfPathRef.current && !approvedRef.current && currentMemoId) {
         supabase.from('memos').update({
-          pdf_draft_path: originalPdfPath,
+          pdf_draft_path: originalPdfPathRef.current,
           updated_at: new Date().toISOString(),
-        }).eq('id', memoId).then(() => {
+        }).eq('id', currentMemoId).then(() => {
           console.log('🔄 Reverted PDF to original after leaving without approving');
         });
-        // ลบ annotation layer ที่เพิ่งสร้าง
-        const userId = signOnBehalfUserId || profile?.user_id;
         if (userId) {
           supabase.from('memo_annotation_layers')
             .delete()
-            .eq('memo_id', memoId)
+            .eq('memo_id', currentMemoId)
             .eq('user_id', userId)
             .then(() => {
               console.log('🗑️ Deleted annotation layers after leaving without approving');
@@ -89,7 +94,7 @@ const ApproveDocumentPage: React.FC = () => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [originalPdfPath, hasCompletedAnnotation, memoId]);
+  }, [memoId]);
 
   // โหลด profile ของคนที่ admin ลงนามแทน
   useEffect(() => {
@@ -902,7 +907,9 @@ const ApproveDocumentPage: React.FC = () => {
           }
 
           setShowLoadingModal(false);
-          // Clear originalPdfPath เพื่อไม่ให้ revert ตอน unmount
+          // Clear เพื่อไม่ให้ revert ตอน unmount
+          approvedRef.current = true;
+          originalPdfPathRef.current = null;
           setOriginalPdfPath(null);
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });
           navigate('/documents');
@@ -937,7 +944,9 @@ const ApproveDocumentPage: React.FC = () => {
         comment.trim() || undefined
       );
       if (result.success) {
-        setOriginalPdfPath(null); // ไม่ต้อง revert
+        approvedRef.current = true;
+        originalPdfPathRef.current = null;
+        setOriginalPdfPath(null);
         toast({
           title: "อนุมัติเอกสารสำเร็จ",
           description: "เอกสารได้ถูกส่งต่อไปยังผู้ลงนามถัดไป",

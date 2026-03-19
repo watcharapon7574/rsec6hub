@@ -362,7 +362,17 @@ const CreateMemoPage = () => {
         date: formData.date,
         attachment_title: formData.attachment_title || '',
         user_id: profile.user_id,
-        form_data: { type: 'upload_memo', originalFileName: uploadedPdfFile.name },
+        form_data: {
+          type: 'upload_memo',
+          originalFileName: uploadedPdfFile.name,
+          ...(enableParallelSigners && selectedParallelSigners.length > 0 && {
+            parallel_signer_config: {
+              enabled: true,
+              signer_user_ids: selectedParallelSigners.map(s => s.user_id),
+              annotation_required_for: annotationRequiredUserIds,
+            }
+          })
+        },
         pdf_draft_path: publicUrl,
         status: 'draft',
         current_signer_order: 1,

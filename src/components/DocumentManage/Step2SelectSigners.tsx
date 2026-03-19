@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, PenTool, Plus, X, UserPlus } from 'lucide-react';
+import { Users, PenTool, UserPlus } from 'lucide-react';
+import UserSearchInput from '@/components/TaskAssignment/UserSearchInput';
 
 interface ParallelSignerInfo {
   user_id: string;
@@ -50,24 +51,14 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
   onAnnotationRequiredChange,
   availableProfiles
 }) => {
-  const [showAddSigner, setShowAddSigner] = useState(false);
-
-  const handleAddParallelSigner = (profile: any) => {
-    const newSigner: ParallelSignerInfo = {
-      user_id: profile.user_id,
-      name: `${profile.prefix || ''}${profile.first_name} ${profile.last_name}`.trim(),
-      position: profile.job_position || profile.current_position || '',
-      org_structure_role: profile.org_structure_role || '',
-      require_annotation: false,
-    };
-    onParallelSignersChange([...parallelSigners, newSigner]);
-    setShowAddSigner(false);
-  };
-
-  const handleRemoveParallelSigner = (userId: string) => {
-    onParallelSignersChange(parallelSigners.filter(s => s.user_id !== userId));
-    onAnnotationRequiredChange(annotationRequiredUserIds.filter(id => id !== userId));
-  };
+  // แปลง parallelSigners เป็น format ที่ UserSearchInput ต้องการ
+  const selectedUsersForSearch = parallelSigners.map(s => ({
+    user_id: s.user_id,
+    first_name: s.name.split(' ')[0] || s.name,
+    last_name: s.name.split(' ').slice(1).join(' ') || '',
+    position: s.position || '',
+    employee_id: undefined,
+  }));
 
   const toggleAnnotation = (userId: string) => {
     if (annotationRequiredUserIds.includes(userId)) {
@@ -76,14 +67,6 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
       onAnnotationRequiredChange([...annotationRequiredUserIds, userId]);
     }
   };
-
-  const existingUserIds = [
-    ...parallelSigners.map(s => s.user_id),
-    ...signers.map((s: any) => s.user_id),
-  ];
-  const addableProfiles = availableProfiles.filter(
-    p => !existingUserIds.includes(p.user_id)
-  );
 
   return (
     <Card>
@@ -94,76 +77,37 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* ผู้ลงนามเพิ่มเติม (Parallel) — แสดงเสมอ */}
+        {/* ผู้ลงนามเพิ่มเติม (Parallel) — แสดงเสมอ + ใช้ UserSearchInput */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
-              ผู้ลงนามเพิ่มเติม (ลงนามพร้อมกันได้)
-            </Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAddSigner(!showAddSigner)}
-              className="flex items-center gap-1"
-            >
-              <Plus className="h-3 w-3" />
-              เพิ่ม
-            </Button>
-          </div>
+          <Label className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4" />
+            ผู้ลงนามเพิ่มเติม (ลงนามพร้อมกันได้)
+          </Label>
 
-          {showAddSigner && addableProfiles.length > 0 && (
-            <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1 bg-card">
-              {addableProfiles.map((p: any) => (
-                <div
-                  key={p.user_id}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted cursor-pointer"
-                  onClick={() => handleAddParallelSigner(p)}
-                >
-                  <div>
-                    <p className="font-medium text-sm">{p.prefix || ''}{p.first_name} {p.last_name}</p>
-                    <p className="text-xs text-muted-foreground">{p.org_structure_role || p.job_position || ''}</p>
-                  </div>
-                  <Plus className="h-4 w-4 text-blue-500" />
-                </div>
-              ))}
-            </div>
-          )}
-          {showAddSigner && addableProfiles.length === 0 && (
-            <p className="text-sm text-muted-foreground p-2">ไม่มีรายชื่อที่สามารถเพิ่มได้</p>
-          )}
-
-          {parallelSigners.length > 0 ? (
-            <div className="space-y-2">
-              {parallelSigners.map((signer) => (
-                <div
-                  key={signer.user_id}
-                  className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800"
-                >
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                      👥
-                    </Badge>
-                    <div>
-                      <p className="font-semibold text-sm">{signer.name}</p>
-                      <p className="text-xs text-muted-foreground">{signer.org_structure_role || signer.position || ''}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveParallelSigner(signer.user_id)}
-                    className="text-red-400 hover:text-red-600 p-1"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-              ยังไม่มีผู้ลงนามเพิ่มเติม (ไม่บังคับ)
-            </p>
-          )}
+          <UserSearchInput
+            selectedUsers={selectedUsersForSearch}
+            onUsersChange={(users) => {
+              const newSigners: ParallelSignerInfo[] = users.map(u => ({
+                user_id: u.user_id,
+                name: `${u.first_name} ${u.last_name}`.trim(),
+                position: u.position || '',
+                org_structure_role: '',
+                require_annotation: false,
+              }));
+              onParallelSignersChange(newSigners);
+              // ลบ annotation requirement ของคนที่ถูกลบออก
+              const userIds = users.map(u => u.user_id);
+              onAnnotationRequiredChange(annotationRequiredUserIds.filter(id => userIds.includes(id)));
+            }}
+            placeholder="พิมพ์ชื่อเพื่อค้นหาผู้ลงนามเพิ่มเติม..."
+            excludeUserIds={signers.map((s: any) => s.user_id)}
+            onClearAll={() => {
+              onParallelSignersChange([]);
+              onAnnotationRequiredChange(annotationRequiredUserIds.filter(id =>
+                signers.some((s: any) => s.user_id === id)
+              ));
+            }}
+          />
         </div>
 
         {/* หัวหน้าฝ่าย + รองผอ. */}

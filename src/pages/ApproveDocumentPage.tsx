@@ -586,16 +586,7 @@ const ApproveDocumentPage: React.FC = () => {
           // สร้างชื่อเต็มพร้อม prefix ของผู้ลงนามจริง
           const fullName = `${signerProfile.prefix || ''}${signerProfile.first_name} ${signerProfile.last_name}`.trim();
 
-          // ตรวจสอบว่าเป็น parallel_signer หรือไม่
-          const isParallelSigner = userSignaturePositions.some(pos => pos.signer?.role === 'parallel_signer');
-
-          if (isParallelSigner) {
-            // parallel_signer ส่งแค่ลายเซ็น PNG เท่านั้น (ไม่มีชื่อ/ตำแหน่ง)
-            linesWithComment = [
-              { type: "image", file_key: "sig1" }
-            ];
-            linesWithoutComment = [...linesWithComment];
-          } else if (signingPosition === 'assistant_director') {
+          if (signingPosition === 'assistant_director') {
             // ถ้ามี comment ให้แสดง comment ในตำแหน่งแรก
             if (comment && comment.trim()) {
               linesWithComment = [
@@ -760,9 +751,14 @@ const ApproveDocumentPage: React.FC = () => {
             return;
           }
           
+          // parallel_signer → override lines เป็นแค่ลายเซ็น PNG ทุกจุด
+          const isParallelSigner = userSignaturePositions.some(pos => pos.signer?.role === 'parallel_signer');
+          if (isParallelSigner) {
+            linesWithComment = [{ type: "image", file_key: "sig1" }];
+            linesWithoutComment = [{ type: "image", file_key: "sig1" }];
+          }
+
           // สร้าง signatures payload สำหรับ Edge Function
-          // จุดแรก: แสดงครบ (comment, ลายเซ็น, ชื่อ, ตำแหน่ง)
-          // จุดที่ 2+: แสดงแค่รูปลายเซ็น PNG อย่างเดียว
           const linesImageOnly = [{ type: "image", file_key: "sig1" }];
           const signaturesPayload = userSignaturePositions.map((pos, index) => ({
             page: pos.page - 1,

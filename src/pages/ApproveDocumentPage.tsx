@@ -55,6 +55,7 @@ const ApproveDocumentPage: React.FC = () => {
   const [isReportMemo, setIsReportMemo] = useState(false); // flag ว่าเป็น report memo หรือไม่
   const [hasCompletedAnnotation, setHasCompletedAnnotation] = useState(false); // ขีดเขียนเสร็จแล้ว
   const [showAnnotationEditor, setShowAnnotationEditor] = useState(false); // แสดง annotation editor
+  const [originalPdfPath, setOriginalPdfPath] = useState<string | null>(null); // PDF เดิมก่อนขีดเขียน
   const [signingLockWaiting, setSigningLockWaiting] = useState(false); // กำลังรอ FIFO lock
   const [signOnBehalfProfile, setSignOnBehalfProfile] = useState<any>(null); // profile ของคนที่ลงนามแทน
 
@@ -62,6 +63,33 @@ const ApproveDocumentPage: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [memoId]);
+
+  // Revert PDF ถ้าขีดเขียนแล้วแต่ไม่ได้อนุมัติ (ออกจากหน้า)
+  useEffect(() => {
+    return () => {
+      if (originalPdfPath && hasCompletedAnnotation && memoId) {
+        // ถ้ายังไม่ได้ submit (isSubmitting = false) → revert PDF กลับ
+        supabase.from('memos').update({
+          pdf_draft_path: originalPdfPath,
+          updated_at: new Date().toISOString(),
+        }).eq('id', memoId).then(() => {
+          console.log('🔄 Reverted PDF to original after leaving without approving');
+        });
+        // ลบ annotation layer ที่เพิ่งสร้าง
+        const userId = signOnBehalfUserId || profile?.user_id;
+        if (userId) {
+          supabase.from('memo_annotation_layers')
+            .delete()
+            .eq('memo_id', memoId)
+            .eq('user_id', userId)
+            .then(() => {
+              console.log('🗑️ Deleted annotation layers after leaving without approving');
+            });
+        }
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originalPdfPath, hasCompletedAnnotation, memoId]);
 
   // โหลด profile ของคนที่ admin ลงนามแทน
   useEffect(() => {
@@ -859,6 +887,8 @@ const ApproveDocumentPage: React.FC = () => {
           }
 
           setShowLoadingModal(false);
+          // Clear originalPdfPath เพื่อไม่ให้ revert ตอน unmount
+          setOriginalPdfPath(null);
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });
           navigate('/documents');
           // Clear signing flag หลัง navigate แล้ว + apply pending SW update
@@ -892,6 +922,7 @@ const ApproveDocumentPage: React.FC = () => {
         comment.trim() || undefined
       );
       if (result.success) {
+        setOriginalPdfPath(null); // ไม่ต้อง revert
         toast({
           title: "อนุมัติเอกสารสำเร็จ",
           description: "เอกสารได้ถูกส่งต่อไปยังผู้ลงนามถัดไป",
@@ -1283,12 +1314,15 @@ const ApproveDocumentPage: React.FC = () => {
           isOpen={showAnnotationEditor}
           onClose={() => setShowAnnotationEditor(false)}
           onSave={async (annotatedPdfBlob: Blob) => {
-            // ปิด editor ก่อนเพื่อป้องกัน canvas unmount error
             setShowAnnotationEditor(false);
 
-            // แสดง loading modal
             setLoadingMessage({ title: "กำลังบันทึกรอยขีดเขียน", description: "กรุณารอสักครู่..." });
             setShowLoadingModal(true);
+
+            // จำ PDF เดิมไว้เผื่อต้อง revert
+            if (!originalPdfPath && memo?.pdf_draft_path) {
+              setOriginalPdfPath(memo.pdf_draft_path);
+            }
 
             try {
               const annotatorUserId = signOnBehalfUserId || profile?.user_id;

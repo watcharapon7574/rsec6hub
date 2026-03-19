@@ -65,6 +65,8 @@ interface Step3TaskDetailsProps {
   onEventEndDateChange: (date: Date | null) => void;
   eventTime: string;
   onEventTimeChange: (time: string) => void;
+  eventEndTime: string;
+  onEventEndTimeChange: (time: string) => void;
 
   // Where - Location
   location: string;
@@ -85,13 +87,16 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
   onEventEndDateChange,
   eventTime,
   onEventTimeChange,
+  eventEndTime,
+  onEventEndTimeChange,
   location,
   onLocationChange,
   note,
   onNoteChange
 }) => {
-  // State for controlling time picker popover
+  // State for controlling time picker popovers
   const [timePopoverOpen, setTimePopoverOpen] = useState(false);
+  const [endTimePopoverOpen, setEndTimePopoverOpen] = useState(false);
 
   // Format date for display
   const formatDisplayDate = (date: Date | null) => {
@@ -159,93 +164,133 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Calendar className="h-4 w-4 text-pink-500" />
-              วันที่
+              วันที่ - เวลา
             </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
-                >
-                  <Calendar className="mr-2 h-4 w-4 text-pink-500" />
-                  {eventDate ? formatDisplayDate(eventDate) : (
-                    <span className="text-muted-foreground">เลือกวันที่...</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={eventDate || undefined}
-                  onSelect={(date) => onEventDateChange(date || null)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
 
-            {/* End Date */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
-                >
-                  <Calendar className="mr-2 h-4 w-4 text-pink-500" />
-                  {eventEndDate ? (
-                    <span>ถึง {formatDisplayDate(eventEndDate)}</span>
-                  ) : (
-                    <span className="text-muted-foreground">ถึงวันที่... (ไม่จำเป็น)</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={eventEndDate || undefined}
-                  onSelect={(date) => onEventEndDateChange(date || null)}
-                  disabled={(date) => eventDate ? date < eventDate : false}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            {/* Start Date + Start Time */}
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
+                  >
+                    <Calendar className="mr-2 h-4 w-4 text-pink-500 shrink-0" />
+                    {eventDate ? formatDisplayDate(eventDate) : (
+                      <span className="text-muted-foreground">เลือกวันที่...</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-card" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={eventDate || undefined}
+                    onSelect={(date) => onEventDateChange(date || null)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[110px] justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
+                  >
+                    <Clock className="mr-1 h-4 w-4 text-pink-500 shrink-0" />
+                    {eventTime ? (
+                      <span>{eventTime} น.</span>
+                    ) : (
+                      <span className="text-muted-foreground">เวลา</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0 bg-card" align="start">
+                  <div className="max-h-[250px] overflow-y-auto">
+                    {timeOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          onEventTimeChange(option.value);
+                          setTimePopoverOpen(false);
+                        }}
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 dark:hover:bg-pink-900 transition-colors ${
+                          eventTime === option.value
+                            ? 'bg-pink-100 dark:bg-pink-800 text-pink-700 dark:text-pink-200 font-medium'
+                            : 'text-foreground'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
 
-            {/* Time - Popover with scrollable list */}
-            <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
-                >
-                  <Clock className="mr-2 h-4 w-4 text-pink-500" />
-                  {eventTime ? (
-                    <span>{eventTime} น.</span>
-                  ) : (
-                    <span className="text-muted-foreground">เลือกเวลา...</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0 bg-card" align="start">
-                <div className="max-h-[250px] overflow-y-auto">
-                  {timeOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        onEventTimeChange(option.value);
-                        setTimePopoverOpen(false);
-                      }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 dark:hover:bg-pink-900 transition-colors ${
-                        eventTime === option.value
-                          ? 'bg-pink-100 dark:bg-pink-800 text-pink-700 dark:text-pink-200 font-medium'
-                          : 'text-foreground'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+            {/* End Date + End Time */}
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
+                  >
+                    <Calendar className="mr-2 h-4 w-4 text-pink-500 shrink-0" />
+                    {eventEndDate ? (
+                      <span>ถึง {formatDisplayDate(eventEndDate)}</span>
+                    ) : (
+                      <span className="text-muted-foreground">ถึงวันที่... (ไม่จำเป็น)</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-card" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={eventEndDate || undefined}
+                    onSelect={(date) => onEventEndDateChange(date || null)}
+                    disabled={(date) => eventDate ? date < eventDate : false}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Popover open={endTimePopoverOpen} onOpenChange={setEndTimePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[110px] justify-start text-left font-normal border-pink-200 dark:border-pink-800 hover:border-pink-300 dark:hover:border-pink-700"
+                  >
+                    <Clock className="mr-1 h-4 w-4 text-pink-500 shrink-0" />
+                    {eventEndTime ? (
+                      <span>{eventEndTime} น.</span>
+                    ) : (
+                      <span className="text-muted-foreground">เวลา</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0 bg-card" align="start">
+                  <div className="max-h-[250px] overflow-y-auto">
+                    {timeOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          onEventEndTimeChange(option.value);
+                          setEndTimePopoverOpen(false);
+                        }}
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 dark:hover:bg-pink-900 transition-colors ${
+                          eventEndTime === option.value
+                            ? 'bg-pink-100 dark:bg-pink-800 text-pink-700 dark:text-pink-200 font-medium'
+                            : 'text-foreground'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           {/* Where - Location */}

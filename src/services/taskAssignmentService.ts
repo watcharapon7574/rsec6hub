@@ -23,6 +23,7 @@ export interface TaskAssignment {
   event_date: string | null;
   event_end_date: string | null;
   event_time: string | null;
+  event_end_time: string | null;
   location: string | null;
   completion_note: string | null;
   deleted_at: string | null;
@@ -65,6 +66,7 @@ export interface TaskDetailsOptions {
   eventDate?: Date | null;
   eventEndDate?: Date | null;
   eventTime?: string;
+  eventEndTime?: string;
   location?: string;
   // Team management
   selectionInfo?: SelectionInfo;
@@ -93,6 +95,7 @@ export interface TaskAssignmentWithDetails {
   event_date: string | null;
   event_end_date: string | null;
   event_time: string | null;
+  event_end_time: string | null;
   location: string | null;
   // Team management fields
   assignment_source: AssignmentSource | null;
@@ -174,6 +177,9 @@ class TaskAssignmentService {
       }
       if (options?.eventTime) {
         updateData.event_time = options.eventTime;
+      }
+      if (options?.eventEndTime) {
+        updateData.event_end_time = options.eventEndTime;
       }
       if (options?.location) {
         updateData.location = options.location;
@@ -312,6 +318,7 @@ class TaskAssignmentService {
         task_description: options?.taskDescription || '',
         event_date: formattedDate,
         event_time: options?.eventTime || '',
+        event_end_time: options?.eventEndTime || '',
         location: options?.location || '',
         note: options?.note || '',
         assignee_names: assigneeNames,
@@ -885,6 +892,7 @@ class TaskAssignmentService {
         event_date: parent.event_date,
         event_end_date: parent.event_end_date,
         event_time: parent.event_time,
+        event_end_time: parent.event_end_time,
         location: parent.location,
         assignment_source: 'name', // Team members are added by name
         position_id: parent.position_id,

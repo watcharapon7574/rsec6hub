@@ -52,6 +52,7 @@ const TaskAssignmentPage = () => {
   const [eventDate, setEventDate] = useState<Date | null>(new Date()); // Default to today
   const [eventEndDate, setEventEndDate] = useState<Date | null>(null);
   const [eventTime, setEventTime] = useState('');
+  const [eventEndTime, setEventEndTime] = useState('');
   const [location, setLocation] = useState('');
 
   // Selection info for team management
@@ -203,6 +204,7 @@ const TaskAssignmentPage = () => {
           eventDate: eventDate,
           eventEndDate: eventEndDate,
           eventTime: eventTime || undefined,
+          eventEndTime: eventEndTime || undefined,
           location: location || undefined,
           selectionInfo: selectionInfo
         }
@@ -311,6 +313,8 @@ const TaskAssignmentPage = () => {
               onEventEndDateChange={setEventEndDate}
               eventTime={eventTime}
               onEventTimeChange={setEventTime}
+              eventEndTime={eventEndTime}
+              onEventEndTimeChange={setEventEndTime}
               location={location}
               onLocationChange={setLocation}
               note={note}
@@ -328,6 +332,7 @@ const TaskAssignmentPage = () => {
               eventDate={eventDate}
               eventEndDate={eventEndDate}
               eventTime={eventTime}
+              eventEndTime={eventEndTime}
               location={location}
             />
           )}

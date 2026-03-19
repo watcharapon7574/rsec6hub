@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Send } from 'lucide-react';
+import { CheckCircle, Send, Users } from 'lucide-react';
 
 interface Step4Props {
   memo: any;
@@ -56,18 +56,24 @@ const Step4Review: React.FC<Step4Props> = ({
             <h3 className="font-medium mb-3">ผู้ลงนาม</h3>
             <div className="space-y-2">
               {signers.map((signer, index) => (
-                <div key={index} className="flex items-start gap-2 text-sm">
-                  <Badge variant="outline" className="mt-0.5">{signer.order}</Badge>
+                <div key={signer.user_id || index} className={`flex items-start gap-2 text-sm ${
+                  signer.role === 'parallel_signer' ? 'ml-4 pl-3 border-l-2 border-blue-300 dark:border-blue-700' : ''
+                }`}>
+                  <Badge variant="outline" className={`mt-0.5 ${
+                    signer.role === 'parallel_signer' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : ''
+                  }`}>{signer.order}</Badge>
                   <div className="flex-1">
-                    <p className="font-semibold">{signer.name}</p>
-                    {/* job_position (เล็กสุด) */}
+                    <p className="font-semibold">
+                      {signer.role === 'parallel_signer' && <Users className="inline h-3.5 w-3.5 mr-1 text-blue-500" />}
+                      {signer.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
+                      {signer.role === 'parallel_signer' && `${signer.job_position || signer.position || 'ผู้ลงนามเพิ่มเติม'}`}
                       {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                       {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
                       {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
                     </p>
-                    {/* org_structure_role (เด่นรอง) */}
                     {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
                       <p className="text-sm text-muted-foreground">
                         {signer.org_structure_role}

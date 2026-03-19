@@ -1603,7 +1603,7 @@ const DocumentManagePage: React.FC = () => {
             <Step4Review
               memo={memo}
               documentNumber={documentNumber}
-              signers={signers}
+              signers={allSigners}
               signaturePositions={signaturePositions}
               onPositionRemove={handlePositionRemove}
               onPrevious={handlePrevious}

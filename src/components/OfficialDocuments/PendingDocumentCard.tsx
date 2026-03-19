@@ -105,6 +105,16 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
       return memo.status === 'pending_sign' && memo.current_signer_order >= 2 && memo.current_signer_order <= 4;
     }
 
+    // เช็ค parallel group — ถ้า user อยู่ใน parallel group ที่กำลังรอ → แสดง
+    const parallelConfig = (memo as any)?.parallel_signers;
+    if (parallelConfig && profile && memo.current_signer_order === parallelConfig.order) {
+      const isInGroup = parallelConfig.signers?.some((s: any) => s.user_id === profile.user_id);
+      const hasCompleted = (parallelConfig.completed_user_ids || []).includes(profile.user_id);
+      if (isInGroup && !hasCompleted && memo.status === 'pending_sign') {
+        return true;
+      }
+    }
+
     // สำหรับ user อื่นๆ ที่ไม่ใช่ executive
     if (!memo.signer_list_progress || !profile) return false;
 
@@ -539,6 +549,41 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                             );
                           }
                           return null;
+                        })()}
+
+                        {/* Parallel signers step (ถ้ามี) */}
+                        {(memo as any)?.parallel_signers?.signers?.length > 0 && (() => {
+                          const pc = (memo as any).parallel_signers;
+                          const completedCount = (pc.completed_user_ids || []).length;
+                          const totalCount = pc.signers.length;
+                          const isCurrentStep = memo.current_signer_order === pc.order;
+                          const isDone = completedCount >= totalCount;
+                          return (
+                            <>
+                              <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
+                                <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                  memo.current_signer_order === 5 ? 'text-muted-foreground'
+                                    : isCurrentStep ? 'text-amber-700 dark:text-amber-300'
+                                    : isDone ? 'text-green-600 dark:text-green-400'
+                                    : 'text-amber-400 dark:text-amber-600'
+                                }`}>
+                                  👥 {completedCount}/{totalCount}
+                                </span>
+                                <span className={`sm:text-[10px] text-[9px] ${
+                                  isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'
+                                }`}>
+                                  ผู้ลงนาม
+                                </span>
+                                <div className={`w-2 h-2 rounded-full mt-1 ${
+                                  memo.current_signer_order === 5 ? 'bg-muted'
+                                    : isDone ? 'bg-green-500'
+                                    : isCurrentStep ? 'bg-amber-500'
+                                    : 'bg-amber-200 dark:bg-amber-800'
+                                }`}></div>
+                              </div>
+                              <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800'}`} />
+                            </>
+                          );
                         })()}
 
                         {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author และธุรการ/clerk) */}

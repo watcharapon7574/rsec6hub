@@ -1054,7 +1054,7 @@ const DocumentManagePage: React.FC = () => {
     if (memoId) {
       // 1. อัปเดต signature positions ให้รวม prefix ในชื่อ
       const updatedSignaturePositions = signaturePositions.map(pos => {
-        const signer = signers.find(s => s.user_id === pos.signer.user_id);
+        const signer = allSigners.find(s => s.user_id === pos.signer.user_id);
         if (signer && signer.prefix) {
           // ตรวจสอบว่าชื่อมี prefix อยู่แล้วหรือไม่
           const nameWithoutPrefix = pos.signer.name.replace(new RegExp(`^${signer.prefix}`), '').trim();
@@ -1122,7 +1122,7 @@ const DocumentManagePage: React.FC = () => {
       }
 
       // 2. อัปเดต signers/ตำแหน่ง
-      await updateMemoSigners(memoId, signers, updatedSignaturePositions);
+      await updateMemoSigners(memoId, allSigners, updatedSignaturePositions);
 
       // 2. เรียก API ลายเซ็นสำหรับธุการ (author)
       let signSuccess = false;

@@ -10,6 +10,11 @@ export interface MemoFormData {
   proposal?: string;
   attached_files?: string[];
   is_report_memo?: boolean; // Flag บอกว่าเป็น report memo (สร้างจาก CreateReportMemoPage)
+  parallel_signer_config?: {
+    enabled: boolean;
+    signer_user_ids: string[];
+    annotation_required_for: string[];
+  };
 }
 
 export interface SignerProgress {

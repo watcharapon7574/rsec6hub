@@ -461,24 +461,20 @@ const DocumentManagePage: React.FC = () => {
     return result;
   }, [signers, parallelSigners, profiles]);
 
-  // Debug: Log signers with prefix information
+  // Debug: Log allSigners (รวม parallel signers)
   React.useEffect(() => {
-    if (signers.length > 0) {
-      console.log('📝 Signers data for signature pins:', signers.map(s => ({
+    if (allSigners.length > 0) {
+      console.log('📝 All signers (incl. parallel):', allSigners.map(s => ({
         order: s.order,
         role: s.role,
         name: s.name,
-        prefix: s.prefix,
-        academic_rank: s.academic_rank,
-        org_structure_role: s.org_structure_role,
-        position: s.position
       })));
-      
-      console.log('📋 Final signer order after skip logic:', 
-        signers.map(s => `${s.order}. ${s.name} (${s.role})`).join(', ')
+
+      console.log('📋 Final signer order:',
+        allSigners.map(s => `${s.order}. ${s.name} (${s.role})`).join(', ')
       );
     }
-  }, [signers]);
+  }, [allSigners]);
 
   const isStepComplete = (step: number) => {
     switch (step) {

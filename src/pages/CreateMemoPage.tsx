@@ -185,6 +185,21 @@ const CreateMemoPage = () => {
           attached_files: parsedAttachedFiles
         });
 
+        // Load parallel signer config from form_data (ตอนตีกลับแล้วส่งใหม่)
+        const savedParallelConfig = (memo.form_data as any)?.parallel_signer_config;
+        if (savedParallelConfig?.enabled && savedParallelConfig.signer_user_ids?.length > 0) {
+          setEnableParallelSigners(true);
+          // ดึง profiles จาก DB เพื่อแสดงชื่อ
+          const { data: signerProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, first_name, last_name, position, employee_id')
+            .in('user_id', savedParallelConfig.signer_user_ids);
+          if (signerProfiles) {
+            setSelectedParallelSigners(signerProfiles as any);
+          }
+          setAnnotationRequiredUserIds(savedParallelConfig.annotation_required_for || []);
+        }
+
         // Load annotated PDF path if any
         if ((memo as any).annotated_pdf_path) {
           setAnnotatedPdfPath((memo as any).annotated_pdf_path);

@@ -77,12 +77,15 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
             {signers.map((signer, index) => {
-              const positionsCount = signaturePositions.filter(pos => pos.signer.order === signer.order).length;
+              // parallel_signer ใช้ user_id match แทน order (เพราะ order ซ้ำกัน)
+              const positionsCount = signer.role === 'parallel_signer'
+                ? signaturePositions.filter(pos => pos.signer.user_id === signer.user_id).length
+                : signaturePositions.filter(pos => pos.signer.order === signer.order && pos.signer.role !== 'parallel_signer').length;
               const isSelected = selectedSignerIndex === index;
               
               return (
                 <div
-                  key={signer.order}
+                  key={signer.user_id || `signer-${index}`}
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
                     isSelected
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 shadow-md'

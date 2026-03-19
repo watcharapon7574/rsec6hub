@@ -1351,7 +1351,7 @@ const DocumentManagePage: React.FC = () => {
   };
 
   const handlePositionClick = (x: number, y: number, page: number) => {
-    if (selectedSignerIndex >= signers.length) {
+    if (selectedSignerIndex >= allSigners.length) {
       toast({
         title: "ไม่มีผู้ลงนามให้เลือก",
         description: "กรุณาเลือกผู้ลงนามก่อน",
@@ -1360,15 +1360,17 @@ const DocumentManagePage: React.FC = () => {
       return;
     }
 
-    // นับจำนวนตำแหน่งที่มีอยู่แล้วสำหรับผู้ลงนามคนนี้
-    const existingPositionsCount = signaturePositions.filter(
-      pos => pos.signer.order === signers[selectedSignerIndex].order
-    ).length;
+    const selectedSigner = allSigners[selectedSignerIndex];
+
+    // นับจำนวนตำแหน่งที่มีอยู่แล้วสำหรับผู้ลงนามคนนี้ (ใช้ user_id สำหรับ parallel_signer)
+    const existingPositionsCount = selectedSigner.role === 'parallel_signer'
+      ? signaturePositions.filter(pos => pos.signer.user_id === selectedSigner.user_id).length
+      : signaturePositions.filter(pos => pos.signer.order === selectedSigner.order && pos.signer.role !== 'parallel_signer').length;
 
     const newPosition = {
       signer: {
-        ...signers[selectedSignerIndex],
-        positionIndex: existingPositionsCount + 1 // เพิ่มหมายเลขตำแหน่ง
+        ...selectedSigner,
+        positionIndex: existingPositionsCount + 1
       },
       x,
       y,
@@ -1381,7 +1383,7 @@ const DocumentManagePage: React.FC = () => {
 
     toast({
       title: "วางตำแหน่งลายเซ็นสำเร็จ",
-      description: `วางลายเซ็น ${signers[selectedSignerIndex].name} ตำแหน่งที่ ${existingPositionsCount + 1} ที่หน้า ${page + 1}`,
+      description: `วางลายเซ็น ${selectedSigner.name} ตำแหน่งที่ ${existingPositionsCount + 1} ที่หน้า ${page + 1}`,
     });
 
     // ไม่เปลี่ยนไปคนถัดไปอัตโนมัติ - ให้ผู้ใช้เลือกเอง

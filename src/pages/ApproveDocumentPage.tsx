@@ -29,6 +29,7 @@ import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
+import PDFAnnotationEditor from '@/components/OfficialDocuments/PDFAnnotationEditor';
 import { calculateNextSignerOrder, calculateNextSignerOrderWithParallel, isInParallelGroup, isCurrentSignerWithParallel } from '@/services/approvalWorkflowService';
 import { ParallelSignerConfig } from '@/types/memo';
 
@@ -53,6 +54,7 @@ const ApproveDocumentPage: React.FC = () => {
   const [originalDocument, setOriginalDocument] = useState<any>(null); // เอกสารต้นเรื่องสำหรับ report memo
   const [isReportMemo, setIsReportMemo] = useState(false); // flag ว่าเป็น report memo หรือไม่
   const [hasCompletedAnnotation, setHasCompletedAnnotation] = useState(false); // ขีดเขียนเสร็จแล้ว
+  const [showAnnotationEditor, setShowAnnotationEditor] = useState(false); // แสดง annotation editor
   const [signingLockWaiting, setSigningLockWaiting] = useState(false); // กำลังรอ FIFO lock
   const [signOnBehalfProfile, setSignOnBehalfProfile] = useState<any>(null); // profile ของคนที่ลงนามแทน
 
@@ -1207,15 +1209,7 @@ const ApproveDocumentPage: React.FC = () => {
                     <Button
                       variant="outline"
                       className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-                      onClick={() => {
-                        // TODO: เปิด PDFAnnotationEditor ใน mode "save as layer"
-                        // สำหรับตอนนี้ให้ mark ว่าขีดเขียนแล้ว (จะ implement จริงใน Phase 5)
-                        setHasCompletedAnnotation(true);
-                        toast({
-                          title: "พร้อมลงนาม",
-                          description: "คุณสามารถลงนามได้แล้ว",
-                        });
-                      }}
+                      onClick={() => setShowAnnotationEditor(true)}
                     >
                       <PenTool className="h-4 w-4 mr-2" />
                       เปิดโหมดขีดเขียน
@@ -1276,6 +1270,61 @@ const ApproveDocumentPage: React.FC = () => {
 
         </div>
       </div>
+      {/* Annotation Editor Modal */}
+      {showAnnotationEditor && memo?.pdf_draft_path && (
+        <Dialog open={showAnnotationEditor} onOpenChange={(open) => !open && setShowAnnotationEditor(false)}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 overflow-hidden">
+            <DialogTitle className="sr-only">โหมดขีดเขียน</DialogTitle>
+            <DialogDescription className="sr-only">ขีดเขียนลงบนเอกสาร</DialogDescription>
+            <PDFAnnotationEditor
+              pdfUrl={extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path}
+              onSave={async (pageCanvasImages) => {
+                // Save annotation layers ลง DB (memo_annotation_layers)
+                const annotatorUserId = signOnBehalfUserId || profile?.user_id;
+                if (!annotatorUserId || !memoId) return;
+
+                for (const [pageNumber, dataUrl] of pageCanvasImages) {
+                  // แปลง data URL เป็น blob แล้ว upload
+                  const base64 = dataUrl.split(',')[1];
+                  const binaryStr = atob(base64);
+                  const bytes = new Uint8Array(binaryStr.length);
+                  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+                  const blob = new Blob([bytes], { type: 'image/png' });
+
+                  const fileName = `annotation_${memoId}_${annotatorUserId}_p${pageNumber}_${Date.now()}.png`;
+                  const filePath = `annotations/${memoId}/${fileName}`;
+
+                  const { error: uploadError } = await supabase.storage
+                    .from('documents')
+                    .upload(filePath, blob, { contentType: 'image/png', upsert: true });
+
+                  if (!uploadError) {
+                    const { data: { publicUrl } } = supabase.storage
+                      .from('documents')
+                      .getPublicUrl(filePath);
+
+                    await supabase.from('memo_annotation_layers').insert({
+                      memo_id: memoId,
+                      user_id: annotatorUserId,
+                      page_number: pageNumber,
+                      layer_url: publicUrl,
+                    });
+                  }
+                }
+
+                setShowAnnotationEditor(false);
+                setHasCompletedAnnotation(true);
+                toast({
+                  title: "ขีดเขียนเสร็จแล้ว",
+                  description: "คุณสามารถลงนามได้แล้ว",
+                });
+              }}
+              onCancel={() => setShowAnnotationEditor(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
       <Dialog open={showLoadingModal}>
         <DialogContent>
           <DialogTitle>กำลังส่งเสนอต่อผู้ลงนามลำดับถัดไป กรุณารอสักครู่</DialogTitle>

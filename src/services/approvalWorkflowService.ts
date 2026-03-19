@@ -159,10 +159,15 @@ export function calculateNextSignerOrderWithParallel(
         parallelUpdate: { completed_user_ids: completedIds },
       };
     }
-    // ครบทุกคนแล้ว → หาคนถัดไป (sequential)
+    // ครบทุกคนแล้ว → หาคนถัดไป + ส่ง parallelUpdate ด้วย
+    const nextResult = calculateNextSignerOrder(currentOrder, signaturePositions, signingPosition);
+    return {
+      ...nextResult,
+      parallelUpdate: { completed_user_ids: completedIds },
+    };
   }
 
-  // Fallback ไปฟังก์ชันเดิม
+  // Fallback ไปฟังก์ชันเดิม (ไม่มี parallel)
   const result = calculateNextSignerOrder(currentOrder, signaturePositions, signingPosition);
   return { ...result };
 }

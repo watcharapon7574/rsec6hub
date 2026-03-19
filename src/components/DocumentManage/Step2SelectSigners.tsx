@@ -26,12 +26,11 @@ interface Step2Props {
   onPrevious: () => void;
   onNext: () => void;
   isStepComplete: boolean;
-  // Parallel signers props
   parallelSigners: ParallelSignerInfo[];
   onParallelSignersChange: (signers: ParallelSignerInfo[]) => void;
   annotationRequiredUserIds: string[];
   onAnnotationRequiredChange: (userIds: string[]) => void;
-  availableProfiles: any[]; // profiles ที่สามารถเพิ่มเป็น parallel signer
+  availableProfiles: any[];
 }
 
 const Step2SelectSigners: React.FC<Step2Props> = ({
@@ -78,7 +77,6 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
     }
   };
 
-  // กรอง profiles ที่เพิ่มได้ (ยังไม่ได้เลือก + ไม่ใช่ signers ปัจจุบัน)
   const existingUserIds = [
     ...parallelSigners.map(s => s.user_id),
     ...signers.map((s: any) => s.user_id),
@@ -96,7 +94,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* ผู้ลงนามเพิ่มเติม (Parallel) */}
+        {/* ผู้ลงนามเพิ่มเติม (Parallel) — แสดงเสมอ */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="flex items-center gap-2">
@@ -115,7 +113,6 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
             </Button>
           </div>
 
-          {/* Dropdown เลือกเพิ่มคน */}
           {showAddSigner && addableProfiles.length > 0 && (
             <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1 bg-card">
               {addableProfiles.map((p: any) => (
@@ -137,7 +134,6 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
             <p className="text-sm text-muted-foreground p-2">ไม่มีรายชื่อที่สามารถเพิ่มได้</p>
           )}
 
-          {/* รายชื่อ parallel signers ที่เลือกแล้ว */}
           {parallelSigners.length > 0 ? (
             <div className="space-y-2">
               {parallelSigners.map((signer) => (
@@ -154,26 +150,12 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <p className="text-xs text-muted-foreground">{signer.org_structure_role || signer.position || ''}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {/* Checkbox ขีดเขียน */}
-                    <div
-                      className="flex items-center gap-1.5 cursor-pointer"
-                      onClick={() => toggleAnnotation(signer.user_id)}
-                    >
-                      <Checkbox checked={annotationRequiredUserIds.includes(signer.user_id)} />
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <PenTool className="h-3 w-3" />
-                        ขีดเขียน
-                      </span>
-                    </div>
-                    {/* ปุ่มลบ */}
-                    <button
-                      onClick={() => handleRemoveParallelSigner(signer.user_id)}
-                      className="text-red-400 hover:text-red-600 p-1"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleRemoveParallelSigner(signer.user_id)}
+                    className="text-red-400 hover:text-red-600 p-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -184,7 +166,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
           )}
         </div>
 
-        {/* หัวหน้าฝ่าย + รองผอ. (เดิม) */}
+        {/* หัวหน้าฝ่าย + รองผอ. */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>หัวหน้าฝ่าย (เลือก 1 คน หรือไม่ระบุ)</Label>
@@ -211,19 +193,6 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                 ))}
               </SelectContent>
             </Select>
-            {/* Annotation checkbox สำหรับหัวหน้าฝ่าย */}
-            {selectedAssistant && selectedAssistant !== 'skip' && (
-              <div
-                className="flex items-center gap-1.5 mt-2 cursor-pointer"
-                onClick={() => toggleAnnotation(selectedAssistant)}
-              >
-                <Checkbox checked={annotationRequiredUserIds.includes(selectedAssistant)} />
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <PenTool className="h-3 w-3" />
-                  ต้องขีดเขียน
-                </span>
-              </div>
-            )}
           </div>
 
           <div>
@@ -251,59 +220,35 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                 ))}
               </SelectContent>
             </Select>
-            {/* Annotation checkbox สำหรับรองผอ. */}
-            {selectedDeputy && selectedDeputy !== 'skip' && (
-              <div
-                className="flex items-center gap-1.5 mt-2 cursor-pointer"
-                onClick={() => toggleAnnotation(selectedDeputy)}
-              >
-                <Checkbox checked={annotationRequiredUserIds.includes(selectedDeputy)} />
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <PenTool className="h-3 w-3" />
-                  ต้องขีดเขียน
-                </span>
-              </div>
-            )}
           </div>
         </div>
-
-        {/* Annotation checkbox สำหรับ ผอ. */}
-        {signers.some((s: any) => s.role === 'director') && (
-          <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => {
-            const director = signers.find((s: any) => s.role === 'director');
-            if (director) toggleAnnotation(director.user_id);
-          }}>
-            <Checkbox checked={
-              annotationRequiredUserIds.includes(signers.find((s: any) => s.role === 'director')?.user_id || '')
-            } />
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <PenTool className="h-3 w-3" />
-              ผู้อำนวยการต้องขีดเขียน
-            </span>
-          </div>
-        )}
 
         {/* คำอธิบาย */}
         <div className="text-sm text-muted-foreground bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
           <p className="font-medium mb-1">หมายเหตุ:</p>
           <p>• ผู้ลงนามเพิ่มเติม (👥) จะลงนามพร้อมกันได้ ก่อนหัวหน้าฝ่าย</p>
-          <p>• ✏️ ขีดเขียน = ผู้ลงนามต้องเปิดเอกสารและขีดเขียนก่อนเซ็น</p>
+          <p>• กดที่ชื่อในลำดับการลงนาม เพื่อ toggle ✏️ ขีดเขียน</p>
           <p>• สามารถเลือก "ไม่ระบุ (ข้าม)" เพื่อข้ามหัวหน้าฝ่ายหรือรองผู้อำนวยการได้</p>
           <p>• ผู้เขียนและผู้อำนวยการจะอยู่เสมอ</p>
         </div>
 
-        {/* ลำดับการลงนาม (preview) */}
+        {/* ลำดับการลงนาม — กดที่ชื่อเพื่อ toggle ขีดเขียน */}
         <div>
           <Label>ลำดับการลงนาม ({signers.length + parallelSigners.length} คน)</Label>
           <div className="mt-2 space-y-2">
             {signers.map((signer: any, index: number) => {
               const isAnnotationRequired = annotationRequiredUserIds.includes(signer.user_id);
-              // แทรก parallel signers หลังผู้เขียน (order 1)
               const showParallelAfter = signer.role === 'author' && parallelSigners.length > 0;
+              const canToggleAnnotation = signer.role !== 'author'; // ผู้เขียนไม่ต้องขีดเขียน
 
               return (
                 <React.Fragment key={index}>
-                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                  <div
+                    className={`flex items-center gap-3 p-3 rounded-lg ${
+                      canToggleAnnotation ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950' : ''
+                    } ${isAnnotationRequired ? 'bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800' : 'bg-muted'}`}
+                    onClick={() => canToggleAnnotation && toggleAnnotation(signer.user_id)}
+                  >
                     <Badge variant="outline" className="min-w-[30px] text-center">{signer.order}</Badge>
                     <div className="flex-1">
                       <p className="font-semibold">
@@ -322,6 +267,12 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                         <p className="text-sm text-muted-foreground">{signer.org_structure_role}</p>
                       )}
                     </div>
+                    {canToggleAnnotation && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Checkbox checked={isAnnotationRequired} />
+                        <PenTool className="h-3 w-3" />
+                      </div>
+                    )}
                   </div>
 
                   {/* แสดง parallel signers หลังผู้เขียน */}
@@ -330,22 +281,33 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                       <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                         👥 ลงนามพร้อมกัน ({parallelSigners.length} คน)
                       </p>
-                      {parallelSigners.map((ps) => (
-                        <div key={ps.user_id} className="flex items-center gap-3 p-2 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                          <Badge variant="outline" className="min-w-[30px] text-center bg-blue-100 dark:bg-blue-900">
-                            {signer.order + 1}
-                          </Badge>
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm">
-                              {ps.name}
-                              {annotationRequiredUserIds.includes(ps.user_id) && (
-                                <span className="ml-2 text-orange-500" title="ต้องขีดเขียน">✏️</span>
-                              )}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{ps.org_structure_role || ps.position || ''}</p>
+                      {parallelSigners.map((ps) => {
+                        const psAnnotation = annotationRequiredUserIds.includes(ps.user_id);
+                        return (
+                          <div
+                            key={ps.user_id}
+                            className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 ${
+                              psAnnotation ? 'bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800' : 'bg-blue-50 dark:bg-blue-950'
+                            }`}
+                            onClick={() => toggleAnnotation(ps.user_id)}
+                          >
+                            <Badge variant="outline" className="min-w-[30px] text-center bg-blue-100 dark:bg-blue-900">
+                              {signer.order + 1}
+                            </Badge>
+                            <div className="flex-1">
+                              <p className="font-semibold text-sm">
+                                {ps.name}
+                                {psAnnotation && <span className="ml-2 text-orange-500">✏️</span>}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{ps.org_structure_role || ps.position || ''}</p>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Checkbox checked={psAnnotation} />
+                              <PenTool className="h-3 w-3" />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </React.Fragment>

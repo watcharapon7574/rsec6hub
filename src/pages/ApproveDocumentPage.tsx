@@ -1270,59 +1270,53 @@ const ApproveDocumentPage: React.FC = () => {
 
         </div>
       </div>
-      {/* Annotation Editor Modal */}
-      {showAnnotationEditor && memo?.pdf_draft_path && (
-        <Dialog open={showAnnotationEditor} onOpenChange={(open) => !open && setShowAnnotationEditor(false)}>
-          <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 overflow-hidden">
-            <DialogTitle className="sr-only">โหมดขีดเขียน</DialogTitle>
-            <DialogDescription className="sr-only">ขีดเขียนลงบนเอกสาร</DialogDescription>
-            <PDFAnnotationEditor
-              pdfUrl={extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path}
-              onSave={async (pageCanvasImages) => {
-                // Save annotation layers ลง DB (memo_annotation_layers)
-                const annotatorUserId = signOnBehalfUserId || profile?.user_id;
-                if (!annotatorUserId || !memoId) return;
+      {/* Annotation Editor — ใช้แบบเดียวกับ RejectionCard */}
+      {memo?.pdf_draft_path && (
+        <PDFAnnotationEditor
+          pdfUrl={extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path}
+          isOpen={showAnnotationEditor}
+          onClose={() => setShowAnnotationEditor(false)}
+          onSave={async (pageCanvasImages) => {
+            // Save annotation layers ลง DB (memo_annotation_layers)
+            const annotatorUserId = signOnBehalfUserId || profile?.user_id;
+            if (!annotatorUserId || !memoId) return;
 
-                for (const [pageNumber, dataUrl] of pageCanvasImages) {
-                  // แปลง data URL เป็น blob แล้ว upload
-                  const base64 = dataUrl.split(',')[1];
-                  const binaryStr = atob(base64);
-                  const bytes = new Uint8Array(binaryStr.length);
-                  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-                  const blob = new Blob([bytes], { type: 'image/png' });
+            for (const [pageNumber, dataUrl] of pageCanvasImages) {
+              const base64 = dataUrl.split(',')[1];
+              const binaryStr = atob(base64);
+              const bytes = new Uint8Array(binaryStr.length);
+              for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+              const blob = new Blob([bytes], { type: 'image/png' });
 
-                  const fileName = `annotation_${memoId}_${annotatorUserId}_p${pageNumber}_${Date.now()}.png`;
-                  const filePath = `annotations/${memoId}/${fileName}`;
+              const fileName = `annotation_${memoId}_${annotatorUserId}_p${pageNumber}_${Date.now()}.png`;
+              const filePath = `annotations/${memoId}/${fileName}`;
 
-                  const { error: uploadError } = await supabase.storage
-                    .from('documents')
-                    .upload(filePath, blob, { contentType: 'image/png', upsert: true });
+              const { error: uploadError } = await supabase.storage
+                .from('documents')
+                .upload(filePath, blob, { contentType: 'image/png', upsert: true });
 
-                  if (!uploadError) {
-                    const { data: { publicUrl } } = supabase.storage
-                      .from('documents')
-                      .getPublicUrl(filePath);
+              if (!uploadError) {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('documents')
+                  .getPublicUrl(filePath);
 
-                    await supabase.from('memo_annotation_layers').insert({
-                      memo_id: memoId,
-                      user_id: annotatorUserId,
-                      page_number: pageNumber,
-                      layer_url: publicUrl,
-                    });
-                  }
-                }
-
-                setShowAnnotationEditor(false);
-                setHasCompletedAnnotation(true);
-                toast({
-                  title: "ขีดเขียนเสร็จแล้ว",
-                  description: "คุณสามารถลงนามได้แล้ว",
+                await supabase.from('memo_annotation_layers').insert({
+                  memo_id: memoId,
+                  user_id: annotatorUserId,
+                  page_number: pageNumber,
+                  layer_url: publicUrl,
                 });
-              }}
-              onCancel={() => setShowAnnotationEditor(false)}
-            />
-          </DialogContent>
-        </Dialog>
+              }
+            }
+
+            setShowAnnotationEditor(false);
+            setHasCompletedAnnotation(true);
+            toast({
+              title: "ขีดเขียนเสร็จแล้ว",
+              description: "คุณสามารถลงนามได้แล้ว",
+            });
+          }}
+        />
       )}
 
       <Dialog open={showLoadingModal}>

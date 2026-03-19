@@ -913,7 +913,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const pdfSizeScale = Math.min(currentPageWidth, currentPageHeight) / 500; // Normalize against 500px base
                 
                 // ตำแหน่งที่ 2+ แสดงแค่ลายเซ็น → ใช้ pin เล็กลง
-                const isImageOnly = (pos.signer as any).positionIndex > 1 && pos.signer.role !== 'clerk';
+                const isImageOnly = ((pos.signer as any).positionIndex > 1 || pos.signer.role === 'parallel_signer') && pos.signer.role !== 'clerk';
                 const effectivePinSizePt = isImageOnly ? 80 : basePinSizePt; // 80pt สำหรับแค่ลายเซ็น
                 const calculatedSize = effectivePinSizePt * pdfSizeScale;
 

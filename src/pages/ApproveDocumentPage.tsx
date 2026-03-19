@@ -754,12 +754,16 @@ const ApproveDocumentPage: React.FC = () => {
 
           console.log('🔍 Signing with order:', signerOrder, 'isAdminSigning:', isAdminSigning, 'signOnBehalf:', signOnBehalfUserId);
 
-          // ค้นหาตำแหน่งลายเซ็น — signOnBehalf ใช้ user_id ของคนที่ลงนามแทน
-          let userSignaturePositions = signOnBehalfUserId
-            ? signaturePositions.filter(pos => pos.signer?.user_id === signOnBehalfUserId)
+          // ค้นหาตำแหน่งลายเซ็น
+          // parallel_signer + signOnBehalf → ใช้ user_id เสมอ (เพราะ order ซ้ำกัน)
+          const searchUserId = signOnBehalfUserId || profile?.user_id;
+          const isParallelOrder = parallelConfig && signerOrder === parallelConfig.order;
+
+          let userSignaturePositions = (isParallelOrder || signOnBehalfUserId)
+            ? signaturePositions.filter(pos => pos.signer?.user_id === searchUserId)
             : signaturePositions.filter(pos => pos.signer?.order === signerOrder);
 
-          // หากไม่เจอจาก order/user_id ให้ลองค้นหาจาก user_id ของตัวเอง
+          // หากไม่เจอ ให้ลองค้นหาจาก user_id
           if (userSignaturePositions.length === 0 && profile?.user_id && !isAdminSigning) {
             userSignaturePositions = signaturePositions.filter(pos => pos.signer?.user_id === profile.user_id);
           }

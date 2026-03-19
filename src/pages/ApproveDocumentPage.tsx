@@ -1277,36 +1277,46 @@ const ApproveDocumentPage: React.FC = () => {
           isOpen={showAnnotationEditor}
           onClose={() => setShowAnnotationEditor(false)}
           onSave={async (annotatedPdfBlob: Blob) => {
-            // onSave ได้รับ annotated PDF blob — upload เป็น layer
+            // onSave ได้รับ annotated PDF blob — upload แทนที่ PDF เดิม
             const annotatorUserId = signOnBehalfUserId || profile?.user_id;
             if (!annotatorUserId || !memoId) return;
 
-            const fileName = `annotation_${memoId}_${annotatorUserId}_${Date.now()}.pdf`;
-            const filePath = `annotations/${memoId}/${fileName}`;
+            const fileName = `annotated_${memoId}_${Date.now()}.pdf`;
+            const filePath = `memos/${annotatorUserId}/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
               .from('documents')
               .upload(filePath, annotatedPdfBlob, { contentType: 'application/pdf', upsert: true });
 
-            if (!uploadError) {
-              const { data: { publicUrl } } = supabase.storage
-                .from('documents')
-                .getPublicUrl(filePath);
-
-              // บันทึก layer (page 0 = ทุกหน้า เพราะ annotated PDF รวมทุกหน้าแล้ว)
-              await supabase.from('memo_annotation_layers').insert({
-                memo_id: memoId,
-                user_id: annotatorUserId,
-                page_number: 0,
-                layer_url: publicUrl,
-              });
+            if (uploadError) {
+              toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถบันทึกรอยขีดเขียนได้', variant: 'destructive' });
+              return;
             }
 
+            const { data: { publicUrl } } = supabase.storage
+              .from('documents')
+              .getPublicUrl(filePath);
+
+            // อัปเดต pdf_draft_path ให้เป็น annotated PDF
+            await supabase.from('memos').update({
+              pdf_draft_path: `${publicUrl}?t=${Date.now()}`,
+              updated_at: new Date().toISOString(),
+            }).eq('id', memoId);
+
+            // บันทึก layer record ด้วย
+            await supabase.from('memo_annotation_layers').insert({
+              memo_id: memoId,
+              user_id: annotatorUserId,
+              page_number: 0,
+              layer_url: publicUrl,
+            });
+
+            await refetch();
             setShowAnnotationEditor(false);
             setHasCompletedAnnotation(true);
             toast({
               title: "ขีดเขียนเสร็จแล้ว",
-              description: "คุณสามารถลงนามได้แล้ว",
+              description: "รอยขีดเขียนถูกบันทึกลงเอกสารแล้ว คุณสามารถลงนามได้",
             });
           }}
         />

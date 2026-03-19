@@ -893,13 +893,48 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       </div>
                       <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
 
+                      {/* Parallel signers step (ถ้ามี) */}
+                      {(memo as any)?.parallel_signers?.signers?.length > 0 && (() => {
+                        const pc = (memo as any).parallel_signers;
+                        const completedCount = (pc.completed_user_ids || []).length;
+                        const totalCount = pc.signers.length;
+                        const isCurrentStep = memo.current_signer_order === pc.order;
+                        const isDone = completedCount >= totalCount;
+                        return (
+                          <>
+                            <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
+                              <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                memo.current_signer_order === 5 ? 'text-muted-foreground'
+                                  : isCurrentStep ? 'text-purple-700 dark:text-purple-300'
+                                  : isDone ? 'text-green-600 dark:text-green-400'
+                                  : 'text-purple-400 dark:text-purple-600'
+                              }`}>
+                                <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
+                              </span>
+                              <span className={`sm:text-[10px] text-[9px] ${
+                                isCurrentStep ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600'
+                              }`}>
+                                ผู้ลงนาม
+                              </span>
+                              <div className={`w-2 h-2 rounded-full mt-1 ${
+                                memo.current_signer_order === 5 ? 'bg-muted'
+                                  : isDone ? 'bg-green-500'
+                                  : isCurrentStep ? 'bg-purple-500'
+                                  : 'bg-purple-200 dark:bg-purple-800'
+                              }`}></div>
+                            </div>
+                            <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
+                          </>
+                        );
+                      })()}
+
                       {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author) */}
                       {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
                         memo.signer_list_progress
-                          .filter(signer => signer.role !== 'author' && signer.role !== 'clerk') // ข้ามผู้เขียนและธุรการ
+                          .filter(signer => signer.role !== 'author' && signer.role !== 'clerk' && signer.role !== 'parallel_signer') // ข้ามผู้เขียน ธุรการ และ parallel_signer
                           .sort((a, b) => a.order - b.order)
                           .map((signer, idx, arr) => (
-                            <React.Fragment key={signer.order}>
+                            <React.Fragment key={signer.user_id || `signer-${idx}`}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                   memo.current_signer_order === 5
@@ -907,12 +942,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
                                 }`}>
                                   {(() => {
-                                    // ตรวจสอบ user_id: ถ้าเป็น 28ef1822-628a-4dfd-b7ea-2defa97d755b ให้แสดงเป็น ผู้อำนวยการ เสมอ
-                                    if (signer.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') {
-                                      return 'ผู้อำนวยการ';
-                                    }
-
-                                    // แสดงตำแหน่งตาม role
+                                    if (signer.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') return 'ผู้อำนวยการ';
                                     switch (signer.role) {
                                       case 'assistant_director':
                                         return signer.org_structure_role || 'หัวหน้าฝ่าย';
@@ -921,7 +951,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                       case 'director':
                                         return 'ผู้อำนวยการ';
                                       default:
-                                        return signer.job_position || signer.position || '-';
+                                        return signer.org_structure_role || signer.job_position || signer.position || '-';
                                     }
                                   })()}
                                 </span>

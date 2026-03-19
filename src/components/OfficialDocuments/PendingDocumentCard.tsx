@@ -589,10 +589,10 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         {/* แสดงเฉพาะผู้ลงนามจาก signer_list_progress (ข้ามผู้เขียน/author และธุรการ/clerk) */}
                         {memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 ? (
                           memo.signer_list_progress
-                            .filter(signer => signer.role !== 'author' && signer.role !== 'clerk') // ข้ามผู้เขียนและธุรการ
+                            .filter(signer => signer.role !== 'author' && signer.role !== 'clerk' && signer.role !== 'parallel_signer') // ข้ามผู้เขียน ธุรการ และ parallel_signer (แสดงในกลุ่มแล้ว)
                             .sort((a, b) => a.order - b.order)
                             .map((signer, idx, arr) => (
-                              <React.Fragment key={signer.order}>
+                              <React.Fragment key={signer.user_id || `signer-${idx}`}>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 
@@ -609,7 +609,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                         case 'director':
                                           return 'ผู้อำนวยการ';
                                         default:
-                                          return signer.job_position || signer.position || '-';
+                                          return signer.org_structure_role || signer.job_position || signer.position || '-';
                                       }
                                     })()}
                                   </span>

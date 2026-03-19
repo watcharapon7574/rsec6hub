@@ -295,7 +295,7 @@ const ApproveDocumentPage: React.FC = () => {
 
   // Check if user can comment (assistant_director, deputy_director, director, or admin)
   // ผู้ลงนามเพิ่มเติม (parallel_signer) ไม่ต้องแสดง comment
-  const isSigningForParallel = signOnBehalfProfile && signaturePositions.some(
+  const isSigningForParallel = signOnBehalfProfile && Array.isArray(memo?.signature_positions) && memo.signature_positions.some(
     (pos: any) => pos.signer?.user_id === signOnBehalfUserId && pos.signer?.role === 'parallel_signer'
   );
   const canComment = !isSigningForParallel && (

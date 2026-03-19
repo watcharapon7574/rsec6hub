@@ -110,61 +110,69 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
           />
         </div>
 
-        {/* หัวหน้าฝ่าย + รองผอ. */}
+        {/* หัวหน้าฝ่าย + รองผอ. — แยกเป็นการ์ดเด่น */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>หัวหน้าฝ่าย (เลือก 1 คน หรือไม่ระบุ)</Label>
-            <Select value={selectedAssistant} onValueChange={onSelectedAssistantChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="เลือกหัวหน้าฝ่าย หรือไม่ระบุ" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
-                <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
-                  <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
-                </SelectItem>
-                {assistantDirectors.map((profile) => (
-                  <SelectItem
-                    key={`assistant-${profile.id}`}
-                    value={profile.user_id || profile.id}
-                    className="hover:bg-blue-50 dark:hover:bg-blue-950 focus:bg-blue-50 dark:focus:bg-blue-950 cursor-pointer"
-                    textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold">{profile.prefix || ''}{profile.first_name} {profile.last_name}</span>
-                      <span className="text-sm text-muted-foreground">{profile.org_structure_role || ''}</span>
-                    </div>
+          <Card className="border-2 border-indigo-200 dark:border-indigo-800 shadow-sm">
+            <CardContent className="pt-4 pb-4 space-y-2">
+              <Label className="font-semibold text-indigo-700 dark:text-indigo-300">
+                หัวหน้าฝ่าย (เลือก 1 คน หรือไม่ระบุ)
+              </Label>
+              <Select value={selectedAssistant} onValueChange={onSelectedAssistantChange}>
+                <SelectTrigger className="border-2 border-indigo-200 dark:border-indigo-700 bg-card">
+                  <SelectValue placeholder="เลือกหัวหน้าฝ่าย หรือไม่ระบุ" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border border-indigo-200 dark:border-indigo-800 z-50 shadow-lg">
+                  <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
+                    <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                  {assistantDirectors.map((profile) => (
+                    <SelectItem
+                      key={`assistant-${profile.id}`}
+                      value={profile.user_id || profile.id}
+                      className="hover:bg-indigo-50 dark:hover:bg-indigo-950 focus:bg-indigo-50 dark:focus:bg-indigo-950 cursor-pointer"
+                      textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{profile.prefix || ''}{profile.first_name} {profile.last_name}</span>
+                        <span className="text-sm text-muted-foreground">{profile.org_structure_role || ''}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
 
-          <div>
-            <Label>รองผู้อำนวยการ (เลือก 1 คน หรือไม่ระบุ)</Label>
-            <Select value={selectedDeputy} onValueChange={onSelectedDeputyChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="เลือกรองผู้อำนวยการ หรือไม่ระบุ" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border border-blue-200 dark:border-blue-800 z-50 shadow-lg">
-                <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
-                  <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
-                </SelectItem>
-                {deputyDirectors.map((profile) => (
-                  <SelectItem
-                    key={`deputy-${profile.id}`}
-                    value={profile.user_id || profile.id}
-                    className="hover:bg-blue-50 dark:hover:bg-blue-950 focus:bg-blue-50 dark:focus:bg-blue-950 cursor-pointer"
-                    textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold">{profile.prefix || ''}{profile.first_name} {profile.last_name}</span>
-                      <span className="text-sm text-muted-foreground">{profile.org_structure_role || ''}</span>
-                    </div>
+          <Card className="border-2 border-violet-200 dark:border-violet-800 shadow-sm">
+            <CardContent className="pt-4 pb-4 space-y-2">
+              <Label className="font-semibold text-violet-700 dark:text-violet-300">
+                รองผู้อำนวยการ (เลือก 1 คน หรือไม่ระบุ)
+              </Label>
+              <Select value={selectedDeputy} onValueChange={onSelectedDeputyChange}>
+                <SelectTrigger className="border-2 border-violet-200 dark:border-violet-700 bg-card">
+                  <SelectValue placeholder="เลือกรองผู้อำนวยการ หรือไม่ระบุ" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border border-violet-200 dark:border-violet-800 z-50 shadow-lg">
+                  <SelectItem value="skip" className="hover:bg-muted focus:bg-muted cursor-pointer">
+                    <span className="font-medium text-muted-foreground">ไม่ระบุ (ข้าม)</span>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                  {deputyDirectors.map((profile) => (
+                    <SelectItem
+                      key={`deputy-${profile.id}`}
+                      value={profile.user_id || profile.id}
+                      className="hover:bg-violet-50 dark:hover:bg-violet-950 focus:bg-violet-50 dark:focus:bg-violet-950 cursor-pointer"
+                      textValue={`${profile.prefix || ''}${profile.first_name} ${profile.last_name}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{profile.prefix || ''}{profile.first_name} {profile.last_name}</span>
+                        <span className="text-sm text-muted-foreground">{profile.org_structure_role || ''}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
         </div>
 
         {/* คำอธิบาย */}

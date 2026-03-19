@@ -1188,7 +1188,9 @@ const ApproveDocumentPage: React.FC = () => {
             {/* Annotation Requirement */}
             {(() => {
               const annotationRequired = (memo as any)?.annotation_required_for as string[] | null;
-              const needsAnnotation = annotationRequired?.includes(profile?.user_id || '') && !hasCompletedAnnotation;
+              // เช็คทั้ง user ปัจจุบัน และคนที่ลงนามแทน
+              const checkUserId = signOnBehalfUserId || profile?.user_id || '';
+              const needsAnnotation = annotationRequired?.includes(checkUserId) && !hasCompletedAnnotation;
 
               return needsAnnotation ? (
                 <Card className="border-orange-300 dark:border-orange-700">
@@ -1239,7 +1241,7 @@ const ApproveDocumentPage: React.FC = () => {
                   onClick={() => handleSubmit('approve')}
                   disabled={
                     isSubmitting || isRejecting || signingLockWaiting ||
-                    ((memo as any)?.annotation_required_for?.includes(profile?.user_id || '') && !hasCompletedAnnotation)
+                    ((memo as any)?.annotation_required_for?.includes(signOnBehalfUserId || profile?.user_id || '') && !hasCompletedAnnotation)
                   }
                   className="bg-green-600 hover:bg-green-700 text-white w-full py-3"
                 >

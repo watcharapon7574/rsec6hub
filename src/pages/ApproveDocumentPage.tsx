@@ -1277,7 +1277,9 @@ const ApproveDocumentPage: React.FC = () => {
           isOpen={showAnnotationEditor}
           onClose={() => setShowAnnotationEditor(false)}
           onSave={async (annotatedPdfBlob: Blob) => {
-            // onSave ได้รับ annotated PDF blob — upload แทนที่ PDF เดิม
+            // ปิด editor ก่อนเพื่อป้องกัน canvas unmount error
+            setShowAnnotationEditor(false);
+
             const annotatorUserId = signOnBehalfUserId || profile?.user_id;
             if (!annotatorUserId || !memoId) return;
 
@@ -1297,13 +1299,11 @@ const ApproveDocumentPage: React.FC = () => {
               .from('documents')
               .getPublicUrl(filePath);
 
-            // อัปเดต pdf_draft_path ให้เป็น annotated PDF
             await supabase.from('memos').update({
               pdf_draft_path: `${publicUrl}?t=${Date.now()}`,
               updated_at: new Date().toISOString(),
             }).eq('id', memoId);
 
-            // บันทึก layer record ด้วย
             await supabase.from('memo_annotation_layers').insert({
               memo_id: memoId,
               user_id: annotatorUserId,
@@ -1311,13 +1311,13 @@ const ApproveDocumentPage: React.FC = () => {
               layer_url: publicUrl,
             });
 
-            await refetch();
-            setShowAnnotationEditor(false);
             setHasCompletedAnnotation(true);
             toast({
               title: "ขีดเขียนเสร็จแล้ว",
               description: "รอยขีดเขียนถูกบันทึกลงเอกสารแล้ว คุณสามารถลงนามได้",
             });
+            // refetch หลัง delay เพื่อให้ canvas cleanup เสร็จก่อน
+            setTimeout(() => refetch(), 500);
           }}
         />
       )}

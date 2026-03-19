@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
-import { getFirstSignerOrder, calculateNextSignerOrder, calculateRejection } from '@/services/approvalWorkflowService';
+import { getFirstSignerOrder, calculateNextSignerOrder, calculateNextSignerOrderWithParallel, calculateRejection } from '@/services/approvalWorkflowService';
 
 export interface MemoRecord {
   id: string;
@@ -420,9 +420,13 @@ export const useAllMemos = () => {
         : [];
       const currentOrder = memo.current_signer_order || 1;
 
-      // ใช้ centralized logic จาก approvalWorkflowService
+      // ใช้ centralized logic จาก approvalWorkflowService (รองรับ parallel group)
+      const parallelSigners = memo.parallel_signers || null;
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id || '';
+
       const result = action === 'approve'
-        ? calculateNextSignerOrder(currentOrder, signaturePositions)
+        ? calculateNextSignerOrderWithParallel(currentOrder, signaturePositions, undefined, parallelSigners, currentUserId)
         : calculateRejection();
 
       const newStatus = result.newStatus;
@@ -433,6 +437,14 @@ export const useAllMemos = () => {
         current_signer_order: newSignerOrder,
         updated_at: new Date().toISOString()
       };
+
+      // อัปเดต parallel_signers.completed_user_ids ถ้ามี
+      if ('parallelUpdate' in result && result.parallelUpdate && parallelSigners) {
+        updateData.parallel_signers = {
+          ...parallelSigners,
+          completed_user_ids: result.parallelUpdate.completed_user_ids,
+        };
+      }
 
       // If rejecting, add rejected_name_comment and increment revision_count
       if (action === 'reject') {
@@ -479,6 +491,14 @@ export const useAllMemos = () => {
         // Increment revision_count
         const currentRevisionCount = memo.revision_count || 0;
         updateData.revision_count = currentRevisionCount + 1;
+
+        // Reset parallel_signers.completed_user_ids เมื่อตีกลับ
+        if (parallelSigners) {
+          updateData.parallel_signers = {
+            ...parallelSigners,
+            completed_user_ids: [],
+          };
+        }
 
         // ลบ PDF และเอกสารแนบทันทีเมื่อถูกตีกลับ
         console.log('🗑️ Deleting PDF and attachments due to rejection');

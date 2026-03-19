@@ -488,6 +488,15 @@ const ManageReportMemoPage: React.FC = () => {
       return;
     }
 
+    if (!/^\d+\/\d{2}$/.test(finalDocSuffix)) {
+      toast({
+        title: 'รูปแบบเลขหนังสือไม่ถูกต้อง',
+        description: 'กรุณากรอกในรูปแบบ เลขที่/ปี เช่น 0240/69',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     if (!memoId) return;
 
     const fullDocNumber = `ศธ ๐๔๐๐๗.๖๐๐/${finalDocSuffix}`;

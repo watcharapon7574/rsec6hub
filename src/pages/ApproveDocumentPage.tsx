@@ -15,7 +15,8 @@ import {
   User,
   Clock,
   Eye,
-  ClipboardCheck
+  ClipboardCheck,
+  PenTool
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAllMemos } from '@/hooks/useAllMemos';
@@ -28,7 +29,8 @@ import { AnimatedProgress } from '@/components/ui/progress';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
-import { calculateNextSignerOrder } from '@/services/approvalWorkflowService';
+import { calculateNextSignerOrder, isInParallelGroup, isCurrentSignerWithParallel } from '@/services/approvalWorkflowService';
+import { ParallelSignerConfig } from '@/types/memo';
 
 const ApproveDocumentPage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
@@ -48,6 +50,8 @@ const ApproveDocumentPage: React.FC = () => {
   const [isDocReceive, setIsDocReceive] = useState(false); // flag ว่าเป็น doc_receive หรือไม่
   const [originalDocument, setOriginalDocument] = useState<any>(null); // เอกสารต้นเรื่องสำหรับ report memo
   const [isReportMemo, setIsReportMemo] = useState(false); // flag ว่าเป็น report memo หรือไม่
+  const [hasCompletedAnnotation, setHasCompletedAnnotation] = useState(false); // ขีดเขียนเสร็จแล้ว
+  const [signingLockWaiting, setSigningLockWaiting] = useState(false); // กำลังรอ FIFO lock
 
   // Scroll to top on mount - ทำทันทีเมื่อเปิดหน้า
   useEffect(() => {
@@ -336,7 +340,18 @@ const ApproveDocumentPage: React.FC = () => {
       return;
     }
 
-    if (!currentUserSigner && !currentUserSignature) {
+    // เช็ค parallel group — ถ้า user อยู่ใน parallel group และ current_signer_order ตรง → อนุญาตเข้าถึง
+    const parallelConfig = (memo as any)?.parallel_signers as ParallelSignerConfig | null;
+    const isParallelMember = parallelConfig && isInParallelGroup(profile.user_id, parallelConfig);
+    const isParallelTurn = isParallelMember && memo.current_signer_order === parallelConfig?.order
+      && !(parallelConfig?.completed_user_ids || []).includes(profile.user_id);
+
+    if (isParallelTurn) {
+      console.log('🔓 User is in parallel group and it is their turn');
+      return; // อนุญาตเข้าถึง
+    }
+
+    if (!currentUserSigner && !currentUserSignature && !isParallelMember) {
       setHasShownPermissionToast(true);
       toast({
         title: "ไม่สามารถเข้าถึงได้",
@@ -448,8 +463,10 @@ const ApproveDocumentPage: React.FC = () => {
   const handleSubmit = async (approvalAction: 'approve') => {
     if (!memoId || !memo || !profile) return;
 
-    // ตรวจสอบสิทธิ์อีกครั้งก่อนเซ็น
-    if (!userCanSign) {
+    // ตรวจสอบสิทธิ์อีกครั้งก่อนเซ็น — รองรับ parallel group
+    const parallelConfig = (memo as any)?.parallel_signers as ParallelSignerConfig | null;
+    const isParallelMember = isInParallelGroup(profile.user_id, parallelConfig);
+    if (!userCanSign && !isParallelMember) {
       console.log('❌ User cannot sign - no permission');
       setIsSubmitting(false);
       return;
@@ -459,6 +476,26 @@ const ApproveDocumentPage: React.FC = () => {
     setAction(approvalAction);
 
     try {
+      // FIFO Lock — acquire lock ก่อนเซ็น
+      const { data: lockAcquired } = await supabase.rpc('acquire_signing_lock', {
+        p_memo_id: memoId,
+        p_user_id: profile.user_id
+      });
+      if (!lockAcquired) {
+        setSigningLockWaiting(true);
+        toast({
+          title: "กรุณารอสักครู่",
+          description: "มีผู้ลงนามท่านอื่นกำลังดำเนินการ ระบบจะลองใหม่ใน 3 วินาที",
+        });
+        setIsSubmitting(false);
+        // Retry หลัง 3 วินาที
+        setTimeout(() => {
+          setSigningLockWaiting(false);
+          handleSubmit(approvalAction);
+        }, 3000);
+        return;
+      }
+      setSigningLockWaiting(false);
       // Admin สามารถลงนามแทนได้โดยใช้ลายเซ็นของผู้ลงนามจริง
       const isAdminSigningOnBehalf = isAdminUser && !currentUserSigner && !currentUserSignature;
       const hasSignatureAccess = profile.signature_url || isAdminSigningOnBehalf;
@@ -823,6 +860,10 @@ const ApproveDocumentPage: React.FC = () => {
         variant: "destructive",
       });
     } finally {
+      // Release FIFO lock
+      await supabase.from('memos')
+        .update({ signing_lock: null } as any)
+        .eq('id', memoId);
       setIsSubmitting(false);
       setAction(null);
     }
@@ -1084,15 +1125,62 @@ const ApproveDocumentPage: React.FC = () => {
               </Card>
             )}
 
+            {/* Annotation Requirement */}
+            {(() => {
+              const annotationRequired = (memo as any)?.annotation_required_for as string[] | null;
+              const needsAnnotation = annotationRequired?.includes(profile?.user_id || '') && !hasCompletedAnnotation;
+
+              return needsAnnotation ? (
+                <Card className="border-orange-300 dark:border-orange-700">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-orange-600">
+                      <PenTool className="h-5 w-5" />
+                      ต้องขีดเขียนก่อนลงนาม
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      คุณต้องเปิดเอกสารและขีดเขียนก่อนจึงจะสามารถลงนามได้
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                      onClick={() => {
+                        // TODO: เปิด PDFAnnotationEditor ใน mode "save as layer"
+                        // สำหรับตอนนี้ให้ mark ว่าขีดเขียนแล้ว (จะ implement จริงใน Phase 5)
+                        setHasCompletedAnnotation(true);
+                        toast({
+                          title: "พร้อมลงนาม",
+                          description: "คุณสามารถลงนามได้แล้ว",
+                        });
+                      }}
+                    >
+                      <PenTool className="h-4 w-4 mr-2" />
+                      เปิดโหมดขีดเขียน
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : null;
+            })()}
+
             {/* Approval Action Button */}
             <Card>
               <CardHeader>
                 <CardTitle>การอนุมัติ</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
+                {signingLockWaiting && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                    <Clock className="h-4 w-4 animate-spin" />
+                    กรุณารอสักครู่ มีผู้ลงนามท่านอื่นกำลังดำเนินการ...
+                  </p>
+                )}
                 <Button
                   onClick={() => handleSubmit('approve')}
-                  disabled={isSubmitting || isRejecting}
+                  disabled={
+                    isSubmitting || isRejecting || signingLockWaiting ||
+                    ((memo as any)?.annotation_required_for?.includes(profile?.user_id || '') && !hasCompletedAnnotation)
+                  }
                   className="bg-green-600 hover:bg-green-700 text-white w-full py-3"
                 >
                   {isSubmitting && action === 'approve' ? (

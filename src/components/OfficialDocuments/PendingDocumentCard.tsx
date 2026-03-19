@@ -273,7 +273,26 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     currentUserId: profile?.user_id
   });
 
-  const handleManageDocument = (memo: any) => {
+  const handleManageDocument = async (memo: any) => {
+    // Parallel group → acquire lock ก่อน navigate (ป้องกันกดพร้อมกัน)
+    if (memo?.parallel_signers && memo.current_signer_order === memo.parallel_signers.order) {
+      const userId = profile?.user_id;
+      if (userId) {
+        const { data: lockAcquired } = await supabase.rpc('acquire_signing_lock', {
+          p_memo_id: memo.id,
+          p_user_id: userId
+        });
+        if (!lockAcquired) {
+          toast({
+            title: "มีผู้ลงนามกำลังดำเนินการ",
+            description: "กรุณารอสักครู่แล้วลองใหม่",
+          });
+          onRefresh?.();
+          return;
+        }
+      }
+    }
+
     // Admin + parallel group → แสดง modal เลือกลงนามแทน
     const pc = memo?.parallel_signers;
     if (isAdminUser && pc?.signers?.length > 0 && memo.current_signer_order === pc.order) {

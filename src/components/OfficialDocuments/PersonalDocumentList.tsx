@@ -581,11 +581,11 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                 const scrollClose = () => { popup.remove(); document.removeEventListener('click', close); window.removeEventListener('scroll', scrollClose, true); };
                                 setTimeout(() => { document.addEventListener('click', close); window.addEventListener('scroll', scrollClose, true); }, 0);
                               }}>
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : isCurrentStep ? 'text-blue-700 dark:text-blue-300' : isDone ? 'text-green-600 dark:text-green-400' : 'text-blue-400 dark:text-blue-600'}`}>
+                                <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : isCurrentStep ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600'}`}>
                                   <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${isCurrentStep ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600'}`}>ผู้ลงนาม</span>
-                                <div className={`w-2 h-2 rounded-full mt-1 ${memo.current_signer_order === 5 ? 'bg-muted' : isDone ? 'bg-green-500' : isCurrentStep ? 'bg-blue-500' : 'bg-blue-200 dark:bg-blue-800'}`}></div>
+                                <div className={`w-2 h-2 rounded-full mt-1 ${memo.current_signer_order === 5 ? 'bg-muted' : isCurrentStep ? 'bg-blue-500' : 'bg-blue-200 dark:bg-blue-800'}`}></div>
                               </button>
                             </div>
                             <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-blue-200 dark:bg-blue-800'}`} />

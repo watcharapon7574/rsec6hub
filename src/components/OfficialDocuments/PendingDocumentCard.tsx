@@ -623,7 +623,6 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
                                     memo.current_signer_order === 5 ? 'text-muted-foreground'
                                       : isCurrentStep ? 'text-amber-700 dark:text-amber-300'
-                                      : isDone ? 'text-green-600 dark:text-green-400'
                                       : 'text-amber-400 dark:text-amber-600'
                                   }`}>
                                     <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
@@ -635,7 +634,6 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   </span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 ? 'bg-muted'
-                                      : isDone ? 'bg-green-500'
                                       : isCurrentStep ? 'bg-amber-500'
                                       : 'bg-amber-200 dark:bg-amber-800'
                                   }`}></div>

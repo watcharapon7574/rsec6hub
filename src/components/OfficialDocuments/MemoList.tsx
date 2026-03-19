@@ -697,11 +697,11 @@ const MemoList: React.FC<MemoListProps> = ({
                                 const scrollClose = () => { popup.remove(); document.removeEventListener('click', close); window.removeEventListener('scroll', scrollClose, true); };
                                 setTimeout(() => { document.addEventListener('click', close); window.addEventListener('scroll', scrollClose, true); }, 0);
                               }}>
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : isCurrentStep ? 'text-amber-700 dark:text-amber-300' : isDone ? 'text-green-600 dark:text-green-400' : 'text-amber-400 dark:text-amber-600'}`}>
+                                <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : isCurrentStep ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600'}`}>
                                   <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'}`}>ผู้ลงนาม</span>
-                                <div className={`w-2 h-2 rounded-full mt-1 ${memo.current_signer_order === 5 ? 'bg-muted' : isDone ? 'bg-green-500' : isCurrentStep ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800'}`}></div>
+                                <div className={`w-2 h-2 rounded-full mt-1 ${memo.current_signer_order === 5 ? 'bg-muted' : isCurrentStep ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800'}`}></div>
                               </button>
                             </div>
                             <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800'}`} />

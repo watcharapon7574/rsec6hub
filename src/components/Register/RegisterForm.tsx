@@ -143,6 +143,62 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ registerType, onSaved }) =>
     setLoading(true);
     try {
       const paddedNumber = String(nextNumber).padStart(4, '0');
+      const docNumber = `${paddedNumber}/${yearShort}`;
+
+      // ตรวจสอบเลขซ้ำใน document_register_manual
+      const { data: existingManual } = await (supabase as any)
+        .from('document_register_manual')
+        .select('id')
+        .eq('register_type', registerType)
+        .eq('doc_number', docNumber)
+        .limit(1);
+
+      if (existingManual && existingManual.length > 0) {
+        toast({
+          title: 'เลขทะเบียนซ้ำ',
+          description: `เลขทะเบียน ${docNumber} ถูกใช้แล้วในทะเบียน${registerType === 'internal' ? 'ภายใน' : 'ภายนอก'} กรุณาใช้เลขอื่น`,
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
+      // ตรวจสอบเลขซ้ำใน table หลัก (memos หรือ doc_receive)
+      if (registerType === 'internal') {
+        const { data: existingMemos } = await supabase
+          .from('memos')
+          .select('id')
+          .eq('doc_number', docNumber)
+          .is('doc_del', null)
+          .limit(1);
+
+        if (existingMemos && existingMemos.length > 0) {
+          toast({
+            title: 'เลขทะเบียนซ้ำ',
+            description: `เลขทะเบียน ${docNumber} ถูกใช้แล้วในระบบบันทึกข้อความ กรุณาใช้เลขอื่น`,
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+      } else {
+        const { data: existingDocs } = await supabase
+          .from('doc_receive')
+          .select('id')
+          .eq('doc_number', docNumber)
+          .is('doc_del', null)
+          .limit(1);
+
+        if (existingDocs && existingDocs.length > 0) {
+          toast({
+            title: 'เลขทะเบียนซ้ำ',
+            description: `เลขทะเบียน ${docNumber} ถูกใช้แล้วในระบบเอกสารรับ กรุณาใช้เลขอื่น`,
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+      }
 
       const { error } = await (supabase as any).from('document_register_manual').insert({
         register_type: registerType,
@@ -156,14 +212,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ registerType, onSaved }) =>
         remarks: remarks || null,
         year: currentBuddhistYear,
         created_by: profile?.user_id,
-        doc_number: `${paddedNumber}/${yearShort}`,
+        doc_number: docNumber,
       });
 
       if (error) throw error;
 
       toast({
         title: 'บันทึกสำเร็จ',
-        description: `เพิ่มรายการเลขทะเบียนรับ ${paddedNumber}/${yearShort} แล้ว`,
+        description: `เพิ่มรายการเลขทะเบียนรับ ${docNumber} แล้ว`,
       });
 
       resetForm();

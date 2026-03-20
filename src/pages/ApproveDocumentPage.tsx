@@ -1373,9 +1373,11 @@ const ApproveDocumentPage: React.FC = () => {
 
             setShowLoadingModal(true);
 
-            // จำ PDF เดิมไว้เผื่อต้อง revert
-            if (!originalPdfPath && memo?.pdf_draft_path) {
-              setOriginalPdfPath(memo.pdf_draft_path);
+            // จำ PDF เดิมไว้เผื่อต้อง revert (ใช้ URL ล่าสุดจาก DB)
+            if (!originalPdfPath) {
+              const { data: currentMemo } = await supabase.from('memos').select('pdf_draft_path').eq('id', memoId).single();
+              const currentPath = currentMemo?.pdf_draft_path || memo?.pdf_draft_path;
+              if (currentPath) setOriginalPdfPath(currentPath);
             }
 
             try {

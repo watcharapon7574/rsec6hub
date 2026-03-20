@@ -533,16 +533,9 @@ const ManageReportMemoPage: React.FC = () => {
       const formDataType = (reportMemo?.form_data as any)?.type;
       const isUploadedMemo = formDataType === 'upload_report_memo';
 
-      let newPdfUrl: string | null = null;
-      if (isUploadedMemo) {
-        newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup);
-      } else {
-        newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
-        if (newPdfUrl) {
-          const stampedUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup, newPdfUrl);
-          if (stampedUrl) newPdfUrl = stampedUrl;
-        }
-      }
+      // ใช้ stamp API ปั๊มตราเลขหนังสือมุมขวาบนทุกกรณี (ไม่ต้อง regenerate PDF ใหม่)
+      console.log('📌 Stamping doc number on existing PDF');
+      const newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup);
 
       // Update memo with document number, status, clerk_id, department, and new PDF URL
       const updateData: any = {

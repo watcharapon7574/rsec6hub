@@ -744,20 +744,9 @@ const DocumentManagePage: React.FC = () => {
       const formDataType = (memo?.form_data as any)?.type;
       const isUploadedMemo = formDataType === 'upload_memo' || formDataType === 'upload_report_memo';
 
-      let newPdfUrl: string | null = null;
-      if (isUploadedMemo) {
-        // อัพโหลด PDF → ใช้ stamp API ปั๊มตราเลขหนังสือมุมขวาบน
-        console.log('📌 Uploaded memo detected — using stamp API');
-        newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup);
-      } else {
-        // สร้างจากฟอร์ม → regenerate PDF ใหม่ทั้งฉบับ แล้วปั๊มตราเลขหนังสือมุมขวาบน
-        console.log('📄 Form memo detected — regenerating PDF then stamping');
-        newPdfUrl = await regeneratePdfWithDocNumber(finalDocSuffix);
-        if (newPdfUrl) {
-          const stampedUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup, newPdfUrl);
-          if (stampedUrl) newPdfUrl = stampedUrl;
-        }
-      }
+      // ใช้ stamp API ปั๊มตราเลขหนังสือมุมขวาบนทุกกรณี (ไม่ต้อง regenerate PDF ใหม่)
+      console.log('📌 Stamping doc number on existing PDF');
+      const newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup);
 
       // Update memo with document number, status, clerk_id, department, and new PDF URL
       const updateData: any = {

@@ -839,7 +839,7 @@ const ApproveDocumentPage: React.FC = () => {
 
           // คำนวณ next signer order และ status (รองรับ parallel group)
           const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;
-          const parallelConfig = (memo as any)?.parallel_signers || null;
+          // parallelConfig ใช้จากที่ประกาศไว้ด้านบน (บรรทัด 533)
           const effectiveUserId = signOnBehalfUserId || profile?.user_id || '';
           const approvalResult = calculateNextSignerOrderWithParallel(
             currentOrder, signaturePositions, signingPosition, parallelConfig, effectiveUserId

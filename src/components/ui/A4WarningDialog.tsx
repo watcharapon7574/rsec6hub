@@ -40,11 +40,14 @@ export function A4WarningDialog({ open, onConfirm, onCancel, result, fileName }:
                   ? 'ทุกหน้าไม่ใช่ขนาด A4'
                   : `หน้าที่ ${pages.map(p => p.page).join(', ')} ไม่ใช่ขนาด A4`}
               </p>
-              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs space-y-1">
+              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs space-y-2">
                 {pages.slice(0, 5).map(p => (
                   <div key={p.page} className="text-amber-800 dark:text-amber-300">
-                    หน้า {p.page}: {p.width} x {p.height} pt
-                    <span className="text-muted-foreground ml-1">(A4 = 595 x 842 pt)</span>
+                    <div className="font-semibold">หน้า {p.page}: {p.paperType}</div>
+                    <div className="text-muted-foreground ml-2">
+                      ขนาด: {p.sizeMm}
+                      <span className="ml-1">(A4 = 210 x 297 mm)</span>
+                    </div>
                   </div>
                 ))}
                 {pages.length > 5 && (

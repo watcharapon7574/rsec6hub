@@ -5,14 +5,44 @@ const A4_WIDTH = 595.28;
 const A4_HEIGHT = 841.89;
 const TOLERANCE = 15; // ±15 points (~5mm)
 
+export interface InvalidPage {
+  page: number;
+  width: number;
+  height: number;
+  paperType: string; // ประเภทกระดาษที่ตรวจพบ
+  sizeMm: string; // ขนาดเป็น mm
+}
+
 export interface PdfValidationResult {
   valid: boolean;
   totalPages: number;
-  invalidPages: {
-    page: number;
-    width: number;
-    height: number;
-  }[];
+  invalidPages: InvalidPage[];
+}
+
+// ขนาดกระดาษมาตรฐาน (width x height ในหน่วย points)
+const PAPER_SIZES: { name: string; w: number; h: number }[] = [
+  { name: 'Letter (US)', w: 612, h: 792 },
+  { name: 'Legal', w: 612, h: 1008 },
+  { name: 'A3', w: 841.89, h: 1190.55 },
+  { name: 'A5', w: 419.53, h: 595.28 },
+  { name: 'B4', w: 728.5, h: 1031.81 },
+  { name: 'B5', w: 515.91, h: 728.5 },
+  { name: 'Folio', w: 612, h: 936 },
+  { name: 'Executive', w: 522, h: 756 },
+];
+
+function detectPaperType(width: number, height: number): string {
+  const tol = 10;
+  for (const paper of PAPER_SIZES) {
+    const isPortrait = Math.abs(width - paper.w) <= tol && Math.abs(height - paper.h) <= tol;
+    const isLandscape = Math.abs(width - paper.h) <= tol && Math.abs(height - paper.w) <= tol;
+    if (isPortrait || isLandscape) return paper.name;
+  }
+  return 'ไม่ทราบประเภท';
+}
+
+function ptToMm(pt: number): number {
+  return Math.round(pt * 25.4 / 72 * 10) / 10;
 }
 
 /**
@@ -44,6 +74,8 @@ export async function validatePdfA4(file: File): Promise<PdfValidationResult> {
         page: i,
         width: Math.round(width * 100) / 100,
         height: Math.round(height * 100) / 100,
+        paperType: detectPaperType(width, height),
+        sizeMm: `${ptToMm(width)} x ${ptToMm(height)} mm`,
       });
     }
   }

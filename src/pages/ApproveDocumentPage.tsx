@@ -55,6 +55,7 @@ const ApproveDocumentPage: React.FC = () => {
   const [isReportMemo, setIsReportMemo] = useState(false); // flag ว่าเป็น report memo หรือไม่
   const [hasCompletedAnnotation, setHasCompletedAnnotation] = useState(false); // ขีดเขียนเสร็จแล้ว
   const [showAnnotationEditor, setShowAnnotationEditor] = useState(false); // แสดง annotation editor
+  const [freshPdfUrlForAnnotation, setFreshPdfUrlForAnnotation] = useState<string | null>(null);
   const [originalPdfPath, setOriginalPdfPath] = useState<string | null>(null); // PDF เดิมก่อนขีดเขียน
   const originalPdfPathRef = useRef<string | null>(null);
   const approvedRef = useRef(false); // track ว่าอนุมัติแล้วหรือยัง
@@ -588,9 +589,9 @@ const ApproveDocumentPage: React.FC = () => {
           return;
         }
 
-        // ดึง pdf_draft_path ล่าสุดจาก DB (อาจถูกอัปเดตโดย annotation)
+        // ดึง pdf_draft_path ล่าสุดจาก DB เสมอ (อาจถูกอัปเดตโดย annotation หรือผู้ลงนามก่อนหน้า)
         let latestPdfPath = memo.pdf_draft_path;
-        if (hasCompletedAnnotation && memoId) {
+        if (memoId) {
           const { data: freshMemo } = await supabase
             .from('memos')
             .select('pdf_draft_path')
@@ -1293,7 +1294,14 @@ const ApproveDocumentPage: React.FC = () => {
                     <Button
                       variant="outline"
                       className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-                      onClick={() => setShowAnnotationEditor(true)}
+                      onClick={async () => {
+                        // ดึง PDF ล่าสุดจาก DB ก่อนเปิด editor
+                        if (memoId) {
+                          const { data: fm } = await supabase.from('memos').select('pdf_draft_path').eq('id', memoId).single();
+                          if (fm?.pdf_draft_path) setFreshPdfUrlForAnnotation(extractPdfUrl(fm.pdf_draft_path) || fm.pdf_draft_path);
+                        }
+                        setShowAnnotationEditor(true);
+                      }}
                     >
                       <PenTool className="h-4 w-4 mr-2" />
                       เปิดโหมดขีดเขียน
@@ -1357,7 +1365,7 @@ const ApproveDocumentPage: React.FC = () => {
       {/* Annotation Editor — ใช้แบบเดียวกับ RejectionCard */}
       {memo?.pdf_draft_path && (
         <PDFAnnotationEditor
-          pdfUrl={extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path}
+          pdfUrl={freshPdfUrlForAnnotation || extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path}
           isOpen={showAnnotationEditor}
           onClose={() => setShowAnnotationEditor(false)}
           onSave={async (annotatedPdfBlob: Blob) => {

@@ -1625,7 +1625,7 @@ const CreateMemoPage = () => {
                       >
                         <span>
                           <span className="font-semibold">💡 เครื่องหมายพิเศษ:</span>{' '}
-                          พิมพ์ <code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่ย่อหน้า
+                          พิมพ์ <code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่ใน PDF
                         </span>
                         {showSpecialCharHelp ? (
                           <ChevronUp className="h-5 w-5 flex-shrink-0 ml-2" />
@@ -1635,11 +1635,11 @@ const CreateMemoPage = () => {
                       </div>
                       {showSpecialCharHelp && (
                         <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800 space-y-1.5">
-                          <p className="text-blue-600 dark:text-blue-400 dark:text-blue-600 font-medium">ตัวอย่าง ถ้า ! มากกว่า 1:</p>
+                          <p className="text-blue-600 dark:text-blue-400 dark:text-blue-600 font-medium">บรรทัดแรกย่อหน้าอัตโนมัติ:</p>
                           <div className="pl-3 space-y-1">
-                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 2 ครั้ง</p>
-                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 3 ครั้ง</p>
-                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!!!</code> = ขึ้นบรรทัดใหม่ย่อหน้า 4 ครั้ง</p>
+                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!</code> = ขึ้นบรรทัดใหม่ (ไม่ย่อหน้า)</p>
+                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ + ย่อหน้า</p>
+                            <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ + ย่อหน้า 2 ครั้ง</p>
                           </div>
                         </div>
                       )}
@@ -1880,12 +1880,12 @@ const CreateMemoPage = () => {
               </summary>
               <div className="px-3 pb-3 pt-1 border-t border-blue-200 dark:border-blue-800 space-y-1.5">
                 <p>
-                  พิมพ์ <code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่และย่อหน้าใน PDF
+                  พิมพ์ <code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่ใน PDF (บรรทัดแรกย่อหน้าอัตโนมัติ)
                 </p>
                 <div className="pl-3 space-y-0.5 text-blue-600 dark:text-blue-400">
-                  <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!</code> = ขึ้นบรรทัดใหม่</p>
-                  <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!!</code> = ย่อหน้า 1 ครั้ง (เว้น 10 ช่อง)</p>
-                  <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!!!</code> = ย่อหน้า 2 ครั้ง (เว้น 20 ช่อง)</p>
+                  <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!</code> = ขึ้นบรรทัดใหม่ (ไม่ย่อหน้า)</p>
+                  <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!!</code> = ขึ้นบรรทัดใหม่ + ย่อหน้า</p>
+                  <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!!!</code> = ขึ้นบรรทัดใหม่ + ย่อหน้า 2 ครั้ง</p>
                 </div>
                 <p className="text-blue-500 dark:text-blue-500 mt-1">
                   หมายเหตุ: การกด Enter ไม่มีผลใน PDF สุดท้าย ใช้ <code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!</code> แทน

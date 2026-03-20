@@ -761,9 +761,11 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                     // Logic ใหม่ใช้ signer_list_progress แทน signature_positions
                     const signerList = Array.isArray(memo.signer_list_progress) ? memo.signer_list_progress : [];
                     const userSigner = signerList.find((signer: any) => signer.user_id === profile?.user_id);
-                    // เช็ค signing_lock — ถ้ามีคนอื่นกำลังทำอยู่ → disable
+                    // เช็ค signing_lock — ถ้ามีคนอื่นกำลังทำอยู่ (ไม่เกิน 5 นาที) → disable
                     const lockData = (memo as any)?.signing_lock;
-                    const isLockedByOther = lockData && lockData.locked_by !== profile?.user_id;
+                    const isLockedByOther = lockData
+                      && lockData.locked_by !== profile?.user_id
+                      && (Date.now() - new Date(lockData.locked_at).getTime() < 5 * 60 * 1000);
 
                     // Admin สามารถลงนามแทนได้ทุกเอกสารที่รอลงนาม
                     const canSign = !isLockedByOther && (isAdmin || (!!userSigner && userSigner.order === memo.current_signer_order));

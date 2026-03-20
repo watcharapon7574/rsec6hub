@@ -69,14 +69,23 @@ const ApproveDocumentPage: React.FC = () => {
   // Sync ref กับ state
   useEffect(() => { originalPdfPathRef.current = originalPdfPath; }, [originalPdfPath]);
 
-  // Release signing_lock เมื่อออกจากหน้า approve
+  // Release signing_lock เมื่อออกจากหน้า + renew ทุก 2 นาทีตราบที่ยังอยู่
   useEffect(() => {
+    if (!memoId || !profile?.user_id) return;
+
+    // Renew lock ทุก 2 นาที
+    const renewInterval = setInterval(() => {
+      supabase.from('memos').update({
+        signing_lock: { locked_by: profile.user_id, locked_at: new Date().toISOString() }
+      } as any).eq('id', memoId);
+    }, 2 * 60 * 1000);
+
     return () => {
-      if (memoId) {
-        supabase.from('memos').update({ signing_lock: null } as any).eq('id', memoId);
-      }
+      clearInterval(renewInterval);
+      // Release lock เมื่อออกจากหน้า
+      supabase.from('memos').update({ signing_lock: null } as any).eq('id', memoId);
     };
-  }, [memoId]);
+  }, [memoId, profile?.user_id]);
 
   // Revert PDF ถ้าขีดเขียนแล้วแต่ไม่ได้อนุมัติ (ออกจากหน้า)
   useEffect(() => {

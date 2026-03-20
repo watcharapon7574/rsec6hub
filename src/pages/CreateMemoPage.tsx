@@ -1872,6 +1872,26 @@ const CreateMemoPage = () => {
               }
             />
           </div>
+          {/* คำแนะนำการพิมพ์ */}
+          <div className="px-6 pb-2">
+            <details className="text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+              <summary className="px-3 py-2 cursor-pointer font-semibold select-none">
+                💡 คำแนะนำการพิมพ์
+              </summary>
+              <div className="px-3 pb-3 pt-1 border-t border-blue-200 dark:border-blue-800 space-y-1.5">
+                <p>
+                  กด <kbd className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">Shift</kbd> + <kbd className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">Enter</kbd> เพื่อตัดคำและขึ้นบรรทัดใหม่
+                </p>
+                <p>
+                  พิมพ์ <code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded font-bold">!</code> เพื่อขึ้นบรรทัดใหม่ย่อหน้าใน PDF
+                </p>
+                <div className="pl-3 space-y-0.5 text-blue-600 dark:text-blue-400">
+                  <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!!</code> = ย่อหน้า 2 ครั้ง</p>
+                  <p><code className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1 rounded font-bold">!!!</code> = ย่อหน้า 3 ครั้ง</p>
+                </div>
+              </div>
+            </details>
+          </div>
           <div className="flex justify-end gap-2 px-6 pb-6 pt-2 border-t">
             <Button variant="outline" onClick={() => setTextModalField(null)}>
               ยกเลิก

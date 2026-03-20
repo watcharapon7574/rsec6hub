@@ -24,7 +24,7 @@ export function A4WarningDialog({ open, onConfirm, onCancel, result, fileName }:
   const pages = result.invalidPages;
 
   return (
-    <AlertDialog open={open} onOpenChange={(v) => !v && onCancel()}>
+    <AlertDialog open={open}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="text-amber-600">

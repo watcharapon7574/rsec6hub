@@ -25,6 +25,7 @@ interface ProfileSummary {
   job_position: string;
   academic_rank: string;
   org_structure_role: string;
+  workplace: string;
   is_admin: boolean;
   created_at: string;
   updated_at: string;

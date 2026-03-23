@@ -43,6 +43,7 @@ interface ProfileSummary {
   job_position: string;
   academic_rank: string;
   org_structure_role: string;
+  workplace: string;
   telegram_chat_id?: string;
 }
 
@@ -74,6 +75,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     job_position: profile.job_position || '',
     academic_rank: profile.academic_rank || '',
     org_structure_role: profile.org_structure_role || '',
+    workplace: profile.workplace || '',
     telegram_chat_id: profile.telegram_chat_id || '',
   }));
 
@@ -172,6 +174,7 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             job_position: '',
             academic_rank: '',
             org_structure_role: '',
+            workplace: '',
             telegram_chat_id: '',
           }
         : formData;
@@ -336,7 +339,18 @@ export const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             />
           </div>
 
-          {/* Row 7: Telegram Chat ID (แสดงเฉพาะเมื่อมีค่าอยู่แล้ว) */}
+          {/* Row 7: Workplace */}
+          <div className="space-y-2">
+            <Label htmlFor="workplace">สถานที่ทำงาน (ห้องเรียน/หน่วยฯ)</Label>
+            <Input
+              id="workplace"
+              value={formData.workplace}
+              onChange={(e) => handleChange('workplace', e.target.value)}
+              placeholder="เช่น ห้องเรียนคู่ขนานบ้านหมี่, หน่วยบริการพัฒนานิคม"
+            />
+          </div>
+
+          {/* Row 8: Telegram Chat ID (แสดงเฉพาะเมื่อมีค่าอยู่แล้ว) */}
           {hasTelegramChatId && (
             <div className="space-y-2">
               <Label htmlFor="telegram_chat_id" className="flex items-center gap-2">

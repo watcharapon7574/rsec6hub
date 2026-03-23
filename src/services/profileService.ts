@@ -46,7 +46,7 @@ export async function getAllProfiles(): Promise<Profile[]> {
 export async function getAllProfilesSummary() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, employee_id, prefix, first_name, last_name, phone, position, job_position, academic_rank, org_structure_role, is_admin, telegram_chat_id, created_at, updated_at')
+    .select('id, employee_id, prefix, first_name, last_name, phone, position, job_position, academic_rank, org_structure_role, workplace, is_admin, telegram_chat_id, created_at, updated_at')
     .order('employee_id', { ascending: true });
 
   if (error) {

@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useChatContext } from '@/contexts/ChatContext';
 import {
   Home,
   Calendar,
@@ -34,6 +35,7 @@ const FloatingNavbar = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [fanOpen, setFanOpen] = useState(false);
   const fanRef = useRef<HTMLDivElement>(null);
+  const { isChatOpen } = useChatContext();
 
   const isDocActive = currentPath === '/create-document' || currentPath === '/documents' || currentPath === '/ocr-search';
 
@@ -115,7 +117,7 @@ const FloatingNavbar = () => {
       className={`
         fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50
         transition-transform duration-300 ease-in-out
-        ${isVisible ? 'translate-y-0' : 'translate-y-full'}
+        ${isVisible && !isChatOpen ? 'translate-y-0' : 'translate-y-full'}
       `}
     >
       {/* Toggle Button */}

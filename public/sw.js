@@ -1,5 +1,5 @@
 // CACHE_NAME จะถูกอัปเดตอัตโนมัติทุกครั้งที่ build (ผ่าน vite build script)
-const CACHE_NAME = 'fastdoc-v1.4.27-1771918863080';
+const CACHE_NAME = 'fastdoc-v1.4.27-1774412960155';
 const urlsToCache = [
   '/',
   '/fastdocIcon.png',

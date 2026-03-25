@@ -1227,8 +1227,9 @@ const DocumentManagePage: React.FC = () => {
             // จุดแรก: แสดงครบ (ลายเซ็น, ชื่อ, ตำแหน่ง) / จุดที่ 2+: แค่รูปลายเซ็น PNG
             const linesImageOnly = [{ type: "image", file_key: "sig1" }];
             const signaturesPayload = authorPositions.map((pos, index) => ({
-              page: pos.page - 1, // ปรับจาก 1-based (frontend) เป็น 0-based (API)
-              x: Math.round(pos.x), // ส่งพิกัด X โดยตรง
+              page: pos.page - 1,
+              x: Math.round(pos.x),
+              rotation: pos.rotation || 0, // ส่ง rotation ไป API
               y: Math.round(pos.y), // ส่งพิกัด Y โดยตรง
               width: 120,
               height: 60,

@@ -1061,6 +1061,7 @@ const ManageReportMemoPage: React.FC = () => {
               page: pos.page - 1,
               x: Math.round(pos.x),
               y: Math.round(pos.y),
+              rotation: (pos as any).rotation || 0,
               width: 120,
               height: 60,
               lines: index === 0 ? lines : linesImageOnly

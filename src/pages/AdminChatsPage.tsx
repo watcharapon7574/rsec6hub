@@ -57,13 +57,21 @@ const AdminChatsPage: React.FC = () => {
 
   const prevMsgCount = React.useRef(0);
 
-  // Auto-scroll
+  // เปิดครั้งแรก → scroll ก่อน paint
+  React.useLayoutEffect(() => {
+    if (!messagesEndRef.current) return;
+    if (prevMsgCount.current === 0 && messages.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'instant' });
+      prevMsgCount.current = messages.length;
+    }
+  }, [messages]);
+
+  // ข้อความใหม่ → scroll smooth
   React.useEffect(() => {
     if (!messagesEndRef.current) return;
-    const isFirstLoad = prevMsgCount.current === 0 && messages.length > 0;
-    messagesEndRef.current.scrollIntoView({
-      behavior: isFirstLoad ? 'instant' : 'smooth',
-    });
+    if (prevMsgCount.current > 0 && messages.length > prevMsgCount.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
     prevMsgCount.current = messages.length;
   }, [messages]);
 

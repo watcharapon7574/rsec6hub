@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X, MessageCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -45,15 +45,21 @@ const AdminChatSheet: React.FC = () => {
 
   const prevMsgCount = useRef(0);
 
-  // Auto-scroll to bottom
+  // เปิดครั้งแรก → useLayoutEffect scroll ก่อน paint (ไม่กระพริบ)
+  useLayoutEffect(() => {
+    if (!isChatOpen || !messagesEndRef.current) return;
+    if (prevMsgCount.current === 0 && messages.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'instant' });
+      prevMsgCount.current = messages.length;
+    }
+  }, [messages, isChatOpen]);
+
+  // ข้อความใหม่ → useEffect scroll smooth
   useEffect(() => {
     if (!isChatOpen || !messagesEndRef.current) return;
-    const isFirstLoad = prevMsgCount.current === 0 && messages.length > 0;
-    // เปิดครั้งแรก → scroll ทันที ไม่มี animation
-    // ข้อความใหม่ → scroll smooth
-    messagesEndRef.current.scrollIntoView({
-      behavior: isFirstLoad ? 'instant' : 'smooth',
-    });
+    if (prevMsgCount.current > 0 && messages.length > prevMsgCount.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
     prevMsgCount.current = messages.length;
   }, [messages, isChatOpen]);
 

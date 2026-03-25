@@ -55,12 +55,22 @@ const AdminChatsPage: React.FC = () => {
     }
   };
 
+  const prevMsgCount = React.useRef(0);
+
   // Auto-scroll
   React.useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (!messagesEndRef.current) return;
+    const isFirstLoad = prevMsgCount.current === 0 && messages.length > 0;
+    messagesEndRef.current.scrollIntoView({
+      behavior: isFirstLoad ? 'instant' : 'smooth',
+    });
+    prevMsgCount.current = messages.length;
   }, [messages]);
+
+  // Reset เมื่อเปลี่ยนห้อง
+  React.useEffect(() => {
+    prevMsgCount.current = 0;
+  }, [selectedRoomId]);
 
   const filteredRooms = searchTerm.trim()
     ? rooms.filter(r => {

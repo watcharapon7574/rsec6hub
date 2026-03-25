@@ -43,12 +43,24 @@ const AdminChatSheet: React.FC = () => {
     isOpen: isChatOpen && !userIsAdmin,
   });
 
+  const prevMsgCount = useRef(0);
+
   // Auto-scroll to bottom
   useEffect(() => {
-    if (isChatOpen && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (!isChatOpen || !messagesEndRef.current) return;
+    const isFirstLoad = prevMsgCount.current === 0 && messages.length > 0;
+    // เปิดครั้งแรก → scroll ทันที ไม่มี animation
+    // ข้อความใหม่ → scroll smooth
+    messagesEndRef.current.scrollIntoView({
+      behavior: isFirstLoad ? 'instant' : 'smooth',
+    });
+    prevMsgCount.current = messages.length;
   }, [messages, isChatOpen]);
+
+  // Reset เมื่อปิดแชท
+  useEffect(() => {
+    if (!isChatOpen) prevMsgCount.current = 0;
+  }, [isChatOpen]);
 
   // Admin ไม่ใช้ chat sheet → ใช้หน้า /admin/chats แทน
   if (userIsAdmin) return null;

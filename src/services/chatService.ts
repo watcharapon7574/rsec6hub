@@ -193,70 +193,65 @@ export const chatService = {
    * ดึงรายชื่อพนักงานทุกคน (ยกเว้น admin) พร้อมสถานะห้องแชท
    */
   async getAllUsersWithChatStatus(): Promise<ChatRoom[]> {
-    // ดึง profiles ทั้งหมดที่ไม่ใช่ admin
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select('user_id, first_name, last_name, profile_picture_url, position, is_admin, telegram_chat_id')
-      .not('telegram_chat_id', 'is', null)
-      .order('first_name');
+    // Query 1: profiles ที่มี telegram
+    // Query 2: rooms ทั้งหมด
+    // Query 3: ข้อความทั้งหมด (สำหรับ last message + unread count)
+    // รวม 3 queries แทน 180+
+    const [profilesRes, roomsRes, messagesRes] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, profile_picture_url, position, is_admin, telegram_chat_id')
+        .not('telegram_chat_id', 'is', null)
+        .order('first_name'),
+      (supabase.from('chat_rooms') as any)
+        .select('*')
+        .order('last_message_at', { ascending: false }),
+      (supabase.from('chat_messages') as any)
+        .select('room_id, message, image_urls, is_admin, read_by_admin, created_at')
+        .order('created_at', { ascending: false }),
+    ]);
 
-    if (error) throw error;
-
-    // ดึง rooms ที่มีอยู่แล้ว
-    const { data: existingRooms } = await (supabase.from('chat_rooms') as any)
-      .select('*')
-      .order('last_message_at', { ascending: false });
+    if (profilesRes.error) throw profilesRes.error;
 
     const roomMap = new Map(
-      (existingRooms || []).map((r: any) => [r.user_id, r])
+      (roomsRes.data || []).map((r: any) => [r.user_id, r])
     );
+
+    // สร้าง lookup: room_id → { lastMsg, unreadCount }
+    const roomStats = new Map<string, { lastMsg: string; unreadCount: number }>();
+    for (const msg of (messagesRes.data || [])) {
+      const rid = msg.room_id;
+      if (!roomStats.has(rid)) {
+        // ข้อความแรกที่เจอคือล่าสุด (เพราะ order desc)
+        roomStats.set(rid, {
+          lastMsg: msg.message || (msg.image_urls?.length ? '📷 รูปภาพ' : ''),
+          unreadCount: 0,
+        });
+      }
+      // นับ unread: ข้อความจาก user ที่ admin ยังไม่อ่าน
+      if (!msg.is_admin && !msg.read_by_admin) {
+        roomStats.get(rid)!.unreadCount++;
+      }
+    }
 
     const result: ChatRoom[] = [];
 
-    for (const p of (profiles || [])) {
-      // ข้ามคนที่เป็น admin หรือ director
+    for (const p of (profilesRes.data || [])) {
       if (p.is_admin || p.position === 'director') continue;
 
       const existingRoom = roomMap.get(p.user_id);
+      const stats = existingRoom ? roomStats.get(existingRoom.id) : null;
 
-      if (existingRoom) {
-        // มีห้องแล้ว → ดึง last message + unread
-        const { data: lastMsg } = await (supabase.from('chat_messages') as any)
-          .select('message, image_urls')
-          .eq('room_id', existingRoom.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const { count } = await (supabase.from('chat_messages') as any)
-          .select('*', { count: 'exact', head: true })
-          .eq('room_id', existingRoom.id)
-          .eq('read_by_admin', false)
-          .eq('is_admin', false);
-
-        result.push({
-          id: existingRoom.id,
-          user_id: p.user_id,
-          last_message_at: existingRoom.last_message_at,
-          created_at: existingRoom.created_at,
-          user_name: `${p.first_name} ${p.last_name}`,
-          user_avatar: p.profile_picture_url || undefined,
-          last_message_preview: lastMsg?.message || (lastMsg?.image_urls?.length ? '📷 รูปภาพ' : ''),
-          unread_count: count || 0,
-        });
-      } else {
-        // ยังไม่มีห้อง → แสดงเป็นรายชื่อว่าง
-        result.push({
-          id: `pending-${p.user_id}`,
-          user_id: p.user_id,
-          last_message_at: '',
-          created_at: '',
-          user_name: `${p.first_name} ${p.last_name}`,
-          user_avatar: p.profile_picture_url || undefined,
-          last_message_preview: '',
-          unread_count: 0,
-        });
-      }
+      result.push({
+        id: existingRoom?.id || `pending-${p.user_id}`,
+        user_id: p.user_id,
+        last_message_at: existingRoom?.last_message_at || '',
+        created_at: existingRoom?.created_at || '',
+        user_name: `${p.first_name} ${p.last_name}`,
+        user_avatar: p.profile_picture_url || undefined,
+        last_message_preview: stats?.lastMsg || '',
+        unread_count: stats?.unreadCount || 0,
+      });
     }
 
     // เรียง: มี unread ก่อน → มีข้อความล่าสุดก่อน → ยังไม่มีห้องทีหลัง

@@ -317,7 +317,7 @@ const PDFReceiveManagePage: React.FC = () => {
         .from('documents')
         .upload(newFilePath, stampedPdfBlob, {
           contentType: 'application/pdf',
-          upsert: false
+          upsert: true
         });
 
       if (uploadError) throw uploadError;

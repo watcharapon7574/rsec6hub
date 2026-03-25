@@ -166,7 +166,7 @@ export function useAdminChat({ mode, userId, roomId, isOpen, onAdminMessage }: U
     }
 
     const channel = supabase
-      .channel(`chat-${currentRoomId}`)
+      .channel(`chat-${currentRoomId}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -202,10 +202,10 @@ export function useAdminChat({ mode, userId, roomId, isOpen, onAdminMessage }: U
           event: 'UPDATE',
           schema: 'public',
           table: 'chat_messages',
-          filter: `room_id=eq.${currentRoomId}`,
         },
         (payload: any) => {
-          const updated: ChatMessage = payload.new;
+          const updated = payload.new;
+          if (updated.room_id !== currentRoomId) return;
           // อัปเดตสถานะอ่านแล้วใน UI ทันที
           setMessages(prev => prev.map(m =>
             m.id === updated.id
@@ -223,6 +223,37 @@ export function useAdminChat({ mode, userId, roomId, isOpen, onAdminMessage }: U
       channelRef.current = null;
     };
   }, [currentRoomId, mode]);
+
+  // Polling: refresh read status ทุก 5 วินาที (fallback ถ้า realtime UPDATE miss)
+  useEffect(() => {
+    if (!currentRoomId || !isOpen) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await (supabase.from('chat_messages') as any)
+          .select('id, read_by_user, read_by_admin')
+          .eq('room_id', currentRoomId);
+
+        if (data) {
+          const readMap = new Map(data.map((d: any) => [d.id, d]));
+          setMessages(prev => {
+            let changed = false;
+            const updated = prev.map(m => {
+              const fresh = readMap.get(m.id);
+              if (fresh && (m.read_by_user !== fresh.read_by_user || m.read_by_admin !== fresh.read_by_admin)) {
+                changed = true;
+                return { ...m, read_by_user: fresh.read_by_user, read_by_admin: fresh.read_by_admin };
+              }
+              return m;
+            });
+            return changed ? updated : prev;
+          });
+        }
+      } catch {}
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [currentRoomId, isOpen]);
 
   // Realtime: badge จุดแดง user (ฟังทุก INSERT ไม่ต้องรอ room)
   useEffect(() => {

@@ -5,7 +5,7 @@
  * @param memo - The memo object with form_data
  * @returns 'pdf_upload' | 'create_memo'
  */
-export const getMemoSourceType = (memo: any): 'pdf_upload' | 'create_memo' => {
+const getMemoSourceType = (memo: any): 'pdf_upload' | 'create_memo' => {
   // Check if form_data exists and has type field
   if (memo?.form_data && typeof memo.form_data === 'object') {
     // If form_data has type field set to 'pdf_upload'
@@ -53,9 +53,6 @@ export const isPDFUploadMemo = (memo: any): boolean => {
  * @param memo - The memo object
  * @returns boolean
  */
-export const isCreateMemoForm = (memo: any): boolean => {
-  return getMemoSourceType(memo) === 'create_memo';
-};
 
 /**
  * Gets the appropriate edit route based on memo source

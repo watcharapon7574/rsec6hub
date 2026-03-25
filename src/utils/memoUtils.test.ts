@@ -1,45 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
-  getMemoSourceType,
   getDocumentManageRoute,
   getDocumentEditRoute,
   isPDFUploadMemo,
-  isCreateMemoForm,
 } from './memoUtils';
 
-describe('getMemoSourceType', () => {
-  it('form_data.type = pdf_upload → pdf_upload', () => {
-    expect(getMemoSourceType({ form_data: { type: 'pdf_upload' } })).toBe('pdf_upload');
+describe('isPDFUploadMemo', () => {
+  it('pdf_upload memo → true', () => {
+    expect(isPDFUploadMemo({ form_data: { type: 'pdf_upload' } })).toBe(true);
   });
 
-  it('form_data ว่าง → create_memo', () => {
-    expect(getMemoSourceType({ form_data: {} })).toBe('create_memo');
-  });
-
-  it('ไม่มี form_data → create_memo', () => {
-    expect(getMemoSourceType({})).toBe('create_memo');
-  });
-
-  it('null → create_memo', () => {
-    expect(getMemoSourceType(null)).toBe('create_memo');
-  });
-
-  it('undefined → create_memo', () => {
-    expect(getMemoSourceType(undefined)).toBe('create_memo');
-  });
-});
-
-describe('isPDFUploadMemo / isCreateMemoForm', () => {
-  it('pdf_upload memo', () => {
-    const memo = { form_data: { type: 'pdf_upload' } };
-    expect(isPDFUploadMemo(memo)).toBe(true);
-    expect(isCreateMemoForm(memo)).toBe(false);
-  });
-
-  it('create_memo form', () => {
-    const memo = { form_data: {} };
-    expect(isPDFUploadMemo(memo)).toBe(false);
-    expect(isCreateMemoForm(memo)).toBe(true);
+  it('create_memo → false', () => {
+    expect(isPDFUploadMemo({ form_data: {} })).toBe(false);
   });
 });
 

@@ -285,6 +285,74 @@ export const chatService = {
   },
 
   /**
+   * ประกาศ: ส่งข้อความเดียวไปทุกห้อง (สร้างห้องให้คนที่ยังไม่มี)
+   */
+  async broadcast(
+    senderId: string,
+    message: string,
+    imageUrls: string[]
+  ): Promise<{ sent: number; failed: number }> {
+    // ดึงทุก user ที่มี telegram (เหมือน getAllUsersWithChatStatus)
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, is_admin, position, telegram_chat_id')
+      .not('telegram_chat_id', 'is', null);
+
+    if (!profiles) return { sent: 0, failed: 0 };
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const p of profiles) {
+      if (p.is_admin || p.position === 'director') continue;
+
+      try {
+        // หาหรือสร้างห้อง
+        let room;
+        const { data: existing } = await (supabase.from('chat_rooms') as any)
+          .select('id')
+          .eq('user_id', p.user_id)
+          .maybeSingle();
+
+        if (existing) {
+          room = existing;
+        } else {
+          const { data: newRoom } = await (supabase.from('chat_rooms') as any)
+            .insert({ user_id: p.user_id })
+            .select('id')
+            .single();
+          room = newRoom;
+        }
+
+        if (!room) { failed++; continue; }
+
+        // ส่งข้อความ
+        await (supabase.from('chat_messages') as any)
+          .insert({
+            room_id: room.id,
+            sender_id: senderId,
+            message,
+            image_urls: imageUrls,
+            is_admin: true,
+            read_by_user: false,
+            read_by_admin: true,
+          });
+
+        // อัปเดต last_message_at
+        await (supabase.from('chat_rooms') as any)
+          .update({ last_message_at: new Date().toISOString() })
+          .eq('id', room.id);
+
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+
+    return { sent, failed };
+  },
+
+  /**
    * นับข้อความที่ user ยังไม่อ่าน (admin ส่งมา)
    */
   async getUserUnreadCount(userId: string): Promise<number> {

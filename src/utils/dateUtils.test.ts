@@ -3,7 +3,6 @@ import {
   convertToThaiNumerals,
   formatThaiDateFull,
   formatThaiDateShort,
-  formatThaiDateISO,
   formatRelativeTime,
 } from './dateUtils';
 
@@ -55,16 +54,6 @@ describe('formatThaiDateShort', () => {
 
   it('invalid → empty string', () => {
     expect(formatThaiDateShort('invalid')).toBe('');
-  });
-});
-
-describe('formatThaiDateISO', () => {
-  it('วันที่ → ISO เลขไทย', () => {
-    expect(formatThaiDateISO(new Date(2025, 1, 2))).toBe('๒๕๖๘-๐๒-๐๒');
-  });
-
-  it('null → empty string', () => {
-    expect(formatThaiDateISO(null)).toBe('');
   });
 });
 

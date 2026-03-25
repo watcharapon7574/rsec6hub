@@ -65,28 +65,6 @@ export const formatThaiDateShort = (date: Date | string | null): string => {
 };
 
 /**
- * แปลงวันที่เป็นรูปแบบ ISO แต่ใช้ตัวเลขไทย
- * เช่น "๒๕๖๘-๐๒-๐๒"
- *
- * @param date - วันที่ที่ต้องการแปลง
- * @returns วันที่ในรูปแบบ ISO ด้วยตัวเลขไทย
- */
-export const formatThaiDateISO = (date: Date | string | null): string => {
-  if (!date) return '';
-
-  const d = typeof date === 'string' ? new Date(date) : date;
-
-  // ตรวจสอบว่าเป็น Invalid Date หรือไม่
-  if (isNaN(d.getTime())) return '';
-
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear() + 543; // แปลง ค.ศ. เป็น พ.ศ.
-
-  return `${convertToThaiNumerals(year)}-${convertToThaiNumerals(month)}-${convertToThaiNumerals(day)}`;
-};
-
-/**
  * เดือนภาษาไทยแบบย่อ
  */
 const THAI_MONTHS_SHORT = [

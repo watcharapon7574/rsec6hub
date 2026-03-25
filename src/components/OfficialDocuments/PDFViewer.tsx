@@ -98,6 +98,7 @@ interface SignaturePosition {
   y: number;
   page: number;
   comment?: string;
+  rotation?: number; // 0, 90, 180, 270 — หมุนลายเซ็น
 }
 
 interface PDFViewerProps {
@@ -105,6 +106,7 @@ interface PDFViewerProps {
   fileName: string;
   onPositionClick?: (x: number, y: number, page: number) => void;
   onPositionRemove?: (index: number) => void; // เพิ่มฟังก์ชันลบตำแหน่ง
+  onPositionRotate?: (index: number) => void; // หมุนลายเซ็น 90°
   signaturePositions?: SignaturePosition[];
   signers?: any[]; // เพิ่ม signers prop เพื่อแสดงข้อมูลที่ถูกต้อง
   memo?: any; // เพิ่ม memo prop เพื่อใช้ updated_at
@@ -120,6 +122,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   fileName,
   onPositionClick,
   onPositionRemove,
+  onPositionRotate,
   signaturePositions = [],
   signers = [],
   memo,
@@ -1000,7 +1003,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       width: `${pinWidth}px`, // Dynamic width based on zoom
                       height: `${pinHeight}px`, // Dynamic height based on zoom
                       padding: `${Math.max(2, basePinSize * 0.05)}px`, // Scale padding with pin size (5%)
-                      transform: 'translate(-50%, 0%)', // Pin positioned above click point
+                      transform: `translate(-50%, 0%) rotate(${pos.rotation || 0}deg)`, // Pin positioned + rotated
                       zIndex: 999,
                       pointerEvents: 'auto', // เปลี่ยนเป็น auto เพื่อให้ปุ่ม X คลิกได้
                       background: `rgba(${bgColorRGB}, 0.25)`, // Fixed opacity
@@ -1009,7 +1012,34 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       overflow: 'visible' // เพิ่มเพื่อให้ปุ่ม X แสดงออกนอกขอบ
                     }}
                   >
-                    {/* ปุ่ม X ลบตำแหน่ง - ใช้ onPointerDown เพื่อจับคลิกทันทีก่อน re-render */}
+                    {/* ปุ่มหมุน + ปุ่ม X */}
+                    {onPositionRotate && (
+                      <button
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          const idx = signaturePositions.indexOf(pos);
+                          if (idx !== -1) {
+                            onPositionRotate(idx);
+                          }
+                        }}
+                        className="absolute w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center font-bold shadow-lg transition-all duration-200 hover:scale-110"
+                        style={{
+                          top: '0px',
+                          left: '0px',
+                          border: '3px solid white',
+                          boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                          zIndex: 10001,
+                          fontSize: '14px',
+                          transform: 'translate(-50%, -50%)',
+                          cursor: 'pointer',
+                          touchAction: 'manipulation'
+                        }}
+                        title="หมุนลายเซ็น 90°"
+                      >
+                        ↻
+                      </button>
+                    )}
                     {onPositionRemove && (
                       <button
                         onPointerDown={(e) => {
@@ -1030,7 +1060,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                           fontSize: '16px',
                           transform: 'translate(50%, -50%)',
                           cursor: 'pointer',
-                          touchAction: 'manipulation' // ป้องกัน delay บน touch devices
+                          touchAction: 'manipulation'
                         }}
                         title="ลบตำแหน่งลายเซ็น"
                       >

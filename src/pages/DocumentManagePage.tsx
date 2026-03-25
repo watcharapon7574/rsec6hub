@@ -1402,6 +1402,15 @@ const DocumentManagePage: React.FC = () => {
     // ไม่เปลี่ยนไปคนถัดไปอัตโนมัติ - ให้ผู้ใช้เลือกเอง
   };
 
+  const handlePositionRotate = (index: number) => {
+    setSignaturePositions(prev => prev.map((pos, i) => {
+      if (i !== index) return pos;
+      const current = pos.rotation || 0;
+      const next = (current + 90) % 360;
+      return { ...pos, rotation: next };
+    }));
+  };
+
   const handlePositionRemove = (index: number) => {
     const removedPosition = signaturePositions[index];
     setSignaturePositions(signaturePositions.filter((_, i) => i !== index));
@@ -1610,6 +1619,7 @@ const DocumentManagePage: React.FC = () => {
               onSelectedSignerIndexChange={setSelectedSignerIndex}
               onPositionClick={handlePositionClick}
               onPositionRemove={handlePositionRemove}
+              onPositionRotate={handlePositionRotate}
               onPrevious={handlePrevious}
               onNext={handleNext}
               isStepComplete={isStepComplete(3)}

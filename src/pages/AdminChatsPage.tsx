@@ -62,8 +62,11 @@ const AdminChatsPage: React.FC = () => {
     }
   }, [messages]);
 
-  const filteredRooms = searchTerm
-    ? rooms.filter(r => r.user_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredRooms = searchTerm.trim()
+    ? rooms.filter(r => {
+        const name = (r.user_name || '').toLowerCase();
+        return searchTerm.trim().toLowerCase().split(/\s+/).every(word => name.includes(word));
+      })
     : rooms;
   const selectedRoom = rooms.find(r => r.id === selectedRoomId);
 
@@ -71,7 +74,7 @@ const AdminChatsPage: React.FC = () => {
     <div className="max-w-6xl mx-auto px-4 py-6">
       <h1 className="text-xl font-bold mb-4 flex items-center gap-2">
         <MessageCircle className="h-6 w-6 text-blue-500" />
-        แชทกับพนักงาน
+        แชทกับครู
       </h1>
 
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
@@ -85,7 +88,7 @@ const AdminChatsPage: React.FC = () => {
           `}>
             <div className="px-3 py-2.5 border-b border-border space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                พนักงานทั้งหมด ({rooms.length})
+                ครูทั้งหมด ({rooms.length})
               </p>
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -115,7 +118,7 @@ const AdminChatsPage: React.FC = () => {
                 </div>
               ) : filteredRooms.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground text-sm">
-                  {searchTerm ? 'ไม่พบผลลัพธ์' : 'ยังไม่มีพนักงาน'}
+                  {searchTerm ? 'ไม่พบผลลัพธ์' : 'ยังไม่มีครู'}
                 </div>
               ) : (
                 filteredRooms.map((room) => (

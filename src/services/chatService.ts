@@ -196,7 +196,8 @@ export const chatService = {
     // ดึง profiles ทั้งหมดที่ไม่ใช่ admin
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('user_id, first_name, last_name, profile_picture_url, position, is_admin')
+      .select('user_id, first_name, last_name, profile_picture_url, position, is_admin, telegram_chat_id')
+      .not('telegram_chat_id', 'is', null)
       .order('first_name');
 
     if (error) throw error;

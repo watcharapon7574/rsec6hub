@@ -443,18 +443,23 @@ const DocumentManagePage: React.FC = () => {
   }, [authorProfile, selectedAssistant, selectedDeputy, assistantDirectors, deputyDirectors, directors]);
 
   // allSigners = signers + parallel signers (แทรกหลัง author, ก่อน assistant_director)
+  // กรอง parallel signers ที่ซ้ำกับผู้บริหารใน dropdown ออก
   const allSigners = React.useMemo(() => {
-    if (parallelSigners.length === 0) return signers;
+    // user_ids ของผู้บริหารที่ถูกเลือกใน dropdown (ไม่ต้องซ้ำใน parallel)
+    const adminUserIds = new Set(signers.filter(s => s.role !== 'author').map(s => s.user_id));
+    const filteredParallel = parallelSigners.filter(ps => !adminUserIds.has(ps.user_id));
+
+    if (filteredParallel.length === 0) return signers;
 
     const result: any[] = [];
     let orderCounter = 1;
     for (const signer of signers) {
       result.push({ ...signer, order: orderCounter++ });
 
-      // แทรก parallel signers หลัง author
+      // แทรก parallel signers หลัง author (เฉพาะที่ไม่ซ้ำกับ dropdown)
       if (signer.role === 'author') {
         const parallelOrder = orderCounter; // ใช้ order เดียวกัน
-        for (const ps of parallelSigners) {
+        for (const ps of filteredParallel) {
           const p = profiles.find(pr => pr.user_id === ps.user_id);
           result.push({
             order: parallelOrder,

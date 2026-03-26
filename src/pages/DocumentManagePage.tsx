@@ -306,24 +306,29 @@ const DocumentManagePage: React.FC = () => {
             };
           })
           .filter(Boolean);
-        if (autoSigners.length > 0) {
-          setParallelSigners(autoSigners);
-          setAnnotationRequiredUserIds(config.annotation_required_for || []);
+        // แยกผู้บริหารออกจาก parallel signers → ย้ายไป dropdown แทน
+        const adminPositions = ['deputy_director', 'director', 'assistant_director'];
+        const nonAdminSigners: typeof autoSigners = [];
+
+        for (const signer of autoSigners) {
+          const p = profiles.find(pr => pr.user_id === signer.user_id);
+          if (!p) { nonAdminSigners.push(signer); continue; }
+
+          if (p.position === 'deputy_director' && !selectedDeputy) {
+            setSelectedDeputy(signer.user_id);
+          } else if ((p.position === 'assistant_director' || p.org_structure_role?.includes('หัวหน้าฝ่าย')) && !selectedAssistant) {
+            setSelectedAssistant(signer.user_id);
+          } else if (p.position === 'director') {
+            // director มีอยู่แล้ว ไม่ต้องทำอะไร
+          } else {
+            nonAdminSigners.push(signer);
+          }
         }
 
-        // Auto-select dropdown ถ้าผู้เขียนเลือกผู้บริหารไว้แล้ว
-        for (const uid of config.signer_user_ids) {
-          const p = profiles.find(pr => pr.user_id === uid);
-          if (!p) continue;
-          if (p.position === 'deputy_director' && !selectedDeputy) {
-            setSelectedDeputy(uid);
-          }
-          if (p.position === 'assistant_director' || p.org_structure_role?.includes('หัวหน้าฝ่าย')) {
-            if (!selectedAssistant) {
-              setSelectedAssistant(uid);
-            }
-          }
+        if (nonAdminSigners.length > 0) {
+          setParallelSigners(nonAdminSigners);
         }
+        setAnnotationRequiredUserIds(config.annotation_required_for || []);
       }
     }
   }, [memo, profiles]);

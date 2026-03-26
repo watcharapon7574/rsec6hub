@@ -461,18 +461,14 @@ const DocumentManagePage: React.FC = () => {
     return result;
   }, [signers, parallelSigners, profiles]);
 
-  // Debug: Log allSigners (รวม parallel signers)
+  // ตั้ง default selectedSignerIndex เป็นผู้บริหารคนแรก (ไม่ใช่ผู้เขียน/parallel)
   React.useEffect(() => {
     if (allSigners.length > 0) {
-      console.log('📝 All signers (incl. parallel):', allSigners.map(s => ({
-        order: s.order,
-        role: s.role,
-        name: s.name,
-      })));
-
-      console.log('📋 Final signer order:',
-        allSigners.map(s => `${s.order}. ${s.name} (${s.role})`).join(', ')
-      );
+      const adminRoles = ['assistant_director', 'deputy_director', 'director'];
+      const firstAdminIndex = allSigners.findIndex(s => adminRoles.includes(s.role));
+      if (firstAdminIndex !== -1) {
+        setSelectedSignerIndex(firstAdminIndex);
+      }
     }
   }, [allSigners]);
 

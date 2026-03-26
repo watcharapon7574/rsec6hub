@@ -310,6 +310,20 @@ const DocumentManagePage: React.FC = () => {
           setParallelSigners(autoSigners);
           setAnnotationRequiredUserIds(config.annotation_required_for || []);
         }
+
+        // Auto-select dropdown ถ้าผู้เขียนเลือกผู้บริหารไว้แล้ว
+        for (const uid of config.signer_user_ids) {
+          const p = profiles.find(pr => pr.user_id === uid);
+          if (!p) continue;
+          if (p.position === 'deputy_director' && !selectedDeputy) {
+            setSelectedDeputy(uid);
+          }
+          if (p.position === 'assistant_director' || p.org_structure_role?.includes('หัวหน้าฝ่าย')) {
+            if (!selectedAssistant) {
+              setSelectedAssistant(uid);
+            }
+          }
+        }
       }
     }
   }, [memo, profiles]);

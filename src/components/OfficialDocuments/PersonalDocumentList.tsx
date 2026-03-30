@@ -28,7 +28,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   const navigate = useNavigate();
 
   // เช็คเลขาฝ่ายจาก org_structure_role (เริ่มต้นด้วย "เลขา")
-  const isSecretary = ((profile as any)?.org_structure_role || '').startsWith('เลขา');
+  const isSecretary = (profile?.org_structure_role || '').startsWith('เลขา');
 
   // State สำหรับ collapsible
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);

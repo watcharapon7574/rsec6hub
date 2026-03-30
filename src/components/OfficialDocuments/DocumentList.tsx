@@ -13,7 +13,7 @@ import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDocumentManageRoute, getDocumentEditRoute, isPDFUploadMemo } from '@/utils/memoUtils';
-import { shouldShowMemo as shouldShowMemoFn } from '@/utils/documentVisibility';
+import { shouldShowMemo as shouldShowMemoFn, parseSecretaryRole } from '@/utils/documentVisibility';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -62,11 +62,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const { toast } = useToast();
 
   // เช็คเลขาฝ่ายจาก org_structure_role (เริ่มต้นด้วย "เลขา")
-  const orgRole = profile?.org_structure_role || '';
-  const isSecretary = orgRole.startsWith('เลขา');
-  const secretaryDepartment = isSecretary ? orgRole.replace('เลขา', '') : null;
-
-  console.log('📋 DocumentList secretary check:', { orgRole, isSecretary, secretaryDepartment, profileLoaded: !!profile });
+  const { isSecretary, department: secretaryDepartment } = parseSecretaryRole(profile?.org_structure_role);
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');

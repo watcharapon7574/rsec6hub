@@ -1,5 +1,55 @@
 import { describe, it, expect } from 'vitest';
-import { shouldShowMemo, DocumentVisibilityParams } from './documentVisibility';
+import { shouldShowMemo, DocumentVisibilityParams, parseSecretaryRole } from './documentVisibility';
+
+// === UT: parseSecretaryRole ===
+
+describe('parseSecretaryRole', () => {
+  it('เลขาฝ่ายบริหารทั่วไป → isSecretary + department', () => {
+    const result = parseSecretaryRole('เลขาฝ่ายบริหารทั่วไป');
+    expect(result.isSecretary).toBe(true);
+    expect(result.department).toBe('ฝ่ายบริหารทั่วไป');
+  });
+
+  it('เลขาฝ่ายบริหารกิจการพิเศษ', () => {
+    const result = parseSecretaryRole('เลขาฝ่ายบริหารกิจการพิเศษ');
+    expect(result.isSecretary).toBe(true);
+    expect(result.department).toBe('ฝ่ายบริหารกิจการพิเศษ');
+  });
+
+  it('เลขาฝ่ายบริหารงบประมาณ', () => {
+    expect(parseSecretaryRole('เลขาฝ่ายบริหารงบประมาณ').department).toBe('ฝ่ายบริหารงบประมาณ');
+  });
+
+  it('เลขาฝ่ายบริหารงานบุคคล', () => {
+    expect(parseSecretaryRole('เลขาฝ่ายบริหารงานบุคคล').department).toBe('ฝ่ายบริหารงานบุคคล');
+  });
+
+  it('เลขาฝ่ายบริหารวิชาการ', () => {
+    expect(parseSecretaryRole('เลขาฝ่ายบริหารวิชาการ').department).toBe('ฝ่ายบริหารวิชาการ');
+  });
+
+  it('หัวหน้าฝ่าย → ไม���ใช่เลขา', () => {
+    const result = parseSecretaryRole('หัวหน้าฝ่ายบริหารทั่วไป');
+    expect(result.isSecretary).toBe(false);
+    expect(result.department).toBe(null);
+  });
+
+  it('ครู → ไม่ใช่เลขา', () => {
+    expect(parseSecretaryRole('ครู').isSecretary).toBe(false);
+  });
+
+  it('empty string → ไม่ใช่เลขา', () => {
+    expect(parseSecretaryRole('').isSecretary).toBe(false);
+  });
+
+  it('null → ไม่ใช่เลขา', () => {
+    expect(parseSecretaryRole(null).isSecretary).toBe(false);
+  });
+
+  it('undefined → ไม่ใช่เลขา', () => {
+    expect(parseSecretaryRole(undefined).isSecretary).toBe(false);
+  });
+});
 
 // === Helpers ===
 

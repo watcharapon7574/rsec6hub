@@ -1,5 +1,20 @@
 import { isPDFUploadMemo } from './memoUtils';
 
+/**
+ * Parse org_structure_role เพื่อเช็คว่าเป็นเลขาฝ่ายหรือไม่
+ * เช่น "เลขาฝ่ายบริหารทั่วไป" → { isSecretary: true, department: "ฝ่ายบริหารทั่วไป" }
+ */
+export function parseSecretaryRole(orgStructureRole: string | null | undefined): {
+  isSecretary: boolean;
+  department: string | null;
+} {
+  const role = orgStructureRole || '';
+  if (role.startsWith('เลขา')) {
+    return { isSecretary: true, department: role.replace('เลขา', '') };
+  }
+  return { isSecretary: false, department: null };
+}
+
 export interface DocumentVisibilityParams {
   permissions: {
     isAdmin: boolean;

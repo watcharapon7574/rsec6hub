@@ -62,9 +62,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const { toast } = useToast();
 
   // เช็คเลขาฝ่ายจาก org_structure_role (เริ่มต้นด้วย "เลขา")
-  const orgRole = (profile as any)?.org_structure_role || '';
+  const orgRole = profile?.org_structure_role || '';
   const isSecretary = orgRole.startsWith('เลขา');
   const secretaryDepartment = isSecretary ? orgRole.replace('เลขา', '') : null;
+
+  console.log('📋 DocumentList secretary check:', { orgRole, isSecretary, secretaryDepartment, profileLoaded: !!profile });
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');

@@ -236,10 +236,8 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
           {/* Assigned Documents List สำหรับบุคลากรทุกคน - งานที่ได้รับมอบหมาย */}
           <AssignedDocumentsList />
 
-          {/* สำหรับผู้ช่วยผอ, รองผอ: เอกสารส่วนตัวก่อน (ปิดค่าเริ่มต้น) */}
-          {["assistant_director", "deputy_director"].includes(permissions.position) && (
-            <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} defaultCollapsed={true} />
-          )}
+          {/* เอกสารส่วนตัว: สำหรับผู้ช่วยผอ, รองผอ, และเลขาฝ่าย (ปิดค่าเริ่มต้น) */}
+          <PersonalDocumentList realMemos={realMemos} onRefresh={onRefresh} defaultCollapsed={true} />
 
           {/* Document List สำหรับบทบาทอื่น (เปิดค่าเริ่มต้น) */}
           <DocumentList

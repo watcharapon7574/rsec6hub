@@ -360,6 +360,7 @@ const PDFReceiveManagePage: React.FC = () => {
           signer_list_progress: signerListProgress, // บันทึกรายชื่อผู้ลงนามทั้งหมด (สำคัญ!)
           clerk_id: profile?.user_id,
           user_id: profile?.user_id, // บันทึก user_id เหมือน memos table
+          stamp_department: selectedDepartment && selectedDepartment !== 'skip' ? selectedDepartment : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', memoId);

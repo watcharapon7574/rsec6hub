@@ -214,6 +214,42 @@ export type Database = {
         }
         Relationships: []
       }
+      department_secretaries: {
+        Row: {
+          id: string
+          department_id: string
+          secretary_user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          department_id: string
+          secretary_user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          department_id?: string
+          secretary_user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_secretaries_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_secretaries_secretary_user_id_fkey"
+            columns: ["secretary_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       doc_receive: {
         Row: {
           annotated_attachment_paths: string | null
@@ -244,6 +280,7 @@ export type Database = {
           signature_positions: Json | null
           signatures: Json | null
           signer_list_progress: Json | null
+          stamp_department: string | null
           status: string
           subject: string
           updated_at: string
@@ -278,6 +315,7 @@ export type Database = {
           signature_positions?: Json | null
           signatures?: Json | null
           signer_list_progress?: Json | null
+          stamp_department?: string | null
           status?: string
           subject: string
           updated_at?: string
@@ -312,6 +350,7 @@ export type Database = {
           signature_positions?: Json | null
           signatures?: Json | null
           signer_list_progress?: Json | null
+          stamp_department?: string | null
           status?: string
           subject?: string
           updated_at?: string

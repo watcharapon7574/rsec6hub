@@ -13,6 +13,7 @@ import { useSmartRealtime } from '@/hooks/useSmartRealtime';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPdfUrl } from '@/utils/fileUpload';
 import { getDocumentManageRoute, getDocumentEditRoute, isPDFUploadMemo } from '@/utils/memoUtils';
+import { shouldShowMemo as shouldShowMemoFn } from '@/utils/documentVisibility';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -59,6 +60,37 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const { updateSingleMemo } = useSmartRealtime();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // State สำหรับเลขาฝ่าย
+  const [secretaryDepartment, setSecretaryDepartment] = useState<string | null>(null);
+  const [isSecretary, setIsSecretary] = useState(false);
+
+  // เช็คว่า user เป็นเลขาฝ่ายหรือไม่
+  useEffect(() => {
+    const checkSecretary = async () => {
+      if (!profile?.user_id) return;
+      try {
+        const { data, error } = await (supabase as any)
+          .from('department_secretaries')
+          .select('department_id, departments!inner(name)')
+          .eq('secretary_user_id', profile.user_id)
+          .limit(1)
+          .maybeSingle();
+
+        if (!error && data) {
+          setIsSecretary(true);
+          setSecretaryDepartment(data.departments?.name || null);
+        } else {
+          setIsSecretary(false);
+          setSecretaryDepartment(null);
+        }
+      } catch {
+        setIsSecretary(false);
+        setSecretaryDepartment(null);
+      }
+    };
+    checkSecretary();
+  }, [profile?.user_id]);
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');
@@ -434,55 +466,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
-  // กรองเอกสารสำหรับแสดงใน DocumentList
-  // สำหรับ clerk_teacher: แสดงเอกสารทุกฉบับ (เพราะต้องจัดการเอกสารทั้งหมดของสถานศึกษา)
-  // สำหรับ ผู้ช่วยผอ, รองผอ: ไม่แสดงเอกสารส่วนตัวใน DocumentList
-  // เพราะจะแสดงใน PersonalDocumentList แยกต่างหาก
-  const shouldShowMemo = (memo: any) => {
-    // Admin เห็นเอกสารทุกฉบับ
-    if (permissions.isAdmin) {
-      return true;
-    }
-
-    // สำหรับ clerk_teacher: แสดงเอกสารทุกฉบับ (รวมทั้งเอกสารของตัวเอง)
-    // เพราะ DocumentList คือตารางจัดการเอกสารทั้งหมดของสถานศึกษา
-    if (permissions.isClerk) {
-      return true;
-    }
-
-    // สำหรับผู้ช่วยผอและรองผอ: แสดงเฉพาะเอกสารที่มีชื่อตัวเองใน signer_list_progress
-    // หรือถ้าเป็น PDF Upload ให้แสดงทุกคน
-    if (["assistant_director", "deputy_director"].includes(permissions.position)) {
-      // ถ้าเป็น PDF Upload ให้แสดงได้เสมอ
-      if (isPDFUploadMemo(memo)) {
-        return true;
-      }
-
-      // ตรวจสอบว่ามีชื่อตัวเองใน signer_list_progress หรือไม่
-      if (memo.signer_list_progress && Array.isArray(memo.signer_list_progress)) {
-        const hasUserInSignerList = memo.signer_list_progress.some((signer: any) =>
-          signer.user_id === profile?.user_id
-        );
-        return hasUserInSignerList;
-      }
-      // ถ้าไม่มี signer_list_progress ให้ fallback ไปดู signature_positions
-      if (memo.signature_positions && Array.isArray(memo.signature_positions)) {
-        const hasUserInSignatures = memo.signature_positions.some((pos: any) =>
-          pos.signer?.user_id === profile?.user_id
-        );
-        return hasUserInSignatures;
-      }
-      // ถ้าไม่พบใน signer list ก็ไม่แสดง
-      return false;
-    }
-
-    // ผอ เห็นเอกสารทุกชนิด (เหมือนเดิม)
-    if (permissions.position === "director") {
-      return true;
-    }
-    // คนอื่นดูได้เฉพาะเอกสารของตนเอง
-    return memo.user_id === profile?.user_id;
-  };
+  // กรองเอกสารสำหรับแสดงใน DocumentList (delegate ไปที่ pure function เพื่อให้ test ได้)
+  const shouldShowMemo = (memo: any) => shouldShowMemoFn(memo, {
+    permissions,
+    userId: profile?.user_id,
+    isSecretary,
+    secretaryDepartment,
+  });
 
   // ฟังก์ชันกรองและจัดเรียงข้อมูล
   const filteredAndSortedMemos = useMemo(() => {
@@ -591,7 +581,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
     });
 
     return filtered;
-  }, [localMemos, searchTerm, statusFilter, typeFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position, permissions.isAdmin, permissions.isClerk]);
+  }, [localMemos, searchTerm, statusFilter, typeFilter, assignmentFilter, sortBy, sortOrder, profile?.user_id, permissions.position, permissions.isAdmin, permissions.isClerk, isSecretary, secretaryDepartment]);
 
   // คำนวณข้อมูลสำหรับ pagination
   const totalPages = Math.ceil(filteredAndSortedMemos.length / itemsPerPage);
@@ -614,10 +604,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
       <CardHeader className="bg-purple-600 py-3 px-4 rounded-t-lg">
         <CardTitle className="flex items-center gap-2 text-base text-white">
           <FileText className="h-4 w-4 text-purple-100" />
-          {permissions.position === "clerk_teacher" ? 
-            "เอกสารภายในสถานศึกษา" : 
-            (["assistant_director", "deputy_director"].includes(permissions.position) ? 
-              "เอกสารของผู้อื่น" : 
+          {permissions.position === "clerk_teacher" ?
+            "เอกสารภายในสถานศึกษา" :
+            isSecretary && secretaryDepartment ?
+              `เอกสาร${secretaryDepartment}` :
+            (["assistant_director", "deputy_director"].includes(permissions.position) ?
+              "เอกสารของผู้อื่น" :
               "รายการเอกสาร")
           }
           <Badge variant="secondary" className="ml-auto bg-purple-700 text-white font-semibold px-2 py-1 rounded-full">
@@ -638,7 +630,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
             จัดการเอกสารภายในสถานศึกษา ตรวจสอบความถูกต้อง กำหนดเลขที่ และจัดเส้นทางการอนุมัติ
           </div>
         )}
-        {["assistant_director", "deputy_director"].includes(permissions.position) && (
+        {isSecretary && secretaryDepartment && (
+          <div className="text-sm text-purple-100 font-normal mt-1">
+            เอกสารทั้งหมดของ{secretaryDepartment} (สำหรับสรุปงาน)
+          </div>
+        )}
+        {!isSecretary && ["assistant_director", "deputy_director"].includes(permissions.position) && (
           <div className="text-sm text-purple-100 font-normal mt-1">
             เอกสารที่สร้างโดยผู้อื่น (เอกสารของคุณแสดงในส่วนข้างบน)
           </div>
@@ -1085,8 +1082,20 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         <Eye className="h-4 w-4" />
                         {(reportMemoIds.has(memo.id) || memo.is_assigned) && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
+                      {/* ปุ่มดูรายชื่อผู้รับมอบหมาย - แสดงสำหรับเลขาฝ่าย (เฉพาะเอกสารที่มอบหมายแล้ว) */}
+                      {isSecretary && memo.is_assigned && memo.has_active_tasks && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewAssignees(memo)}
+                          className="h-7 px-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:bg-blue-900 dark:hover:bg-blue-900"
+                        >
+                          <ClipboardList className="h-4 w-4" />
+                          <span className="text-xs font-medium">ดูรายชื่อ</span>
+                        </Button>
+                      )}
                       {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ และไม่ใช่ report memo */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && !reportMemoIds.has(memo.id) && (
+                      {!isSecretary && (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && !reportMemoIds.has(memo.id) && (
                         <>
                           {!memo.is_assigned ? (
                             <div className="relative">
@@ -1177,7 +1186,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director'));
                         return null;
                       })()}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
+                      {!isSecretary && (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
                         <div className="relative">
                           {(() => {
                             const isReportMemo = reportMemoIds.has(memo.id);
@@ -1224,18 +1233,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       )}
                     </>
                   )}
-                  {/* Delete button - แสดงเฉพาะธุรการเท่านั้น */}
-                  {(() => {
-                    const shouldShow = (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director');
-                    console.log('🗑️ DocumentList Delete Button Check:', {
-                      position: profile?.position,
-                      isClerkTeacher: shouldShow,
-                      memoId: memo.id,
-                      willRender: shouldShow ? 'YES - BUTTON WILL RENDER' : 'NO - BUTTON HIDDEN'
-                    });
-                    return null;
-                  })()}
-                  {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
+                  {/* Delete button - แสดงเฉพาะธุรการเท่านั้น (ไม่แสดงสำหรับเลขาฝ่าย) */}
+                  {!isSecretary && (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1278,14 +1277,19 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     <p>ยังไม่มีเอกสารในสถานศึกษา</p>
                     <span className="text-xs text-muted-foreground">รอเอกสารจากครูและบุคลากรเพื่อทำการจัดการ</span>
                   </div>
-                ) : (["assistant_director", "deputy_director"].includes(permissions.position) ? (
+                ) : isSecretary && secretaryDepartment ? (
+                  <div className="text-sm">
+                    <p>ยังไม่มีเอกสารของ{secretaryDepartment}</p>
+                    <span className="text-xs text-muted-foreground">เอกสารจะแสดงเมื่อมีการระบุฝ่ายที่รับผิดชอบ</span>
+                  </div>
+                ) : ["assistant_director", "deputy_director"].includes(permissions.position) ? (
                   <div className="text-sm">
                     <p>ไม่มีเอกสารของผู้อื่น</p>
                     <span className="text-xs text-muted-foreground">เอกสารส่วนตัวแสดงในส่วนข้างบน</span>
                   </div>
                 ) : (
                   <p className="text-sm">ไม่มีเอกสารในระบบ</p>
-                ))
+                )
               )}
             </div>
           )}

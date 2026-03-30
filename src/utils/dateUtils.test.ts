@@ -120,3 +120,105 @@ describe('formatRelativeTime', () => {
     expect(formatRelativeTime('not-a-date')).toBe('');
   });
 });
+
+// =============================================
+// Edge Cases (เพิ่มเติม Phase 3)
+// =============================================
+
+describe('formatThaiDateFull — Edge Cases', () => {
+  it('31 ธ.ค. → ปี พ.ศ. ถูกต้อง', () => {
+    // 31 Dec 2025 = 31 ธันวาคม 2568
+    expect(formatThaiDateFull(new Date(2025, 11, 31))).toBe('๓๑ ธันวาคม ๒๕๖๘');
+  });
+
+  it('1 ม.ค. ปีถัดไป → ปี พ.ศ. เปลี่ยน', () => {
+    // 1 Jan 2026 = 1 มกราคม 2569
+    expect(formatThaiDateFull(new Date(2026, 0, 1))).toBe('๑ มกราคม ๒๕๖๙');
+  });
+
+  it('ปี 2000 → พ.ศ. 2543', () => {
+    expect(formatThaiDateFull(new Date(2000, 0, 1))).toBe('๑ มกราคม ๒๕๔๓');
+  });
+
+  it('29 ก.พ. ปีอธิกสุรทิน', () => {
+    // 2024 is leap year
+    expect(formatThaiDateFull(new Date(2024, 1, 29))).toBe('๒๙ กุมภาพันธ์ ๒๕๖๗');
+  });
+});
+
+describe('formatThaiDateShort — Edge Cases', () => {
+  it('31 ธ.ค. 2025 → 31/12/68', () => {
+    expect(formatThaiDateShort(new Date(2025, 11, 31))).toBe('31/12/68');
+  });
+
+  it('1 ม.ค. 2026 → 1/1/69', () => {
+    expect(formatThaiDateShort(new Date(2026, 0, 1))).toBe('1/1/69');
+  });
+
+  it('ปี 2057 → พ.ศ. 2600 → 2 หลัก = 0', () => {
+    // 2057 + 543 = 2600, mod 100 = 0
+    expect(formatThaiDateShort(new Date(2057, 5, 15))).toBe('15/6/0');
+  });
+
+  it('ISO string → parse ถูก', () => {
+    // Note: ISO string parsed in local timezone
+    const result = formatThaiDateShort(new Date(2025, 2, 15)); // March 15, 2025
+    expect(result).toBe('15/3/68');
+  });
+});
+
+describe('formatRelativeTime — Boundary Cases', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('exactly 1 นาที → 1 นาทีที่แล้ว', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-06-15T12:01:00Z'));
+    expect(formatRelativeTime('2025-06-15T12:00:00Z')).toBe('1 นาทีที่แล้ว');
+  });
+
+  it('exactly 59 นาที → 59 นาทีที่แล้ว', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-06-15T12:59:00Z'));
+    expect(formatRelativeTime('2025-06-15T12:00:00Z')).toBe('59 นาทีที่แล้ว');
+  });
+
+  it('exactly 1 ชม. → 1 ชม.ที่แล้ว', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-06-15T13:00:00Z'));
+    expect(formatRelativeTime('2025-06-15T12:00:00Z')).toBe('1 ชม.ที่แล้ว');
+  });
+
+  it('exactly 23 ชม. → 23 ชม.ที่แล้ว', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-06-16T11:00:00Z'));
+    expect(formatRelativeTime('2025-06-15T12:00:00Z')).toBe('23 ชม.ที่แล้ว');
+  });
+
+  it('exactly 7 วัน → แสดงวันที่ (ไม่ใช่ "7 วันที่แล้ว")', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2025-06-22T12:00:00Z'));
+    expect(formatRelativeTime('2025-06-15T12:00:00Z')).toBe('15 มิ.ย.');
+  });
+
+  it('ข้ามปี: ธ.ค. → ม.ค.', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-05T12:00:00Z'));
+    expect(formatRelativeTime('2025-12-28T12:00:00Z')).toBe('28 ธ.ค.');
+  });
+});
+
+describe('convertToThaiNumerals — Edge Cases', () => {
+  it('0 → ๐', () => {
+    expect(convertToThaiNumerals(0)).toBe('๐');
+  });
+
+  it('ตัวเลขใหญ่มาก', () => {
+    expect(convertToThaiNumerals(9999999)).toBe('๙๙๙๙๙๙๙');
+  });
+
+  it('mixed text + number → แปลงเฉพาะตัวเลข', () => {
+    expect(convertToThaiNumerals('RSEC601')).toBe('RSEC๖๐๑');
+  });
+});

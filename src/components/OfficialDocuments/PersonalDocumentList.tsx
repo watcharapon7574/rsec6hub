@@ -27,6 +27,22 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   const permissions = getPermissions();
   const navigate = useNavigate();
 
+  // เช็คว่า user เป็นเลขาฝ่ายหรือไม่
+  const [isSecretary, setIsSecretary] = useState(false);
+  useEffect(() => {
+    const check = async () => {
+      if (!profile?.user_id) return;
+      const { data } = await (supabase as any)
+        .from('department_secretaries')
+        .select('id')
+        .eq('secretary_user_id', profile.user_id)
+        .limit(1)
+        .maybeSingle();
+      setIsSecretary(!!data);
+    };
+    check();
+  }, [profile?.user_id]);
+
   // State สำหรับ collapsible
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
@@ -276,8 +292,8 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
     setCurrentPage(1);
   }, [searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
 
-  // แสดงเฉพาะสำหรับ clerk_teacher, ผู้ช่วยผอ, รองผอ
-  if (!["clerk_teacher", "assistant_director", "deputy_director"].includes(permissions.position)) {
+  // แสดงเฉพาะสำหรับ clerk_teacher, ผู้ช่วยผอ, รองผอ, และเลขาฝ่าย
+  if (!isSecretary && !["clerk_teacher", "assistant_director", "deputy_director"].includes(permissions.position)) {
     return null;
   }
 

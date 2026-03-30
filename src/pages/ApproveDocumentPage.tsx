@@ -225,7 +225,7 @@ const ApproveDocumentPage: React.FC = () => {
           }
         } else if (assignment.document_type === 'doc_receive' && assignment.doc_receive_id) {
           const { data: origDocReceive, error: origError } = await (supabase
-            .from('doc_receives' as any)
+            .from('doc_receive' as any)
             .select('*')
             .eq('id', assignment.doc_receive_id)
             .single() as any);

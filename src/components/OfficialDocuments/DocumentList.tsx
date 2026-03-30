@@ -61,36 +61,10 @@ const DocumentList: React.FC<DocumentListProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // State สำหรับเลขาฝ่าย
-  const [secretaryDepartment, setSecretaryDepartment] = useState<string | null>(null);
-  const [isSecretary, setIsSecretary] = useState(false);
-
-  // เช็คว่า user เป็นเลขาฝ่ายหรือไม่
-  useEffect(() => {
-    const checkSecretary = async () => {
-      if (!profile?.user_id) return;
-      try {
-        const { data, error } = await (supabase as any)
-          .from('department_secretaries')
-          .select('department_id, departments!inner(name)')
-          .eq('secretary_user_id', profile.user_id)
-          .limit(1)
-          .maybeSingle();
-
-        if (!error && data) {
-          setIsSecretary(true);
-          setSecretaryDepartment(data.departments?.name || null);
-        } else {
-          setIsSecretary(false);
-          setSecretaryDepartment(null);
-        }
-      } catch {
-        setIsSecretary(false);
-        setSecretaryDepartment(null);
-      }
-    };
-    checkSecretary();
-  }, [profile?.user_id]);
+  // เช็คเลขาฝ่ายจาก org_structure_role (เริ่มต้นด้วย "เลขา")
+  const orgRole = (profile as any)?.org_structure_role || '';
+  const isSecretary = orgRole.startsWith('เลขา');
+  const secretaryDepartment = isSecretary ? orgRole.replace('เลขา', '') : null;
 
   // State สำหรับการค้นหาและกรอง
   const [searchTerm, setSearchTerm] = useState('');

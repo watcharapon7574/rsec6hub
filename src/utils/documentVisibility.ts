@@ -32,11 +32,8 @@ export const shouldShowMemo = (memo: any, params: DocumentVisibilityParams): boo
     return true;
   }
 
-  // เลขาฝ่าย: เอกสารที่ stamp_department ตรงกับฝ่าย (ไม่รวมเอกสารตัวเอง)
+  // เลขาฝ่าย: เอกสารที่ stamp_department ตรงกับฝ่าย (รวมเอกสารตัวเองด้วย)
   if (isSecretary && secretaryDepartment) {
-    if (memo.user_id === userId) {
-      return false;
-    }
     return memo.stamp_department === secretaryDepartment;
   }
 

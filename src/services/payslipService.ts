@@ -128,10 +128,31 @@ async function loadPdf(data: ArrayBuffer): Promise<pdfjsLib.PDFDocumentProxy> {
 async function extractPageText(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<string> {
   const page = await pdf.getPage(pageNum);
   const textContent = await page.getTextContent();
-  return (textContent.items as any[])
+  const items = (textContent.items as any[])
     .filter(it => it.str?.trim())
-    .map(it => it.str as string)
-    .join(' ');
+    .map(it => ({
+      str: it.str as string,
+      x: it.transform[4] as number,
+      y: it.transform[5] as number,
+    }));
+
+  // Group by rows (same Y within threshold) then sort by X within each row
+  const Y_THRESHOLD = 4;
+  const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
+  const rows: { y: number; tokens: { str: string; x: number }[] }[] = [];
+  for (const it of sorted) {
+    const last = rows[rows.length - 1];
+    if (last && Math.abs(last.y - it.y) <= Y_THRESHOLD) {
+      last.tokens.push(it);
+    } else {
+      rows.push({ y: it.y, tokens: [it] });
+    }
+  }
+
+  // Format each row as tab-separated to preserve spatial layout
+  return rows
+    .map(r => r.tokens.sort((a, b) => a.x - b.x).map(t => t.str).join('\t'))
+    .join('\n');
 }
 
 // ==================== Gemini OCR ====================
@@ -235,7 +256,7 @@ function scoreOcr(result: PageOcrResult): number {
 
 async function ocrPayslipPage(pageText: string): Promise<PageOcrResult> {
   const raw = await callGenerate(OCR_MODEL, [
-    { text: `${PAYSLIP_PROMPT}\n\nข้อความในหน้า:\n${pageText}` },
+    { text: `${PAYSLIP_PROMPT}\n\nข้อความในหน้า (เรียงตามแถว, แต่ละแถวคั่นด้วย tab — ตัวเลขที่อยู่หลังชื่อรายการในแถวเดียวกันคือจำนวนเงินของรายการนั้น):\n${pageText}` },
   ]);
   const cleaned = raw.replace(/```json\s*/g, '').replace(/```/g, '').trim();
   const parsed = JSON.parse(cleaned);

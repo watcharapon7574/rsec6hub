@@ -9,6 +9,9 @@ export interface CalendarEvent {
   start: string;
   end: string;
   allDay: boolean;
+  colorId?: string;
+  color?: string;      // hex bg color from Google Calendar
+  colorName?: string;
 }
 
 interface UseGoogleCalendarOptions {

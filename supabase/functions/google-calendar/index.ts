@@ -7,6 +7,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const GOOGLE_API_KEY = Deno.env.get('GOOGLE_CALENDAR_API_KEY') || 'AIzaSyACXC0P_lc2SCv29IntKtG_GjddGpG1yNI'
+
+// Google Calendar API colorId → hex color mapping
+// https://developers.google.com/calendar/api/v3/reference/colors
+const COLOR_MAP: Record<string, { bg: string; fg: string; name: string }> = {
+  '1':  { bg: '#7986CB', fg: '#1d1d1d', name: 'lavender' },
+  '2':  { bg: '#33B679', fg: '#1d1d1d', name: 'sage' },
+  '3':  { bg: '#8E24AA', fg: '#ffffff', name: 'grape' },
+  '4':  { bg: '#E67C73', fg: '#1d1d1d', name: 'flamingo' },
+  '5':  { bg: '#F6BF26', fg: '#1d1d1d', name: 'banana' },
+  '6':  { bg: '#F4511E', fg: '#ffffff', name: 'tangerine' },
+  '7':  { bg: '#039BE5', fg: '#ffffff', name: 'peacock' },
+  '8':  { bg: '#616161', fg: '#ffffff', name: 'graphite' },
+  '9':  { bg: '#3F51B5', fg: '#ffffff', name: 'blueberry' },
+  '10': { bg: '#0B8043', fg: '#ffffff', name: 'basil' },
+  '11': { bg: '#D50000', fg: '#ffffff', name: 'tomato' },
+}
+
+// Default calendar color (when no colorId is set on event)
+const DEFAULT_COLOR = { bg: '#039BE5', fg: '#ffffff', name: 'default' }
+
 interface CalendarEvent {
   id: string
   summary: string
@@ -15,101 +36,21 @@ interface CalendarEvent {
   start: string
   end: string
   allDay: boolean
+  colorId: string
+  color: string      // hex bg color
+  colorName: string   // human-readable name
 }
 
-function parseICS(icsText: string): CalendarEvent[] {
-  const events: CalendarEvent[] = []
-  const lines = icsText.replace(/\r\n /g, '').replace(/\r/g, '').split('\n')
-
-  let inEvent = false
-  let current: Partial<CalendarEvent> = {}
-
-  for (const line of lines) {
-    if (line === 'BEGIN:VEVENT') {
-      inEvent = true
-      current = {}
-      continue
-    }
-    if (line === 'END:VEVENT') {
-      inEvent = false
-      if (current.summary) {
-        events.push({
-          id: current.id || crypto.randomUUID(),
-          summary: current.summary || '',
-          description: current.description || '',
-          location: current.location || '',
-          start: current.start || '',
-          end: current.end || '',
-          allDay: current.allDay ?? false,
-        })
-      }
-      continue
-    }
-    if (!inEvent) continue
-
-    const colonIdx = line.indexOf(':')
-    if (colonIdx === -1) continue
-
-    const keyPart = line.substring(0, colonIdx)
-    const value = line.substring(colonIdx + 1).replace(/\\n/g, '\n').replace(/\\,/g, ',').replace(/\\\\/g, '\\')
-    const key = keyPart.split(';')[0]
-
-    // Strip HTML tags and decode common entities
-    const stripHtml = (s: string) =>
-      s.replace(/<[^>]*>/g, '')
-       .replace(/&amp;/g, '&')
-       .replace(/&lt;/g, '<')
-       .replace(/&gt;/g, '>')
-       .replace(/&nbsp;/g, ' ')
-       .replace(/&quot;/g, '"')
-       .replace(/  +/g, ' ')
-       .trim()
-
-    switch (key) {
-      case 'UID':
-        current.id = value
-        break
-      case 'SUMMARY':
-        current.summary = stripHtml(value)
-        break
-      case 'DESCRIPTION':
-        current.description = stripHtml(value)
-        break
-      case 'LOCATION':
-        current.location = value
-        break
-      case 'DTSTART': {
-        // VALUE=DATE means all-day event (YYYYMMDD)
-        // Otherwise it's a datetime (YYYYMMDDTHHMMSSZ or with TZID)
-        if (keyPart.includes('VALUE=DATE') || value.length === 8) {
-          current.allDay = true
-          current.start = `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`
-        } else {
-          current.allDay = false
-          // Parse YYYYMMDDTHHMMSS or YYYYMMDDTHHMMSSZ
-          const d = value.replace('Z', '')
-          current.start = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}T${d.slice(9, 11)}:${d.slice(11, 13)}:${d.slice(13, 15)}`
-          if (value.endsWith('Z')) current.start += 'Z'
-        }
-        break
-      }
-      case 'DTEND': {
-        if (keyPart.includes('VALUE=DATE') || value.length === 8) {
-          current.end = `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`
-        } else {
-          const d = value.replace('Z', '')
-          current.end = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}T${d.slice(9, 11)}:${d.slice(11, 13)}:${d.slice(13, 15)}`
-          if (value.endsWith('Z')) current.end += 'Z'
-        }
-        break
-      }
-    }
-  }
-
-  // Sort by start date descending (newest first)
-  events.sort((a, b) => b.start.localeCompare(a.start))
-
-  return events
+function stripHtml(s: string): string {
+  return s
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/  +/g, ' ')
+    .trim()
 }
 
 serve(async (req) => {
@@ -120,25 +61,65 @@ serve(async (req) => {
   try {
     const url = new URL(req.url)
     const calendarId = url.searchParams.get('calendarId') || 'maplopburi6@gmail.com'
-    const month = url.searchParams.get('month') // optional: YYYY-MM to filter
+    const month = url.searchParams.get('month') // YYYY-MM
 
-    const icsUrl = `https://calendar.google.com/calendar/ical/${encodeURIComponent(calendarId)}/public/basic.ics`
+    if (!GOOGLE_API_KEY) {
+      throw new Error('GOOGLE_CALENDAR_API_KEY not configured')
+    }
 
-    const response = await fetch(icsUrl, {
-      headers: { 'User-Agent': 'RSEC6Hub/1.0' },
-    })
+    // Build time range for the month
+    let timeMin: string
+    let timeMax: string
+    if (month) {
+      const [y, m] = month.split('-').map(Number)
+      timeMin = new Date(y, m - 1, 1).toISOString()
+      timeMax = new Date(y, m, 1).toISOString()
+    } else {
+      // Default: current month ± 1 month
+      const now = new Date()
+      timeMin = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+      timeMax = new Date(now.getFullYear(), now.getMonth() + 2, 1).toISOString()
+    }
+
+    const apiUrl = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`)
+    apiUrl.searchParams.set('key', GOOGLE_API_KEY)
+    apiUrl.searchParams.set('timeMin', timeMin)
+    apiUrl.searchParams.set('timeMax', timeMax)
+    apiUrl.searchParams.set('singleEvents', 'true')
+    apiUrl.searchParams.set('orderBy', 'startTime')
+    apiUrl.searchParams.set('maxResults', '250')
+
+    const response = await fetch(apiUrl.toString())
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch calendar: ${response.status}`)
+      const errText = await response.text()
+      throw new Error(`Google API error ${response.status}: ${errText}`)
     }
 
-    const icsText = await response.text()
-    let events = parseICS(icsText)
+    const data = await response.json()
+    const items = data.items || []
 
-    // Filter by month if specified
-    if (month) {
-      events = events.filter(e => e.start.startsWith(month))
-    }
+    const events: CalendarEvent[] = items.map((item: any) => {
+      const colorId = item.colorId || ''
+      const colorInfo = COLOR_MAP[colorId] || DEFAULT_COLOR
+
+      const isAllDay = !!item.start?.date
+      const start = isAllDay ? item.start.date : (item.start?.dateTime || '')
+      const end = isAllDay ? item.end.date : (item.end?.dateTime || '')
+
+      return {
+        id: item.id || crypto.randomUUID(),
+        summary: stripHtml(item.summary || '(ไม่มีชื่อ)'),
+        description: stripHtml(item.description || ''),
+        location: item.location || '',
+        start,
+        end,
+        allDay: isAllDay,
+        colorId,
+        color: colorInfo.bg,
+        colorName: colorInfo.name,
+      }
+    })
 
     return new Response(JSON.stringify({ events, count: events.length }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

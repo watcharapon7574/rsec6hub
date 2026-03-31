@@ -13,14 +13,32 @@ const THAI_MONTHS = [
 
 const THAI_DAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
-// Color palette for events (rotate per event index in a day)
-const EVENT_COLORS = [
-  { bg: 'bg-blue-100 dark:bg-blue-900/50', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-800 dark:text-blue-200', dot: 'bg-blue-500' },
-  { bg: 'bg-orange-100 dark:bg-orange-900/50', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-800 dark:text-orange-200', dot: 'bg-orange-500' },
-  { bg: 'bg-green-100 dark:bg-green-900/50', border: 'border-green-200 dark:border-green-800', text: 'text-green-800 dark:text-green-200', dot: 'bg-green-500' },
-  { bg: 'bg-purple-100 dark:bg-purple-900/50', border: 'border-purple-200 dark:border-purple-800', text: 'text-purple-800 dark:text-purple-200', dot: 'bg-purple-500' },
-  { bg: 'bg-rose-100 dark:bg-rose-900/50', border: 'border-rose-200 dark:border-rose-800', text: 'text-rose-800 dark:text-rose-200', dot: 'bg-rose-500' },
-];
+// Default color when event has no color from Google
+const DEFAULT_EVENT_COLOR = '#039BE5';
+
+/** Lighten a hex color for use as background (mix with white) */
+function lightenColor(hex: string, amount = 0.85): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const lr = Math.round(r + (255 - r) * amount);
+  const lg = Math.round(g + (255 - g) * amount);
+  const lb = Math.round(b + (255 - b) * amount);
+  return `#${lr.toString(16).padStart(2, '0')}${lg.toString(16).padStart(2, '0')}${lb.toString(16).padStart(2, '0')}`;
+}
+
+/** Determine if text should be white or dark based on bg color */
+function getContrastText(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#1a1a1a' : '#ffffff';
+}
+
+function getEventColor(event: CalendarEvent): string {
+  return event.color || DEFAULT_EVENT_COLOR;
+}
 
 function getMonthString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -210,31 +228,48 @@ const CalendarWidget: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Event previews (show max 2 on mobile, 3 on desktop) */}
+                    {/* Event previews with real Google Calendar colors */}
                     <div className="flex-1 space-y-0.5 overflow-hidden">
-                      {dayEvents.slice(0, 2).map((event, idx) => {
-                        const color = EVENT_COLORS[idx % EVENT_COLORS.length];
+                      {dayEvents.slice(0, 2).map((event) => {
+                        const color = getEventColor(event);
                         return (
                           <div
                             key={event.id}
-                            className={`${color.bg} ${color.border} border rounded px-1 py-0.5 truncate`}
+                            className="rounded px-1 py-0.5 truncate border"
+                            style={{
+                              backgroundColor: lightenColor(color),
+                              borderColor: color + '40',
+                            }}
                           >
-                            <span className={`text-[10px] md:text-[11px] leading-tight ${color.text} font-medium`}>
+                            <span
+                              className="text-[10px] md:text-[11px] leading-tight font-medium"
+                              style={{ color: getContrastText(lightenColor(color)) }}
+                            >
                               {event.summary}
                             </span>
                           </div>
                         );
                       })}
                       {/* 3rd event only on desktop */}
-                      {dayEvents[2] && (
-                        <div
-                          className={`hidden md:block ${EVENT_COLORS[2].bg} ${EVENT_COLORS[2].border} border rounded px-1 py-0.5 truncate`}
-                        >
-                          <span className={`text-[11px] leading-tight ${EVENT_COLORS[2].text} font-medium`}>
-                            {dayEvents[2].summary}
-                          </span>
-                        </div>
-                      )}
+                      {dayEvents[2] && (() => {
+                        const color = getEventColor(dayEvents[2]);
+                        return (
+                          <div
+                            className="hidden md:block rounded px-1 py-0.5 truncate border"
+                            style={{
+                              backgroundColor: lightenColor(color),
+                              borderColor: color + '40',
+                            }}
+                          >
+                            <span
+                              className="text-[11px] leading-tight font-medium"
+                              style={{ color: getContrastText(lightenColor(color)) }}
+                            >
+                              {dayEvents[2].summary}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </button>
                 );
@@ -264,8 +299,8 @@ const CalendarWidget: React.FC = () => {
                 </div>
                 {selectedEvents.length > 0 ? (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {selectedEvents.map((event, idx) => (
-                      <EventDetailItem key={event.id} event={event} colorIdx={idx} />
+                    {selectedEvents.map((event) => (
+                      <EventDetailItem key={event.id} event={event} />
                     ))}
                   </div>
                 ) : (
@@ -280,15 +315,25 @@ const CalendarWidget: React.FC = () => {
   );
 };
 
-const EventDetailItem: React.FC<{ event: CalendarEvent; colorIdx: number }> = ({ event, colorIdx }) => {
-  const color = EVENT_COLORS[colorIdx % EVENT_COLORS.length];
+const EventDetailItem: React.FC<{ event: CalendarEvent }> = ({ event }) => {
+  const color = getEventColor(event);
+  const bgLight = lightenColor(color, 0.88);
 
   return (
-    <div className={`p-3 rounded-lg ${color.bg} border ${color.border}`}>
+    <div
+      className="p-3 rounded-lg border"
+      style={{ backgroundColor: bgLight, borderColor: color + '30' }}
+    >
       <div className="flex items-start gap-2.5">
-        <div className={`w-1.5 rounded-full ${color.dot} flex-shrink-0 mt-1 self-stretch min-h-[24px]`} />
+        <div
+          className="w-1.5 rounded-full flex-shrink-0 mt-1 self-stretch min-h-[24px]"
+          style={{ backgroundColor: color }}
+        />
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-semibold ${color.text} leading-snug`}>
+          <p
+            className="text-sm font-semibold leading-snug"
+            style={{ color: getContrastText(bgLight) }}
+          >
             {event.summary}
           </p>
           {event.description && (

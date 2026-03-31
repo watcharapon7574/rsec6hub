@@ -279,83 +279,151 @@ async function ocrPayslipPage(pageText: string): Promise<PageOcrResult> {
   return { top: normalize(obj.top), bottom: normalize(obj.bottom), raw_text: raw };
 }
 
-// ==================== Deterministic payslip parser ==
+// ==================== Deterministic payslip parser (landscape) ====================
 
 const AMOUNT_RE = /^[\d,]+\.\d{2}$/;
-const NAME_RE = /^(นาย|นาง(?:สาว)?|ด\.ต\.|ว่าที่|ร\.ต\.อ\.|ร\.ต\.|จ\.ส\.[อตท]\.)/u;
-const FOOTER_RE = /ลงชื่อ|ผู้มีหน้าที่จ่ายเงิน|วัน เดือน ปี ที่ออก/;
+const NAME_RE = /^(นาย|นาง(?:สาว)?|ด\.ต\.|ว่าที่|ร\.ต\.อ?\.|จ\.ส\.[อตท]\.)/u;
 const ROW_Y_THRESHOLD = 4;
-const SKIP_LABELS = new Set(['รายรับ', 'รายจ่าย', 'รายการ', 'ลำดับ', 'จำนวนเงิน(บาท)', 'จำนวนเงิน (บาท)', 'หลักเกณฑ์']);
 
 interface TItem { str: string; x: number; y: number; }
-interface TRow  { y: number; tokens: string[]; }
+interface TRow  { y: number; tokens: TItem[]; }
 
-function groupRows(items: TItem[]): TRow[] {
+const LANDSCAPE_INCOME_LABELS = [
+  'เงินเดือน', 'เงินเดือนตกเบิก', 'ป.จ.ต.', 'ป.จ.ต./ตกเบิก', 'พ.ข.อ./ตกเบิก',
+  'พ.ส.ร./ตกเบิก', 'พ.ค.ว./ตกเบิก', 'พ.ป.ผ./ตกเบิก', 'สปพ./ตกเบิก', 'ตปพ./ตกเบิก',
+  'ต.ข.ท.ปจต.', 'ต.ข.ท.ปจต. ตกเบิก', 'ต.ข.8-8ว.', 'ต.ข.8-8ว. ตกเบิก', 'ต.ด.ข.1-7/ตกเบิก',
+  'ง.ต.พ.ข./ตกเบิก', 'ค่าเช่าบ้าน/ตกเบิก', 'ช่วยเหลือบุตร/ตกเบิก', 'การศึกษาบุตร/ตกเบิก',
+  'เงินรางวัล/เงินท้าทาย', 'วิทยฐานะ', 'วิทยฐานะ ตกเบิก', 'พ.ค.ก.',
+];
+
+const LANDSCAPE_DEDUCTION_LABELS = [
+  'ภาษี/ตกเบิก', 'กบข./ตกเบิก', 'สะสมเพิ่ม/ตกเบิก', 'ง.หักสหกรณ์',
+  'สธณภ.', 'งก.กยศ.', 'สินเชื่อ',
+];
+
+const LANDSCAPE_TOTAL_KEYWORDS: Record<string, 'income' | 'deductions' | 'net'> = {
+  'รวมรับทั้งเดือน': 'income', 'รวมจ่ายทั้งเดือน': 'deductions', 'รับสุทธิ': 'net',
+};
+
+const ALL_LANDSCAPE_LABELS = [...LANDSCAPE_INCOME_LABELS, ...LANDSCAPE_DEDUCTION_LABELS];
+
+function groupRowsLandscape(items: TItem[]): TRow[] {
   const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
   const rows: TRow[] = [];
   for (const it of sorted) {
     const last = rows[rows.length - 1];
-    if (last && Math.abs(last.y - it.y) <= ROW_Y_THRESHOLD) last.tokens.push(it.str);
-    else rows.push({ y: it.y, tokens: [it.str] });
+    if (last && Math.abs(last.y - it.y) <= ROW_Y_THRESHOLD) last.tokens.push(it);
+    else rows.push({ y: it.y, tokens: [it] });
   }
+  for (const row of rows) row.tokens.sort((a, b) => a.x - b.x);
   return rows;
 }
 
-function rowAmount(tokens: string[]): number {
-  for (let i = tokens.length - 1; i >= 0; i--)
-    if (AMOUNT_RE.test(tokens[i])) return parseFloat(tokens[i].replace(/,/g, ''));
-  return 0;
+function findLandscapeLabel(text: string): string | null {
+  const t = text.replace(/\s+/g, ' ').trim();
+  if (Object.keys(LANDSCAPE_TOTAL_KEYWORDS).some(kw => t.includes(kw))) return null;
+  if (ALL_LANDSCAPE_LABELS.includes(t)) return t;
+  for (const label of ALL_LANDSCAPE_LABELS) {
+    if (t.startsWith(label)) return label;
+  }
+  if (/^งก\./.test(t)) return 'งก.กยศ.';
+  return null;
 }
 
-function rowLabel(tokens: string[]): string {
-  const t = [...tokens];
-  if (t.length && AMOUNT_RE.test(t[t.length - 1])) t.pop();
-  if (t.length && /^\d+\.$/.test(t[0])) t.shift();
-  return t.join(' ').trim();
-}
+function parseLandscapeSlip(items: TItem[]): PayslipData {
+  const rows = groupRowsLandscape(items);
 
-function parseColumn(items: TItem[]): PayslipData {
-  const rows = groupRows(items);
-  let name = '', position = '';
-  const incomeItems: PayslipItem[] = [];
-  const deductionItems: PayslipItem[] = [];
+  let name = '', positionNumber = '', bankName = '', bankAccount = '';
+  const incomeMap = new Map<string, number | null>();
+  const deductionMap = new Map<string, number | null>();
   let totalIncome = 0, totalDeductions = 0, netPay = 0;
-  let phase = 0; // 0=find name, 1=position, 2=income items, 3=deduction items
-  let incomeTotalFound = false;
 
   for (const row of rows) {
-    const text = row.tokens.join(' ').trim();
-    if (!text || SKIP_LABELS.has(text)) continue;
+    const tokens = row.tokens;
+    const rowText = tokens.map(t => t.str).join(' ');
 
-    if (FOOTER_RE.test(text)) break;
-
-    if (phase === 0) {
-      if (NAME_RE.test(text)) { name = text; phase = 1; }
-      continue;
-    }
-    if (phase === 1) {
-      if (!AMOUNT_RE.test(text)) { position = text; }
-      phase = 2;
-      continue;
+    // Extract name
+    for (const tok of tokens) {
+      if (NAME_RE.test(tok.str.trim()) && !name) name = tok.str.trim();
     }
 
-    if (/^รวม/.test(text)) {
-      if (!incomeTotalFound) { totalIncome = rowAmount(row.tokens); incomeTotalFound = true; phase = 3; }
-      else { totalDeductions = rowAmount(row.tokens); phase = 4; }
-      continue;
+    // Extract metadata
+    if (rowText.includes('เลขตำแหน่ง')) {
+      const posMatch = rowText.match(/เลขตำแหน่ง\s*(\d+)/);
+      if (posMatch) positionNumber = posMatch[1];
+      const bankMatch = rowText.match(/โอนเงินเข้า\s*(.+?)(?:\s+เลขที่บัญชี|$)/);
+      if (bankMatch) bankName = bankMatch[1].trim();
+      const acctMatch = rowText.match(/เลขที่บัญชี\s*(\d+)/);
+      if (acctMatch) bankAccount = acctMatch[1];
     }
-    if (text.includes('รับสุทธิ')) { netPay = rowAmount(row.tokens); continue; }
 
-    if (phase === 2 || phase === 3) {
-      const label = rowLabel(row.tokens);
-      if (!label) continue;
-      const hasAmt = AMOUNT_RE.test(row.tokens[row.tokens.length - 1]);
-      const item: PayslipItem = { label, amount: hasAmt ? rowAmount(row.tokens) : null };
-      if (phase === 2) incomeItems.push(item); else deductionItems.push(item);
+    // Parse label-amount pairs
+    let lastLabel: string | null = null;
+
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i].str.trim();
+
+      // Amount → assign to previous label
+      if (AMOUNT_RE.test(t)) {
+        const amount = parseFloat(t.replace(/,/g, ''));
+        if (lastLabel) {
+          if (LANDSCAPE_INCOME_LABELS.includes(lastLabel)) incomeMap.set(lastLabel, amount);
+          else if (LANDSCAPE_DEDUCTION_LABELS.includes(lastLabel)) deductionMap.set(lastLabel, amount);
+          lastLabel = null;
+        }
+        continue;
+      }
+
+      // Total keywords → flush lastLabel, consume amount, skip
+      let isTotalKw = false;
+      for (const [kw, type] of Object.entries(LANDSCAPE_TOTAL_KEYWORDS)) {
+        if (t === kw) {
+          isTotalKw = true;
+          if (lastLabel) {
+            if (LANDSCAPE_INCOME_LABELS.includes(lastLabel) && !incomeMap.has(lastLabel)) incomeMap.set(lastLabel, null);
+            if (LANDSCAPE_DEDUCTION_LABELS.includes(lastLabel) && !deductionMap.has(lastLabel)) deductionMap.set(lastLabel, null);
+            lastLabel = null;
+          }
+          if (i + 1 < tokens.length && AMOUNT_RE.test(tokens[i + 1].str.trim())) {
+            const amt = parseFloat(tokens[i + 1].str.replace(/,/g, ''));
+            if (type === 'income') totalIncome = amt;
+            else if (type === 'deductions') totalDeductions = amt;
+            else if (type === 'net') netPay = amt;
+            i++;
+          }
+          break;
+        }
+      }
+      if (isTotalKw) continue;
+
+      // Known label
+      const matched = findLandscapeLabel(t);
+      if (matched) {
+        if (lastLabel) {
+          if (LANDSCAPE_INCOME_LABELS.includes(lastLabel) && !incomeMap.has(lastLabel)) incomeMap.set(lastLabel, null);
+          if (LANDSCAPE_DEDUCTION_LABELS.includes(lastLabel) && !deductionMap.has(lastLabel)) deductionMap.set(lastLabel, null);
+        }
+        lastLabel = matched;
+        continue;
+      }
+    }
+
+    // End of row
+    if (lastLabel) {
+      if (LANDSCAPE_INCOME_LABELS.includes(lastLabel) && !incomeMap.has(lastLabel)) incomeMap.set(lastLabel, null);
+      if (LANDSCAPE_DEDUCTION_LABELS.includes(lastLabel) && !deductionMap.has(lastLabel)) deductionMap.set(lastLabel, null);
+      lastLabel = null;
     }
   }
 
-  return { name, position, income_items: incomeItems, deduction_items: deductionItems, total_income: totalIncome, total_deductions: totalDeductions, net_pay: netPay };
+  const income_items = LANDSCAPE_INCOME_LABELS.map(label => ({ label, amount: incomeMap.get(label) ?? null }));
+  const deduction_items = LANDSCAPE_DEDUCTION_LABELS.map(label => ({ label, amount: deductionMap.get(label) ?? null }));
+
+  return {
+    name, position_number: positionNumber, bank_name: bankName, bank_account: bankAccount,
+    income_items, deduction_items,
+    total_income: totalIncome, total_deductions: totalDeductions, net_pay: netPay,
+  };
 }
 
 export async function parsePayslipPage(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<PageOcrResult> {
@@ -366,13 +434,11 @@ export async function parsePayslipPage(pdf: pdfjsLib.PDFDocumentProxy, pageNum: 
     .filter(it => it.str?.trim())
     .map(it => ({ str: it.str as string, x: it.transform[4] as number, y: it.transform[5] as number }));
 
-  // Landscape layout: 2 slips stacked top-bottom, split at vertical midpoint
-  // PDF y-coordinate: higher y = higher on page (top), lower y = lower on page (bottom)
   const midY = viewport.height / 2;
   const rawText = allItems.map(it => it.str).join(' ');
   return {
-    top:    parseColumn(allItems.filter(it => it.y >= midY)),
-    bottom: parseColumn(allItems.filter(it => it.y < midY)),
+    top:    parseLandscapeSlip(allItems.filter(it => it.y >= midY)),
+    bottom: parseLandscapeSlip(allItems.filter(it => it.y < midY)),
     raw_text: rawText,
   };
 }
@@ -618,6 +684,32 @@ export async function processPayslipPdf(
   });
 
   return runPool(tasks, 5);
+}
+
+// ==================== Direct PDF parse pipeline (no AI) ====================
+
+export async function processPayslipPdfDirect(
+  file: File,
+  onPageDone: (done: number, total: number) => void
+): Promise<{ top: PayslipData; bottom: PayslipData; pageNumber: number; rawText: string }[]> {
+  const buffer = await file.arrayBuffer();
+  const pdf = await loadPdf(buffer);
+  const totalPages = pdf.numPages;
+  const results: { top: PayslipData; bottom: PayslipData; pageNumber: number; rawText: string }[] = [];
+
+  for (let i = 0; i < totalPages; i++) {
+    const pageNum = i + 1;
+    const parsed = await parsePayslipPage(pdf, pageNum);
+    results.push({
+      top: parsed.top,
+      bottom: parsed.bottom,
+      pageNumber: pageNum,
+      rawText: parsed.raw_text || '',
+    });
+    onPageDone(pageNum, totalPages);
+  }
+
+  return results;
 }
 
 // ==================== Admin settings ====================

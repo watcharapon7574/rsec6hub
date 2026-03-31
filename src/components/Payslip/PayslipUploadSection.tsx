@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   uploadPayslipPdf,
   processPayslipPdf,
+  processPayslipPdfDirect,
   createBatch,
   deleteBatchPayslips,
   insertPayslips,
@@ -42,6 +43,7 @@ const PayslipUploadSection = ({ profileId, batches, onComplete }: Props) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1));
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
+  const [parseMode, setParseMode] = useState<'direct' | 'ocr'>('direct');
 
   const [processing, setProcessing] = useState(false);
   const [pagesDone, setPagesDone] = useState(0);
@@ -92,11 +94,14 @@ const PayslipUploadSection = ({ profileId, batches, onComplete }: Props) => {
       const allProfiles = await getAllProfiles();
       setProfiles(allProfiles);
 
-      // 4. OCR all pages
-      const ocrResults = await processPayslipPdf(selectedFile, batch.id, (done, total) => {
+      // 4. Parse all pages (direct or OCR)
+      const onPageDone = (done: number, total: number) => {
         setPagesDone(done);
         setTotalPages(total);
-      });
+      };
+      const ocrResults = parseMode === 'direct'
+        ? await processPayslipPdfDirect(selectedFile, onPageDone)
+        : await processPayslipPdf(selectedFile, batch.id, onPageDone);
 
       // 5. Match names + employee_code
       const allItems = ocrResults.flatMap(r => [
@@ -218,6 +223,20 @@ const PayslipUploadSection = ({ profileId, batches, onComplete }: Props) => {
               </Select>
             </div>
 
+            {/* Parse mode */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">วิธีอ่าน</label>
+              <Select value={parseMode} onValueChange={(v) => setParseMode(v as 'direct' | 'ocr')}>
+                <SelectTrigger className="w-36 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="direct">อ่านไฟล์ตรง</SelectItem>
+                  <SelectItem value="ocr">Gemini OCR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* File picker */}
             <div className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground">ไฟล์ PDF</label>
@@ -234,9 +253,9 @@ const PayslipUploadSection = ({ profileId, batches, onComplete }: Props) => {
               className="h-9 gap-1.5 bg-blue-600 hover:bg-blue-700"
             >
               {processing ? (
-                <><Loader2 className="h-4 w-4 animate-spin" />กำลัง OCR...</>
+                <><Loader2 className="h-4 w-4 animate-spin" />กำลังประมวลผล...</>
               ) : (
-                <><Upload className="h-4 w-4" />อัพโหลด + OCR</>
+                <><Upload className="h-4 w-4" />อัพโหลด + อ่านไฟล์</>
               )}
             </Button>
           </div>

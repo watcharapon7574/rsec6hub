@@ -5,25 +5,26 @@ import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import FastDocLogo from '@/components/ui/FastDocLogo';
-import { 
-  Calendar, 
-  FileText, 
-  ClipboardList, 
-  Bell, 
+import CalendarWidget from '@/components/Dashboard/CalendarWidget';
+import {
+  Calendar,
+  FileText,
+  ClipboardList,
+  Bell,
   Users,
-  TrendingUp,
   CheckCircle,
-  Clock
+  Clock,
+  Plus,
+  Send,
+  ScanLine,
+  ListTodo,
+  ChevronRight,
 } from 'lucide-react';
 
 const Dashboard = () => {
-  // ไม่ต้องเช็ค loading/isAuthenticated ที่นี่ เพราะ ProtectedRoute guard อยู่แล้ว
-  // การสร้าง useEmployeeAuth() instance ใหม่จะทำให้ loading ค้างซ้ำซ้อน
   const { profile } = useEmployeeAuth();
-
   const navigate = useNavigate();
 
-  // Show dashboard even if profile is still loading
   const displayName = profile ? `${profile.first_name} ${profile.last_name}` : 'ผู้ใช้งาน';
 
   const getPositionText = (position: string) => {
@@ -70,10 +71,9 @@ const Dashboard = () => {
                 <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900">
                   <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
-                <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">12</span>
               </div>
               <h3 className="font-semibold text-foreground text-sm">คำขอลา</h3>
-              <p className="text-xs text-muted-foreground">เดือนนี้</p>
+              <p className="text-xs text-muted-foreground">จัดการวันลา</p>
             </CardContent>
           </Card>
 
@@ -81,120 +81,139 @@ const Dashboard = () => {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
-                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
+                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 dark:text-blue-600">8</span>
               </div>
               <h3 className="font-semibold text-foreground text-sm">เอกสาร</h3>
-              <p className="text-xs text-muted-foreground">รอ 3 ฉบับ</p>
+              <p className="text-xs text-muted-foreground">หนังสือราชการ</p>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/newsfeed')}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-teal-100">
-                  <ClipboardList className="h-5 w-5 text-teal-600" />
+                <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900">
+                  <ClipboardList className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                 </div>
-                <span className="text-2xl font-bold text-teal-600">25</span>
               </div>
               <h3 className="font-semibold text-foreground text-sm">รายงาน</h3>
-              <p className="text-xs text-muted-foreground">เดือนนี้</p>
+              <p className="text-xs text-muted-foreground">รายงานประจำวัน</p>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/notifications')}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-rose-100">
-                  <Bell className="h-5 w-5 text-rose-600" />
+                <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900">
+                  <Bell className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                 </div>
-                <span className="text-2xl font-bold text-rose-600">5</span>
               </div>
               <h3 className="font-semibold text-foreground text-sm">แจ้งเตือน</h3>
-              <p className="text-xs text-muted-foreground">ยังไม่อ่าน</p>
+              <p className="text-xs text-muted-foreground">การแจ้งเตือน</p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Main content: Calendar + Quick Actions */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
-          {/* Recent Activities */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                กิจกรรมล่าสุด
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900">
-                  <div className="p-1.5 bg-green-500 rounded-full">
-                    <CheckCircle className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">คำขอลาป่วยได้รับการอนุมัติ</p>
-                    <p className="text-xs text-muted-foreground">2 ชั่วโมงที่แล้ว</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900">
-                  <div className="p-1.5 bg-blue-500 rounded-full">
-                    <FileText className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">ส่งหนังสือราชการเรื่องจัดซื้อ</p>
-                    <p className="text-xs text-muted-foreground">1 วันที่แล้ว</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-teal-50 dark:bg-teal-950 border border-teal-100 dark:border-teal-900">
-                  <div className="p-1.5 bg-teal-500 rounded-full">
-                    <ClipboardList className="h-3.5 w-3.5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">ส่งรายงานการปฏิบัติงานประจำวัน</p>
-                    <p className="text-xs text-muted-foreground">2 วันที่แล้ว</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Google Calendar */}
+          <CalendarWidget />
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                การดำเนินการด่วน
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-100 dark:border-amber-900">
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">รอการอนุมัติคำขอลา</p>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 dark:text-amber-600 mb-2">มี 2 คำขอรอการพิจารณา</p>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/leave-requests')}>
-                    ดูรายละเอียด
+          {/* Quick Actions + Recent */}
+          <div className="space-y-4">
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Plus className="h-5 w-5 text-muted-foreground" />
+                  ดำเนินการด่วน
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="h-auto py-3 flex flex-col items-center gap-1.5"
+                    onClick={() => navigate('/create-document')}
+                  >
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <span className="text-xs">สร้างหนังสือ</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-auto py-3 flex flex-col items-center gap-1.5"
+                    onClick={() => navigate('/leave-requests')}
+                  >
+                    <Send className="h-5 w-5 text-orange-600" />
+                    <span className="text-xs">ขอลา</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-auto py-3 flex flex-col items-center gap-1.5"
+                    onClick={() => navigate('/ocr')}
+                  >
+                    <ScanLine className="h-5 w-5 text-purple-600" />
+                    <span className="text-xs">OCR สแกน</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-auto py-3 flex flex-col items-center gap-1.5"
+                    onClick={() => navigate('/assigned-tasks')}
+                  >
+                    <ListTodo className="h-5 w-5 text-teal-600" />
+                    <span className="text-xs">งานที่มอบหมาย</span>
                   </Button>
                 </div>
-                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900">
-                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">เอกสารใหม่</p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 dark:text-blue-600 mb-2">ได้รับหนังสือราชการ 1 ฉบับ</p>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/documents')}>
-                    เปิดดู
-                  </Button>
+              </CardContent>
+            </Card>
+
+            {/* Recent Activities */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                  กิจกรรมล่าสุด
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900">
+                    <div className="p-1.5 bg-green-500 rounded-full flex-shrink-0">
+                      <CheckCircle className="h-3 w-3 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">คำขอลาป่วยได้รับการอนุมัติ</p>
+                      <p className="text-xs text-muted-foreground">2 ชั่วโมงที่แล้ว</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900">
+                    <div className="p-1.5 bg-blue-500 rounded-full flex-shrink-0">
+                      <FileText className="h-3 w-3 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">ส่งหนังสือราชการเรื่องจัดซื้อ</p>
+                      <p className="text-xs text-muted-foreground">1 วันที่แล้ว</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950 border border-teal-100 dark:border-teal-900">
+                    <div className="p-1.5 bg-teal-500 rounded-full flex-shrink-0">
+                      <ClipboardList className="h-3 w-3 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">ส่งรายงานการปฏิบัติงานประจำวัน</p>
+                      <p className="text-xs text-muted-foreground">2 วันที่แล้ว</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900">
-                  <p className="text-sm font-medium text-green-800 dark:text-green-200">รายงานสำเร็จ</p>
-                  <p className="text-xs text-green-600 dark:text-green-400 dark:text-green-600 mb-2">ส่งรายงานครบถ้วนแล้ว</p>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/newsfeed')}>
-                    ตรวจสอบ
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
+        {/* Admin Panel */}
         {isAdmin && (
           <Card>
             <CardHeader>

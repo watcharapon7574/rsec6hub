@@ -190,7 +190,7 @@ export const chatService = {
   },
 
   /**
-   * ดึงรายชื่อพนักงานทุกคน (ยกเว้น admin) พร้อมสถานะห้องแชท
+   * ดึงรายชื่อครูทุกคน (ยกเว้น admin) พร้อมสถานะห้องแชท
    */
   async getAllUsersWithChatStatus(): Promise<ChatRoom[]> {
     // Query 1: profiles ที่มี telegram

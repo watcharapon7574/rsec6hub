@@ -18,9 +18,9 @@ interface ProfileSelectorProps {
 const ProfileSelector: React.FC<ProfileSelectorProps> = ({
   onSelectProfile,
   selectedProfile,
-  triggerText = "เลือกพนักงาน",
+  triggerText = "เลือกครู",
   filterByPosition,
-  placeholder = "เลือกพนักงาน..."
+  placeholder = "เลือกครู..."
 }) => {
   const [open, setOpen] = useState(false);
 

@@ -203,7 +203,7 @@ describe('shouldShowMemo — Regression (ระบบเดิ��)', () => {
     });
   });
 
-  describe('Regular User (ครู / พนักงาน)', () => {
+  describe('Regular User (ครู)', () => {
     const userId = 'user-teacher';
     const params = makeParams({
       permissions: { isAdmin: false, isClerk: false, position: 'government_teacher' },

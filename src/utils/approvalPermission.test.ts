@@ -139,7 +139,7 @@ describe('checkApprovalAccess — Management', () => {
 });
 
 // =============================================
-// Regular User (ครู / พนักงาน)
+// Regular User (ครู)
 // =============================================
 
 describe('checkApprovalAccess — Regular User', () => {

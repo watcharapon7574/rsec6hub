@@ -37,7 +37,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="flex items-center space-x-4">
         <h1 className="text-3xl font-bold text-foreground flex items-center">
           <User className="h-8 w-8 mr-3 text-blue-600 dark:text-blue-400 dark:text-blue-600" />
-          โปรไฟล์พนักงาน
+          โปรไฟล์ครู
         </h1>
         {isProfileIncomplete && (
           <Badge variant="destructive">

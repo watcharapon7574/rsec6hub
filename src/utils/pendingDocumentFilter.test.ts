@@ -135,7 +135,7 @@ describe('filterPendingMemos — Parallel Group', () => {
 });
 
 // =============================================
-// Regular User (ครู / พนักงาน)
+// Regular User (ครู)
 // =============================================
 
 describe('filterPendingMemos — Regular User', () => {

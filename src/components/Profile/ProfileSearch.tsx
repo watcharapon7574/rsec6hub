@@ -68,7 +68,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="ค้นหาพนักงาน..."
+              placeholder="ค้นหาครู..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-purple-400"
@@ -158,7 +158,7 @@ const ProfileSearch: React.FC<ProfileSearchProps> = ({
 
       {filteredProfiles.length === 0 && (
         <div className="text-center text-muted-foreground py-8">
-          ไม่พบข้อมูลพนักงานที่ค้นหา
+          ไม่พบข้อมูลครูที่ค้นหา
         </div>
       )}
 

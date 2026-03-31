@@ -11,8 +11,8 @@ const GOOGLE_API_KEY = Deno.env.get('GOOGLE_CALENDAR_API_KEY') || 'AIzaSyACXC0P_
 
 // Multiple calendars with their default colors
 const CALENDARS = [
-  { id: 'maplopburi6@gmail.com', color: '#039BE5', name: 'ศูนย์ฯ เขต 6' },
-  { id: 'rsec01@ssnb.ac.th', color: '#D50000', name: 'สำนักบริหารงาน' },
+  { id: 'maplopburi6@gmail.com', color: '#039BE5', name: 'งาน' },
+  { id: 'th.th#holiday@group.v.calendar.google.com', color: '#33B679', name: 'วันหยุด' },
 ]
 
 // Google Calendar API colorId → hex color mapping

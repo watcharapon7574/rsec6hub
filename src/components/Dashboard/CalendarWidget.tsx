@@ -147,11 +147,11 @@ const CalendarWidget: React.FC = () => {
         <div className="flex items-center gap-4 mb-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#039BE5' }} />
-            ศูนย์ฯ เขต 6
+            งาน
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#D50000' }} />
-            สำนักบริหารงาน
+            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#33B679' }} />
+            วันหยุด
           </div>
         </div>
 

@@ -114,14 +114,14 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Main content: Calendar + Quick Actions */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
-          {/* Google Calendar */}
+        {/* Google Calendar - full width */}
+        <div className="mb-6">
           <CalendarWidget />
+        </div>
 
-          {/* Quick Actions + Recent */}
-          <div className="space-y-4">
-            {/* Quick Actions */}
+        {/* Quick Actions + Recent */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
+          {/* Quick Actions */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -210,7 +210,6 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
         </div>
 
         {/* Admin Panel */}

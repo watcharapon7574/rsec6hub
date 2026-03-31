@@ -54,15 +54,26 @@ function parseICS(icsText: string): CalendarEvent[] {
     const value = line.substring(colonIdx + 1).replace(/\\n/g, '\n').replace(/\\,/g, ',').replace(/\\\\/g, '\\')
     const key = keyPart.split(';')[0]
 
+    // Strip HTML tags and decode common entities
+    const stripHtml = (s: string) =>
+      s.replace(/<[^>]*>/g, '')
+       .replace(/&amp;/g, '&')
+       .replace(/&lt;/g, '<')
+       .replace(/&gt;/g, '>')
+       .replace(/&nbsp;/g, ' ')
+       .replace(/&quot;/g, '"')
+       .replace(/  +/g, ' ')
+       .trim()
+
     switch (key) {
       case 'UID':
         current.id = value
         break
       case 'SUMMARY':
-        current.summary = value
+        current.summary = stripHtml(value)
         break
       case 'DESCRIPTION':
-        current.description = value
+        current.description = stripHtml(value)
         break
       case 'LOCATION':
         current.location = value

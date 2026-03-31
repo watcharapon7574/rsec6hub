@@ -5,7 +5,7 @@ import type { PayslipData, ProfileSummary, MatchResult } from '@/services/paysli
 
 export interface MatchedRow {
   pageNumber: number;
-  half: 'left' | 'right';
+  half: 'top' | 'bottom';
   data: PayslipData;
   profileId: string | null;
   matchScore: number;
@@ -16,7 +16,7 @@ export interface MatchedRow {
 interface Props {
   rows: MatchedRow[];
   profiles: ProfileSummary[];
-  onChangeMatch: (pageNumber: number, half: 'left' | 'right', profileId: string | null) => void;
+  onChangeMatch: (pageNumber: number, half: 'top' | 'bottom', profileId: string | null) => void;
 }
 
 const MatchBadge = ({ row }: { row: MatchedRow }) => {
@@ -64,7 +64,7 @@ const PayslipMatchTable = ({ rows, profiles, onChangeMatch }: Props) => {
             return (
               <tr key={key} className="hover:bg-muted/40 transition-colors">
                 <td className="px-3 py-2 text-muted-foreground">
-                  {row.pageNumber}/{row.half === 'left' ? '←' : '→'}
+                  {row.pageNumber}/{row.half === 'top' ? '↑' : '↓'}
                 </td>
                 <td className="px-3 py-2 font-medium">
                   {row.data.name || <span className="text-amber-500 italic text-xs">OCR ไม่ได้ชื่อ</span>}

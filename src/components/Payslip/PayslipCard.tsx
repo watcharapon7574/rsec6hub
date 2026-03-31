@@ -47,7 +47,7 @@ const PayslipCard = ({ payslip }: Props) => {
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const blob = await cropPayslipPDF(batch.file_url, payslip.page_number, payslip.half);
+      const blob = await cropPayslipPDF(batch.file_url, payslip.page_number, payslip.half as 'top' | 'bottom');
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -93,41 +93,54 @@ const PayslipCard = ({ payslip }: Props) => {
       </div>
 
       <CardContent className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Income */}
-          <div>
-            <div className="flex items-center gap-1.5 text-green-700 dark:text-green-400 font-semibold text-sm mb-2">
-              <TrendingUp className="h-4 w-4" />
-              รายรับ
-            </div>
-            <div className="space-y-0.5">
-              {payslip.income_items.filter(it => it.label.trim() && !isFooterItem(it.label)).map((item, i) => <ItemRow key={i} item={item} />)}
-            </div>
-            <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-sm text-green-700 dark:text-green-400">
-              <span>รวมรับ</span>
-              <span>{fmt(payslip.total_income)}</span>
-            </div>
+        {/* Metadata row */}
+        {(payslip as any).position_number && (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-3 pb-2 border-b">
+            {(payslip as any).position_number && (
+              <span>เลขตำแหน่ง: <strong className="text-foreground">{(payslip as any).position_number}</strong></span>
+            )}
+            {(payslip as any).bank_name && (
+              <span>ธนาคาร: <strong className="text-foreground">{(payslip as any).bank_name}</strong></span>
+            )}
+            {(payslip as any).bank_account && (
+              <span>เลขบัญชี: <strong className="text-foreground">{(payslip as any).bank_account}</strong></span>
+            )}
           </div>
+        )}
 
-          {/* Deductions */}
-          <div>
-            <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold text-sm mb-2">
-              <TrendingDown className="h-4 w-4" />
-              รายหัก
-            </div>
-            <div className="space-y-0.5">
-              {payslip.deduction_items.filter(it => it.label.trim() && !isFooterItem(it.label)).map((item, i) => <ItemRow key={i} item={item} />)}
-            </div>
-            <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-sm text-red-600 dark:text-red-400">
-              <span>รวมหัก</span>
-              <span>{fmt(payslip.total_deductions)}</span>
-            </div>
+        {/* Income items - grid layout */}
+        <div>
+          <div className="flex items-center gap-1.5 text-green-700 dark:text-green-400 font-semibold text-sm mb-2">
+            <TrendingUp className="h-4 w-4" />
+            รายรับ
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-0.5">
+            {payslip.income_items.filter(it => it.label.trim() && !isFooterItem(it.label)).map((item, i) => <ItemRow key={i} item={item} />)}
+          </div>
+          <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-sm text-green-700 dark:text-green-400">
+            <span>รวมรับทั้งเดือน</span>
+            <span>{fmt(payslip.total_income)}</span>
+          </div>
+        </div>
+
+        {/* Deductions - grid layout */}
+        <div className="mt-3">
+          <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-semibold text-sm mb-2">
+            <TrendingDown className="h-4 w-4" />
+            รายจ่าย
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-0.5">
+            {payslip.deduction_items.filter(it => it.label.trim() && !isFooterItem(it.label)).map((item, i) => <ItemRow key={i} item={item} />)}
+          </div>
+          <div className="border-t mt-2 pt-2 flex justify-between font-semibold text-sm text-red-600 dark:text-red-400">
+            <span>รวมจ่ายทั้งเดือน</span>
+            <span>{fmt(payslip.total_deductions)}</span>
           </div>
         </div>
 
         {/* Net pay */}
         <div className="mt-4 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-4 py-3 flex justify-between items-center">
-          <span className="font-semibold text-blue-800 dark:text-blue-200">เงินสุทธิ</span>
+          <span className="font-semibold text-blue-800 dark:text-blue-200">รับสุทธิ</span>
           <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">
             ฿{fmt(payslip.net_pay)}
           </span>

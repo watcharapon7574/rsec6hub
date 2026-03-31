@@ -100,24 +100,24 @@ const PayslipUploadSection = ({ profileId, batches, onComplete }: Props) => {
 
       // 5. Match names + employee_code
       const allItems = ocrResults.flatMap(r => [
-        { name: r.left.name },
-        { name: r.right.name },
+        { name: r.top.name },
+        { name: r.bottom.name },
       ]);
       const matchMap = matchProfiles(allItems, allProfiles);
 
       // 6. Build match rows — แสดงทุก row ทุกหน้า (OCR ที่ fail ให้ผู้นำเข้าระบุเอง)
       const rows: MatchedRow[] = ocrResults.flatMap(r => [
         {
-          pageNumber: r.pageNumber, half: 'left' as const, data: r.left, rawText: r.rawText,
-          profileId: matchMap.get(r.left.name)?.profileId ?? null,
-          matchScore: matchMap.get(r.left.name)?.score ?? 0,
-          matchType: matchMap.get(r.left.name)?.matchType ?? 'none',
+          pageNumber: r.pageNumber, half: 'top' as const, data: r.top, rawText: r.rawText,
+          profileId: matchMap.get(r.top.name)?.profileId ?? null,
+          matchScore: matchMap.get(r.top.name)?.score ?? 0,
+          matchType: matchMap.get(r.top.name)?.matchType ?? 'none',
         },
         {
-          pageNumber: r.pageNumber, half: 'right' as const, data: r.right, rawText: r.rawText,
-          profileId: matchMap.get(r.right.name)?.profileId ?? null,
-          matchScore: matchMap.get(r.right.name)?.score ?? 0,
-          matchType: matchMap.get(r.right.name)?.matchType ?? 'none',
+          pageNumber: r.pageNumber, half: 'bottom' as const, data: r.bottom, rawText: r.rawText,
+          profileId: matchMap.get(r.bottom.name)?.profileId ?? null,
+          matchScore: matchMap.get(r.bottom.name)?.score ?? 0,
+          matchType: matchMap.get(r.bottom.name)?.matchType ?? 'none',
         },
       ]);
 
@@ -129,7 +129,7 @@ const PayslipUploadSection = ({ profileId, batches, onComplete }: Props) => {
     }
   }, [selectedFile, selectedMonth, selectedYear, profileId]);
 
-  const handleChangeMatch = useCallback((pageNumber: number, half: 'left' | 'right', profileId: string | null) => {
+  const handleChangeMatch = useCallback((pageNumber: number, half: 'top' | 'bottom', profileId: string | null) => {
     setMatchRows(prev => prev.map(r =>
       r.pageNumber === pageNumber && r.half === half ? { ...r, profileId } : r
     ));

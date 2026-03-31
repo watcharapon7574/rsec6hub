@@ -10,8 +10,8 @@ export interface CalendarEvent {
   end: string;
   allDay: boolean;
   colorId?: string;
-  color?: string;      // hex bg color from Google Calendar
-  colorName?: string;
+  color?: string;       // hex bg color from Google Calendar
+  calendarName?: string; // which calendar this event belongs to
 }
 
 interface UseGoogleCalendarOptions {

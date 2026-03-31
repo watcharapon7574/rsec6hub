@@ -143,6 +143,18 @@ const CalendarWidget: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Calendar legend */}
+        <div className="flex items-center gap-4 mb-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#039BE5' }} />
+            ศูนย์ฯ เขต 6
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#D50000' }} />
+            สำนักบริหารงาน
+          </div>
+        </div>
+
         {error && (
           <div className="text-sm text-destructive mb-3 p-2 rounded bg-destructive/10">
             ไม่สามารถโหลดปฏิทินได้: {error}
@@ -355,6 +367,11 @@ const EventDetailItem: React.FC<{ event: CalendarEvent }> = ({ event }) => {
                 <MapPin className="h-3 w-3" />
                 {event.location}
               </span>
+            )}
+            {event.calendarName && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                {event.calendarName}
+              </Badge>
             )}
           </div>
         </div>

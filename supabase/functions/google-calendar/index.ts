@@ -9,24 +9,26 @@ const corsHeaders = {
 
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_CALENDAR_API_KEY') || 'AIzaSyACXC0P_lc2SCv29IntKtG_GjddGpG1yNI'
 
-// Google Calendar API colorId → hex color mapping
-// https://developers.google.com/calendar/api/v3/reference/colors
-const COLOR_MAP: Record<string, { bg: string; fg: string; name: string }> = {
-  '1':  { bg: '#7986CB', fg: '#1d1d1d', name: 'lavender' },
-  '2':  { bg: '#33B679', fg: '#1d1d1d', name: 'sage' },
-  '3':  { bg: '#8E24AA', fg: '#ffffff', name: 'grape' },
-  '4':  { bg: '#E67C73', fg: '#1d1d1d', name: 'flamingo' },
-  '5':  { bg: '#F6BF26', fg: '#1d1d1d', name: 'banana' },
-  '6':  { bg: '#F4511E', fg: '#ffffff', name: 'tangerine' },
-  '7':  { bg: '#039BE5', fg: '#ffffff', name: 'peacock' },
-  '8':  { bg: '#616161', fg: '#ffffff', name: 'graphite' },
-  '9':  { bg: '#3F51B5', fg: '#ffffff', name: 'blueberry' },
-  '10': { bg: '#0B8043', fg: '#ffffff', name: 'basil' },
-  '11': { bg: '#D50000', fg: '#ffffff', name: 'tomato' },
-}
+// Multiple calendars with their default colors
+const CALENDARS = [
+  { id: 'maplopburi6@gmail.com', color: '#039BE5', name: 'ศูนย์ฯ เขต 6' },
+  { id: 'rsec01@ssnb.ac.th', color: '#D50000', name: 'สำนักบริหารงาน' },
+]
 
-// Default calendar color (when no colorId is set on event)
-const DEFAULT_COLOR = { bg: '#039BE5', fg: '#ffffff', name: 'default' }
+// Google Calendar API colorId → hex color mapping
+const COLOR_MAP: Record<string, string> = {
+  '1':  '#7986CB', // lavender
+  '2':  '#33B679', // sage
+  '3':  '#8E24AA', // grape
+  '4':  '#E67C73', // flamingo
+  '5':  '#F6BF26', // banana
+  '6':  '#F4511E', // tangerine
+  '7':  '#039BE5', // peacock
+  '8':  '#616161', // graphite
+  '9':  '#3F51B5', // blueberry
+  '10': '#0B8043', // basil
+  '11': '#D50000', // tomato
+}
 
 interface CalendarEvent {
   id: string
@@ -37,8 +39,8 @@ interface CalendarEvent {
   end: string
   allDay: boolean
   colorId: string
-  color: string      // hex bg color
-  colorName: string   // human-readable name
+  color: string
+  calendarName: string
 }
 
 function stripHtml(s: string): string {
@@ -53,6 +55,55 @@ function stripHtml(s: string): string {
     .trim()
 }
 
+async function fetchCalendarEvents(
+  calendarId: string,
+  defaultColor: string,
+  calendarName: string,
+  timeMin: string,
+  timeMax: string
+): Promise<CalendarEvent[]> {
+  const apiUrl = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`)
+  apiUrl.searchParams.set('key', GOOGLE_API_KEY)
+  apiUrl.searchParams.set('timeMin', timeMin)
+  apiUrl.searchParams.set('timeMax', timeMax)
+  apiUrl.searchParams.set('singleEvents', 'true')
+  apiUrl.searchParams.set('orderBy', 'startTime')
+  apiUrl.searchParams.set('maxResults', '250')
+
+  const response = await fetch(apiUrl.toString())
+
+  if (!response.ok) {
+    console.error(`Failed to fetch ${calendarId}: ${response.status}`)
+    return []
+  }
+
+  const data = await response.json()
+  const items = data.items || []
+
+  return items.map((item: any) => {
+    const colorId = item.colorId || ''
+    // Use event-specific color if set, otherwise use the calendar's default color
+    const color = colorId ? (COLOR_MAP[colorId] || defaultColor) : defaultColor
+
+    const isAllDay = !!item.start?.date
+    const start = isAllDay ? item.start.date : (item.start?.dateTime || '')
+    const end = isAllDay ? item.end.date : (item.end?.dateTime || '')
+
+    return {
+      id: item.id || crypto.randomUUID(),
+      summary: stripHtml(item.summary || '(ไม่มีชื่อ)'),
+      description: stripHtml(item.description || ''),
+      location: item.location || '',
+      start,
+      end,
+      allDay: isAllDay,
+      colorId,
+      color,
+      calendarName,
+    }
+  })
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -60,14 +111,12 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url)
-    const calendarId = url.searchParams.get('calendarId') || 'maplopburi6@gmail.com'
     const month = url.searchParams.get('month') // YYYY-MM
 
     if (!GOOGLE_API_KEY) {
       throw new Error('GOOGLE_CALENDAR_API_KEY not configured')
     }
 
-    // Build time range for the month
     let timeMin: string
     let timeMax: string
     if (month) {
@@ -75,53 +124,24 @@ serve(async (req) => {
       timeMin = new Date(y, m - 1, 1).toISOString()
       timeMax = new Date(y, m, 1).toISOString()
     } else {
-      // Default: current month ± 1 month
       const now = new Date()
       timeMin = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
       timeMax = new Date(now.getFullYear(), now.getMonth() + 2, 1).toISOString()
     }
 
-    const apiUrl = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`)
-    apiUrl.searchParams.set('key', GOOGLE_API_KEY)
-    apiUrl.searchParams.set('timeMin', timeMin)
-    apiUrl.searchParams.set('timeMax', timeMax)
-    apiUrl.searchParams.set('singleEvents', 'true')
-    apiUrl.searchParams.set('orderBy', 'startTime')
-    apiUrl.searchParams.set('maxResults', '250')
+    // Fetch all calendars in parallel
+    const results = await Promise.all(
+      CALENDARS.map(cal => fetchCalendarEvents(cal.id, cal.color, cal.name, timeMin, timeMax))
+    )
 
-    const response = await fetch(apiUrl.toString())
+    // Merge and sort by start time
+    const events = results.flat().sort((a, b) => a.start.localeCompare(b.start))
 
-    if (!response.ok) {
-      const errText = await response.text()
-      throw new Error(`Google API error ${response.status}: ${errText}`)
-    }
-
-    const data = await response.json()
-    const items = data.items || []
-
-    const events: CalendarEvent[] = items.map((item: any) => {
-      const colorId = item.colorId || ''
-      const colorInfo = COLOR_MAP[colorId] || DEFAULT_COLOR
-
-      const isAllDay = !!item.start?.date
-      const start = isAllDay ? item.start.date : (item.start?.dateTime || '')
-      const end = isAllDay ? item.end.date : (item.end?.dateTime || '')
-
-      return {
-        id: item.id || crypto.randomUUID(),
-        summary: stripHtml(item.summary || '(ไม่มีชื่อ)'),
-        description: stripHtml(item.description || ''),
-        location: item.location || '',
-        start,
-        end,
-        allDay: isAllDay,
-        colorId,
-        color: colorInfo.bg,
-        colorName: colorInfo.name,
-      }
-    })
-
-    return new Response(JSON.stringify({ events, count: events.length }), {
+    return new Response(JSON.stringify({
+      events,
+      count: events.length,
+      calendars: CALENDARS.map(c => ({ name: c.name, color: c.color })),
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {

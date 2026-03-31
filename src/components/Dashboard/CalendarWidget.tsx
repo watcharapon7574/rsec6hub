@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, ChevronLeft, ChevronRight, MapPin, RefreshCw } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, MapPin, RefreshCw } from 'lucide-react';
 import { useGoogleCalendar, type CalendarEvent } from '@/hooks/useGoogleCalendar';
 
 const THAI_MONTHS = [
@@ -104,6 +104,15 @@ const CalendarWidget: React.FC = () => {
             ปฏิทินงาน
           </CardTitle>
           <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => window.open('https://calendar.google.com/calendar/u/0/r?cid=maplopburi6@gmail.com', '_blank')}
+            >
+              <ExternalLink className="h-3 w-3" />
+              จัดการปฏิทิน
+            </Button>
             {!isCurrentMonth && (
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={goToToday}>
                 วันนี้

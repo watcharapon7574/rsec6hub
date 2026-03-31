@@ -528,7 +528,7 @@ export async function insertPayslips(
 
 export async function updateBatchStatus(
   batchId: string,
-  update: { status: string; total_records?: number; matched_records?: number }
+  update: { status: string; total_records?: number; matched_records?: number; page_count?: number }
 ): Promise<void> {
   const { error } = await (supabase as any).from('payslip_batches')
     .update({ ...update, updated_at: new Date().toISOString() })

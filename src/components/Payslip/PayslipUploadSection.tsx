@@ -155,10 +155,12 @@ const PayslipUploadSection = ({ profileId, batches, onComplete }: Props) => {
       })));
 
       const matched = matchRows.filter(r => r.profileId).length;
+      const pageCount = new Set(matchRows.map(r => r.pageNumber)).size;
       await updateBatchStatus(currentBatchId, {
         status: 'completed',
         total_records: matchRows.length,
         matched_records: matched,
+        page_count: pageCount,
       });
 
       toast({ title: `บันทึกสำเร็จ ${matchRows.length} รายการ (จับคู่ได้ ${matched} คน)` });
@@ -291,24 +293,46 @@ const PayslipUploadSection = ({ profileId, batches, onComplete }: Props) => {
           <CardContent className="p-4">
             <h3 className="font-semibold text-sm text-muted-foreground mb-3">ประวัติการอัพโหลด</h3>
             <div className="space-y-2">
-              {batches.map(b => (
-                <div key={b.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/40">
-                  <span className="font-medium">
-                    {THAI_MONTHS[b.month]} {b.year + 543}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground text-xs">
-                      {b.matched_records}/{b.total_records} คน
-                    </span>
-                    <Badge
-                      variant={b.status === 'completed' ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {b.status === 'completed' ? 'สำเร็จ' : b.status === 'error' ? 'ผิดพลาด' : 'กำลังดำเนินการ'}
-                    </Badge>
+              {batches.map(b => {
+                const statusLabel = b.status === 'completed'
+                  ? 'สำเร็จ'
+                  : b.status === 'error'
+                    ? 'ผิดพลาด'
+                    : b.total_records > 0
+                      ? 'รอบันทึก'
+                      : 'กำลัง OCR';
+                const statusVariant = b.status === 'completed'
+                  ? 'default' as const
+                  : b.status === 'error'
+                    ? 'destructive' as const
+                    : 'secondary' as const;
+                const updatedDate = b.updated_at
+                  ? new Date(b.updated_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+                  : '';
+                return (
+                  <div key={b.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/40">
+                    <div>
+                      <span className="font-medium">
+                        {THAI_MONTHS[b.month]} {b.year + 543}
+                      </span>
+                      {updatedDate && (
+                        <span className="text-muted-foreground text-xs ml-2">อัพเดท {updatedDate}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {b.total_records > 0 && (
+                        <span className="text-muted-foreground text-xs">
+                          จับคู่ {b.matched_records}/{b.total_records} คน
+                          {b.page_count > 0 && ` · ${b.page_count} หน้า`}
+                        </span>
+                      )}
+                      <Badge variant={statusVariant} className="text-xs">
+                        {statusLabel}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

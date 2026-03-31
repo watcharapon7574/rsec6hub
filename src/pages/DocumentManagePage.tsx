@@ -485,13 +485,15 @@ const DocumentManagePage: React.FC = () => {
     return result;
   }, [signers, parallelSigners, profiles]);
 
-  // ตั้ง default selectedSignerIndex เป็นผู้บริหารคนแรก (ไม่ใช่ผู้เขียน/parallel)
+  // ตั้ง default selectedSignerIndex เป็นผู้บริหารคนแรก (แค่ครั้งแรก)
+  const hasSetDefaultSigner = React.useRef(false);
   React.useEffect(() => {
-    if (allSigners.length > 0) {
+    if (allSigners.length > 0 && !hasSetDefaultSigner.current) {
       const adminRoles = ['assistant_director', 'deputy_director', 'director'];
       const firstAdminIndex = allSigners.findIndex(s => adminRoles.includes(s.role));
       if (firstAdminIndex !== -1) {
         setSelectedSignerIndex(firstAdminIndex);
+        hasSetDefaultSigner.current = true;
       }
     }
   }, [allSigners]);

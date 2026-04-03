@@ -95,9 +95,11 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                 require_annotation: false,
               }));
               onParallelSignersChange(newSigners);
-              // ลบ annotation requirement ของคนที่ถูกลบออก
+              // ลบ annotation requirement ของคนที่ถูกลบออก (แต่รักษา annotation ของผู้บริหารที่อยู่ใน dropdown ไว้)
               const userIds = users.map(u => u.user_id);
-              onAnnotationRequiredChange(annotationRequiredUserIds.filter(id => userIds.includes(id)));
+              onAnnotationRequiredChange(annotationRequiredUserIds.filter(id =>
+                userIds.includes(id) || signers.some((s: any) => s.user_id === id)
+              ));
             }}
             placeholder="พิมพ์ชื่อเพื่อค้นหาผู้ลงนามเพิ่มเติม..."
             excludeUserIds={signers.map((s: any) => s.user_id)}

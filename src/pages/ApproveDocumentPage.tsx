@@ -66,28 +66,6 @@ const ApproveDocumentPage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [memoId]);
 
-  // Release signing_lock เมื่อออกจากหน้า + renew ทุก 2 นาทีตราบที่ยังอยู่
-  // ข้าม persistent lock สำหรับ parallel signers (ลงนามพร้อมกันได้ → lock เฉพาะตอน submit)
-  useEffect(() => {
-    if (!memoId || !profile?.user_id || !memo) return;
-    const parallelConfig = (memo as any)?.parallel_signers;
-    const isParallelTurn = parallelConfig && memo.current_signer_order === parallelConfig.order;
-    if (isParallelTurn) return; // parallel signers ไม่ต้อง hold lock
-
-    // Renew lock ทุก 2 นาที
-    const renewInterval = setInterval(() => {
-      supabase.from('memos').update({
-        signing_lock: { locked_by: profile.user_id, locked_at: new Date().toISOString() }
-      } as any).eq('id', memoId);
-    }, 2 * 60 * 1000);
-
-    return () => {
-      clearInterval(renewInterval);
-      // Release lock เมื่อออกจากหน้า
-      supabase.from('memos').update({ signing_lock: null } as any).eq('id', memoId);
-    };
-  }, [memoId, profile?.user_id, memo?.current_signer_order]);
-
   // Lazy annotation: ขีดเขียนเก็บแค่ PNG overlays ใน memo_annotation_layers
   // ไม่แตะ pdf_draft_path จนกว่าจะกดอนุมัติ → ไม่ต้อง revert PDF เมื่อออกจากหน้า
   // แค่ลบ annotation layers ของ user นี้เมื่อออกโดยไม่ได้อนุมัติ
@@ -363,6 +341,27 @@ const ApproveDocumentPage: React.FC = () => {
     profile?.position === 'deputy_director' ||
     profile?.position === 'director'
   );
+
+  // Release signing_lock เมื่อออกจากหน้า + renew ทุก 2 นาทีตราบที่ยังอยู่
+  // ข้าม persistent lock สำหรับ parallel signers (ลงนามพร้อมกันได้ → lock เฉพาะตอน submit)
+  // ต้องอยู่หลัง const memo เพราะ dependency array ใช้ memo?.current_signer_order
+  useEffect(() => {
+    if (!memoId || !profile?.user_id || !memo) return;
+    const parallelConfig = (memo as any)?.parallel_signers;
+    const isParallelTurn = parallelConfig && memo.current_signer_order === parallelConfig.order;
+    if (isParallelTurn) return;
+
+    const renewInterval = setInterval(() => {
+      supabase.from('memos').update({
+        signing_lock: { locked_by: profile.user_id, locked_at: new Date().toISOString() }
+      } as any).eq('id', memoId);
+    }, 2 * 60 * 1000);
+
+    return () => {
+      clearInterval(renewInterval);
+      supabase.from('memos').update({ signing_lock: null } as any).eq('id', memoId);
+    };
+  }, [memoId, profile?.user_id, memo?.current_signer_order]);
 
   // Debug: แสดงข้อมูลสำหรับการ debug (ลบออกได้หลังจากแก้ไขเสร็จ)
   useEffect(() => {

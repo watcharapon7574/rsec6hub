@@ -625,9 +625,11 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                       <p class="text-xs font-semibold text-muted-foreground mb-2">ผู้ลงนามเพิ่มเติม</p>
                                       ${pc.signers.map((s: any) => {
                                         const done = (pc.completed_user_ids || []).includes(s.user_id);
+                                        const needsAnnotation = Array.isArray((memo as any)?.annotation_required_for) && (memo as any).annotation_required_for.includes(s.user_id);
                                         return `<div class="flex items-center gap-2 py-1">
                                           <span class="text-xs ${done ? 'text-green-600' : 'text-amber-600'}">${done ? '✓' : '○'}</span>
                                           <span class="text-xs text-foreground">${s.name}</span>
+                                          ${needsAnnotation ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-500 inline ml-0.5"><path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"/><path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"/></svg>' : ''}
                                         </div>`;
                                       }).join('')}
                                     `;
@@ -650,6 +652,9 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                       : 'text-amber-400 dark:text-amber-600'
                                   }`}>
                                     <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
+                                    {pc.signers.some((s: any) => Array.isArray((memo as any)?.annotation_required_for) && (memo as any).annotation_required_for.includes(s.user_id)) && (
+                                      <PenTool className="inline h-2.5 w-2.5 ml-0.5 text-orange-500" />
+                                    )}
                                   </span>
                                   <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${
                                     isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'
@@ -702,10 +707,9 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   }`}>{(() => {
                                     // Always use user_id to fetch fresh data from profiles
                                     const userProfile = profiles.find(p => p.user_id === signer.user_id);
-                                    if (userProfile) {
-                                      return `${userProfile.first_name} ${userProfile.last_name}`.trim();
-                                    }
-                                    return '-';
+                                    const name = userProfile ? `${userProfile.first_name} ${userProfile.last_name}`.trim() : '-';
+                                    const needsAnnotation = Array.isArray((memo as any)?.annotation_required_for) && (memo as any).annotation_required_for.includes(signer.user_id);
+                                    return <>{name}{needsAnnotation && <PenTool className="inline h-2.5 w-2.5 ml-0.5 text-orange-500" />}</>;
                                   })()}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
                                     memo.current_signer_order === 5 

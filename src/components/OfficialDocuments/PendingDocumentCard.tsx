@@ -274,8 +274,10 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
   });
 
   const handleManageDocument = async (memo: any) => {
-    // Parallel group → acquire lock ก่อน navigate (ป้องกันกดพร้อมกัน)
-    if (memo?.parallel_signers && memo.current_signer_order === memo.parallel_signers.order) {
+    // Parallel group → ข้าม lock เพราะลงนามพร้อมกันได้ (lock ใช้เฉพาะตอน submit จริง)
+    // Sequential signing → acquire lock ก่อน navigate
+    const isParallelTurn = memo?.parallel_signers && memo.current_signer_order === memo.parallel_signers.order;
+    if (!isParallelTurn && memo?.signing_lock) {
       const userId = profile?.user_id;
       if (userId) {
         const { data: lockAcquired } = await supabase.rpc('acquire_signing_lock', {
@@ -762,8 +764,10 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                     const signerList = Array.isArray(memo.signer_list_progress) ? memo.signer_list_progress : [];
                     const userSigner = signerList.find((signer: any) => signer.user_id === profile?.user_id);
                     // เช็ค signing_lock — ถ้ามีคนอื่นกำลังทำอยู่ (ไม่เกิน 5 นาที) → disable
+                    // ยกเว้น parallel signers ที่ลงนามพร้อมกันได้
                     const lockData = (memo as any)?.signing_lock;
-                    const isLockedByOther = lockData
+                    const isParallelTurn = memo?.parallel_signers && memo.current_signer_order === memo.parallel_signers?.order;
+                    const isLockedByOther = !isParallelTurn && lockData
                       && lockData.locked_by !== profile?.user_id
                       && (Date.now() - new Date(lockData.locked_at).getTime() < 5 * 60 * 1000);
 

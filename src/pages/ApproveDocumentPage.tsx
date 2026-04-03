@@ -71,8 +71,12 @@ const ApproveDocumentPage: React.FC = () => {
   useEffect(() => { originalPdfPathRef.current = originalPdfPath; }, [originalPdfPath]);
 
   // Release signing_lock เมื่อออกจากหน้า + renew ทุก 2 นาทีตราบที่ยังอยู่
+  // ข้าม persistent lock สำหรับ parallel signers (ลงนามพร้อมกันได้ → lock เฉพาะตอน submit)
   useEffect(() => {
-    if (!memoId || !profile?.user_id) return;
+    if (!memoId || !profile?.user_id || !memo) return;
+    const parallelConfig = (memo as any)?.parallel_signers;
+    const isParallelTurn = parallelConfig && memo.current_signer_order === parallelConfig.order;
+    if (isParallelTurn) return; // parallel signers ไม่ต้อง hold lock
 
     // Renew lock ทุก 2 นาที
     const renewInterval = setInterval(() => {
@@ -86,7 +90,7 @@ const ApproveDocumentPage: React.FC = () => {
       // Release lock เมื่อออกจากหน้า
       supabase.from('memos').update({ signing_lock: null } as any).eq('id', memoId);
     };
-  }, [memoId, profile?.user_id]);
+  }, [memoId, profile?.user_id, memo?.current_signer_order]);
 
   // Revert PDF ถ้าขีดเขียนแล้วแต่ไม่ได้อนุมัติ (ออกจากหน้า)
   useEffect(() => {

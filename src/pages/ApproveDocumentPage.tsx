@@ -56,8 +56,6 @@ const ApproveDocumentPage: React.FC = () => {
   const [hasCompletedAnnotation, setHasCompletedAnnotation] = useState(false); // ขีดเขียนเสร็จแล้ว
   const [showAnnotationEditor, setShowAnnotationEditor] = useState(false); // แสดง annotation editor
   const [freshPdfUrlForAnnotation, setFreshPdfUrlForAnnotation] = useState<string | null>(null);
-  const [originalPdfPath, setOriginalPdfPath] = useState<string | null>(null); // PDF เดิมก่อนขีดเขียน
-  const originalPdfPathRef = useRef<string | null>(null);
   const approvedRef = useRef(false); // track ว่าอนุมัติแล้วหรือยัง
   const pendingAnnotationImagesRef = useRef<Map<number, string> | null>(null); // PNG overlays รอวาดตอนอนุมัติ
   const [signingLockWaiting, setSigningLockWaiting] = useState(false); // กำลังรอ FIFO lock
@@ -67,9 +65,6 @@ const ApproveDocumentPage: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [memoId]);
-
-  // Sync ref กับ state
-  useEffect(() => { originalPdfPathRef.current = originalPdfPath; }, [originalPdfPath]);
 
   // Release signing_lock เมื่อออกจากหน้า + renew ทุก 2 นาทีตราบที่ยังอยู่
   // ข้าม persistent lock สำหรับ parallel signers (ลงนามพร้อมกันได้ → lock เฉพาะตอน submit)

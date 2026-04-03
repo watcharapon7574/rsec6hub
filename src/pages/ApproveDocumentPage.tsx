@@ -59,6 +59,7 @@ const ApproveDocumentPage: React.FC = () => {
   const [originalPdfPath, setOriginalPdfPath] = useState<string | null>(null); // PDF เดิมก่อนขีดเขียน
   const originalPdfPathRef = useRef<string | null>(null);
   const approvedRef = useRef(false); // track ว่าอนุมัติแล้วหรือยัง
+  const pendingAnnotationImagesRef = useRef<Map<number, string> | null>(null); // PNG overlays รอวาดตอนอนุมัติ
   const [signingLockWaiting, setSigningLockWaiting] = useState(false); // กำลังรอ FIFO lock
   const [signOnBehalfProfile, setSignOnBehalfProfile] = useState<any>(null); // profile ของคนที่ลงนามแทน
 
@@ -92,47 +93,39 @@ const ApproveDocumentPage: React.FC = () => {
     };
   }, [memoId, profile?.user_id, memo?.current_signer_order]);
 
-  // Revert PDF ถ้าขีดเขียนแล้วแต่ไม่ได้อนุมัติ (ออกจากหน้า)
-  // สำหรับ parallel signers: เช็คว่า PDF ปัจจุบันยังเป็น version ที่เราขีดเขียนอยู่หรือไม่
-  // ถ้าคนอื่นขีดเขียนต่อหรือเซ็นไปแล้ว → ไม่ revert (เพราะจะ overwrite งานคนอื่น)
+  // Lazy annotation: ขีดเขียนเก็บแค่ PNG overlays ใน memo_annotation_layers
+  // ไม่แตะ pdf_draft_path จนกว่าจะกดอนุมัติ → ไม่ต้อง revert PDF เมื่อออกจากหน้า
+  // แค่ลบ annotation layers ของ user นี้เมื่อออกโดยไม่ได้อนุมัติ
   useEffect(() => {
     const currentMemoId = memoId;
     const userId = signOnBehalfUserId || profile?.user_id;
     return () => {
-      // ใช้ ref เพื่อดูค่าล่าสุด (ไม่ใช่ closure เก่า)
-      if (originalPdfPathRef.current && !approvedRef.current && currentMemoId) {
-        // เช็คว่า PDF ใน DB ยังเป็น version ที่เราขีดเขียนอยู่หรือไม่
-        supabase.from('memos').select('pdf_draft_path').eq('id', currentMemoId).single().then(({ data }) => {
-          if (!data?.pdf_draft_path) return;
-          // เช็คว่า PDF ปัจจุบัน ถูกสร้างโดย user นี้ (มี userId ใน path)
-          const currentPath = data.pdf_draft_path.split('?')[0];
-          const isMyAnnotation = userId && currentPath.includes(`memos/${userId}/annotated_`);
-          if (isMyAnnotation) {
-            // PDF ยังเป็น version ของเรา → revert ได้ปลอดภัย
-            supabase.from('memos').update({
-              pdf_draft_path: originalPdfPathRef.current,
-              updated_at: new Date().toISOString(),
-            }).eq('id', currentMemoId).then(() => {
-              console.log('🔄 Reverted PDF to original after leaving without approving');
-            });
-          } else {
-            console.log('⏭️ Skipped revert — PDF was already updated by another signer');
-          }
-        });
-        // ลบ annotation layers ของ user นี้เสมอ (ไม่กระทบ layers คนอื่น)
-        if (userId) {
-          supabase.from('memo_annotation_layers')
-            .delete()
-            .eq('memo_id', currentMemoId)
-            .eq('user_id', userId)
-            .then(() => {
-              console.log('🗑️ Deleted annotation layers after leaving without approving');
-            });
-        }
+      if (!approvedRef.current && currentMemoId && userId) {
+        supabase.from('memo_annotation_layers')
+          .delete()
+          .eq('memo_id', currentMemoId)
+          .eq('user_id', userId)
+          .then(() => {
+            console.log('🗑️ Deleted annotation layers after leaving without approving');
+          });
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memoId]);
+
+  // Restore hasCompletedAnnotation on page load (กรณี refresh)
+  useEffect(() => {
+    if (memoId && profile?.user_id) {
+      const checkUserId = signOnBehalfUserId || profile.user_id;
+      supabase.from('memo_annotation_layers')
+        .select('id')
+        .eq('memo_id', memoId)
+        .eq('user_id', checkUserId)
+        .then(({ data }) => {
+          if (data && data.length > 0) setHasCompletedAnnotation(true);
+        });
+    }
+  }, [memoId, profile?.user_id, signOnBehalfUserId]);
 
   // โหลด profile ของคนที่ admin ลงนามแทน
   useEffect(() => {
@@ -620,7 +613,7 @@ const ApproveDocumentPage: React.FC = () => {
             latestPdfPath = freshMemo.pdf_draft_path;
           }
         }
-        const extractedPdfUrl = extractPdfUrl(latestPdfPath);
+        let extractedPdfUrl = extractPdfUrl(latestPdfPath);
         if (!extractedPdfUrl) {
           toast({
             title: "ข้อผิดพลาด",
@@ -630,10 +623,65 @@ const ApproveDocumentPage: React.FC = () => {
           setIsSubmitting(false);
           return;
         }
-        
+
         setShowLoadingModal(true);
         // ป้องกัน SW reload ระหว่างลงนาม
         (window as any).__signingInProgress = true;
+
+        // Lazy annotation: วาด PNG overlays ลงบน PDF ล่าสุดก่อนเซ็น (ถ้ามี)
+        const annotatorUserId = signOnBehalfUserId || profile?.user_id;
+        if (annotatorUserId && hasCompletedAnnotation) {
+          try {
+            let pageImages = pendingAnnotationImagesRef.current;
+
+            // ถ้าไม่มีใน memory (เช่น refresh หน้า) → โหลดจาก DB
+            if (!pageImages) {
+              const { data: layers } = await supabase.from('memo_annotation_layers')
+                .select('page_number, layer_url')
+                .eq('memo_id', memoId)
+                .eq('user_id', annotatorUserId);
+
+              if (layers && layers.length > 0) {
+                pageImages = new Map<number, string>();
+                for (const layer of layers) {
+                  const res = await fetch(layer.layer_url);
+                  const blob = await res.blob();
+                  const dataUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(blob);
+                  });
+                  pageImages.set(layer.page_number, dataUrl);
+                }
+              }
+            }
+
+            if (pageImages && pageImages.size > 0) {
+              console.log('📝 Applying annotation overlays onto latest PDF before signing');
+              const pdfRes = await fetch(extractedPdfUrl);
+              const pdfBytes = await pdfRes.arrayBuffer();
+              const { exportAnnotatedPdf } = await import('@/utils/pdfAnnotationUtils');
+              const annotatedBlob = await exportAnnotatedPdf(pdfBytes, pageImages);
+
+              // อัพโหลด PDF ที่วาด annotation แล้ว
+              const fileName = `annotated_${memoId}_${Date.now()}.pdf`;
+              const filePath = `memos/${annotatorUserId}/${fileName}`;
+              const { error: uploadErr } = await supabase.storage
+                .from('documents')
+                .upload(filePath, annotatedBlob, { contentType: 'application/pdf', upsert: true });
+
+              if (!uploadErr) {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('documents')
+                  .getPublicUrl(filePath);
+                extractedPdfUrl = publicUrl;
+                console.log('✅ Annotation overlays applied, using annotated PDF for signing');
+              }
+            }
+          } catch (annErr) {
+            console.error('⚠️ Failed to apply annotations, signing without them:', annErr);
+          }
+        }
 
         // ถ้าเป็น admin ลงนามแทน ให้เพิ่ม "admin" นำหน้า comment
         const isAdminSigning = isAdminUser && !currentUserSigner && !currentUserSignature;
@@ -950,10 +998,13 @@ const ApproveDocumentPage: React.FC = () => {
           }
 
           setShowLoadingModal(false);
-          // Clear เพื่อไม่ให้ revert ตอน unmount
           approvedRef.current = true;
-          originalPdfPathRef.current = null;
-          setOriginalPdfPath(null);
+          // ลบ annotation layers หลังอนุมัติสำเร็จ (วาดลง PDF แล้ว ไม่ต้องเก็บ)
+          if (annotatorUserId && memoId) {
+            supabase.from('memo_annotation_layers').delete()
+              .eq('memo_id', memoId).eq('user_id', annotatorUserId);
+            pendingAnnotationImagesRef.current = null;
+          }
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });
           navigate('/documents');
           // Clear signing flag หลัง navigate แล้ว + apply pending SW update
@@ -988,8 +1039,6 @@ const ApproveDocumentPage: React.FC = () => {
       );
       if (result.success) {
         approvedRef.current = true;
-        originalPdfPathRef.current = null;
-        setOriginalPdfPath(null);
         toast({
           title: "อนุมัติเอกสารสำเร็จ",
           description: "เอกสารได้ถูกส่งต่อไปยังผู้ลงนามถัดไป",
@@ -1388,81 +1437,63 @@ const ApproveDocumentPage: React.FC = () => {
           pdfUrl={freshPdfUrlForAnnotation || extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path}
           isOpen={showAnnotationEditor}
           onClose={() => setShowAnnotationEditor(false)}
-          onSave={async (annotatedPdfBlob: Blob, pageImages?: Map<number, string>) => {
+          onSave={async (_annotatedPdfBlob: Blob, pageImages?: Map<number, string>) => {
             setShowAnnotationEditor(false);
-
             setShowLoadingModal(true);
-
-            // จำ PDF เดิมไว้เผื่อต้อง revert (ใช้ URL ล่าสุดจาก DB)
-            if (!originalPdfPath) {
-              const { data: currentMemo } = await supabase.from('memos').select('pdf_draft_path').eq('id', memoId).single();
-              const currentPath = currentMemo?.pdf_draft_path || memo?.pdf_draft_path;
-              if (currentPath) setOriginalPdfPath(currentPath);
-            }
 
             try {
               const annotatorUserId = signOnBehalfUserId || profile?.user_id;
-              if (!annotatorUserId || !memoId) return;
-
-              // เช็คว่า PDF ใน DB เปลี่ยนไปหรือไม่ (คนอื่นอาจขีดเขียนไปแล้ว — parallel signing)
-              let finalBlob = annotatedPdfBlob;
-              const editorPdfUrl = freshPdfUrlForAnnotation || extractPdfUrl(memo?.pdf_draft_path) || '';
-              const { data: freshMemo } = await supabase.from('memos').select('pdf_draft_path').eq('id', memoId).single();
-              const latestPdfUrl = freshMemo?.pdf_draft_path ? (extractPdfUrl(freshMemo.pdf_draft_path) || '') : '';
-
-              // ตัด query string (?t=...) เพื่อเปรียบเทียบ path จริง
-              const editorBase = editorPdfUrl.split('?')[0];
-              const latestBase = latestPdfUrl.split('?')[0];
-
-              if (latestBase && editorBase !== latestBase && pageImages && pageImages.size > 0) {
-                // PDF เปลี่ยนแล้ว → ผู้ลงนามอื่นขีดเขียนไปก่อน → re-export overlay ลงบน PDF ล่าสุด
-                console.log('🔄 PDF changed by another signer, re-exporting annotations on latest PDF');
-                try {
-                  const res = await fetch(latestPdfUrl);
-                  const latestPdfBytes = await res.arrayBuffer();
-                  const { exportAnnotatedPdf } = await import('@/utils/pdfAnnotationUtils');
-                  finalBlob = await exportAnnotatedPdf(latestPdfBytes, pageImages);
-                  console.log('✅ Re-exported annotations on latest PDF successfully');
-                } catch (reExportErr) {
-                  console.error('⚠️ Failed to re-export on latest PDF, using original export:', reExportErr);
-                  // fallback: ใช้ blob เดิม (อาจทำให้ annotation คนก่อนหาย แต่ดีกว่า error)
-                }
-              }
-
-              const fileName = `annotated_${memoId}_${Date.now()}.pdf`;
-              const filePath = `memos/${annotatorUserId}/${fileName}`;
-
-              const { error: uploadError } = await supabase.storage
-                .from('documents')
-                .upload(filePath, finalBlob, { contentType: 'application/pdf', upsert: true });
-
-              if (uploadError) {
-                toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถบันทึกรอยขีดเขียนได้', variant: 'destructive' });
+              if (!annotatorUserId || !memoId || !pageImages || pageImages.size === 0) {
+                setHasCompletedAnnotation(true);
                 return;
               }
 
-              const { data: { publicUrl } } = supabase.storage
-                .from('documents')
-                .getPublicUrl(filePath);
+              // เก็บ pageImages ใน ref สำหรับใช้ตอนกดอนุมัติ (fast path)
+              pendingAnnotationImagesRef.current = pageImages;
 
-              await supabase.from('memos').update({
-                pdf_draft_path: `${publicUrl}?t=${Date.now()}`,
-                updated_at: new Date().toISOString(),
-              }).eq('id', memoId);
+              // ลบ annotation layers เก่าของ user นี้ (กรณีขีดเขียนใหม่ซ้ำ)
+              await supabase.from('memo_annotation_layers')
+                .delete()
+                .eq('memo_id', memoId)
+                .eq('user_id', annotatorUserId);
 
-              await supabase.from('memo_annotation_layers').insert({
-                memo_id: memoId,
-                user_id: annotatorUserId,
-                page_number: 0,
-                layer_url: publicUrl,
-              });
+              // อัพโหลด PNG overlay แต่ละหน้าเก็บไว้ใน storage + memo_annotation_layers
+              for (const [pageNum, dataUrl] of pageImages) {
+                const base64 = dataUrl.split(',')[1];
+                const pngBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+                const pngBlob = new Blob([pngBytes], { type: 'image/png' });
+
+                const fileName = `annotation_p${pageNum}_${Date.now()}.png`;
+                const filePath = `annotations/${memoId}/${annotatorUserId}/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                  .from('documents')
+                  .upload(filePath, pngBlob, { contentType: 'image/png', upsert: true });
+
+                if (uploadError) {
+                  console.error('Error uploading annotation layer:', uploadError);
+                  continue;
+                }
+
+                const { data: { publicUrl } } = supabase.storage
+                  .from('documents')
+                  .getPublicUrl(filePath);
+
+                await supabase.from('memo_annotation_layers').insert({
+                  memo_id: memoId,
+                  user_id: annotatorUserId,
+                  page_number: pageNum,
+                  layer_url: publicUrl,
+                });
+              }
+
+              // ไม่แตะ pdf_draft_path — จะวาด overlay ลงตอนกดอนุมัติเท่านั้น
 
               setHasCompletedAnnotation(true);
               toast({
                 title: "ขีดเขียนเสร็จแล้ว",
-                description: "รอยขีดเขียนถูกบันทึกลงเอกสารแล้ว คุณสามารถลงนามได้",
+                description: "รอยขีดเขียนถูกบันทึกแล้ว กดอนุมัติเพื่อวาดลงเอกสารจริง",
               });
-              setTimeout(() => refetch(), 500);
             } catch (error) {
               console.error('Error saving annotation:', error);
               toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถบันทึกรอยขีดเขียนได้', variant: 'destructive' });

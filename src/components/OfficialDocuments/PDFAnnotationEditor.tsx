@@ -33,7 +33,7 @@ interface PDFAnnotationEditorProps {
   pdfUrl: string;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (annotatedPdfBlob: Blob) => void;
+  onSave: (annotatedPdfBlob: Blob, pageImages?: Map<number, string>) => void;
   isSaving?: boolean;
 }
 
@@ -460,12 +460,12 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
     }
 
     if (pageImages.size === 0) {
-      onSave(new Blob([pdfBytes], { type: 'application/pdf' }));
+      onSave(new Blob([pdfBytes], { type: 'application/pdf' }), pageImages);
       return;
     }
 
     const blob = await exportAnnotatedPdf(pdfBytes, pageImages);
-    onSave(blob);
+    onSave(blob, pageImages);
   };
 
   // Helper: get distance between two touch points

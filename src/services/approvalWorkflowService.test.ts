@@ -348,3 +348,44 @@ describe('canActOnDocument', () => {
     expect(canActOnDocument(0)).toBe(false);
   });
 });
+
+// =============================================
+// 12. Full parallel → admin flow (#0295 scenario)
+// =============================================
+
+describe('Full parallel → admin flow', () => {
+  // Memo #0295: order 1 (author) → order 2 (parallel: u1, u2, u3) → order 3 (deputy) → order 4 (director)
+  const positions = [makePos(1), makePos(2), makePos(2), makePos(2), makePos(3), makePos(4)];
+  const parallel = makeParallel({ order: 2, completed_user_ids: [] });
+
+  it('parallel u1 signs → stays at order 2', () => {
+    const result = calculateNextSignerOrderWithParallel(2, positions, undefined, parallel, 'u1');
+    expect(result.nextSignerOrder).toBe(2);
+    expect(result.newStatus).toBe('pending_sign');
+  });
+
+  it('parallel u2 signs (u1 done) → stays at order 2', () => {
+    const p = makeParallel({ completed_user_ids: ['u1'] });
+    const result = calculateNextSignerOrderWithParallel(2, positions, undefined, p, 'u2');
+    expect(result.nextSignerOrder).toBe(2);
+  });
+
+  it('parallel u3 signs (u1,u2 done) → advance to order 3 (deputy)', () => {
+    const p = makeParallel({ completed_user_ids: ['u1', 'u2'] });
+    const result = calculateNextSignerOrderWithParallel(2, positions, undefined, p, 'u3');
+    expect(result.nextSignerOrder).toBe(3);
+    expect(result.newStatus).toBe('pending_sign');
+  });
+
+  it('deputy (order 3) signs → advance to order 4', () => {
+    const result = calculateNextSignerOrderWithParallel(3, positions, 'deputy_director', null, 'deputy-1');
+    expect(result.nextSignerOrder).toBe(4);
+    expect(result.newStatus).toBe('pending_sign');
+  });
+
+  it('director (order 4) signs → COMPLETED', () => {
+    const result = calculateNextSignerOrderWithParallel(4, positions, 'director', null, 'director-1');
+    expect(result.nextSignerOrder).toBe(SIGNER_ORDER.COMPLETED);
+    expect(result.newStatus).toBe('completed');
+  });
+});

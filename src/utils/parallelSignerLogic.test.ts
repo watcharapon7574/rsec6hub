@@ -3,6 +3,9 @@ import {
   splitParallelAndAdmins,
   buildAllSigners,
   findFirstAdminIndex,
+  filterAnnotationIdsOnParallelChange,
+  isParallelSigningTurn,
+  isLockedByOtherUser,
   type Profile,
   type ParallelSignerConfig,
   type ParallelSigner,
@@ -228,5 +231,109 @@ describe('findFirstAdminIndex', () => {
   it('ข้าม author และ parallel_signer', () => {
     const signers = [baseSigner('author'), baseSigner('parallel_signer'), baseSigner('parallel_signer'), baseSigner('deputy_director')];
     expect(findFirstAdminIndex(signers)).toBe(3);
+  });
+});
+
+// =============================================
+// filterAnnotationIdsOnParallelChange
+// =============================================
+describe('filterAnnotationIdsOnParallelChange', () => {
+  it('รักษา annotation ของ admin ที่อยู่ใน signers (dropdown) ไว้', () => {
+    const annotationIds = ['teacher-a', 'teacher-b', 'deputy-1', 'director-1'];
+    const newParallelUserIds = ['teacher-a', 'teacher-b', 'teacher-c']; // เพิ่ม teacher-c
+    const signerIds = ['author-1', 'deputy-1', 'director-1']; // admin อยู่ใน signers
+
+    const result = filterAnnotationIdsOnParallelChange(annotationIds, newParallelUserIds, signerIds);
+
+    expect(result).toContain('teacher-a');
+    expect(result).toContain('teacher-b');
+    expect(result).toContain('deputy-1');   // admin — รักษาไว้
+    expect(result).toContain('director-1'); // admin — รักษาไว้
+    expect(result).toHaveLength(4);
+  });
+
+  it('ลบ annotation ของคนที่ถูกลบจาก parallel list (ไม่ใช่ admin)', () => {
+    const annotationIds = ['teacher-a', 'teacher-b'];
+    const newParallelUserIds = ['teacher-a']; // teacher-b ถูกลบ
+    const signerIds = ['author-1', 'director-1'];
+
+    const result = filterAnnotationIdsOnParallelChange(annotationIds, newParallelUserIds, signerIds);
+
+    expect(result).toContain('teacher-a');
+    expect(result).not.toContain('teacher-b'); // ลบออก
+    expect(result).toHaveLength(1);
+  });
+
+  it('clear all parallel → คง admin annotations ไว้', () => {
+    const annotationIds = ['teacher-a', 'deputy-1', 'director-1'];
+    const newParallelUserIds: string[] = []; // clear all
+    const signerIds = ['author-1', 'deputy-1', 'director-1'];
+
+    const result = filterAnnotationIdsOnParallelChange(annotationIds, newParallelUserIds, signerIds);
+
+    expect(result).toContain('deputy-1');
+    expect(result).toContain('director-1');
+    expect(result).not.toContain('teacher-a');
+    expect(result).toHaveLength(2);
+  });
+
+  it('annotationIds ว่าง → return ว่าง', () => {
+    const result = filterAnnotationIdsOnParallelChange([], ['teacher-a'], ['author-1']);
+    expect(result).toHaveLength(0);
+  });
+});
+
+// =============================================
+// isParallelSigningTurn
+// =============================================
+describe('isParallelSigningTurn', () => {
+  it('parallel order ตรง current_signer_order → true', () => {
+    expect(isParallelSigningTurn({
+      parallel_signers: { order: 2 },
+      current_signer_order: 2,
+    })).toBe(true);
+  });
+
+  it('parallel order ไม่ตรง → false (ถึงตาผู้บริหารแล้ว)', () => {
+    expect(isParallelSigningTurn({
+      parallel_signers: { order: 2 },
+      current_signer_order: 3,
+    })).toBe(false);
+  });
+
+  it('ไม่มี parallel_signers → false', () => {
+    expect(isParallelSigningTurn({ current_signer_order: 2 })).toBe(false);
+  });
+
+  it('memo เป็น null → false', () => {
+    expect(isParallelSigningTurn(null)).toBe(false);
+  });
+});
+
+// =============================================
+// isLockedByOtherUser
+// =============================================
+describe('isLockedByOtherUser', () => {
+  const recentLock = { locked_by: 'user-A', locked_at: new Date().toISOString() };
+  const expiredLock = { locked_by: 'user-A', locked_at: new Date(Date.now() - 10 * 60 * 1000).toISOString() };
+
+  it('lock โดยคนอื่น (recent) → true', () => {
+    expect(isLockedByOtherUser(recentLock, 'user-B', false)).toBe(true);
+  });
+
+  it('lock โดยตัวเอง → false', () => {
+    expect(isLockedByOtherUser(recentLock, 'user-A', false)).toBe(false);
+  });
+
+  it('lock หมดอายุ → false', () => {
+    expect(isLockedByOtherUser(expiredLock, 'user-B', false)).toBe(false);
+  });
+
+  it('ไม่มี lock → false', () => {
+    expect(isLockedByOtherUser(null, 'user-B', false)).toBe(false);
+  });
+
+  it('parallel turn → false เสมอ (ไม่สน lock)', () => {
+    expect(isLockedByOtherUser(recentLock, 'user-B', true)).toBe(false);
   });
 });

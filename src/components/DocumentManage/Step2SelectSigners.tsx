@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Users, PenTool, UserPlus } from 'lucide-react';
 import UserSearchInput from '@/components/TaskAssignment/UserSearchInput';
+import { filterAnnotationIdsOnParallelChange } from '@/utils/parallelSignerLogic';
 
 interface ParallelSignerInfo {
   user_id: string;
@@ -97,9 +98,8 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
               onParallelSignersChange(newSigners);
               // ลบ annotation requirement ของคนที่ถูกลบออก (แต่รักษา annotation ของผู้บริหารที่อยู่ใน dropdown ไว้)
               const userIds = users.map(u => u.user_id);
-              onAnnotationRequiredChange(annotationRequiredUserIds.filter(id =>
-                userIds.includes(id) || signers.some((s: any) => s.user_id === id)
-              ));
+              const signerIds = signers.map((s: any) => s.user_id);
+              onAnnotationRequiredChange(filterAnnotationIdsOnParallelChange(annotationRequiredUserIds, userIds, signerIds));
             }}
             placeholder="พิมพ์ชื่อเพื่อค้นหาผู้ลงนามเพิ่มเติม..."
             excludeUserIds={signers.map((s: any) => s.user_id)}

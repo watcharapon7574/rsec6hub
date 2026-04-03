@@ -78,6 +78,46 @@ export function splitParallelAndAdmins(
   return { parallelSigners, selectedAssistant, selectedDeputy, annotationRequiredUserIds };
 }
 
+/**
+ * เมื่อ parallel signers เปลี่ยน → filter annotationRequiredUserIds
+ * แต่รักษา annotation ของผู้บริหารที่อยู่ใน signers (dropdown) ไว้
+ */
+export function filterAnnotationIdsOnParallelChange(
+  currentAnnotationIds: string[],
+  newParallelUserIds: string[],
+  signerUserIds: string[]
+): string[] {
+  return currentAnnotationIds.filter(id =>
+    newParallelUserIds.includes(id) || signerUserIds.includes(id)
+  );
+}
+
+/**
+ * เช็คว่าเป็น parallel signing turn หรือไม่
+ * ถ้าใช่ → ไม่ต้องใช้ signing lock (ลงนามพร้อมกันได้)
+ */
+export function isParallelSigningTurn(
+  memo: { parallel_signers?: { order: number } | null; current_signer_order?: number } | null
+): boolean {
+  if (!memo?.parallel_signers) return false;
+  return memo.current_signer_order === memo.parallel_signers.order;
+}
+
+/**
+ * เช็คว่า signing lock ถูกถือโดยคนอื่นหรือไม่ (ข้าม parallel signers)
+ */
+export function isLockedByOtherUser(
+  lockData: { locked_by: string; locked_at: string } | null | undefined,
+  currentUserId: string,
+  isParallelTurn: boolean,
+  lockTimeoutMs: number = 5 * 60 * 1000
+): boolean {
+  if (isParallelTurn) return false;
+  if (!lockData) return false;
+  if (lockData.locked_by === currentUserId) return false;
+  return Date.now() - new Date(lockData.locked_at).getTime() < lockTimeoutMs;
+}
+
 export interface Signer {
   order: number;
   user_id: string;

@@ -37,11 +37,6 @@ const ProfilePage = () => {
     if (authProfile) {
       setProfile(authProfile);
       
-      if (!authProfile.user_id) {
-        console.log('Profile missing user_id - Supabase Auth integration needed');
-      } else {
-        console.log('Profile has user_id:', authProfile.user_id);
-      }
     }
   }, [authProfile]);
 

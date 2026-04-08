@@ -12,7 +12,6 @@ export const useProfileUpload = (authProfile: Profile | null) => {
       return { success: false, error: 'ไม่พบ User ID' };
     }
 
-    console.log('Starting profile picture upload with authProfile:', authProfile);
     const result = await uploadProfilePicture(file, authProfile.user_id);
     
     if (result.success && result.url) {
@@ -80,7 +79,6 @@ export const useProfileUpload = (authProfile: Profile | null) => {
       return { success: false, error: 'ไม่พบ User ID' };
     }
 
-    console.log('Starting signature upload with authProfile:', authProfile);
     const result = await uploadSignature(file, authProfile.user_id);
     
     if (result.success && result.url) {

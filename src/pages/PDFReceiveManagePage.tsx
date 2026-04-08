@@ -82,12 +82,6 @@ const PDFReceiveManagePage: React.FC = () => {
         .single();
 
       if (error) throw error;
-      console.log('📄 Doc receive data loaded:', {
-        id: data?.id,
-        subject: data?.subject,
-        pdf_draft_path: data?.pdf_draft_path,
-        status: data?.status
-      });
       setDocReceive(data);
     } catch (error) {
       console.error('Error fetching doc_receive:', error);
@@ -241,7 +235,6 @@ const PDFReceiveManagePage: React.FC = () => {
       }
 
       // Fetch PDF
-      console.log('📄 Fetching PDF from:', extractedPdfUrl);
       const pdfRes = await fetch(extractedPdfUrl);
       const pdfBlob = await pdfRes.blob();
 
@@ -254,7 +247,6 @@ const PDFReceiveManagePage: React.FC = () => {
         throw new Error("ไม่พบลายเซ็นของธุรการ กรุณาอัปโหลดลายเซ็นก่อน");
       }
 
-      console.log('🖊️ Fetching clerk signature from:', clerkProfile.signature_url);
       const signRes = await fetch(clerkProfile.signature_url);
       const signBlob = await signRes.blob();
       formData.append('sign_png', signBlob, 'signature.png');
@@ -281,11 +273,9 @@ const PDFReceiveManagePage: React.FC = () => {
         height: 150  // Fixed height for stamp
       };
 
-      console.log('📦 Summary payload with position:', summaryPayload);
       formData.append('payload', JSON.stringify(summaryPayload));
 
       // Call Railway stamp_summary API with queue + retry logic
-      console.log('🚀 Calling /stamp_summary API...');
       const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
           const res = await railwayFetch('/stamp_summary', {
@@ -305,14 +295,11 @@ const PDFReceiveManagePage: React.FC = () => {
         3,
         1000
       );
-      console.log('✅ Stamp successful, blob size:', stampedPdfBlob.size);
-
       // Upload stamped PDF back to storage (ตัด query string ?t=xxx ออกก่อน)
       const oldFilePath = extractedPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '').split('?')[0];
       const newFileName = `stamped_${Date.now()}_${oldFilePath.split('/').pop()}`;
       const newFilePath = oldFilePath.replace(/[^/]+$/, newFileName);
 
-      console.log('📤 Uploading stamped PDF to:', newFilePath);
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
         .upload(newFilePath, stampedPdfBlob, {
@@ -325,8 +312,6 @@ const PDFReceiveManagePage: React.FC = () => {
       const { data: { publicUrl: newPublicUrl } } = supabase.storage
         .from('documents')
         .getPublicUrl(newFilePath);
-
-      console.log('✅ New PDF URL:', newPublicUrl);
 
       // Prepare signer_list_progress (like memos table - stores all signers for tracking)
       const signerListProgress = signers.map(signer => ({
@@ -344,9 +329,6 @@ const PDFReceiveManagePage: React.FC = () => {
       // Find the next signer after clerk (order 1) - dynamically based on selected signers
       // Clerk is order 1, next signer could be assistant director (2), deputy (3), or director (4)
       const nextSignerOrder = signers.find(s => s.order > 1)?.order || 5; // Default to 5 (completed) if no signers
-
-      console.log('📝 Signer list progress:', signerListProgress);
-      console.log('🎯 Next signer order:', nextSignerOrder, 'Signers:', signers.map(s => ({ order: s.order, role: s.role })));
 
       // Update doc_receive table
       // เปลี่ยน status เป็น pending_sign และเริ่มต้นที่ผู้ลงนามคนแรกหลังธุรการ
@@ -366,18 +348,13 @@ const PDFReceiveManagePage: React.FC = () => {
         .eq('id', memoId);
 
       if (updateError) {
-        console.error('❌ Database update error:', updateError);
         throw updateError;
       }
-
-      console.log('✅ Doc receive updated successfully');
 
       // Remove old PDF file
       try {
         await supabase.storage.from('documents').remove([oldFilePath]);
-        console.log('🗑️ Old PDF removed');
       } catch (removeError) {
-        console.warn('⚠️ Failed to remove old PDF:', removeError);
         // ไม่ throw error เพราะไม่ critical
       }
 

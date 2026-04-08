@@ -125,27 +125,6 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
                            permissions.isAdmin ||
                            hasParallelPending;
 
-  // Debug logging
-  console.log('🔍 Debug DocumentCards:', {
-    pendingSignMemosCount: pendingSignMemos.length,
-    canAccessApproval,
-    userPosition: permissions.position,
-    allowedPositions: ['assistant_director', 'deputy_director', 'director'],
-    totalRealMemos: realMemos.length,
-    userId: profile?.user_id,
-    userName: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown',
-    note: `User position "${permissions.position}" ${canAccessApproval ? 'CAN' : 'CANNOT'} access approval`,
-    pendingSignMemos: pendingSignMemos.map(m => ({ 
-      id: m.id, 
-      status: m.status, 
-      subject: m.subject,
-      author: m.author_name,
-      user_id: m.user_id,
-      current_signer_order: m.current_signer_order,
-      signature_positions: m.signature_positions
-    }))
-  });
-
   return (
     <div className="space-y-8">
       {/* Create Document Button - Compact Version */}

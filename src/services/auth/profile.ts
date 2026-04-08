@@ -7,11 +7,8 @@ import { updateStoredProfile } from './storage';
  */
 export const refreshProfile = async (phone: string): Promise<Profile | null> => {
   try {
-    console.log('🔍 Refreshing profile for phone:', phone);
-
     // Check current session first
     const { data: { session } } = await supabase.auth.getSession();
-    console.log('🔐 Current session user_id:', session?.user?.id);
 
     // 🔧 Try to find profile by user_id first (more reliable)
     let profileData = null;
@@ -26,7 +23,6 @@ export const refreshProfile = async (phone: string): Promise<Profile | null> => 
 
       profileData = result.data;
       error = result.error;
-      console.log('📊 Profile query by user_id:', { found: !!profileData, error: error?.message });
     }
 
     // If not found by user_id, try phone number
@@ -39,20 +35,15 @@ export const refreshProfile = async (phone: string): Promise<Profile | null> => 
 
       profileData = result.data;
       error = result.error;
-      console.log('📊 Profile query by phone:', { found: !!profileData, error: error?.message });
     }
 
     if (error) {
-      console.error('❌ Error refreshing profile:', error);
       return null;
     }
 
     if (!profileData) {
-      console.log('⚠️ No profile found for user_id or phone');
-
       // 🔧 สร้าง profile อัตโนมัติถ้ามี session (ล็อกอินสำเร็จแล้ว)
       if (session?.user?.id) {
-        console.log('🔨 Auto-creating profile for user:', session.user.id);
 
         const newProfile = {
           user_id: session.user.id,
@@ -72,11 +63,8 @@ export const refreshProfile = async (phone: string): Promise<Profile | null> => 
           .single();
 
         if (createError) {
-          console.error('❌ Failed to create profile:', createError);
           return null;
         }
-
-        console.log('✅ Profile created successfully:', createdProfile.employee_id);
 
         const profile: Profile = {
           ...createdProfile,

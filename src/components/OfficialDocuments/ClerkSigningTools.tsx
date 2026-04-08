@@ -51,16 +51,13 @@ const ClerkSigningTools: React.FC = () => {
   const [comment, setComment] = useState('');
 
   const handleApprove = (docId: string) => {
-    console.log('Approving document:', docId, 'with comment:', comment);
     setComment('');
   };
 
   const handleSign = (docId: string) => {
-    console.log('Signing document:', docId);
   };
 
   const handleDownloadPDF = (docId: string) => {
-    console.log('Downloading signed PDF:', docId);
   };
 
   const getStatusBadge = (status: string) => {

@@ -114,8 +114,6 @@ export async function getNextEmployeeId(): Promise<string> {
   // Format with zero-padding (3 digits)
   const nextEmployeeId = `${prefix}${String(nextNumber).padStart(3, '0')}`;
 
-  console.log(`Generated next employee_id: ${nextEmployeeId} (from ${lastEmployeeId})`);
-
   return nextEmployeeId;
 }
 
@@ -132,8 +130,6 @@ export async function getNextEmployeeId(): Promise<string> {
  */
 export async function createProfileWithAuth(data: CreateProfileData): Promise<Profile> {
   try {
-    console.log(`Creating new profile via Edge Function...`);
-
     const { data: result, error } = await supabase.functions.invoke('create-profile', {
       body: {
         phone: data.phone,
@@ -156,7 +152,6 @@ export async function createProfileWithAuth(data: CreateProfileData): Promise<Pr
       throw new Error(result.error);
     }
 
-    console.log(`Profile created successfully: ${result.profile.employee_id}`);
     return result.profile;
   } catch (error: any) {
     console.error('Error in createProfileWithAuth:', error);
@@ -179,16 +174,10 @@ export async function clearPhoneFromAuthUsers(phone: string): Promise<void> {
     });
 
     if (error) {
-      console.warn('Warning: Could not clear phone from auth.users:', error.message);
       // Don't throw - this is not critical, profile update should still succeed
       return;
     }
 
-    if (data?.cleared) {
-      console.log(`✅ Phone ${phone} cleared from auth.users (${data.affected_email})`);
-    } else {
-      console.log(`ℹ️ No auth user found with phone ${phone}`);
-    }
   } catch (err) {
     console.warn('Warning: Error in clearPhoneFromAuthUsers:', err);
     // Don't throw - this is not critical
@@ -221,7 +210,6 @@ export async function updateProfile(
   // If phone is changing, clear the new phone from any existing auth.users
   // This allows the phone to be used by a different user
   if (newPhone && newPhone !== oldPhone) {
-    console.log(`📱 Phone changing from "${oldPhone}" to "${newPhone}" - clearing from auth.users`);
     await clearPhoneFromAuthUsers(newPhone);
   }
 
@@ -254,8 +242,6 @@ export async function updateProfile(
     console.error('Error updating profile:', error);
     throw new Error(`Failed to update profile: ${error.message}`);
   }
-
-  console.log(`Profile updated successfully: ${updatedProfile.employee_id}`);
 
   return updatedProfile;
 }

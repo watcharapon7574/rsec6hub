@@ -326,8 +326,6 @@ const ManageReportMemoPage: React.FC = () => {
     if (!reportMemo || !profile?.user_id) return null;
 
     try {
-      console.log('📄 Regenerating PDF with document suffix:', docSuffix);
-
       // Prepare form data for API call
       const formData = {
         doc_number: docSuffix, // ส่งแค่ส่วน 4568/68 เพราะใน template มี ศธ ๐๔๐๐๗.๖๐๐/ อยู่แล้ว
@@ -477,7 +475,6 @@ const ManageReportMemoPage: React.FC = () => {
     const match = finalDocSuffix.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
     if (match) {
       finalDocSuffix = match[1];
-      console.log('Extracted suffix from full number:', finalDocSuffix);
     }
 
     if (!finalDocSuffix) {
@@ -534,7 +531,6 @@ const ManageReportMemoPage: React.FC = () => {
       const isUploadedMemo = formDataType === 'upload_report_memo';
 
       // ใช้ stamp API ปั๊มตราเลขหนังสือมุมขวาบนทุกกรณี (ไม่ต้อง regenerate PDF ใหม่)
-      console.log('📌 Stamping doc number on existing PDF');
       const newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup);
 
       // Update memo with document number, status, clerk_id, department, and new PDF URL
@@ -545,8 +541,6 @@ const ManageReportMemoPage: React.FC = () => {
         stamp_department: selectedGroup, // บันทึกฝ่ายที่เลือกสำหรับตราปั๊ม
         updated_at: now
       };
-
-      console.log('📝 Step 1 - Recording clerk_id:', profile?.user_id, 'for memo:', memoId);
 
       // Update PDF path if regeneration was successful
       if (newPdfUrl) {
@@ -603,8 +597,6 @@ const ManageReportMemoPage: React.FC = () => {
   // Handle reject report - รับ reason จาก RejectionCard component
   const handleRejectFromCard = async (reason: string, annotatedPdfUrl?: string, annotatedAttachments?: string[]) => {
     // Debug: ตรวจสอบค่าที่จำเป็น
-    console.log('🔴 handleRejectFromCard called:', { reason: reason?.trim(), memoId, taskAssignment: !!taskAssignment, profile: !!profile });
-
     if (!reason.trim()) {
       toast({ title: 'กรุณาระบุเหตุผล', description: 'กรุณาระบุเหตุผลการตีกลับ', variant: 'destructive' });
       return;
@@ -759,7 +751,6 @@ const ManageReportMemoPage: React.FC = () => {
       // ข้ามการปั้มตราถ้า PDF มีตราปั้มอยู่แล้ว
       const alreadyStamped = currentPdfPath?.includes('memo_stamped_');
       if (alreadyStamped) {
-        console.log('ℹ️ PDF already stamped, skipping re-stamp');
       }
 
       if (isNumberAssigned && revisionCount > 0 && docNumberSuffix && !alreadyStamped) {
@@ -780,7 +771,6 @@ const ManageReportMemoPage: React.FC = () => {
             setReportMemo((prev: any) => ({ ...prev, pdf_draft_path: stampedUrl }));
             currentPdfPath = stampedUrl; // อัปเดต path เพื่อให้ merge ใช้ PDF ที่ปั้มตราแล้ว
             await refetch();
-            console.log('✅ Re-stamped report memo PDF saved:', stampedUrl);
           }
         } catch (error) {
           console.error('Error re-stamping report memo:', error);
@@ -806,8 +796,6 @@ const ManageReportMemoPage: React.FC = () => {
         setShowLoadingModal(true);
 
         try {
-          console.log('🔄 Starting PDF merge with attached files:', attachedFiles);
-
           const mergeResult = await mergeMemoWithAttachments({
             memoId: reportMemo.id,
             mainPdfPath: currentPdfPath,
@@ -886,8 +874,6 @@ const ManageReportMemoPage: React.FC = () => {
           org_structure_role: signer.org_structure_role
         }));
 
-        console.log('📊 Saving signer_list_progress:', signerListProgress);
-
         const { error: updateError } = await supabase
           .from('memos')
           .update({
@@ -905,7 +891,6 @@ const ManageReportMemoPage: React.FC = () => {
           return;
         }
 
-        console.log('✅ Signer list progress saved successfully');
         toast({
           title: 'บันทึกข้อมูลผู้ลงนามสำเร็จ',
           description: `บันทึกรายชื่อผู้ลงนาม ${signers.length} คน เรียบร้อยแล้ว`
@@ -998,7 +983,6 @@ const ManageReportMemoPage: React.FC = () => {
 
       // 5. Update report memo with signature positions and pending_sign status (including clerk_id)
       const clerkId = profile?.user_id;
-      console.log('📝 Recording clerk_id:', clerkId, 'for memo:', memoId);
 
       const { error: updateError } = await supabase
         .from('memos')

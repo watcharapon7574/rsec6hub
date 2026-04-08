@@ -124,14 +124,6 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
   };
 
   const handleSelectGroup = async (group: UserGroup) => {
-    console.log('🔍 handleSelectGroup called:', {
-      groupId: group.id,
-      groupName: group.name,
-      groupType: group.group_type,
-      leaderUserId: group.leader_user_id,
-      members: group.members.map(m => ({ userId: m.user_id, name: `${m.first_name} ${m.last_name}` }))
-    });
-
     const isPosition = group.group_type === 'position';
     const typeLabel = isPosition ? 'หน้าที่' : 'กลุ่ม';
 
@@ -205,13 +197,11 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
     try {
       await userGroupService.incrementUsage(group.id);
     } catch (error) {
-      console.warn('Failed to increment usage count:', error);
+      // ignore usage count errors
     }
 
     // Update selection info
     if (onSelectionInfoChange) {
-      console.log('📋 Updating selectionInfo - current:', selectionInfo);
-
       if (isPosition) {
         // For positions: accumulate into positions array, all members become leaders
         const positionMemberId = group.members[0]?.user_id;
@@ -219,15 +209,13 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
         const existingLeaderIds = selectionInfo?.groupLeaderIds || [];
         const newPositions = [...existingPositions, { id: group.id, name: group.name, memberId: positionMemberId }];
         const newLeaderIds = [...existingLeaderIds, ...(positionMemberId ? [positionMemberId] : [])];
-        const newInfo = {
+        onSelectionInfoChange({
           source: 'position' as const,
           positionId: newPositions[0].id,
           positionName: newPositions[0].name,
           positions: newPositions,
           groupLeaderIds: newLeaderIds
-        };
-        console.log('📋 Setting position selectionInfo:', newInfo);
-        onSelectionInfoChange(newInfo);
+        });
       } else {
         // Track group selection and leader info
         const existingLeaderIds = selectionInfo?.groupLeaderIds || [];
@@ -235,46 +223,31 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
           ? [...existingLeaderIds, group.leader_user_id]
           : existingLeaderIds;
 
-        console.log('📋 Group leader calculation:', {
-          groupLeaderUserId: group.leader_user_id,
-          existingLeaderIds,
-          newLeaderIds,
-          currentSource: selectionInfo?.source
-        });
-
         if (!selectionInfo?.source) {
           // First group selection
-          const newInfo = {
+          onSelectionInfoChange({
             source: 'group' as const,
             groupId: group.id,
             groupName: group.name,
             groupLeaderIds: newLeaderIds
-          };
-          console.log('📋 Setting FIRST group selectionInfo:', newInfo);
-          onSelectionInfoChange(newInfo);
+          });
         } else if (selectionInfo.source === 'group') {
           // Additional group selection
-          const newInfo = {
+          onSelectionInfoChange({
             ...selectionInfo,
             groupLeaderIds: newLeaderIds
-          };
-          console.log('📋 Setting ADDITIONAL group selectionInfo:', newInfo);
-          onSelectionInfoChange(newInfo);
+          });
         }
         // If source is 'name', don't change source but add leader
         else if (selectionInfo.source === 'name' && group.leader_user_id) {
-          const newInfo = {
+          onSelectionInfoChange({
             source: 'group' as const, // Switch to group mode since we now have a group
             groupId: group.id,
             groupName: group.name,
             groupLeaderIds: newLeaderIds
-          };
-          console.log('📋 Switching from name to group selectionInfo:', newInfo);
-          onSelectionInfoChange(newInfo);
+          });
         }
       }
-    } else {
-      console.warn('⚠️ onSelectionInfoChange is not defined!');
     }
 
     onUsersChange([...selectedUsers, ...newMembers]);

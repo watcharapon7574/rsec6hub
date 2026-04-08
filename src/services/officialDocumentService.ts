@@ -7,7 +7,6 @@ export const officialDocumentService = {
   async fetchOfficialDocuments(userProfile?: any): Promise<OfficialDocument[]> {
     
     if (!userProfile) {
-      console.log('❌ No user profile provided');
       return [];
     }
 
@@ -16,28 +15,21 @@ export const officialDocumentService = {
       .select('*')
       .order('created_at', { ascending: false });
 
-    console.log('👤 User position:', userProfile.position);
-
     // กรณีที่ 2: ธุรการเห็นทุกเอกสาร
     if (['government_employee', 'clerk_teacher'].includes(userProfile.position)) {
-      console.log('📋 Clerk access - fetching all documents');
       // ธุรการเห็นทุกเอกสาร - ไม่เพิ่มเงื่อนไขเพิ่มเติม
     } else if (['director', 'deputy_director', 'assistant_director'].includes(userProfile.position)) {
-      console.log('👔 Executive access - filtering by approval level');
       // กรณีที่ 3: ผู้บริหารเห็นเอกสารที่ส่งถึงตามลำดับการอนุมัติ
       const approvalLevel = this.getApprovalLevel(userProfile.position);
       query = query.or(`user_id.eq.${userProfile.user_id},current_approver_level.eq.${approvalLevel}`);
     } else {
-      console.log('👨‍💼 Regular user access - own documents only');
       // กรณีที่ 1: ผู้อื่นเห็นแค่เอกสารของตนเอง
       query = query.eq('user_id', userProfile.user_id);
     }
 
     const { data, error } = await query;
-    console.log('📊 Query result:', { data: data?.length || 0, error });
 
     if (error) {
-      console.error('❌ Database error:', error);
       throw error;
     }
     return data?.map(doc => ({ ...doc, creator_profile: null })) || [];
@@ -55,8 +47,6 @@ export const officialDocumentService = {
 
   // ดึงบันทึกข้อความตาม role และเงื่อนไข
   async fetchMemos(userProfile?: any): Promise<any[]> {
-    console.log('📝 Fetching memos for profile:', userProfile);
-
     // แสดงเอกสารย้อนหลัง 30 วัน เพื่อไม่ให้พลาดเอกสารข้ามเดือน
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -80,7 +70,6 @@ export const officialDocumentService = {
     );
 
     if (error) {
-      console.error('❌ Memos database error:', error);
       throw error;
     }
 
@@ -96,19 +85,6 @@ export const officialDocumentService = {
         (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
       );
 
-      // Debug log
-      if (memo.is_assigned) {
-        console.log('🔍 officialDocumentService memo transformation:', {
-          memoId: memo.id,
-          subject: memo.subject,
-          is_assigned: memo.is_assigned,
-          tasks: tasks,
-          tasksLength: tasks.length,
-          hasInProgressTask: hasInProgressTask,
-          hasActiveTasks: hasActiveTasks
-        });
-      }
-
       // Remove task_assignments from the object to keep it clean
       const { task_assignments, ...memoWithoutTasks } = memo;
 
@@ -117,17 +93,6 @@ export const officialDocumentService = {
         has_in_progress_task: hasInProgressTask,
         has_active_tasks: hasActiveTasks
       };
-    });
-
-    console.log('📊 Memos query result:', {
-      dataCount: transformedData.length,
-      userPosition: userProfile?.position,
-      userId: userProfile?.user_id,
-      assignedMemos: transformedData.filter((m: any) => m.is_assigned).map((m: any) => ({
-        id: m.id,
-        subject: m.subject,
-        has_in_progress_task: m.has_in_progress_task
-      }))
     });
 
     return transformedData;

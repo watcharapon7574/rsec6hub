@@ -8,25 +8,18 @@ import { invalidateSession, getCurrentSessionToken } from '../sessionService';
  */
 export const signOut = async (): Promise<AuthResult> => {
   try {
-    console.log('Starting complete sign out process...');
-    
     // Invalidate current session first
     const sessionToken = getCurrentSessionToken();
     if (sessionToken) {
       await invalidateSession(sessionToken);
-      console.log('Session invalidated successfully');
     }
-    
+
     // Sign out from Supabase Auth
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Supabase sign out error:', error);
-    }
-    
+    await supabase.auth.signOut();
+
     // Clear all authentication data from storage
     clearAuthStorage();
-    
-    console.log('Complete sign out successful - all storage cleared');
+
     return {};
   } catch (err) {
     console.error('Sign out error:', err);

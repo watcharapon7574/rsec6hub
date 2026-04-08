@@ -119,7 +119,6 @@ const CreateMemoPage = () => {
 
         // If not found in cache, fetch directly from database
         if (!memo) {
-          console.log('📝 Memo not found in cache, fetching from database...');
           const { data, error } = await supabase
             .from('memos')
             .select('*')
@@ -350,14 +349,6 @@ const CreateMemoPage = () => {
   };
 
   const handleUploadSubmit = async () => {
-    console.log('🔍 handleUploadSubmit called:', {
-      isEditMode,
-      hasOriginalMemo: !!originalMemo,
-      hasUploadedPdf: !!uploadedPdfFile,
-      enableParallelSigners,
-      selectedParallelSigners: selectedParallelSigners.map(s => s.user_id),
-      annotationRequiredUserIds,
-    });
     // Edit mode ที่ตีกลับ ไม่ต้อง require PDF ใหม่ (ใช้ PDF เก่าได้)
     const needsNewPdf = !isEditMode || !originalMemo?.pdf_draft_path;
     if (needsNewPdf && (!uploadedPdfFile || !profile?.user_id)) {
@@ -484,7 +475,6 @@ const CreateMemoPage = () => {
           }
 
           if (pathsToDelete.length > 0) {
-            console.log('🗑️ Deleting old files before re-upload:', pathsToDelete);
             await supabase.storage.from('documents').remove(pathsToDelete);
           }
         } catch (err) {
@@ -532,12 +522,6 @@ const CreateMemoPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🔍 handleSubmit (form mode) called:', {
-      isEditMode,
-      enableParallelSigners,
-      selectedCount: selectedParallelSigners.length,
-    });
-
     // Use the doc_number as is, without auto-generation
     // เพิ่ม parallel signer config เข้า form_data
     const parallelSignerConfig = enableParallelSigners && selectedParallelSigners.length > 0
@@ -557,7 +541,6 @@ const CreateMemoPage = () => {
     // Use pre-generated PDF if preview is still valid (form data hasn't changed)
     const validPreviewBlob = isPreviewValid() ? previewBlob : undefined;
     if (validPreviewBlob) {
-      console.log('📄 Using pre-generated PDF from preview (skipping API call)');
     }
 
     if (isEditMode && originalMemo) {
@@ -706,7 +689,6 @@ const CreateMemoPage = () => {
 
         // Process changes from Edge Function response
         if (data.changes && data.changes.length > 0) {
-          console.log('✅ Grammar corrections found for', label, ':', data.changes);
           data.changes.forEach((correction: any, index: number) => {
             if (correction.original && correction.corrected && correction.original !== correction.corrected) {
               allSuggestions.push({
@@ -751,16 +733,11 @@ const CreateMemoPage = () => {
     if (!suggestion || suggestion.applied) return;
 
     const content = formData[suggestion.field as keyof MemoFormData]?.toString() || '';
-    console.log('Before correction:', content);
-    console.log('Original word:', suggestion.originalWord);
-    console.log('Corrected word:', suggestion.correctedWord);
-    
+
     // Use more precise replacement - escape special regex characters
     const escapedOriginal = suggestion.originalWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const updatedContent = content.replace(new RegExp(escapedOriginal, 'g'), suggestion.correctedWord);
-    
-    console.log('After correction:', updatedContent);
-    
+
     setFormData(prev => ({
       ...prev,
       [suggestion.field]: updatedContent
@@ -836,8 +813,6 @@ const CreateMemoPage = () => {
         author_name: formData.author_name || (profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : '') || 'ไม่ระบุชื่อ',
         author_position: formData.author_position || profile?.current_position || profile?.job_position || profile?.position || 'ไม่ระบุตำแหน่ง'
       };
-
-      console.log('📄 Preview data:', previewData);
 
       const response = await railwayFetch('/pdf', {
         method: 'POST',

@@ -401,9 +401,7 @@ export const useNewsfeed = (options?: { category?: string; search?: string }) =>
         if (cd && Date.now() - cd < COOLDOWN_MS) return;
         refreshPostComments(record.post_id);
       })
-      .subscribe((status: string) => {
-        console.log('[Newsfeed Realtime]', status);
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);

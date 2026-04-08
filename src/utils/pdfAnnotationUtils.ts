@@ -141,11 +141,8 @@ export async function mergeAnnotationLayers(
       .order('created_at', { ascending: true });
 
     if (error || !layers || layers.length === 0) {
-      console.log('ℹ️ No annotation layers to merge');
       return null;
     }
-
-    console.log(`🎨 Merging ${layers.length} annotation layers into PDF`);
 
     // โหลด PDF ต้นฉบับ
     const pdfBytes = await loadPdfFromUrl(pdfUrl);
@@ -238,8 +235,6 @@ export async function cleanupAnnotatedFiles(documentId: string): Promise<void> {
         .remove(filesToDelete);
       if (removeError) {
         console.warn('Failed to delete annotated files:', removeError.message);
-      } else {
-        console.log(`🗑️ Deleted ${filesToDelete.length} annotated file(s)`);
       }
     }
 

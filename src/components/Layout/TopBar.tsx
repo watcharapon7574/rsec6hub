@@ -53,17 +53,12 @@ const TopBar = () => {
 
   const handleSignOut = async () => {
     try {
-      console.log('Starting sign out process...');
       const result = await signOut();
-      
-      console.log('Sign out result:', result);
-      console.log('Redirecting to auth page...');
       
       // Force redirect regardless of result
       navigate('/auth', { replace: true });
       
     } catch (err) {
-      console.error('Sign out error:', err);
       // Force redirect even if there's an error
       navigate('/auth', { replace: true });
     }

@@ -418,7 +418,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     const pdfPage = clickedElement.closest('.rpv-core__page-layer');
 
     if (!pdfPage) {
-      console.warn('Could not find PDF page element from click target.');
       return;
     }
 
@@ -448,15 +447,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     // Ensure position is within bounds
     const boundedX = Math.max(0, Math.min(pdfX, standardPageWidth));
     const boundedY = Math.max(0, Math.min(pdfY, standardPageHeight));
-    
-    console.log(`🎯 Click position calculation:
-      - Click coordinates: (${clickX.toFixed(1)}, ${clickY.toFixed(1)}) [DOM pixels]
-      - Page size: ${rect.width.toFixed(1)} x ${rect.height.toFixed(1)} [DOM]
-      - A4 standard: ${standardPageWidth} x ${standardPageHeight} [PDF points]
-      - Scale factors: X=${scaleX.toFixed(3)}, Y=${scaleY.toFixed(3)}
-      - PDF coordinates (DOM): (${pdfX.toFixed(1)}, ${pdfY_DOM.toFixed(1)})
-      - PDF coordinates (flipped): (${pdfX.toFixed(1)}, ${pdfY.toFixed(1)})
-      - Final bounded position: (${boundedX.toFixed(1)}, ${boundedY.toFixed(1)})`);
     
     onPositionClick(boundedX, boundedY, currentPageIndex);
   }, [onPositionClick, showSignatureMode, currentPageIndex]);
@@ -538,7 +528,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   // Force refresh when zoom scale changes to reposition pins
   useEffect(() => {
-    console.log('Zoom scale changed to:', scale, 'Refreshing pin positions');
     setRefreshKey(prev => prev + 1);
   }, [scale]);
 

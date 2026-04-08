@@ -51,14 +51,12 @@ const AdminSigningTools: React.FC = () => {
     const file = event.target.files?.[0];
     if (file && file.type === 'application/pdf') {
       setSelectedFile(file);
-      console.log('PDF file selected:', file.name);
     }
   };
 
   const handlePositionClick = (page: number, x: number, y: number) => {
     const newPosition: SignaturePosition = { page, x, y };
     setSignaturePositions([...signaturePositions, newPosition]);
-    console.log('Signature position added:', newPosition);
   };
 
   const createWorkflow = () => {
@@ -78,7 +76,6 @@ const AdminSigningTools: React.FC = () => {
     setWorkflows([...workflows, newWorkflow]);
     setSelectedFile(null);
     setSignaturePositions([]);
-    console.log('Workflow created:', newWorkflow);
   };
 
   const removePosition = (index: number) => {

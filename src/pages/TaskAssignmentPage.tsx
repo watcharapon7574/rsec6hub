@@ -92,8 +92,6 @@ const TaskAssignmentPage = () => {
         const rawPdfUrl = data.pdf_draft_path || data.pdf_final_path;
         const pdfUrl = extractPdfUrl(rawPdfUrl);
 
-        console.log('📄 Document loaded:', { documentType, pdfUrl, data });
-
         setDocument({
           id: data.id,
           subject: data.subject,
@@ -183,16 +181,6 @@ const TaskAssignmentPage = () => {
         setLoading(false);
         return;
       }
-
-      console.log('🚀 Calling createMultipleTaskAssignments with selectionInfo:', {
-        source: selectionInfo.source,
-        groupId: selectionInfo.groupId,
-        groupName: selectionInfo.groupName,
-        positionId: selectionInfo.positionId,
-        positionName: selectionInfo.positionName,
-        groupLeaderIds: selectionInfo.groupLeaderIds,
-        userIds
-      });
 
       await taskAssignmentService.createMultipleTaskAssignments(
         documentId,

@@ -104,7 +104,6 @@ const AuthPage = () => {
       const { error } = await signIn(formattedPhone, otp);
 
       if (error) {
-        console.log('❌ Sign in error:', error.message);
         setOtpError(error.message);
         toast({
           title: "เข้าสู่ระบบไม่สำเร็จ",

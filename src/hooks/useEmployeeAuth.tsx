@@ -35,7 +35,6 @@ export const useEmployeeAuth = () => {
 
     const currentTime = new Date().getTime();
     if (currentTime > storedAuth.expirationTime) {
-      console.log('⏰ Health check: session 8 ชม. หมดอายุ');
       clearAuthStorage();
       setUser(null);
       setIsAuth(false);
@@ -54,7 +53,6 @@ export const useEmployeeAuth = () => {
     if (sessionToken) {
       validateSession(sessionToken).then(({ valid, reason }) => {
         if (!valid && (reason === 'invalidated' || reason === 'expired')) {
-          console.log('🔒 Session ถูกยกเลิกจากเครื่องอื่น (reason:', reason, ')');
           clearAuthStorage();
           setUser(null);
           setIsAuth(false);
@@ -76,16 +74,13 @@ export const useEmployeeAuth = () => {
     if (!loading) return;
 
     const timeout = setTimeout(() => {
-      console.log('⏱️ Loading timeout (5s) → fallback to cached auth');
       const cachedProfile = getCurrentProfile();
       const authStatus = isAuthenticated();
 
       if (authStatus && cachedProfile) {
-        console.log('✅ Fallback: ใช้ cached profile:', cachedProfile.employee_id);
         setProfile(cachedProfile);
         setIsAuth(true);
       } else {
-        console.log('❌ Fallback: ไม่มี cached auth → แสดงหน้า login');
         setIsAuth(false);
         setProfile(null);
       }
@@ -101,8 +96,6 @@ export const useEmployeeAuth = () => {
     // Set up Supabase Auth state listener เป็นหลัก
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 Supabase Auth state changed:', event, session?.user?.id);
-
         if (!isMounted) return;
 
         if (session?.user) {
@@ -115,10 +108,8 @@ export const useEmployeeAuth = () => {
             if (currentTime > storedAuth.expirationTime) {
               if (isSigningInProgress) {
                 // กำลังลงนามอยู่ → ข้ามการบังคับ signOut ไว้ก่อน
-                console.log('⏰ Session 8 ชม. หมดอายุ แต่กำลังลงนามอยู่ → ข้ามไปก่อน');
               } else {
                 // Session 8 ชม. หมดอายุแล้ว → บังคับ sign out (local only เพื่อป้องกัน 403 loop)
-                console.log('⏰ Session 8 ชม. หมดอายุแล้ว (เข้าตั้งแต่', new Date(storedAuth.loginTime).toLocaleString(), ')');
                 clearAuthStorage();
                 setUser(null);
                 setIsAuth(false);
@@ -131,12 +122,10 @@ export const useEmployeeAuth = () => {
             }
           } else if (event !== 'SIGNED_IN') {
             if (isSigningInProgress) {
-              console.log('⚠️ ไม่มี auth data แต่กำลังลงนามอยู่ → ข้ามไปก่อน');
             } else {
               // ไม่มี auth data แต่มี Supabase session (อาจถูกเคลียร์ไปแล้วเพราะหมดอายุ)
               // ใช้ scope: 'local' เพื่อเคลียร์ session ใน browser เท่านั้น
               // ไม่ call server (ป้องกัน 403 ถ้า session หมดอายุแล้ว → วนลูป)
-              console.log('❌ ไม่มี auth data แต่มี Supabase session → เคลียร์ local session');
               setUser(null);
               setIsAuth(false);
               setProfile(null);
@@ -149,8 +138,6 @@ export const useEmployeeAuth = () => {
           setUser(session.user);
           setIsAuth(true);
           setLoading(false); // Reset loading when authenticated
-          console.log('✅ Supabase user authenticated:', session.user.id);
-          console.log('📊 Current states - loading:', false, 'isAuth:', true, 'profile:', !!profile);
 
           // Fetch profile using user_metadata phone or user_id (non-blocking)
           if (session.user.user_metadata?.phone) {
@@ -158,8 +145,6 @@ export const useEmployeeAuth = () => {
             refreshProfile(session.user.user_metadata.phone).then(profileData => {
               if (isMounted && profileData) {
                 setProfile(profileData);
-                console.log('✅ Profile loaded from Supabase user:', profileData.employee_id);
-                console.log('📊 Final states - loading:', false, 'isAuth:', true, 'profile:', !!profileData);
               }
             }).catch(error => {
               console.error('Failed to load profile from Supabase user:', error);
@@ -170,7 +155,6 @@ export const useEmployeeAuth = () => {
             const cachedProfile = getCurrentProfile();
             if (cachedProfile && isMounted) {
               setProfile(cachedProfile);
-              console.log('✅ Profile loaded from localStorage:', cachedProfile.employee_id);
             }
 
             // Refresh จาก DB แบบ non-blocking (ไม่ await เพราะอาจ deadlock กับ Supabase internal lock)
@@ -187,7 +171,6 @@ export const useEmployeeAuth = () => {
                     position: profileData.position as Profile['position']
                   } as Profile;
                   setProfile(dbProfile);
-                  console.log('✅ Profile refreshed from DB by user_id:', dbProfile.employee_id);
                 }
               })
               .catch(error => {
@@ -197,14 +180,12 @@ export const useEmployeeAuth = () => {
         } else {
           // No Supabase session
           setUser(null);
-          console.log('❌ No Supabase session');
 
           // ตรวจสอบระบบเดิมเป็น fallback เท่านั้น (ไม่ใช้ session monitoring)
           const authStatus = isAuthenticated();
           const currentProfile = getCurrentProfile();
 
           if (authStatus && currentProfile) {
-            console.log('🔄 Fallback to legacy auth system');
             setIsAuth(true);
             setProfile(currentProfile);
           } else {
@@ -222,11 +203,6 @@ export const useEmployeeAuth = () => {
     // Check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (isMounted) {
-        if (session?.user) {
-          console.log('🔍 Found existing Supabase session:', session.user.id);
-        } else {
-          console.log('🔍 No existing Supabase session found');
-        }
         // Always set loading to false after checking session
         setLoading(false);
       }
@@ -244,7 +220,6 @@ export const useEmployeeAuth = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('👁️ Tab became visible, checking session health...');
         checkSessionHealth();
         // ตรวจ DB session หลัง 2 วินาที (รอ network reconnect หลัง sleep)
         setTimeout(() => checkSessionFromDB(), 2000);
@@ -252,7 +227,6 @@ export const useEmployeeAuth = () => {
     };
 
     const handleFocus = () => {
-      console.log('🔍 Window focused, checking session health...');
       checkSessionHealth();
     };
 
@@ -296,7 +270,6 @@ export const useEmployeeAuth = () => {
       if (!result.error && result.profile) {
         setProfile(result.profile);
         setIsAuth(true);
-        console.log('Sign in successful, profile loaded:', result.profile);
       }
       
       return result;
@@ -310,13 +283,10 @@ export const useEmployeeAuth = () => {
 
   const handleSignOut = async () => {
     try {
-      console.log('Starting sign out process in hook...');
-      
       // Clear states FIRST to prevent race conditions
       setProfile(null);
       setIsAuth(false);
-      console.log('Auth states cleared immediately');
-      
+
       // Then call the actual sign out
       const result = await signOut();
       

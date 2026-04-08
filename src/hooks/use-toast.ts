@@ -142,15 +142,6 @@ type Toast = Omit<ToasterToast, "id">
 function toast({ ...props }: Toast) {
   const id = genId()
 
-  // Log toast creation for debugging
-  if (props.variant === "destructive") {
-    console.log('🔴 DESTRUCTIVE Toast triggered:', {
-      title: props.title,
-      description: props.description,
-      variant: props.variant
-    });
-  }
-
   const update = (props: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",

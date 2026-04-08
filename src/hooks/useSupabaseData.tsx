@@ -12,8 +12,6 @@ export const useSupabaseProfiles = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('Fetching profiles from database...');
-      
       const { data: result, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
@@ -24,8 +22,6 @@ export const useSupabaseProfiles = () => {
         throw fetchError;
       }
 
-      console.log('Profiles data fetched successfully:', result?.length, 'records');
-      
       // Cast the data to Profile type with proper type casting
       const castedProfiles = result?.map(profile => ({
         ...profile,
@@ -83,8 +79,6 @@ export const useSupabaseLeaveRequests = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('Fetching leave requests from database...');
-      
       const { data: result, error: fetchError } = await supabase
         .from('leave_requests')
         .select('*')
@@ -95,7 +89,6 @@ export const useSupabaseLeaveRequests = () => {
         throw fetchError;
       }
 
-      console.log('Leave requests data fetched successfully:', result?.length, 'records');
       setData(result || []);
       setError(null);
     } catch (err) {
@@ -127,8 +120,6 @@ export const useSupabaseDailyReports = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('Fetching daily reports from database...');
-      
       const { data: result, error: fetchError } = await supabase
         .from('daily_reports')
         .select('*')
@@ -139,7 +130,6 @@ export const useSupabaseDailyReports = () => {
         throw fetchError;
       }
 
-      console.log('Daily reports data fetched successfully:', result?.length, 'records');
       setData(result || []);
       setError(null);
     } catch (err) {
@@ -171,8 +161,6 @@ export const useSupabaseOfficialDocuments = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('Fetching official documents from database...');
-      
       const { data: result, error: fetchError } = await supabase
         .from('official_documents')
         .select('*')
@@ -183,7 +171,6 @@ export const useSupabaseOfficialDocuments = () => {
         throw fetchError;
       }
 
-      console.log('Official documents data fetched successfully:', result?.length, 'records');
       setData(result || []);
       setError(null);
     } catch (err) {

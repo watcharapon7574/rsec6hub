@@ -93,9 +93,6 @@ class RequestQueue {
         const result = await this.enqueue(fn, `${type}${attempt > 0 ? ` (retry ${attempt}/${maxRetries})` : ''}`);
 
         // Success! Return the result
-        if (attempt > 0) {
-          console.log(`✅ Request succeeded after ${attempt} retry attempts: ${type}`);
-        }
         return result;
       } catch (error) {
         lastError = error;

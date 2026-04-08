@@ -44,8 +44,6 @@ export const extractPdfUrl = (pdfPath: string | null | undefined): string | null
 
 export const uploadProfilePicture = async (file: File, userId: string): Promise<FileUploadResult> => {
   try {
-    console.log('Starting profile picture upload with user_id:', userId);
-    
     if (!userId) {
       console.error('No user_id provided');
       return { success: false, error: 'ไม่พบ User ID กรุณาเข้าสู่ระบบใหม่' };
@@ -66,8 +64,6 @@ export const uploadProfilePicture = async (file: File, userId: string): Promise<
     // Use user_id for secure path structure
     const filePath = `${userId}/${fileName}`;
 
-    console.log('Uploading file to user-scoped path:', filePath);
-
     // Upload to Supabase Storage with user_id path
     const { data, error } = await supabase.storage
       .from('profile-pictures')
@@ -81,14 +77,10 @@ export const uploadProfilePicture = async (file: File, userId: string): Promise<
       return { success: false, error: `เกิดข้อผิดพลาดในการอัปโหลด: ${error.message}` };
     }
 
-    console.log('Upload successful with user_id path:', data);
-
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('profile-pictures')
       .getPublicUrl(filePath);
-
-    console.log('Generated public URL:', publicUrl);
 
     return { success: true, url: publicUrl };
   } catch (error: any) {
@@ -99,8 +91,6 @@ export const uploadProfilePicture = async (file: File, userId: string): Promise<
 
 export const uploadSignature = async (file: File, userId: string): Promise<FileUploadResult> => {
   try {
-    console.log('Starting signature upload with user_id:', userId);
-    
     if (!userId) {
       console.error('No user_id provided');
       return { success: false, error: 'ไม่พบ User ID กรุณาเข้าสู่ระบบใหม่' };
@@ -121,8 +111,6 @@ export const uploadSignature = async (file: File, userId: string): Promise<FileU
     // Use user_id for secure path structure
     const filePath = `${userId}/${fileName}`;
 
-    console.log('Uploading signature to user-scoped path:', filePath);
-
     // Upload to Supabase Storage with user_id path
     const { data, error } = await supabase.storage
       .from('signatures')
@@ -136,14 +124,10 @@ export const uploadSignature = async (file: File, userId: string): Promise<FileU
       return { success: false, error: `เกิดข้อผิดพลาดในการอัปโหลด: ${error.message}` };
     }
 
-    console.log('Signature upload successful with user_id path:', data);
-
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('signatures')
       .getPublicUrl(filePath);
-
-    console.log('Generated signature public URL:', publicUrl);
 
     return { success: true, url: publicUrl };
   } catch (error: any) {
@@ -154,8 +138,6 @@ export const uploadSignature = async (file: File, userId: string): Promise<FileU
 
 export const deleteFileFromStorage = async (bucket: string, filePath: string): Promise<boolean> => {
   try {
-    console.log('Deleting file from bucket:', bucket, 'path:', filePath);
-    
     const { error } = await supabase.storage
       .from(bucket)
       .remove([filePath]);
@@ -165,7 +147,6 @@ export const deleteFileFromStorage = async (bucket: string, filePath: string): P
       return false;
     }
 
-    console.log('File deleted successfully');
     return true;
   } catch (error) {
     console.error('Delete error:', error);

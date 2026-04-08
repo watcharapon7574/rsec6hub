@@ -69,20 +69,6 @@ export const useAllMemos = () => {
         throw error;
       }
 
-      // Debug: Log raw data from database
-      console.log('📊 useAllMemos: Raw data from database:', {
-        count: data?.length,
-        firstMemo: data?.[0],
-        hasTaskAssignments: !!data?.[0]?.task_assignments,
-        sampleTaskAssignments: data?.[0]?.task_assignments,
-        assignedMemos: data?.filter(m => m.is_assigned).map(m => ({
-          id: m.id,
-          subject: m.subject,
-          is_assigned: m.is_assigned,
-          task_assignments: m.task_assignments
-        }))
-      });
-
       // Transform data to match MemoRecord type and add has_in_progress_task + has_active_tasks
       const transformedData = data?.map(memo => {
         const tasks = memo.task_assignments || [];
@@ -94,19 +80,6 @@ export const useAllMemos = () => {
         const hasActiveTasks = tasks.some((task: any) =>
           (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
         );
-
-        // Debug log - ล็อกทุก memo ที่มี is_assigned
-        if (memo.is_assigned) {
-          console.log('🔍 useAllMemos transformation:', {
-            memoId: memo.id,
-            subject: memo.subject,
-            is_assigned: memo.is_assigned,
-            tasks: tasks,
-            tasksLength: tasks.length,
-            hasInProgressTask: hasInProgressTask,
-            hasActiveTasks: hasActiveTasks
-          });
-        }
 
         // Remove task_assignments from the object to keep it clean
         const { task_assignments, ...memoWithoutTasks } = memo;
@@ -124,18 +97,6 @@ export const useAllMemos = () => {
           has_active_tasks: hasActiveTasks
         };
       }) || [];
-
-      // Debug: Log transformed data
-      console.log('✅ useAllMemos: Transformed data:', {
-        count: transformedData.length,
-        firstTransformed: transformedData[0],
-        hasInProgressTaskField: transformedData[0]?.has_in_progress_task,
-        assignedDocs: transformedData.filter(m => m.is_assigned).map(m => ({
-          id: m.id,
-          subject: m.subject,
-          has_in_progress_task: m.has_in_progress_task
-        }))
-      });
 
       setMemos(transformedData as MemoRecord[]);
 
@@ -222,42 +183,29 @@ export const useAllMemos = () => {
           updates.revision_count = currentRevisionCount + 1;
 
           // ลบ PDF และเอกสารแนบทันทีเมื่อถูกตีกลับ (เหมือน updateMemoApproval)
-          console.log('🗑️ [updateMemoStatus] Deleting PDF and attachments due to rejection');
-
-          // ลบ PDF draft
-          console.log('📄 [updateMemoStatus] pdf_draft_path:', currentMemo.pdf_draft_path);
           if (currentMemo.pdf_draft_path) {
             try {
               const pdfPath = currentMemo.pdf_draft_path.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
-              console.log('📄 [updateMemoStatus] PDF path to delete:', pdfPath);
 
               const { error: deletePdfError } = await supabase.storage
                 .from('documents')
                 .remove([pdfPath]);
 
               if (deletePdfError) {
-                console.error('❌ [updateMemoStatus] Error deleting PDF:', deletePdfError);
-              } else {
-                console.log('✅ [updateMemoStatus] Deleted PDF:', pdfPath);
+                console.error('Error deleting PDF:', deletePdfError);
               }
             } catch (err) {
-              console.error('❌ [updateMemoStatus] Error processing PDF deletion:', err);
+              console.error('Error processing PDF deletion:', err);
             }
           }
 
           // ลบเอกสารแนบทั้งหมด
-          console.log('📎 [updateMemoStatus] attached_files:', {
-            value: currentMemo.attached_files,
-            type: typeof currentMemo.attached_files
-          });
-
           if (currentMemo.attached_files) {
             try {
               let attachedFilesArr: string[] = [];
               if (typeof currentMemo.attached_files === 'string') {
                 try {
                   attachedFilesArr = JSON.parse(currentMemo.attached_files);
-                  console.log('📎 [updateMemoStatus] Parsed attached_files:', attachedFilesArr);
                 } catch {
                   attachedFilesArr = currentMemo.attached_files ? [currentMemo.attached_files] : [];
                 }
@@ -270,22 +218,18 @@ export const useAllMemos = () => {
                   .map((url: string) => url?.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, ''))
                   .filter(Boolean);
 
-                console.log('📎 [updateMemoStatus] Attachment paths to delete:', attachmentPaths);
-
                 if (attachmentPaths.length > 0) {
                   const { error: deleteAttachmentsError } = await supabase.storage
                     .from('documents')
                     .remove(attachmentPaths);
 
                   if (deleteAttachmentsError) {
-                    console.error('❌ [updateMemoStatus] Error deleting attachments:', deleteAttachmentsError);
-                  } else {
-                    console.log(`✅ [updateMemoStatus] Deleted ${attachmentPaths.length} attachment(s)`);
+                    console.error('Error deleting attachments:', deleteAttachmentsError);
                   }
                 }
               }
             } catch (err) {
-              console.error('❌ [updateMemoStatus] Error processing attachments deletion:', err);
+              console.error('Error processing attachments deletion:', err);
             }
           }
 
@@ -353,8 +297,6 @@ export const useAllMemos = () => {
         throw new Error('เอกสารถูกลบแล้ว');
       }
 
-      console.log('✅ Found memo:', existingMemo);
-
       const firstOrder = getFirstSignerOrder(signaturePositions);
 
       const { error } = await supabase
@@ -391,14 +333,6 @@ export const useAllMemos = () => {
   const updateMemoApproval = async (memoId: string, action: 'approve' | 'reject', comment?: string, signOnBehalfUserId?: string) => {
     try {
       setLoading(true);
-
-      // Debug: Log profile status
-      console.log('🔍 [updateMemoApproval] Profile check:', {
-        hasProfile: !!profile,
-        profileName: profile ? `${profile.first_name} ${profile.last_name}` : 'NO PROFILE',
-        action,
-        comment
-      });
 
       // Fetch fresh memo data from database (not from cached state)
       // This ensures we have the latest attached_files for deletion
@@ -452,7 +386,6 @@ export const useAllMemos = () => {
 
         // If profile not available from context, try to fetch from supabase session
         if (!rejectorProfile) {
-          console.log('⚠️ [updateMemoApproval] Profile not in context, fetching from supabase...');
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user?.id) {
             const { data: profileData } = await supabase
@@ -463,7 +396,6 @@ export const useAllMemos = () => {
 
             if (profileData) {
               rejectorProfile = profileData as any;
-              console.log('✅ [updateMemoApproval] Fetched profile:', `${rejectorProfile?.first_name} ${rejectorProfile?.last_name}`);
             }
           }
         }
@@ -476,7 +408,6 @@ export const useAllMemos = () => {
             position: rejectorProfile.current_position || rejectorProfile.job_position || rejectorProfile.position || ''
           };
           updateData.rejected_name_comment = rejectedNameComment;
-          console.log('✅ [updateMemoApproval] Set rejected_name_comment:', rejectedNameComment);
         } else {
           console.error('❌ [updateMemoApproval] Could not get profile for rejection');
           // Still set basic rejection info even without profile
@@ -501,37 +432,23 @@ export const useAllMemos = () => {
         }
 
         // ลบ PDF และเอกสารแนบทันทีเมื่อถูกตีกลับ
-        console.log('🗑️ Deleting PDF and attachments due to rejection');
-
-        // ลบ PDF draft
-        console.log('📄 memo.pdf_draft_path:', memo.pdf_draft_path);
         if (memo.pdf_draft_path) {
           try {
             const pdfPath = memo.pdf_draft_path.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
-            console.log('📄 PDF path to delete:', pdfPath);
 
             const { error: deletePdfError } = await supabase.storage
               .from('documents')
               .remove([pdfPath]);
 
             if (deletePdfError) {
-              console.error('❌ Error deleting PDF:', deletePdfError);
-            } else {
-              console.log('✅ Deleted PDF:', pdfPath);
+              console.error('Error deleting PDF:', deletePdfError);
             }
           } catch (err) {
-            console.error('❌ Error processing PDF deletion:', err);
+            console.error('Error processing PDF deletion:', err);
           }
-        } else {
-          console.log('📄 No pdf_draft_path found in memo');
         }
 
         // ลบเอกสารแนบทั้งหมด (attached_files เป็น JSON string จาก database)
-        console.log('📎 memo.attached_files:', {
-          value: memo.attached_files,
-          type: typeof memo.attached_files,
-          isArray: Array.isArray(memo.attached_files)
-        });
 
         if (memo.attached_files) {
           try {
@@ -539,14 +456,11 @@ export const useAllMemos = () => {
             if (typeof memo.attached_files === 'string') {
               try {
                 attachedFilesArr = JSON.parse(memo.attached_files);
-                console.log('📎 Parsed attached_files from JSON string:', attachedFilesArr);
               } catch {
                 attachedFilesArr = memo.attached_files ? [memo.attached_files] : [];
-                console.log('📎 Failed to parse, using as single string:', attachedFilesArr);
               }
             } else if (Array.isArray(memo.attached_files)) {
               attachedFilesArr = memo.attached_files;
-              console.log('📎 attached_files is already an array:', attachedFilesArr);
             }
 
             if (attachedFilesArr.length > 0) {
@@ -554,27 +468,19 @@ export const useAllMemos = () => {
                 .map((url: string) => url?.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, ''))
                 .filter(Boolean);
 
-              console.log('📎 Attachment paths to delete:', attachmentPaths);
-
               if (attachmentPaths.length > 0) {
                 const { error: deleteAttachmentsError } = await supabase.storage
                   .from('documents')
                   .remove(attachmentPaths);
 
                 if (deleteAttachmentsError) {
-                  console.error('❌ Error deleting attachments:', deleteAttachmentsError);
-                } else {
-                  console.log(`✅ Deleted ${attachmentPaths.length} attachment(s):`, attachmentPaths);
+                  console.error('Error deleting attachments:', deleteAttachmentsError);
                 }
               }
-            } else {
-              console.log('📎 No attachments to delete (empty array)');
             }
           } catch (err) {
-            console.error('❌ Error processing attachments deletion:', err);
+            console.error('Error processing attachments deletion:', err);
           }
-        } else {
-          console.log('📎 No attached_files found in memo');
         }
 
         // ล้างค่า pdf_draft_path และ attached_files ใน database
@@ -644,20 +550,15 @@ export const useAllMemos = () => {
           table: 'memos'
         },
         (payload) => {
-          console.log('🎯 Realtime memos update:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
           // Refetch all memos when any change is detected
           fetchMemos();
         }
       )
-      .subscribe((status) => {
-        console.log('📡 Memos realtime status:', status);
-      });
+      .subscribe();
 
     // Listen for smart updates
     const handleMemoUpdated = (event: CustomEvent) => {
       const { memo, action } = event.detail;
-      console.log('🔄 Applying smart memo update:', action, memo.id);
-      
       setMemos(prevMemos => {
         if (action === 'INSERT') {
           // เพิ่ม memo ใหม่ถ้ายังไม่มี
@@ -676,7 +577,6 @@ export const useAllMemos = () => {
 
     const handleMemoDeleted = (event: CustomEvent) => {
       const { memoId } = event.detail;
-      console.log('�️ Removing deleted memo:', memoId);
       setMemos(prevMemos => prevMemos.filter(m => m.id !== memoId));
     };
 

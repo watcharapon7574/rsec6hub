@@ -206,18 +206,13 @@ class TaskAssignmentService {
 
       // Update if we have any data
       if (Object.keys(updateData).length > 0) {
-        console.log('📝 Updating task assignment:', { assignmentId, updateData });
-
         const { error: updateError } = await (supabase as any)
           .from('task_assignments')
           .update(updateData)
           .eq('id', assignmentId);
 
         if (updateError) {
-          console.error('❌ Error updating task details:', updateError);
           // Don't throw - assignment was created successfully
-        } else {
-          console.log('✅ Task assignment updated successfully');
         }
       }
 
@@ -237,13 +232,6 @@ class TaskAssignmentService {
     assigneeUserIds: string[],
     options?: TaskDetailsOptions
   ): Promise<void> {
-    console.log('📢 sendGroupNotification called with:', {
-      documentId,
-      documentType,
-      assigneeUserIds,
-      options
-    });
-
     try {
       // Get document details
       let subject = '';
@@ -325,19 +313,10 @@ class TaskAssignmentService {
         is_position_based: isPositionBased,
       };
 
-      console.log('📤 Sending telegram-notify payload:', payload);
-
       const { data, error } = await supabase.functions.invoke('telegram-notify', {
         body: payload
       });
 
-      console.log('📥 telegram-notify response:', { data, error });
-
-      if (error) {
-        console.error('❌ Error sending group notification:', error);
-      } else {
-        console.log('✅ Group notification sent successfully:', data);
-      }
     } catch (error) {
       console.error('❌ Failed to send group notification:', error);
       // Don't throw - this is a non-critical operation
@@ -411,7 +390,6 @@ class TaskAssignmentService {
 
         // If no valid leaders found (shouldn't happen for properly created groups)
         if (!teamLeaderUserId) {
-          console.warn('⚠️ Group-based but no valid leaders found in assigned users');
           const { data: profiles } = await supabase
             .from('profiles')
             .select('user_id, employee_id')
@@ -427,7 +405,6 @@ class TaskAssignmentService {
         }
       } else if (isGroupBased) {
         // Group-based but groupLeaderIds is empty (old groups without leader_user_id)
-        console.warn('⚠️ Group-based but groupLeaderIds is empty - using RSEC seniority');
         const { data: profiles } = await supabase
           .from('profiles')
           .select('user_id, employee_id')
@@ -445,7 +422,6 @@ class TaskAssignmentService {
         teamLeaderUserId = assignedToUserIds[0];
       } else if (!options?.selectionInfo?.source && assignedToUserIds.length > 1) {
         // Source is null/undefined with multiple users: use RSEC seniority
-        console.warn('⚠️ Source is null but has multiple users - using RSEC seniority');
         const { data: profiles } = await supabase
           .from('profiles')
           .select('user_id, employee_id')
@@ -464,18 +440,6 @@ class TaskAssignmentService {
       if (!teamLeaderUserId && assignedToUserIds.length > 0) {
         teamLeaderUserId = assignedToUserIds[0];
       }
-
-      console.log('📋 createMultipleTaskAssignments:', {
-        isPositionBased,
-        isGroupBased,
-        isNameBased,
-        groupLeaderIds,
-        teamLeaderUserId,
-        teamLeaderUserIds: [...teamLeaderUserIds],
-        assignedToUserIds,
-        source: options?.selectionInfo?.source,
-        positions: options?.selectionInfo?.positions
-      });
 
       // Build per-user position map for multi-position assignments
       const positionMap = new Map<string, string>();
@@ -508,11 +472,9 @@ class TaskAssignmentService {
             userOptions
           );
           assignmentIds.push(assignmentId);
-          console.log(`  ✅ Created assignment for ${userId}, isTeamLeader: ${isLeader}, positionId: ${perUserPositionId || 'default'}`);
         } catch (err: any) {
           // Skip duplicate assignments instead of failing the whole batch
           if (err.message?.includes('ได้รับมอบหมายงานในเอกสารนี้แล้ว')) {
-            console.warn(`  ⚠️ Skipped duplicate assignment for ${userId}`);
             skippedDuplicates.push(userId);
           } else {
             throw err;
@@ -682,7 +644,6 @@ class TaskAssignmentService {
 
       if (!targetUserId) {
         // Return 0 instead of throwing error if user not authenticated yet
-        console.warn('User not authenticated yet, returning 0 for pending task count');
         return 0;
       }
 
@@ -773,16 +734,6 @@ class TaskAssignmentService {
       // Even if not a reporter, they need to be able to edit reporter assignment
       const newStatus = assignment.is_team_leader ? 'in_progress' : (isThisPersonReporter ? 'in_progress' : 'completed');
 
-      console.log('🔍 acknowledgeTask debug:', {
-        assignmentId,
-        isPositionBased,
-        assignmentSource: assignment.assignment_source,
-        isThisPersonReporter,
-        reporterIds,
-        assignedTo: assignment.assigned_to,
-        newStatus
-      });
-
       // Update the main assignment
       const updateData: Record<string, any> = {
         status: newStatus,
@@ -820,10 +771,6 @@ class TaskAssignmentService {
           p_assignment_id: assignmentId,
           p_reporter_user_ids: reporterIds
         });
-
-      if (rpcError) {
-        console.error('Failed to update reporters via RPC:', rpcError);
-      }
 
       return true;
     } catch (error) {
@@ -875,7 +822,6 @@ class TaskAssignmentService {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        console.log(`⚠️ User ${userId} already assigned to this document, skipping`);
         return existing[0].id;
       }
 

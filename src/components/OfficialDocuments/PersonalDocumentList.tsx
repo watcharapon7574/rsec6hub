@@ -95,8 +95,6 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   useEffect(() => {
     const handleMemoUpdated = (event: CustomEvent) => {
       const { memo, action } = event.detail;
-      console.log('📝 PersonalDocumentList: Memo updated', { memo, action });
-      
       if (action === 'INSERT' || action === 'UPDATE') {
         setLocalMemos(prevMemos => {
           const existingIndex = prevMemos.findIndex(m => m.id === memo.id);
@@ -115,8 +113,6 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
 
     const handleMemoDeleted = (event: CustomEvent) => {
       const { memoId } = event.detail;
-      console.log('🗑️ PersonalDocumentList: Memo deleted', { memoId });
-      
       setLocalMemos(prevMemos => 
         prevMemos.filter(memo => memo.id !== memoId)
       );
@@ -138,14 +134,10 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
           filter: profile?.user_id ? `user_id=eq.${profile.user_id}` : undefined,
         },
         async (payload) => {
-          console.log('🔴 PersonalDocumentList: Realtime memo change:', payload);
-          
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             // Removed realtime update - manual refresh only
-            console.log('Memo update detected, use manual refresh to see changes');
           } else if (payload.eventType === 'DELETE') {
             // Removed realtime update - manual refresh only
-            console.log('Memo delete detected, use manual refresh to see changes');
           }
         }
       )

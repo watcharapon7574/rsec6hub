@@ -103,8 +103,6 @@ export const useAssignedTasks = (
 
     const channel = taskAssignmentService.subscribeToTaskAssignments(
       (payload) => {
-        console.log('Task assignment change detected:', payload);
-
         // Show toast notification for new assignments
         if (payload.eventType === 'INSERT') {
           toast({

@@ -152,8 +152,6 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
 
     const handleDocReceiveUpdated = (event: CustomEvent) => {
       const { docReceive, action } = event.detail;
-      console.log('📋 DocReceiveList: Doc Receive updated', { docReceive, action, position: permissions.position });
-      
       if (action === 'INSERT' || action === 'UPDATE') {
         setLocalDocReceive(prevDocs => {
           const existingIndex = prevDocs.findIndex(d => d.id === docReceive.id);
@@ -172,8 +170,6 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
 
     const handleDocReceiveDeleted = (event: CustomEvent) => {
       const { docReceiveId } = event.detail;
-      console.log('🗑️ DocReceiveList: Doc Receive deleted', { docReceiveId, position: permissions.position });
-      
       setLocalDocReceive(prevDocs => 
         prevDocs.filter(doc => doc.id !== docReceiveId)
       );
@@ -195,8 +191,6 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
           filter: profile?.user_id ? `created_by=neq.${profile.user_id}` : undefined, // เอกสารที่ไม่ใช่ของตนเอง
         },
         async (payload: any) => {
-          console.log('🔵 DocReceiveList: Realtime doc_receive change:', payload);
-          
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             // อัพเดท doc_receive ใน local state
             const updatedDoc = payload.new;
@@ -1069,11 +1063,6 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                           <span className="text-xs">แก้ไข</span>
                         </Button>
                       )}
-                      {/* Debug: Check user position */}
-                      {(() => {
-                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director'));
-                        return null;
-                      })()}
                       {((profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') || isPDFUploadMemo(memo)) && (
                         <div className="relative">
                           {memo.status === 'rejected' ? (
@@ -1103,7 +1092,6 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                                   onClick={() => {
                                     if (memo.current_signer_order <= 1) {
                                       const manageRoute = getDocumentManageRoute(memo, memo.id);
-                                      console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
                                       navigate(manageRoute);
                                     }
                                   }}

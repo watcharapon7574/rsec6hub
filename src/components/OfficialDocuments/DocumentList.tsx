@@ -125,8 +125,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
 
     const handleMemoUpdated = (event: CustomEvent) => {
       const { memo, action } = event.detail;
-      console.log('📋 DocumentList: Memo updated', { memo, action, position: permissions.position });
-      
       if (action === 'INSERT' || action === 'UPDATE') {
         setLocalMemos(prevMemos => {
           const existingIndex = prevMemos.findIndex(m => m.id === memo.id);
@@ -145,8 +143,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
 
     const handleMemoDeleted = (event: CustomEvent) => {
       const { memoId } = event.detail;
-      console.log('🗑️ DocumentList: Memo deleted', { memoId, position: permissions.position });
-      
       setLocalMemos(prevMemos => 
         prevMemos.filter(memo => memo.id !== memoId)
       );
@@ -168,8 +164,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
           filter: profile?.user_id ? `user_id=neq.${profile.user_id}` : undefined, // เอกสารที่ไม่ใช่ของตนเอง
         },
         async (payload) => {
-          console.log('🔵 DocumentList: Realtime memo change:', payload);
-          
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             await updateSingleMemo(payload.new.id, payload);
           } else if (payload.eventType === 'DELETE') {
@@ -1153,11 +1147,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           )}
                         </div>
                       )}
-                      {/* Debug: Check user position */}
-                      {(() => {
-                        console.log('🔍 Debug DocumentList - User position:', profile?.position, 'Is clerk_teacher:', (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director'));
-                        return null;
-                      })()}
                       {!isSecretary && (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
                         <div className="relative">
                           {(() => {
@@ -1180,7 +1169,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                       navigate(`/manage-report-memo/${memo.id}`);
                                     } else {
                                       const manageRoute = getDocumentManageRoute(memo, memo.id);
-                                      console.log('🔍 Navigating to manage route:', manageRoute, 'for memo:', memo.id);
                                       navigate(manageRoute);
                                     }
                                   }
@@ -1212,7 +1200,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       size="sm"
                       className="h-7 w-7 p-0 flex items-center justify-center border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 dark:bg-red-950"
                       onClick={() => {
-                        console.log('🗑️ Delete button clicked for memo:', memo.id);
                         handleDeleteClick(memo);
                       }}
                       title="ลบเอกสาร"

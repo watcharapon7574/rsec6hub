@@ -18,7 +18,6 @@ export class MemoService {
       });
 
       if (error) {
-        console.warn('Line-wrap Edge Function error, using original:', error);
         return text; // Fallback
       }
 
@@ -36,7 +35,6 @@ export class MemoService {
 
     for (const field of fieldsToWrap) {
       if (processed[field] && processed[field].trim()) {
-        console.log(`📝 Wrapping field: ${field}`);
         processed[field] = await this.wrapTextWithLineWrap(processed[field]);
       }
     }
@@ -109,9 +107,7 @@ export class MemoService {
             .single()
         ) as any;
 
-        if (fetchError) {
-          console.warn('Could not fetch existing memo for comparison:', fetchError);
-        } else {
+        if (!fetchError) {
           // Check if only attached files changed
           const contentFields = ['doc_number', 'subject', 'date', 'attachment_title', 'introduction', 'author_name', 'author_position', 'fact', 'proposal'];
           const hasContentChanges = contentFields.some(field => {
@@ -123,7 +119,6 @@ export class MemoService {
           // If only attached files changed and we have new files, skip PDF regeneration
           // BUT only if existing PDF still exists (not deleted, e.g., after rejection)
           if (!hasContentChanges && attachedFileUrls.length > 0 && existingMemo.pdf_draft_path) {
-            console.log('📎 Only attached files changed - skipping PDF regeneration');
             shouldGenerateNewPdf = false;
             publicUrl = existingMemo.pdf_draft_path; // Keep existing PDF
           }
@@ -147,7 +142,6 @@ export class MemoService {
                 .map((fileUrl: string) => fileUrl.split('/documents/')[1]);
 
               if (oldFilePaths.length > 0) {
-                console.log('🗑️ Deleting old attached files:', oldFilePaths);
                 await supabase.storage
                   .from('documents')
                   .remove(oldFilePaths);
@@ -161,16 +155,13 @@ export class MemoService {
 
       // Generate new PDF only if content changed or it's a new memo
       if (shouldGenerateNewPdf) {
-        console.log('📄 Generating new PDF...');
 
         let pdfBlob: Blob;
 
         // Use pre-generated blob if available (from preview), otherwise call API
         if (preGeneratedPdfBlob) {
-          console.log('📄 Using pre-generated PDF from preview');
           pdfBlob = preGeneratedPdfBlob;
         } else {
-          console.log('📄 Calling Railway API to generate PDF...');
           // Call Railway PDF API with queue + retry logic (max 3 retries with exponential backoff)
           // This ensures high success rate even under load (Railway can only handle 2 concurrent)
           pdfBlob = await railwayPDFQueue.enqueueWithRetry(
@@ -301,13 +292,10 @@ export class MemoService {
         // ลบไฟล์ PDF เก่าหลังจาก database update สำเร็จแล้วเท่านั้น
         if (oldPdfPathToDelete) {
           try {
-            console.log('🗑️ Deleting old PDF file:', oldPdfPathToDelete);
             await supabase.storage
               .from('documents')
               .remove([oldPdfPathToDelete]);
-            console.log('✅ Old PDF file deleted successfully');
           } catch (deleteError) {
-            console.warn('⚠️ Could not delete old PDF file:', deleteError);
             // ไม่ throw error เพราะ database update สำเร็จแล้ว
           }
         }
@@ -380,7 +368,6 @@ export class MemoService {
     try {
       // Capture device fingerprint when signing
       const deviceInfo = getDeviceFingerprint();
-      console.log('📱 Device fingerprint captured:', deviceInfo);
 
       // Get current memo
       const { data: memo, error: fetchError } = await supabase

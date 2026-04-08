@@ -127,15 +127,6 @@ const PDFDocumentManagePage: React.FC = () => {
     ? profiles.find(p => p.user_id === (docReceive.created_by || docReceive.user_id))
     : null;
 
-  console.log('👤 Author profile lookup:', {
-    docReceiveId: docReceive?.id,
-    createdBy: docReceive?.created_by,
-    userId: docReceive?.user_id,
-    profilesCount: profiles.length,
-    authorProfileFound: !!authorProfile,
-    authorProfileName: authorProfile ? `${authorProfile.first_name} ${authorProfile.last_name}` : 'NOT FOUND'
-  });
-
   // Build signers list - สำหรับหนังสือรับ ไม่มีหัวหน้าฝ่ายในบทบาทการลงนาม
   const signers = React.useMemo(() => {
     const list = [];
@@ -293,13 +284,6 @@ const PDFDocumentManagePage: React.FC = () => {
       });
 
       // Save document summary if provided
-      console.log('🔍 Attempting to save document summary (doc_receive):', {
-        hasComment: !!comment.trim(),
-        commentLength: comment.trim().length,
-        comment: comment.trim(),
-        memoId
-      });
-
       if (comment.trim()) {
         try {
           const { error: updateError } = await (supabase as any)
@@ -311,29 +295,24 @@ const PDFDocumentManagePage: React.FC = () => {
             .eq('id', memoId);
 
           if (updateError) {
-            console.error('❌ Error updating document summary:', updateError);
             toast({
               title: "คำเตือน",
               description: `ไม่สามารถบันทึกความหมายโดยสรุปได้: ${updateError.message}`,
               variant: "destructive",
             });
           } else {
-            console.log('✅ Document summary updated successfully:', comment.trim());
             toast({
               title: "บันทึกสำเร็จ",
               description: "บันทึกความหมายโดยสรุปของเอกสารเรียบร้อยแล้ว",
             });
           }
         } catch (err) {
-          console.error('❌ Failed to update document summary:', err);
           toast({
             title: "เกิดข้อผิดพลาด",
             description: "ไม่สามารถบันทึกความหมายโดยสรุปได้",
             variant: "destructive",
           });
         }
-      } else {
-        console.log('⚠️ No document summary provided - skipping save');
       }
 
       // Update signers/positions in doc_receive table
@@ -350,16 +329,8 @@ const PDFDocumentManagePage: React.FC = () => {
       let signSuccess = false;
       let signedPdfBlob: Blob | null = null;
 
-      console.log('🔍 Checking signature requirements:', {
-        hasDocReceive: !!docReceive,
-        hasPdfDraftPath: !!docReceive?.pdf_draft_path,
-        hasAuthorProfile: !!authorProfile,
-        hasSignatureUrl: !!authorProfile?.signature_url
-      });
-
       if (docReceive && docReceive.pdf_draft_path && authorProfile && authorProfile.signature_url) {
         const extractedPdfUrl = extractPdfUrl(docReceive.pdf_draft_path);
-        console.log('📄 Extracted PDF URL:', extractedPdfUrl);
         if (!extractedPdfUrl) {
           toast({
             title: "ข้อผิดพลาด",
@@ -384,7 +355,6 @@ const PDFDocumentManagePage: React.FC = () => {
           }
 
           // ดาวน์โหลด PDF + ลายเซ็น พร้อมกัน (parallel)
-          console.log('📥 Fetching PDF and signature in parallel...');
           const [pdfRes, sigRes] = await Promise.all([
             fetch(extractedPdfUrl),
             fetch(authorProfile.signature_url)
@@ -415,8 +385,6 @@ const PDFDocumentManagePage: React.FC = () => {
             pdfRes.blob(),
             sigRes.blob()
           ]);
-          console.log('✅ PDF fetched:', pdfBlob.size, 'bytes, Signature fetched:', sigBlob.size, 'bytes');
-
           // ตรวจสอบว่า blob เป็น PDF จริง
           if (pdfBlob.type !== 'application/pdf' && !pdfBlob.type.includes('pdf')) {
             console.error('❌ Invalid PDF blob type:', pdfBlob.type);
@@ -434,7 +402,6 @@ const PDFDocumentManagePage: React.FC = () => {
           formData.append('sig1', sigBlob, 'signature.png');
 
           const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
-          console.log('✍️ Author positions found:', authorPositions.length);
 
           if (authorPositions.length > 0) {
             // จุดแรก: แสดงครบ (ลายเซ็น, ชื่อ, ตำแหน่ง) / จุดที่ 2+: แค่รูปลายเซ็น PNG
@@ -449,10 +416,8 @@ const PDFDocumentManagePage: React.FC = () => {
               lines: index === 0 ? lines : linesImageOnly
             }));
 
-            console.log('📝 Signatures payload:', signaturesPayload);
             formData.append('signatures', JSON.stringify(signaturesPayload));
 
-            console.log('🚀 Calling signature API...');
             // Call Railway add_signature_v2 API with queue + retry logic
             signedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
               async () => {
@@ -461,7 +426,6 @@ const PDFDocumentManagePage: React.FC = () => {
                   body: formData
                 });
 
-                console.log('📡 API response status:', res.status);
                 if (!res.ok) {
                   const errorText = await res.text();
                   console.error('❌ API error:', errorText);
@@ -469,7 +433,6 @@ const PDFDocumentManagePage: React.FC = () => {
                 }
 
                 const blob = await res.blob();
-                console.log('✅ Signature successful, blob size:', blob.size);
                 return blob;
               },
               'Add Signature V2 (PDF Document)',
@@ -477,8 +440,6 @@ const PDFDocumentManagePage: React.FC = () => {
               1000
             );
             signSuccess = true;
-          } else {
-            console.warn('⚠️ No author positions found - cannot sign document');
           }
         } catch (e) {
           console.error('❌ เกิดข้อผิดพลาดขณะส่ง API ลายเซ็นธุการ:', e);
@@ -489,13 +450,6 @@ const PDFDocumentManagePage: React.FC = () => {
           });
           return;
         }
-      } else {
-        console.warn('⚠️ Cannot sign - missing requirements:', {
-          docReceive: !!docReceive,
-          pdfDraftPath: !!docReceive?.pdf_draft_path,
-          authorProfile: !!authorProfile,
-          signatureUrl: !!authorProfile?.signature_url
-        });
       }
 
       // If signing successful, update status

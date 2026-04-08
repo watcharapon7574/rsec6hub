@@ -36,8 +36,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
-
     // Validate file size
     if (file.size > maxSize) {
       const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
@@ -51,22 +49,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     setErrorMessage('');
 
     try {
-      console.log('Starting file upload...');
       const result = await onFileUpload(file);
-      console.log('Upload result:', result);
-      
+
       if (result.success) {
         setUploadStatus('success');
-        console.log('Upload successful, URL:', result.url);
       } else {
         setUploadStatus('error');
         setErrorMessage(result.error || 'เกิดข้อผิดพลาดในการอัปโหลด');
-        console.error('Upload failed:', result.error);
       }
     } catch (error: any) {
       setUploadStatus('error');
       setErrorMessage('เกิดข้อผิดพลาดที่ไม่คาดคิด');
-      console.error('Upload exception:', error);
     } finally {
       setUploading(false);
       // Clear file input
@@ -127,7 +120,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               alt="Preview"
               className="h-8 w-8 rounded object-cover border"
               onError={(e) => {
-                console.error('Error loading image:', currentUrl);
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />

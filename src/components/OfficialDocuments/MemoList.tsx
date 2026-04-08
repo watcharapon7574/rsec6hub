@@ -126,7 +126,7 @@ const MemoList: React.FC<MemoListProps> = ({
           }
         }
         setReportMemoIds(reportMemoIdsSet);
-        console.log('📋 Report memo IDs found:', Array.from(reportMemoIdsSet));
+
 
         // Only continue with draft report memo tracking for admin/clerk
         if (!permissions.isAdmin && !permissions.isClerk) return;
@@ -195,7 +195,7 @@ const MemoList: React.FC<MemoListProps> = ({
           filter: profile?.user_id ? `created_by=neq.${profile.user_id}` : undefined,
         },
         async (payload: any) => {
-          console.log('🔵 MemoList: Realtime memo change:', payload);
+
 
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const updatedMemo = payload.new;
@@ -850,7 +850,7 @@ const MemoList: React.FC<MemoListProps> = ({
                         <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
                           onClick={() => {
                             // TODO: Implement delete functionality
-                            console.log('Delete report memo:', memo.id);
+
                           }}
                           title="ลบรายงาน"
                         >

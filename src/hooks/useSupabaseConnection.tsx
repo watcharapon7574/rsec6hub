@@ -11,8 +11,6 @@ export const useSupabaseConnection = () => {
     const checkConnection = async () => {
       try {
         setLoading(true);
-        console.log('Checking Supabase connection...');
-        
         // Test connection by making a simple query
         const { data, error: connectionError } = await supabase
           .from('profiles')
@@ -23,7 +21,6 @@ export const useSupabaseConnection = () => {
           setError(connectionError);
           setIsConnected(false);
         } else {
-          console.log('Supabase connection successful. Profile count:', data);
           setIsConnected(true);
           setError(null);
         }

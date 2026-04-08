@@ -15,7 +15,6 @@ export const getCurrentProfile = (): Profile | null => {
     // Check if session has expired
     const currentTime = new Date().getTime();
     if (currentTime > authData.expirationTime) {
-      console.log('Session expired, clearing auth data');
       clearAuthStorage(); // Clear expired session
       return null;
     }
@@ -50,7 +49,6 @@ export const isAuthenticated = (): boolean => {
 
     // Check if session has expired
     if (currentTime > authData.expirationTime) {
-      console.log('Authentication expired');
       clearAuthStorage(); // Clear expired session
       return false;
     }
@@ -61,10 +59,8 @@ export const isAuthenticated = (): boolean => {
       // Validate session in background (don't block authentication check)
       validateSession(sessionToken).then(({ valid, reason }) => {
         if (!valid) {
-          console.log('Session validation failed, reason:', reason);
           // เด้งออกเมื่อ: session ถูก invalidate (login จากเครื่องเดียวกัน) หรือ DB session หมดอายุ
           if (reason === 'invalidated' || reason === 'expired') {
-            console.log(`Session ${reason}, logging out...`);
             clearAuthStorage();
             setTimeout(() => window.location.reload(), 100);
           }

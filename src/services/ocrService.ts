@@ -125,7 +125,6 @@ async function deleteDocument(
 // Delete a storage file directly by path (for cleanup on failure)
 async function deleteStorageFile(storagePath: string): Promise<void> {
   const { error } = await supabase.storage.from('documents').remove([storagePath]);
-  if (error) console.warn(`Storage delete failed: ${error.message}`);
 }
 
 // Force delete a document + its pages without requiring storage_path lookup

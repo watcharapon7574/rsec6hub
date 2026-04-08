@@ -87,19 +87,16 @@ export const validateSession = async (sessionToken: string): Promise<{ valid: bo
     // No session record found - might be old login before session tracking
     // Allow through for backward compatibility
     if (anyError || !anySession) {
-      console.log('No session record found (backward compatibility mode)');
       return { valid: true, reason: 'no_record' };
     }
 
     // Session was explicitly invalidated (killed from session management)
     if (!anySession.is_active) {
-      console.log('Session was invalidated (killed remotely)');
       return { valid: false, reason: 'invalidated', userId: anySession.user_id };
     }
 
     // Session expired
     if (new Date(anySession.expires_at) < new Date()) {
-      console.log('Session expired');
       return { valid: false, reason: 'expired', userId: anySession.user_id };
     }
 

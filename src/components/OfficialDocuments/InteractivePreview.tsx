@@ -349,7 +349,6 @@ const InteractivePreview: React.FC<InteractivePreviewProps> = ({
   };
 
   const savePositions = () => {
-    console.log('Saving signature positions:', signaturePositions);
     setIsInteractiveMode(false);
   };
 

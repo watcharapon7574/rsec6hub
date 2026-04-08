@@ -518,7 +518,6 @@ const CreateReportMemoPage = () => {
           }
 
           if (pathsToDelete.length > 0) {
-            console.log('🗑️ Deleting old files before re-upload:', pathsToDelete);
             await supabase.storage.from('documents').remove(pathsToDelete);
           }
         } catch (err) {
@@ -641,7 +640,6 @@ const CreateReportMemoPage = () => {
     // Use pre-generated PDF if preview is still valid
     const validPreviewBlob = isPreviewValid() ? previewBlob : undefined;
     if (validPreviewBlob) {
-      console.log('Using pre-generated PDF from preview');
     }
 
     // Create the memo

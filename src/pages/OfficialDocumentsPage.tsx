@@ -76,18 +76,6 @@ const OfficialDocumentsPage = () => {
           (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
         );
 
-        // Debug log
-        if (doc.is_assigned) {
-          console.log('🔍 DEBUG doc_receive task status:', {
-            docId: doc.id,
-            subject: doc.subject,
-            is_assigned: doc.is_assigned,
-            tasks: tasks,
-            hasInProgressTask: hasInProgressTask,
-            hasActiveTasks: hasActiveTasks
-          });
-        }
-
         // Remove task_assignments from the object to keep it clean
         const { task_assignments, ...docWithoutTasks } = doc;
 
@@ -99,16 +87,6 @@ const OfficialDocumentsPage = () => {
       });
 
       setDocReceiveList(docsWithTaskStatus);
-      console.log('📋 Fetched doc_receive:', {
-        count: docsWithTaskStatus?.length || 0,
-        items: docsWithTaskStatus?.map((d: any) => ({
-          id: d.id,
-          subject: d.subject,
-          status: d.status,
-          current_signer_order: d.current_signer_order,
-          has_in_progress_task: d.has_in_progress_task
-        }))
-      });
     } catch (error) {
       console.error('Error fetching doc_receive:', error);
     }
@@ -147,14 +125,12 @@ const OfficialDocumentsPage = () => {
   // Document list refresh function (ใช้ useAllMemos refetch และ fetchDocReceive)
   const handleDocumentRefresh = async () => {
     try {
-      console.log('🔄 Starting document refresh with useAllMemos and doc_receive...');
       await Promise.all([
         refetchMemos(),
         fetchDocReceive()
       ]);
-      console.log('✅ Document refresh completed');
     } catch (error) {
-      console.error('❌ Error refreshing documents:', error);
+      console.error('Error refreshing documents:', error);
     }
   };
 
@@ -194,7 +170,6 @@ const OfficialDocumentsPage = () => {
 
       // Check if user is still authenticated after API calls
       if (!isAuthenticated) {
-        console.log('Session expired during data loading, redirecting...');
         toast({
           title: "Session หมดอายุ",
           description: "กรุณาเข้าสู่ระบบใหม่",
@@ -213,7 +188,6 @@ const OfficialDocumentsPage = () => {
         error.message.includes('unauthorized') ||
         error.message.includes('token')
       )) {
-        console.log('Authentication error detected, redirecting...');
         toast({
           title: "ต้องเข้าสู่ระบบใหม่",
           description: "เซสชันหมดอายุแล้ว",
@@ -297,21 +271,6 @@ const OfficialDocumentsPage = () => {
     }));
     const combined = [...filteredMemos, ...markedDocReceive];
 
-    console.log('🔗 Combined memos + doc_receive:', {
-      memosCount: allMemos.length,
-      filteredMemosCount: filteredMemos.length,
-      docReceiveCount: docReceiveList.length,
-      filteredDocReceiveCount: filteredDocReceive.length,
-      combinedCount: combined.length,
-      pendingSignDocs: combined.filter(m => m.status === 'pending_sign').map(m => ({
-        id: m.id,
-        subject: m.subject,
-        status: m.status,
-        current_signer_order: m.current_signer_order,
-        source: m.__source_table || 'memos'
-      }))
-    });
-
     return combined;
   }, [allMemos, docReceiveList]);
 
@@ -338,18 +297,10 @@ const OfficialDocumentsPage = () => {
 
   // Load data only once when component mounts and user is authenticated
   useEffect(() => {
-    console.log('🎯 OfficialDocumentsPage useEffect triggered:', {
-      profileUserId: profile?.user_id,
-      isAuthenticated,
-      isLoadingData
-    });
-
     if (profile?.user_id && isAuthenticated) {
-      console.log('🚀 OfficialDocumentsPage: Loading all data...');
       setIsLoadingData(true);
       loadAllData();
       fetchDocReceive();
-      console.log('✅ OfficialDocumentsPage: Triggered fetchDocReceive');
       setIsLoadingData(false);
     }
   }, [profile?.user_id, isAuthenticated]); // เอา loadAllData ออกเพื่อป้องกัน infinite loop
@@ -367,14 +318,10 @@ const OfficialDocumentsPage = () => {
           table: 'doc_receive'
         },
         (payload) => {
-          console.log('🎯 Realtime doc_receive update:', payload.eventType, (payload.new as any)?.id || (payload.old as any)?.id);
-          // Refetch doc_receive when any change is detected
           fetchDocReceive();
         }
       )
-      .subscribe((status) => {
-        console.log('📡 Doc_receive realtime status:', status);
-      });
+      .subscribe();
 
     return () => {
       docReceiveSubscription.unsubscribe();

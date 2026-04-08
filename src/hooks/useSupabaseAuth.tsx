@@ -26,8 +26,6 @@ export const useSupabaseAuth = () => {
     // Set up auth state listener FIRST (before checking existing session)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Supabase Auth state changed:', event, session?.user?.id);
-        
         if (!isMounted) return;
         
         // Only synchronous state updates here to prevent deadlock
@@ -79,7 +77,6 @@ export const useSupabaseAuth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return;
       
-      console.log('Initial Supabase session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       

@@ -176,7 +176,6 @@ class RailwayService {
     )?.node;
 
     if (!instance) {
-      console.warn('⚠️ No instance found for environmentId:', environmentId);
       return {
         ...data.service,
         numReplicas: 0,
@@ -214,17 +213,6 @@ class RailwayService {
         status = deploymentStatus === 'SUCCESS' ? 'running' : 'stopped';
       }
     }
-
-    console.log('🔍 Service status:', {
-      name: data.service.name,
-      numReplicas: instance.numReplicas,
-      deploymentStatus,
-      staticUrl: instance.latestDeployment?.staticUrl,
-      isStaticSite,
-      hasActiveDeployment,
-      activeDeploymentCount: data.activeDeploymentCount,
-      determinedStatus: status
-    });
 
     return {
       ...data.service,
@@ -349,9 +337,6 @@ class RailwayService {
         .eq('service_id', serviceId)
         .neq('id', id);
 
-      if (error) {
-        console.warn('Failed to disable other schedules:', error);
-      }
     }
     await this.updateSchedule(id, { enabled });
   }
@@ -367,10 +352,7 @@ class RailwayService {
       .eq('service_id', serviceId);
 
     if (error) {
-      console.warn('Failed to set manual override:', error);
       // Don't throw - this is not critical
-    } else {
-      console.log(`✅ Manual override set until ${overrideUntil.toISOString()} for service ${serviceId}`);
     }
   }
 
@@ -381,9 +363,6 @@ class RailwayService {
       .update({ manual_override_until: null })
       .eq('service_id', serviceId);
 
-    if (error) {
-      console.warn('Failed to clear manual override:', error);
-    }
   }
 }
 

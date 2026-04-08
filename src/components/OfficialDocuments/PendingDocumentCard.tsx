@@ -246,33 +246,6 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     setCurrentPage(1);
   }, [searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
 
-  console.log('🎯 PendingDocumentCard Debug:', {
-    totalPendingMemos: pendingMemos.length,
-    filteredMemosCount: filteredAndSortedMemos.length,
-    userProfile: profile ? { 
-      id: profile.id, 
-      user_id: profile.user_id, 
-      position: profile.position,
-      name: `${profile.first_name} ${profile.last_name}`
-    } : null,
-    pendingMemosData: pendingMemos.map(m => ({
-      id: m.id,
-      subject: m.subject,
-      author: m.author_name,
-      user_id: m.user_id,
-      currentSignerOrder: m.current_signer_order,
-      signerListProgress: m.signer_list_progress,
-      status: m.status
-    }))
-  });
-
-  // ตรวจสอบว่าผู้ใช้ปัจจุบันต้องอนุมัติเอกสารไหนบ้าง
-  console.log('🔍 User approval check:', {
-    userPosition: profile?.position,
-    isEligiblePosition: ['assistant_director', 'deputy_director', 'director'].includes(profile?.position || ''),
-    currentUserId: profile?.user_id
-  });
-
   const handleManageDocument = async (memo: any) => {
     // Parallel group → ข้าม lock เพราะลงนามพร้อมกันได้ (lock ใช้เฉพาะตอน submit จริง)
     // Sequential signing → acquire lock ก่อน navigate

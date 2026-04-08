@@ -79,7 +79,6 @@ const ApproveDocumentPage: React.FC = () => {
           .eq('memo_id', currentMemoId)
           .eq('user_id', userId)
           .then(() => {
-            console.log('🗑️ Deleted annotation layers after leaving without approving');
           });
       }
     };
@@ -138,7 +137,6 @@ const ApproveDocumentPage: React.FC = () => {
           .maybeSingle();
 
         if (!memoError && memoData) {
-          console.log('Found memo in memos table:', memoId);
           setMemoFromDatabase(memoData);
           setIsDocReceive(false);
           return;
@@ -156,7 +154,6 @@ const ApproveDocumentPage: React.FC = () => {
           .maybeSingle();
 
         if (!error && data) {
-          console.log('Found document in doc_receive table:', memoId);
           setDocReceive(data);
           setIsDocReceive(true);
         }
@@ -186,7 +183,6 @@ const ApproveDocumentPage: React.FC = () => {
 
         // If no assignment found with this report_memo_id, it's not a report memo
         if (assignmentError || !assignment) {
-          console.log('Not a report memo (no task_assignment found):', memoId);
           setIsReportMemo(false);
           setOriginalDocument(null);
           return;
@@ -194,7 +190,6 @@ const ApproveDocumentPage: React.FC = () => {
 
         // This IS a report memo
         setIsReportMemo(true);
-        console.log('📋 This is a report memo:', memoId);
 
         // Get original document based on document_type
         let originalDoc = null;
@@ -221,7 +216,6 @@ const ApproveDocumentPage: React.FC = () => {
         }
 
         if (originalDoc) {
-          console.log('📋 Original document found for report memo:', originalDoc.subject);
           setOriginalDocument(originalDoc);
         }
       } catch (error) {
@@ -363,29 +357,6 @@ const ApproveDocumentPage: React.FC = () => {
     };
   }, [memoId, profile?.user_id, memo?.current_signer_order]);
 
-  // Debug: แสดงข้อมูลสำหรับการ debug (ลบออกได้หลังจากแก้ไขเสร็จ)
-  useEffect(() => {
-    if (memo && profile) {
-      console.log('🔍 Debug ApproveDocumentPage data:', {
-        memo: {
-          id: memo.id,
-          status: memo.status,
-          current_signer_order: memo.current_signer_order,
-          signature_positions: memo.signature_positions,
-          signer_list_progress: (memo as any).signer_list_progress,
-          document_summary: memo.document_summary,
-          has_document_summary: !!memo.document_summary,
-          isDocReceive
-        },
-        profile: {
-          user_id: profile.user_id,
-          position: profile.position,
-          name: `${profile.first_name} ${profile.last_name}`
-        }
-      });
-    }
-  }, [memo, profile, isDocReceive]);
-
   // Get current user's signature info - ใช้ signer_list_progress แทน signature_positions
   const signerListProgress = Array.isArray((memo as any)?.signer_list_progress) 
     ? (memo as any).signer_list_progress 
@@ -418,7 +389,6 @@ const ApproveDocumentPage: React.FC = () => {
 
     // Admin bypass - allow access without showing permission error
     if (isAdminUser) {
-      console.log('🔓 Admin user - bypassing permission checks');
       return;
     }
 
@@ -429,7 +399,6 @@ const ApproveDocumentPage: React.FC = () => {
       && !(parallelConfig?.completed_user_ids || []).includes(profile.user_id);
 
     if (isParallelTurn) {
-      console.log('🔓 User is in parallel group and it is their turn');
       return; // อนุญาตเข้าถึง
     }
 
@@ -452,24 +421,14 @@ const ApproveDocumentPage: React.FC = () => {
       
       if (!canApprove) {
         // แสดงข้อความแจ้งว่ายังไม่ถึงลำดับ แต่ให้เข้าถึงได้เพื่อดูเอกสาร
-        console.log('🔍 Management user accessing document before their turn');
       }
     } else {
       // ตรวจสอบลำดับสำหรับผู้ใช้ทั่วไป
       const userOrder = currentUserSigner?.order || currentUserSignature?.signer?.order;
-      console.log('🔍 Regular user check:', {
-        isManagementRole,
-        hasSignatureInDocument,
-        userOrder,
-        currentSignerOrder: memo.current_signer_order,
-        userCanSign,
-        userPosition: profile?.position
-      });
-      
+
       if (userOrder !== memo.current_signer_order) {
         // เพิ่มเงื่อนไขป้องกัน: ถ้าผู้ใช้สามารถลงนามได้แสดงว่าถึงลำดับแล้ว
         if (userCanSign) {
-          console.log('⚠️ User can sign but order check failed - allowing access');
           return;
         }
         
@@ -490,14 +449,6 @@ const ApproveDocumentPage: React.FC = () => {
 
     setIsRejecting(true);
     try {
-      console.log('🔄 ApproveDocumentPage: Calling updateDocumentApproval for rejection', {
-        memoId,
-        rejectionReason,
-        annotatedPdfUrl: annotatedPdfUrl ? 'yes' : 'no',
-        isDocReceive,
-        profile: { name: `${profile.first_name} ${profile.last_name}`, position: profile.position }
-      });
-
       // Cleanup old annotated files before saving new ones
       const { cleanupAnnotatedFiles } = await import('@/utils/pdfAnnotationUtils');
       await cleanupAnnotatedFiles(memoId);
@@ -549,7 +500,6 @@ const ApproveDocumentPage: React.FC = () => {
     const parallelConfig = (memo as any)?.parallel_signers as ParallelSignerConfig | null;
     const isParallelMember = isInParallelGroup(profile.user_id, parallelConfig);
     if (!userCanSign && !isParallelMember) {
-      console.log('❌ User cannot sign - no permission');
       setIsSubmitting(false);
       return;
     }
@@ -651,7 +601,6 @@ const ApproveDocumentPage: React.FC = () => {
             }
 
             if (pageImages && pageImages.size > 0) {
-              console.log('📝 Applying annotation overlays onto latest PDF before signing');
               const pdfRes = await fetch(extractedPdfUrl);
               const pdfBytes = await pdfRes.arrayBuffer();
               const { exportAnnotatedPdf } = await import('@/utils/pdfAnnotationUtils');
@@ -669,7 +618,6 @@ const ApproveDocumentPage: React.FC = () => {
                   .from('documents')
                   .getPublicUrl(filePath);
                 extractedPdfUrl = publicUrl;
-                console.log('✅ Annotation overlays applied, using annotated PDF for signing');
               }
             }
           } catch (annErr) {
@@ -690,7 +638,6 @@ const ApproveDocumentPage: React.FC = () => {
                              signaturePositions.find((p: any) => p.signer?.order === memo.current_signer_order)?.signer;
           if (currentSignerInfo) {
             signingPosition = currentSignerInfo.role || currentSignerInfo.position || profile.position;
-            console.log('🔓 Admin signing on behalf of:', currentSignerInfo);
           }
         }
 
@@ -712,7 +659,6 @@ const ApproveDocumentPage: React.FC = () => {
 
             if (actualSignerProfile) {
               signerProfile = actualSignerProfile as any;
-              console.log('🔓 Admin using actual signer profile:', actualSignerProfile);
             }
           }
 
@@ -823,8 +769,6 @@ const ApproveDocumentPage: React.FC = () => {
             ? memo.current_signer_order
             : (currentUserSigner?.order || currentUserSignature?.signer?.order);
 
-          console.log('🔍 Signing with order:', signerOrder, 'isAdminSigning:', isAdminSigning, 'signOnBehalf:', signOnBehalfUserId);
-
           // ค้นหาตำแหน่งลายเซ็น
           // parallel_signer + signOnBehalf → ใช้ user_id เสมอ (เพราะ order ซ้ำกัน)
           const searchUserId = signOnBehalfUserId || profile?.user_id;
@@ -840,7 +784,9 @@ const ApproveDocumentPage: React.FC = () => {
           }
 
           // หากไม่เจอจาก user_id ให้ลองค้นหาจาก position (ใช้ signingPosition สำหรับ admin)
-          if (userSignaturePositions.length === 0) {
+          // ⚠️ ข้าม fallback นี้สำหรับ parallel_signer เพราะ position field (เช่น 'government_teacher')
+          // อาจซ้ำกับ user คนอื่น → ทำให้ลายเซ็นไป stamp ทับตำแหน่งของคนอื่น
+          if (userSignaturePositions.length === 0 && !isParallelOrder) {
             const positionToMatch = isAdminSigning ? signingPosition : profile?.position;
             userSignaturePositions = signaturePositions.filter(pos =>
               pos.signer?.position === positionToMatch ||
@@ -848,9 +794,54 @@ const ApproveDocumentPage: React.FC = () => {
             );
           }
 
+          // parallel_signer ที่ไม่มีตำแหน่งลายเซ็น (เช่น require_annotation: false)
+          // → ไม่ต้อง stamp อะไรลง PDF แค่ update parallel_signers.completed_user_ids แล้วจบ
+          if (userSignaturePositions.length === 0 && isParallelOrder) {
+            console.log('📝 Parallel signer ไม่มีตำแหน่งลายเซ็น - skip Railway API, update DB อย่างเดียว');
+            try {
+              const currentOrderForParallel = signerOrder;
+              const effectiveUserIdForParallel = signOnBehalfUserId || profile?.user_id || '';
+              const parallelResult = calculateNextSignerOrderWithParallel(
+                currentOrderForParallel, signaturePositions, signingPosition, parallelConfig, effectiveUserIdForParallel
+              );
+
+              const updateData: any = {
+                status: parallelResult.newStatus,
+                current_signer_order: parallelResult.nextSignerOrder,
+                updated_at: new Date().toISOString(),
+              };
+              if ('parallelUpdate' in parallelResult && parallelResult.parallelUpdate && parallelConfig) {
+                updateData.parallel_signers = {
+                  ...parallelConfig,
+                  completed_user_ids: parallelResult.parallelUpdate.completed_user_ids,
+                };
+              }
+
+              const tableName = isDocReceive ? 'doc_receive' : 'memos';
+              const { error: updateErr } = await (supabase as any)
+                .from(tableName)
+                .update(updateData)
+                .eq('id', memoId);
+              if (updateErr) throw updateErr;
+
+              setShowLoadingModal(false);
+              approvedRef.current = true;
+              originalPdfPathRef.current = null;
+              setOriginalPdfPath(null);
+              toast({ title: 'สำเร็จ', description: 'บันทึกการลงนามเรียบร้อยแล้ว' });
+              navigate('/documents');
+              setTimeout(() => { (window as any).__signingInProgress = false; }, 1500);
+              return;
+            } catch (e) {
+              setShowLoadingModal(false);
+              (window as any).__signingInProgress = false;
+              toast({ title: 'เกิดข้อผิดพลาด', description: (e instanceof Error ? e.message : 'ไม่สามารถบันทึกได้'), variant: 'destructive' });
+              return;
+            }
+          }
+
           // หากยังไม่เจอและเป็น director ให้สร้างตำแหน่ง default
           if (userSignaturePositions.length === 0 && signingPosition === 'director') {
-            console.log('🔧 Creating default signature position for director');
             userSignaturePositions = [{
               signer: {
                 user_id: profile.user_id,
@@ -907,8 +898,6 @@ const ApproveDocumentPage: React.FC = () => {
             lines: index === 0 ? linesWithComment : linesImageOnly
           }));
 
-          console.log(`📝 Signatures payload (${userSignaturePositions.length} positions)`);
-
           // คำนวณ next signer order และ status (รองรับ parallel group)
           const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;
           // parallelConfig ใช้จากที่ประกาศไว้ด้านบน (บรรทัด 533)
@@ -920,7 +909,6 @@ const ApproveDocumentPage: React.FC = () => {
           // คำนวณ file paths
           // ตัด query string (?t=...) ออกจาก URL ก่อนคำนวณ path
           const cleanPdfUrl = extractedPdfUrl.split('?')[0];
-          console.log('📄 PDF URL sent to edge function:', cleanPdfUrl);
           const oldFilePath = cleanPdfUrl.replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/documents\//, '');
           const newFileName = `signed_${Date.now()}_${oldFilePath.split('/').pop()}`;
           const newFilePath = oldFilePath.replace(/[^/]+$/, newFileName);
@@ -938,8 +926,6 @@ const ApproveDocumentPage: React.FC = () => {
             navigate('/auth');
             throw new Error('Session หมดอายุ กรุณาล็อกอินใหม่');
           }
-
-          console.log('🔑 Using access token from getSession');
 
           const edgeRes = await fetch(
             'https://ikfioqvjrhquiyeylmsv.supabase.co/functions/v1/sign-document',
@@ -988,7 +974,6 @@ const ApproveDocumentPage: React.FC = () => {
                 completed_user_ids: approvalResult.parallelUpdate.completed_user_ids,
               }
             } as any).eq('id', memoId);
-            console.log('✅ Updated parallel_signers.completed_user_ids:', approvalResult.parallelUpdate.completed_user_ids);
           }
 
           setShowLoadingModal(false);
@@ -1018,14 +1003,6 @@ const ApproveDocumentPage: React.FC = () => {
         }
       }
       // ... กรณี approve แบบไม่มีลายเซ็น ...
-      console.log('🔄 ApproveDocumentPage: Calling updateDocumentApproval for approval', {
-        memoId,
-        approvalAction,
-        isDocReceive,
-        comment: comment.trim(),
-        profile: profile ? { name: `${profile.first_name} ${profile.last_name}`, position: profile.position } : null
-      });
-
       const result = await updateDocumentApproval(
         memoId,
         approvalAction,

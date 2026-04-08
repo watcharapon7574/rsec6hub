@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Clock } from 'lucide-react';
 import { getSessionTimeRemaining } from '@/services/authService';
 import { signOut } from '@/services/auth/signOut';
+import { supabase } from '@/integrations/supabase/client';
 
 const SessionTimer = () => {
   const [timeRemaining, setTimeRemaining] = useState(getSessionTimeRemaining());
@@ -19,6 +20,21 @@ const SessionTimer = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // เช็ค Supabase session จริงทุก 2 นาที ป้องกัน session หมดแต่ timer ยังเดิน
+  useEffect(() => {
+    const checkRealSession = async () => {
+      if (signingOutRef.current) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session && timeRemaining) {
+        signingOutRef.current = true;
+        await signOut();
+        navigate('/auth', { replace: true });
+      }
+    };
+    const interval = setInterval(checkRealSession, 2 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [timeRemaining, navigate]);
+
   useEffect(() => {
     if (signingOutRef.current) return;
 
@@ -30,7 +46,6 @@ const SessionTimer = () => {
 
     if (shouldSignOut) {
       signingOutRef.current = true;
-      console.log('⏰ Session timer expired, signing out...');
       (async () => {
         await signOut();
         navigate('/auth', { replace: true });

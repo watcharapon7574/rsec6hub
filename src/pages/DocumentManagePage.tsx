@@ -81,17 +81,6 @@ const DocumentManagePage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [memoId]);
 
-  // Debug log for memo
-  React.useEffect(() => {
-    console.log('📄 DocumentManagePage memo:', {
-      memoId,
-      hasMemo: !!memo,
-      id: memo?.id,
-      subject: memo?.subject,
-      pdf_draft_path: memo?.pdf_draft_path,
-      hasPdf: !!memo?.pdf_draft_path
-    });
-  }, [memoId, memo]);
 
   // Get latest document number and generate suggestion (ดูจาก memos + manual entries)
   const getLatestDocNumber = React.useCallback(async () => {
@@ -527,8 +516,6 @@ const DocumentManagePage: React.FC = () => {
     if (!memo || !profile?.user_id) return null;
 
     try {
-      console.log('📄 Regenerating PDF with document suffix:', docSuffix);
-      
       // Prepare form data for API call
       const formData = {
         doc_number: docSuffix, // ส่งแค่ส่วน 4568/68 เพราะใน template มี ศธ ๐๔๐๐๗.๖๐๐/ อยู่แล้ว
@@ -616,8 +603,6 @@ const DocumentManagePage: React.FC = () => {
     try {
       const pdfUrl = pdfUrlOverride || extractPdfUrl(memo.pdf_draft_path);
       if (!pdfUrl) throw new Error('ไม่พบไฟล์ PDF ของเอกสาร');
-
-      console.log('🎨 Stamping PDF with doc number:', docSuffix, 'group:', groupName);
 
       // Fetch existing PDF
       const pdfRes = await fetch(pdfUrl);
@@ -709,7 +694,6 @@ const DocumentManagePage: React.FC = () => {
     const match = finalDocSuffix.match(/ศธ\s*๐๔๐๐๗\.๖๐๐\/(.+)$/);
     if (match) {
       finalDocSuffix = match[1];
-      console.log('Extracted suffix from full number:', finalDocSuffix);
     }
     
     if (!finalDocSuffix) {
@@ -767,7 +751,6 @@ const DocumentManagePage: React.FC = () => {
       const isUploadedMemo = formDataType === 'upload_memo' || formDataType === 'upload_report_memo';
 
       // ใช้ stamp API ปั๊มตราเลขหนังสือมุมขวาบนทุกกรณี (ไม่ต้อง regenerate PDF ใหม่)
-      console.log('📌 Stamping doc number on existing PDF');
       const newPdfUrl = await stampPdfWithDocNumber(finalDocSuffix, selectedGroup);
 
       // Update memo with document number, status, clerk_id, department, and new PDF URL
@@ -778,8 +761,6 @@ const DocumentManagePage: React.FC = () => {
         stamp_department: selectedGroup, // บันทึกฝ่ายที่เลือกสำหรับตราปั๊ม
         updated_at: now
       };
-
-      console.log('📝 Step 1 - Recording clerk_id:', profile?.user_id, 'for memo:', memoId);
 
       // Update PDF path if new PDF was generated/stamped successfully
       if (newPdfUrl) {
@@ -860,12 +841,8 @@ const DocumentManagePage: React.FC = () => {
 
         // ข้ามการปั้มตราถ้า PDF มีตราปั้มอยู่แล้ว (ชื่อไฟล์มี "memo_stamped_")
         const alreadyStamped = currentPdfPath?.includes('memo_stamped_');
-        if (alreadyStamped) {
-          console.log('ℹ️ PDF already stamped, skipping re-stamp');
-        }
 
         if (isNumberAssigned && revisionCount > 0 && docNumberSuffix && !alreadyStamped) {
-          console.log('🔄 Re-stamping memo after rejection, revision:', revisionCount);
           setLoadingMessage({
             title: "กำลังปั๊มตราเลขหนังสือใหม่",
             description: "ระบบกำลังลงตราเลขหนังสือบน PDF ที่ส่งมาใหม่..."
@@ -880,7 +857,6 @@ const DocumentManagePage: React.FC = () => {
               .update({ pdf_draft_path: stampedUrl, updated_at: new Date().toISOString() })
               .eq('id', memo.id);
             await refetch();
-            console.log('✅ Re-stamped PDF saved:', stampedUrl);
             // อัปเดต currentPdfPath เพื่อให้ merge ใช้ PDF ที่ปั้มตราแล้ว
             currentPdfPath = stampedUrl;
           }
@@ -902,8 +878,6 @@ const DocumentManagePage: React.FC = () => {
 
         // Only call merge API if there are attached files
         if (attachedFiles.length > 0) {
-          console.log('🔄 Starting PDF merge with attached files:', attachedFiles);
-
           const mergeResult = await mergeMemoWithAttachments({
             memoId: memo.id,
             mainPdfPath: currentPdfPath,
@@ -938,11 +912,8 @@ const DocumentManagePage: React.FC = () => {
                 description: "รวมไฟล์เอกสารหลักกับไฟล์แนบเรียบร้อยแล้ว ไฟล์แนบถูกลบออกแล้ว",
               });
 
-              console.log('✅ PDF merge completed and memo updated successfully');
-
               // Refresh memo data เพื่ออัปเดต UI
               await refetch();
-              console.log('🔄 Memo data refreshed after merge');
             } catch (dbError) {
               console.error('Database update error after merge:', dbError);
               toast({
@@ -962,8 +933,6 @@ const DocumentManagePage: React.FC = () => {
             setShowLoadingModal(false);
             return; // Don't proceed to next step if merge fails
           }
-        } else {
-          console.log('ℹ️ No attached files found, skipping PDF merge');
         }
       } catch (error) {
         console.error('Error calling PDFmerge:', error);
@@ -999,8 +968,6 @@ const DocumentManagePage: React.FC = () => {
           };
         });
 
-        console.log('📊 Saving signer_list_progress:', signerListProgress);
-
         // สร้าง parallel_signers config ถ้ามี
         const parallelSignersConfig = parallelSigners.length > 0
           ? {
@@ -1013,9 +980,6 @@ const DocumentManagePage: React.FC = () => {
               completed_user_ids: [],
             }
           : null;
-
-        console.log('📊 Parallel signers config:', parallelSignersConfig);
-        console.log('📊 Annotation required for:', annotationRequiredUserIds);
 
         // Update memo with signer_list_progress + parallel config
         const { error: updateError } = await supabase
@@ -1037,7 +1001,6 @@ const DocumentManagePage: React.FC = () => {
           return;
         }
 
-        console.log('✅ Signer list progress saved successfully');
         toast({
           title: "บันทึกข้อมูลผู้ลงนามสำเร็จ",
           description: `บันทึกรายชื่อผู้ลงนาม ${allSigners.length} คน เรียบร้อยแล้ว`,
@@ -1110,20 +1073,7 @@ const DocumentManagePage: React.FC = () => {
         return pos;
       });
 
-      console.log('📝 Updated signature positions with prefix:', updatedSignaturePositions.map((p, i) => ({
-        original: signaturePositions[i].signer.name,
-        updated: p.signer.name,
-        prefix: signers.find(s => s.user_id === p.signer.user_id)?.prefix
-      })));
-
       // 1.5. บันทึกสรุปเนื้อหาเอกสาร (ใช้ documentSummary แทน comment เพราะ comment จะถูก clear เมื่อวางตำแหน่ง)
-      console.log('🔍 Attempting to save document summary:', {
-        hasDocumentSummary: !!documentSummary.trim(),
-        documentSummaryLength: documentSummary.trim().length,
-        documentSummary: documentSummary.trim(),
-        memoId
-      });
-
       if (documentSummary.trim()) {
         try {
           const { error: updateError } = await supabase
@@ -1143,8 +1093,6 @@ const DocumentManagePage: React.FC = () => {
               variant: "destructive",
             });
             return;
-          } else {
-            console.log('✅ Document summary updated successfully:', documentSummary.trim());
           }
         } catch (err) {
           console.error('❌ Failed to update document summary:', err);
@@ -1156,8 +1104,6 @@ const DocumentManagePage: React.FC = () => {
           });
           return;
         }
-      } else {
-        console.log('⚠️ No document summary provided - skipping save');
       }
 
       // 2. อัปเดต signers/ตำแหน่ง
@@ -1193,7 +1139,6 @@ const DocumentManagePage: React.FC = () => {
             lines.push({ type: "role", value: authorProfile.org_structure_role });
           }
           // ดาวน์โหลด PDF + ลายเซ็น พร้อมกัน (parallel)
-          console.log('📥 Fetching PDF and signature in parallel...');
           const [pdfRes, sigRes] = await Promise.all([
             fetch(extractedPdfUrl),
             fetch(authorProfile.signature_url)
@@ -1224,8 +1169,6 @@ const DocumentManagePage: React.FC = () => {
             pdfRes.blob(),
             sigRes.blob()
           ]);
-          console.log('✅ PDF fetched:', pdfBlob.size, 'bytes, Signature fetched:', sigBlob.size, 'bytes');
-
           // ตรวจสอบว่า blob เป็น PDF จริง
           if (pdfBlob.type !== 'application/pdf' && !pdfBlob.type.includes('pdf')) {
             console.error('❌ Invalid PDF blob type:', pdfBlob.type);
@@ -1259,14 +1202,6 @@ const DocumentManagePage: React.FC = () => {
             }));
             
             formData.append('signatures', JSON.stringify(signaturesPayload));
-            
-            // --- LOG ข้อมูลก่อนส่ง ---
-            console.log('📄 pdfBlob:', pdfBlob);
-            console.log('🖊️ sigBlob:', sigBlob);
-            console.log(`📝 Original positions (DOM pixels):`, authorPositions.map(pos => ({ x: pos.x, y: pos.y, page: pos.page })));
-            console.log(`📝 Signatures payload for /add_signature_v2:`, signaturesPayload.map(sig => ({ x: sig.x, y: sig.y, page: sig.page, lines: sig.lines?.length })));
-            console.log(`📝 signatures (${authorPositions.length} positions):`, JSON.stringify(signaturesPayload, null, 2));
-            // ---
 
             // Call Railway add_signature_v2 API with queue + retry logic
             signedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
@@ -1275,8 +1210,6 @@ const DocumentManagePage: React.FC = () => {
                   method: 'POST',
                   body: formData
                 });
-                console.log('API response object:', res);
-                console.log('API response type:', res.headers.get('content-type'));
 
                 if (!res.ok) {
                   const errorText = await res.text();
@@ -1339,7 +1272,6 @@ const DocumentManagePage: React.FC = () => {
           
           // บันทึก clerk_id (user_id ของธุรการที่จัดการเอกสาร)
           const clerkId = profile?.user_id;
-          console.log('📝 Recording clerk_id:', clerkId, 'for memo:', memoId);
 
           // ส่งแค่ docNumberSuffix (เช่น 4606/69) ไม่ใช่ full documentNumber เพราะ template มี prefix อยู่แล้ว
           await updateMemoStatus(memoId, 'pending_sign', docNumberSuffix, undefined, 2, newPublicUrl, clerkId);

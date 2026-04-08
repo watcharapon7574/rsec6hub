@@ -298,8 +298,6 @@ const CreateDocReceivePage = () => {
         return;
       }
 
-      console.log('📋 Using document number:', documentNumber);
-
       // Ensure valid auth session before upload
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -310,7 +308,6 @@ const CreateDocReceivePage = () => {
       }
 
       // Step 2: Upload PDF to Supabase Storage
-      console.log('📤 Uploading PDF to storage...');
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2, 8);
       const fileName = `pdf_upload_${timestamp}_${randomId}.pdf`;
@@ -331,10 +328,7 @@ const CreateDocReceivePage = () => {
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
         .getPublicUrl(filePath);
-      console.log('✅ PDF uploaded to:', publicUrl);
-
       // Step 3: Call /receive_num API to stamp PDF (หนังสือรับภายนอก)
-      console.log('🎨 Calling /receive_num API to stamp PDF...');
       const now = new Date();
       const thaiDate = now.toLocaleDateString('th-TH', {
         day: 'numeric',
@@ -365,8 +359,6 @@ const CreateDocReceivePage = () => {
       };
       receiveNumFormData.append('payload', JSON.stringify(payload));
 
-      console.log('📝 Stamp payload:', payload);
-
       // Call Railway receive_num API with queue + retry logic
       const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
@@ -382,7 +374,6 @@ const CreateDocReceivePage = () => {
           }
 
           const blob = await stampRes.blob();
-          console.log('✅ PDF stamped successfully, size:', blob.size);
           return blob;
         },
         'Receive Number Stamp',
@@ -391,7 +382,6 @@ const CreateDocReceivePage = () => {
       );
 
       // Step 4: Overwrite the original file with stamped PDF
-      console.log('🔄 Overwriting original PDF with stamped version...');
       const { error: updateError } = await supabase.storage
         .from('documents')
         .update(filePath, stampedPdfBlob, {
@@ -402,7 +392,6 @@ const CreateDocReceivePage = () => {
       if (updateError) {
         throw new Error(`Failed to update PDF: ${updateError.message}`);
       }
-      console.log('✅ PDF overwritten successfully');
 
       // IMPORTANT: Get fresh public URL after overwrite to ensure cache busting
       // Add timestamp to force browser to fetch the new version
@@ -412,20 +401,16 @@ const CreateDocReceivePage = () => {
 
       // Add cache-busting query parameter
       const stampedPdfUrl = `${finalPublicUrl}?t=${timestamp}`;
-      console.log('✅ Final stamped PDF URL:', stampedPdfUrl);
 
       // Step 5: Create or Update doc_receive record in database
       if (isEditMode && originalDoc) {
         // UPDATE mode - แก้ไขเอกสารที่ถูกตีกลับ
-        console.log('💾 Updating doc_receive record...');
-
         // Delete old PDF file if exists
         if (originalDoc.pdf_draft_path) {
           try {
             const oldPath = originalDoc.pdf_draft_path.split('/documents/')[1]?.split('?')[0];
             if (oldPath) {
               await supabase.storage.from('documents').remove([oldPath]);
-              console.log('🗑️ Deleted old PDF:', oldPath);
             }
           } catch (e) {
             console.warn('Could not delete old PDF:', e);
@@ -461,7 +446,6 @@ const CreateDocReceivePage = () => {
         if (updateError2) {
           throw new Error(`Failed to update document: ${updateError2.message}`);
         }
-        console.log('✅ doc_receive updated');
 
         toast({
           title: "แก้ไขสำเร็จ",
@@ -469,7 +453,6 @@ const CreateDocReceivePage = () => {
         });
       } else {
         // INSERT mode - สร้างเอกสารใหม่
-        console.log('💾 Creating doc_receive record...');
         const { data: docReceiveData, error: docReceiveError } = await (supabase as any)
           .from('doc_receive')
           .insert({
@@ -503,7 +486,6 @@ const CreateDocReceivePage = () => {
           await supabase.storage.from('documents').remove([filePath]);
           throw new Error(`Failed to create document: ${docReceiveError.message}`);
         }
-        console.log('✅ doc_receive created with ID:', docReceiveData.id);
 
         toast({
           title: "อัพโหลดสำเร็จ",

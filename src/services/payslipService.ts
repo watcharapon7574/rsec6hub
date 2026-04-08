@@ -586,8 +586,6 @@ export async function insertPayslips(
     net_pay: r.netPay,
     raw_ocr_text: r.rawOcrText || null,
   }));
-  console.log('[payslip] insertPayslips:', records.length, 'records, matched:', records.filter(r => r.profile_id).length);
-  records.forEach((r, i) => console.log(`  [${i}] name=${r.employee_name}, profile_id=${r.profile_id}, half=${r.half}`));
   const { error } = await (supabase as any).from('payslips').insert(records);
   if (error) throw error;
 }

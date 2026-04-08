@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight, MapPin, ClipboardList, Link2, Eye } from 'lucide-react';
+import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight, MapPin, ClipboardList, Link2, Eye, Paperclip } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
@@ -23,6 +23,7 @@ interface DocumentDetail {
   pdf_final_path?: string;
   current_signer_order?: number;
   is_assigned?: boolean;
+  attached_files?: string[];
   // Task assignments
   task_assignments?: Array<{
     id: string;
@@ -214,11 +215,27 @@ const DocumentDetailPage: React.FC = () => {
         ? transformedTasks?.filter((task: any) => task.assigned_to === currentUserId)
         : transformedTasks;
 
+      // Parse attached_files (may be JSON string or array)
+      let parsedAttachedFiles: string[] = [];
+      if (docData.attached_files) {
+        if (Array.isArray(docData.attached_files)) {
+          parsedAttachedFiles = docData.attached_files.filter((f: any) => typeof f === 'string');
+        } else if (typeof docData.attached_files === 'string') {
+          try {
+            const parsed = JSON.parse(docData.attached_files);
+            parsedAttachedFiles = Array.isArray(parsed) ? parsed.filter((f: any) => typeof f === 'string') : [];
+          } catch {
+            parsedAttachedFiles = [];
+          }
+        }
+      }
+
       setDocument({
         ...docData,
         id: docData.id,
         document_type: documentType as 'memo' | 'doc_receive',
-        task_assignments: filteredTasks || []
+        task_assignments: filteredTasks || [],
+        attached_files: parsedAttachedFiles
       } as DocumentDetail);
     } catch (error) {
       console.error('Error fetching document detail:', error);
@@ -340,6 +357,44 @@ const DocumentDetailPage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Attached Files Card - Lazy load (ปุ่มดูเปิดใน tab ใหม่ ไม่ auto-load เพื่อลด egress) */}
+          {document.attached_files && document.attached_files.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <Paperclip className="h-5 w-5" />
+                  ไฟล์แนบ ({document.attached_files.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {document.attached_files.map((url, index) => {
+                  const fileName = decodeURIComponent(url.split('/').pop() || `ไฟล์แนบ ${index + 1}`);
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 p-2 border rounded-md hover:bg-muted/50 transition-colors"
+                    >
+                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="flex-1 text-sm truncate" title={fileName}>{fileName}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                        onClick={() => window.open(url, '_blank')}
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1" />
+                        <span className="text-xs">ดู</span>
+                      </Button>
+                    </div>
+                  );
+                })}
+                <p className="text-xs text-muted-foreground pt-1">
+                  * กดปุ่มดูเพื่อเปิดไฟล์แต่ละไฟล์
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Original Document Card - Show only for report memos */}
           {isReportMemo && originalDocument && (

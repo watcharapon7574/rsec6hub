@@ -91,20 +91,59 @@ const Accordion: React.FC<AccordionProps> = ({
       {isOpen && (
         <CardContent className="pt-0">
           <div className="space-y-4">
-            {/* PDF Preview - แสดงเลยเพราะมีไฟล์เดียว */}
-            {attachments.length > 0 && isPDF(attachments[0]) && (
-              <div className="border rounded-lg overflow-hidden">
-                <PDFViewer
-                  fileUrl={attachments[0]}
-                  fileName={getFileName(attachments[0])}
-                  showSignatureMode={false}
-                  showZoomControls={true}
-                  showFullscreenButton={true}
-                />
-              </div>
-            )}
-            
-            
+            {/* แสดงไฟล์แนบทุกไฟล์ต่อกัน (รองรับมากกว่า 1 ไฟล์) */}
+            {attachments.map((url, index) => {
+              const fileName = getFileName(url);
+              return (
+                <div key={`${url}-${index}`} className="border rounded-lg overflow-hidden">
+                  {/* Header แสดงชื่อไฟล์เมื่อมีหลายไฟล์ */}
+                  {attachments.length > 1 && (
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/50 border-b">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Badge variant="outline" className="flex-shrink-0">
+                          {index + 1}/{attachments.length}
+                        </Badge>
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm truncate" title={fileName}>{fileName}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 flex-shrink-0"
+                        onClick={() => downloadFile(url, fileName)}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                  {/* PDF preview หรือลิงก์เปิด */}
+                  {isPDF(url) ? (
+                    <PDFViewer
+                      fileUrl={url}
+                      fileName={fileName}
+                      showSignatureMode={false}
+                      showZoomControls={true}
+                      showFullscreenButton={true}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm truncate">{fileName}</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(url, '_blank')}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        ดู
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       )}

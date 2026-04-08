@@ -85,13 +85,16 @@ export class MemoService {
     return uploadedUrls;
   }
 
-  static async createMemoDraft(formData: MemoFormData & { memo_id?: string; attachedFileObjects?: File[] }, userId: string, preGeneratedPdfBlob?: Blob): Promise<{ success: boolean; data?: any; error?: string }> {
+  static async createMemoDraft(formData: MemoFormData & { memo_id?: string; attachedFileObjects?: File[]; existingAttachedUrls?: string[] }, userId: string, preGeneratedPdfBlob?: Blob): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Handle file uploads for attached files
-      let attachedFileUrls: string[] = [];
+      // เริ่มจาก URLs เดิมที่ user ยังเก็บไว้ (edit mode) แล้วเติมไฟล์ใหม่ที่ upload
+      const keptExistingUrls: string[] = formData.existingAttachedUrls || [];
+      let newlyUploadedUrls: string[] = [];
       if (formData.attachedFileObjects && formData.attachedFileObjects.length > 0) {
-        attachedFileUrls = await this.uploadAttachedFiles(formData.attachedFileObjects, userId);
+        newlyUploadedUrls = await this.uploadAttachedFiles(formData.attachedFileObjects, userId);
       }
+      let attachedFileUrls: string[] = [...keptExistingUrls, ...newlyUploadedUrls];
 
       let publicUrl = '';
       let shouldGenerateNewPdf = true;
@@ -116,15 +119,15 @@ export class MemoService {
             return existingValue !== newValue;
           });
 
-          // If only attached files changed and we have new files, skip PDF regeneration
+          // If only attached files changed (upload new files only), skip PDF regeneration
           // BUT only if existing PDF still exists (not deleted, e.g., after rejection)
-          if (!hasContentChanges && attachedFileUrls.length > 0 && existingMemo.pdf_draft_path) {
+          if (!hasContentChanges && newlyUploadedUrls.length > 0 && existingMemo.pdf_draft_path) {
             shouldGenerateNewPdf = false;
             publicUrl = existingMemo.pdf_draft_path; // Keep existing PDF
           }
 
-          // Delete old attached files when new files are uploaded (regardless of content changes)
-          if (attachedFileUrls.length > 0 && existingMemo?.attached_files) {
+          // ลบเฉพาะไฟล์เก่าที่ user เอาออก (อยู่ใน existingMemo.attached_files แต่ไม่อยู่ใน keptExistingUrls)
+          if (existingMemo?.attached_files) {
             try {
               let oldFiles: string[] = [];
               if (typeof existingMemo.attached_files === 'string') {
@@ -137,14 +140,17 @@ export class MemoService {
                 oldFiles = existingMemo.attached_files;
               }
 
-              const oldFilePaths = oldFiles
-                .filter((fileUrl: string) => fileUrl && fileUrl.includes('/documents/'))
+              const removedFiles = oldFiles.filter(
+                (fileUrl: string) => fileUrl && !keptExistingUrls.includes(fileUrl)
+              );
+              const removedFilePaths = removedFiles
+                .filter((fileUrl: string) => fileUrl.includes('/documents/'))
                 .map((fileUrl: string) => fileUrl.split('/documents/')[1]);
 
-              if (oldFilePaths.length > 0) {
+              if (removedFilePaths.length > 0) {
                 await supabase.storage
                   .from('documents')
-                  .remove(oldFilePaths);
+                  .remove(removedFilePaths);
               }
             } catch (error) {
               console.warn('Could not delete old attached files:', error);

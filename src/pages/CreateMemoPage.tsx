@@ -41,6 +41,8 @@ const CreateMemoPage = () => {
   const [annotatedAttachmentPaths, setAnnotatedAttachmentPaths] = useState<string[]>([]);
   const [loadingMemo, setLoadingMemo] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  // URLs ของไฟล์แนบเดิมที่โหลดมาจาก DB ตอน edit mode (แยกจาก selectedFiles)
+  const [existingAttachedUrls, setExistingAttachedUrls] = useState<string[]>([]);
   const [grammarLoading, setGrammarLoading] = useState(false);
   const [showGrammarModal, setShowGrammarModal] = useState(false);
   const [grammarSuggestions, setGrammarSuggestions] = useState<Array<{
@@ -188,8 +190,11 @@ const CreateMemoPage = () => {
           author_position: memo.author_position || profile?.current_position || profile?.job_position || profile?.position || '',
           fact: memo.fact || '',
           proposal: memo.proposal || '',
-          attached_files: parsedAttachedFiles
+          attached_files: []  // ไฟล์ใหม่ที่เพิ่มในรอบ edit นี้ (filename list) - เริ่มว่าง
         });
+
+        // โหลดไฟล์แนบเดิมไว้แยกต่างหาก เพื่อให้ user ยังเห็นและ merge กับไฟล์ใหม่ได้
+        setExistingAttachedUrls(parsedAttachedFiles);
 
         // Load parallel signer config from form_data (ตอนตีกลับแล้วส่งใหม่)
         const savedParallelConfig = (memo.form_data as any)?.parallel_signer_config;
@@ -395,8 +400,8 @@ const CreateMemoPage = () => {
         publicUrl = result.data.publicUrl;
       }
 
-      // Handle attached files upload
-      let attachedFileUrls: string[] = [];
+      // Handle attached files upload — เริ่มจาก URLs เดิมที่ user ยังเก็บไว้
+      let attachedFileUrls: string[] = [...existingAttachedUrls];
       if (selectedFiles.length > 0) {
         for (const file of selectedFiles) {
           try {
@@ -450,17 +455,17 @@ const CreateMemoPage = () => {
       };
 
       if (isEditMode && originalMemo) {
-        // Delete old PDF and attached files from storage
+        // Delete old PDF + เฉพาะไฟล์แนบเดิมที่ user ลบออก (ไม่อยู่ใน existingAttachedUrls แล้ว)
         try {
           const pathsToDelete: string[] = [];
 
-          // Old PDF
-          if (originalMemo.pdf_draft_path) {
+          // Old PDF (ถ้า user อัพ PDF ใหม่เท่านั้น)
+          if (uploadedPdfFile && originalMemo.pdf_draft_path) {
             const oldPdfPath = originalMemo.pdf_draft_path.split('/documents/')[1];
             if (oldPdfPath) pathsToDelete.push(oldPdfPath);
           }
 
-          // Old attached files
+          // Old attached files — เก็บเฉพาะที่ user ยังต้องการ (existingAttachedUrls), ลบที่ไม่อยู่ในนั้น
           if (originalMemo.attached_files) {
             let oldFiles: string[] = [];
             if (typeof originalMemo.attached_files === 'string') {
@@ -468,7 +473,8 @@ const CreateMemoPage = () => {
             } else if (Array.isArray(originalMemo.attached_files)) {
               oldFiles = originalMemo.attached_files;
             }
-            for (const f of oldFiles) {
+            const removedFiles = oldFiles.filter(f => f && !existingAttachedUrls.includes(f));
+            for (const f of removedFiles) {
               const p = f?.split('/documents/')[1];
               if (p) pathsToDelete.push(p);
             }
@@ -549,6 +555,7 @@ const CreateMemoPage = () => {
         ...submissionData,
         memo_id: originalMemo.id, // Send memo_id for update mode
         attachedFileObjects: selectedFiles,
+        existingAttachedUrls: existingAttachedUrls, // ส่ง URLs เดิมที่ user ยังเก็บไว้
         preGeneratedPdfBlob: validPreviewBlob
       } as any);
 
@@ -1246,17 +1253,31 @@ const CreateMemoPage = () => {
                     </div>
                   </div>
 
-                  {formData.attached_files && formData.attached_files.length > 0 && (
+                  {(existingAttachedUrls.length > 0 || (formData.attached_files && formData.attached_files.length > 0)) && (
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-foreground">ไฟล์ที่เลือก:</p>
-                      {formData.attached_files.map((fileName, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
-                          <span className="flex-1">{fileName}</span>
+                      <p className="text-sm font-medium text-foreground">ไฟล์ที่แนบ:</p>
+                      {existingAttachedUrls.map((url, index) => {
+                        const fileName = decodeURIComponent(url.split('/').pop() || 'ไฟล์แนบ');
+                        return (
+                          <div key={`existing-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                            <span className="flex-1">{fileName} <span className="text-xs text-blue-500">(ไฟล์เดิม)</span></span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setExistingAttachedUrls(prev => prev.filter((_, i) => i !== index));
+                              }}
+                              className="text-destructive hover:text-destructive/80 font-bold"
+                            >×</button>
+                          </div>
+                        );
+                      })}
+                      {formData.attached_files?.map((fileName, index) => (
+                        <div key={`new-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                          <span className="flex-1">{fileName} <span className="text-xs text-green-600">(ใหม่)</span></span>
                           <button
                             type="button"
                             onClick={() => {
-                              const newFiles = selectedFiles.filter((_, i) => i !== index);
-                              setSelectedFiles(newFiles);
+                              setSelectedFiles(prev => prev.filter((_, i) => i !== index));
                               setFormData(prev => ({ ...prev, attached_files: prev.attached_files?.filter((_, i) => i !== index) || [] }));
                             }}
                             className="text-destructive hover:text-destructive/80 font-bold"
@@ -1477,17 +1498,33 @@ const CreateMemoPage = () => {
                       </div>
                     </div>
 
-                    {formData.attached_files && formData.attached_files.length > 0 && (
+                    {(existingAttachedUrls.length > 0 || (formData.attached_files && formData.attached_files.length > 0)) && (
                       <div className="mt-2 space-y-1">
-                        <p className="text-sm font-medium text-foreground">ไฟล์ที่เลือก:</p>
-                        {formData.attached_files.map((fileName, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
-                            <span className="flex-1">{fileName}</span>
+                        <p className="text-sm font-medium text-foreground">ไฟล์ที่แนบ:</p>
+                        {existingAttachedUrls.map((url, index) => {
+                          const fileName = decodeURIComponent(url.split('/').pop() || 'ไฟล์แนบ');
+                          return (
+                            <div key={`existing-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                              <span className="flex-1">{fileName} <span className="text-xs text-blue-500">(ไฟล์เดิม)</span></span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExistingAttachedUrls(prev => prev.filter((_, i) => i !== index));
+                                }}
+                                className="text-red-500 hover:text-red-700 dark:text-red-300 text-xs"
+                              >
+                                ลบ
+                              </button>
+                            </div>
+                          );
+                        })}
+                        {formData.attached_files?.map((fileName, index) => (
+                          <div key={`new-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                            <span className="flex-1">{fileName} <span className="text-xs text-green-600">(ใหม่)</span></span>
                             <button
                               type="button"
                               onClick={() => {
-                                const newFiles = selectedFiles.filter((_, i) => i !== index);
-                                setSelectedFiles(newFiles);
+                                setSelectedFiles(prev => prev.filter((_, i) => i !== index));
                                 setFormData(prev => ({
                                   ...prev,
                                   attached_files: prev.attached_files?.filter((_, i) => i !== index) || []

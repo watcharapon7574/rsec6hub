@@ -40,6 +40,7 @@ import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import TelegramAssigneesPage from "@/pages/TelegramAssigneesPage";
 import OcrUploadPage from "@/pages/OcrUploadPage";
 import OcrSearchPage from "@/pages/OcrSearchPage";
+import OcrSearchEmbedPage from "@/pages/OcrSearchEmbedPage";
 import PayslipPage from "@/pages/PayslipPage";
 import RegisterInternalPage from "@/pages/RegisterInternalPage";
 import RegisterExternalPage from "@/pages/RegisterExternalPage";
@@ -113,7 +114,7 @@ const AppContent = () => {
   const location = useLocation();
 
   // Check if current path is a public route (no auth required)
-  const isPublicRoute = location.pathname.startsWith('/telegram-assignees') || location.pathname === '/auth';
+  const isPublicRoute = location.pathname.startsWith('/telegram-assignees') || location.pathname.startsWith('/embed/') || location.pathname === '/auth';
 
   // For public routes, don't wait for auth loading - render immediately
   if (loading && !isPublicRoute) {
@@ -135,6 +136,8 @@ const AppContent = () => {
           path="/auth"
           element={<AuthPage />}
         />
+        {/* Public embed route (no auth required) */}
+        <Route path="/embed/search" element={<OcrSearchEmbedPage />} />
         {/* Telegram Mini App - Public routes (no auth required) */}
         {/* Route with documentId in URL (for direct links) */}
         <Route

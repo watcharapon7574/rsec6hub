@@ -29,6 +29,7 @@ import {
   Save,
   Tag,
   RotateCcw,
+  Globe,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import type { OcrDocument, OcrSearchResult } from '@/types/ocr';
@@ -37,6 +38,7 @@ interface OcrDocumentCardProps {
   document: OcrDocument | OcrSearchResult;
   onDelete?: (id: string) => void;
   onUpdateTags?: (id: string, tags: string[]) => void;
+  onTogglePublic?: (id: string, isPublic: boolean) => void;
   onRetry?: (id: string) => void;
   isSearchResult?: boolean;
 }
@@ -56,7 +58,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
   failed: { label: 'ล้มเหลว', variant: 'destructive' },
 };
 
-const OcrDocumentCard = ({ document: doc, onDelete, onUpdateTags, onRetry, isSearchResult }: OcrDocumentCardProps) => {
+const OcrDocumentCard = ({ document: doc, onDelete, onUpdateTags, onTogglePublic, onRetry, isSearchResult }: OcrDocumentCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const [editingTags, setEditingTags] = useState(false);
   const [localTags, setLocalTags] = useState<string[]>(doc.tags || []);
@@ -131,6 +133,20 @@ const OcrDocumentCard = ({ document: doc, onDelete, onUpdateTags, onRetry, isSea
               <span>{formatSize(doc.file_size)}</span>
               {doc.page_count > 0 && <span>{doc.page_count} หน้า</span>}
               <span>{formatDate(doc.created_at)}</span>
+              {onTogglePublic && (
+                <button
+                  onClick={() => onTogglePublic(doc.id, !doc.is_public)}
+                  className={`inline-flex items-center gap-0.5 transition-colors ${
+                    doc.is_public
+                      ? 'text-green-600 hover:text-green-700'
+                      : 'text-muted-foreground/50 hover:text-primary'
+                  }`}
+                  title={doc.is_public ? 'เผยแพร่สาธารณะ (คลิกเพื่อปิด)' : 'ไม่เผยแพร่ (คลิกเพื่อเปิด)'}
+                >
+                  <Globe className="h-3 w-3" />
+                  <span>{doc.is_public ? 'สาธารณะ' : 'ส่วนตัว'}</span>
+                </button>
+              )}
             </div>
 
             {doc.status === 'failed' && onRetry && (

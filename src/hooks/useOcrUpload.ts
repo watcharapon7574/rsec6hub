@@ -387,6 +387,22 @@ export function useOcrUpload() {
     []
   );
 
+  const togglePublic = useCallback(
+    async (id: string, isPublic: boolean) => {
+      try {
+        await ocrService.updateDocument(id, { is_public: isPublic } as any);
+        setDocuments((prev) =>
+          prev.map((d) => (d.id === id ? { ...d, is_public: isPublic } : d))
+        );
+        toast.success(isPublic ? 'เปิดเผยแพร่สาธารณะแล้ว' : 'ปิดเผยแพร่สาธารณะแล้ว');
+      } catch (err: any) {
+        console.error('Toggle public failed:', err);
+        toast.error(`เปลี่ยนสถานะไม่สำเร็จ: ${err.message}`);
+      }
+    },
+    []
+  );
+
   return {
     documents,
     loading,
@@ -395,6 +411,7 @@ export function useOcrUpload() {
     addToQueue,
     deleteDocument,
     updateTags,
+    togglePublic,
     retryDocument,
     refetch: fetchDocuments,
   };

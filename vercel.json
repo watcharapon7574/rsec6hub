@@ -54,6 +54,14 @@
       "headers": [
         { "key": "X-Robots-Tag", "value": "index, follow" }
       ]
+    },
+    {
+      "source": "/embed/(.*)",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'self' https://rsec6.ac.th https://*.rsec6.ac.th" },
+        { "key": "X-Frame-Options", "value": "ALLOW-FROM https://rsec6.ac.th" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
     }
   ],
   "buildCommand": "npm run build",

@@ -45,6 +45,7 @@ const OcrUploadPage = () => {
     addToQueue,
     deleteDocument,
     updateTags,
+    togglePublic,
     retryDocument,
   } = useOcrUpload();
 
@@ -320,6 +321,7 @@ const OcrUploadPage = () => {
                     document={doc}
                     onDelete={permissions.isAdmin ? deleteDocument : undefined}
                     onUpdateTags={updateTags}
+                    onTogglePublic={togglePublic}
                     onRetry={retryDocument}
                   />
                 ))}

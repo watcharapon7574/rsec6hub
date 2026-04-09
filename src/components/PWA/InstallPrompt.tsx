@@ -32,8 +32,8 @@ const InstallPrompt: React.FC = () => {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // ไม่แสดงบน iOS, Telegram Mini App, หรือถ้าติดตั้งแล้ว
-    if (isIOS() || isTelegramMiniApp() || isStandalone()) {
+    // ไม่แสดงบน iOS, Telegram Mini App, embed pages, หรือถ้าติดตั้งแล้ว
+    if (isIOS() || isTelegramMiniApp() || isStandalone() || location.pathname.startsWith('/embed/')) {
       setIsInstalled(true);
       return;
     }

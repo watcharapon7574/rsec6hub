@@ -307,8 +307,8 @@ const OcrSearchEmbedPage = () => {
           </div>
         )}
 
-        {/* Turnstile — placed at bottom, small */}
-        <div className="flex justify-center mt-6 mb-4">
+        {/* Turnstile — hidden, runs in background only */}
+        <div className="hidden">
           <Turnstile
             siteKey={TURNSTILE_SITE_KEY}
             onToken={(token) => { turnstileTokenRef.current = token; }}

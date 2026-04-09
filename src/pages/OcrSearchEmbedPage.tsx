@@ -211,6 +211,7 @@ const OcrSearchEmbedPage = () => {
         {!hasSearched && (
           <div className="text-center mb-6">
             <img src="/fastS.png" alt="FastSearch" className="h-28 mx-auto mb-2" />
+            <img src="/fastS1.png" alt="FASTSEARCH" className="h-10 mx-auto mb-2" />
             <p className="text-sm text-slate-400">
               ค้นหาเอกสารสาธารณะ
             </p>

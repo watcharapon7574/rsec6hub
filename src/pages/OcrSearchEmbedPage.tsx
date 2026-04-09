@@ -210,11 +210,9 @@ const OcrSearchEmbedPage = () => {
         {/* Logo — only before search */}
         {!hasSearched && (
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-slate-800 mb-1">
-              ค้นหาเอกสาร RSEC6
-            </h1>
+            <img src="/fastS.png" alt="FastSearch" className="h-28 mx-auto mb-2" />
             <p className="text-sm text-slate-400">
-              ระบบค้นหาเอกสารราชการ โรงเรียนราชสีมาวิทยาลัย 6
+              ค้นหาเอกสารสาธารณะ
             </p>
           </div>
         )}
@@ -320,7 +318,7 @@ const OcrSearchEmbedPage = () => {
         {/* Footer */}
         <div className="text-center pb-6">
           <p className="text-xs text-slate-300">
-            RSEC6 FastDoc &middot; ระบบค้นหาเอกสารสาธารณะ
+            FastDoc &middot; ระบบค้นหาเอกสารสาธารณะ
           </p>
         </div>
       </div>

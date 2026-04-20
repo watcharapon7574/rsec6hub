@@ -887,7 +887,7 @@ const ApproveDocumentPage: React.FC = () => {
           }
 
           // สร้าง signatures payload สำหรับ Edge Function
-          const linesImageOnly = [{ type: "image", file_key: "sig1" }];
+          // จุดแรก: มี comment / จุดที่ 2+: ไม่มี comment แต่มีชื่อ+ตำแหน่ง
           const signaturesPayload = userSignaturePositions.map((pos, index) => ({
             page: pos.page - 1,
             x: Math.round(pos.x),
@@ -895,7 +895,7 @@ const ApproveDocumentPage: React.FC = () => {
             rotation: (pos as any).rotation || 0,
             width: 120,
             height: 60,
-            lines: index === 0 ? linesWithComment : linesImageOnly
+            lines: index === 0 ? linesWithComment : linesWithoutComment
           }));
 
           // คำนวณ next signer order และ status (รองรับ parallel group)

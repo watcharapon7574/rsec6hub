@@ -18,18 +18,18 @@ export function filterBySearch(memos: any[], searchTerm: string): any[] {
 }
 
 /**
- * กรองเอกสารตามสถานะ (ใช้ current_signer_order)
+ * กรองเอกสารตามสถานะ — ใช้ memo.status เป็น source of truth
+ * (เลี่ยงการชนระหว่าง sentinel COMPLETED=5 กับ signer order 5 จริง เช่น ผอ.)
  */
 export function filterByStatus(memos: any[], statusFilter: string): any[] {
   if (statusFilter === 'all') return memos;
 
   return memos.filter(memo => {
-    const order = memo.current_signer_order;
     switch (statusFilter) {
-      case 'draft': return order === 1;
-      case 'pending_sign': return order >= 2 && order <= 4;
-      case 'completed': return order === 5;
-      case 'rejected': return order === 0;
+      case 'draft': return memo.status === 'draft';
+      case 'pending_sign': return memo.status === 'pending_sign';
+      case 'completed': return memo.status === 'completed';
+      case 'rejected': return memo.status === 'rejected';
       default: return true;
     }
   });
@@ -56,7 +56,7 @@ export function filterByAssignment(memos: any[], assignmentFilter: string): any[
 
   return memos.filter(memo => {
     if (assignmentFilter === 'assigned') return memo.is_assigned === true;
-    if (assignmentFilter === 'not_assigned') return memo.current_signer_order === 5 && !memo.is_assigned;
+    if (assignmentFilter === 'not_assigned') return memo.status === 'completed' && !memo.is_assigned;
     return true;
   });
 }

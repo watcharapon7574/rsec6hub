@@ -11,9 +11,12 @@ export interface PendingFilterProfile {
 
 /**
  * กรองเอกสาร pending สำหรับ PendingDocumentCard
- * - Executive เห็นทุก pending_sign (order 2-4)
+ * - Executive เห็นทุก pending_sign
  * - Parallel group member เห็นถ้ายังไม่เซ็น
  * - Regular user เห็นเฉพาะที่ถึงคิวตัวเอง + ไม่ใช่เจ้าของเอกสาร
+ *
+ * NOTE: ใช้ memo.status === 'pending_sign' เป็น gate หลัก
+ * ไม่ใช้ current_signer_order === 5 เช็ค completed เพราะชนกับ signer order 5 จริง (ผอ.)
  */
 export function filterPendingMemos(
   memos: any[],
@@ -28,12 +31,12 @@ export function filterPendingMemos(
     // soft delete
     if (memo.doc_del) return false;
 
-    // completed
-    if (memo.current_signer_order === 5) return false;
+    // ต้องเป็น pending_sign เท่านั้น (ตัด draft/completed/rejected)
+    if (memo.status !== 'pending_sign') return false;
 
-    // Executive: ทุก pending_sign order 2-4
+    // Executive: ทุก pending_sign (รวม order 5 เช่น ผอ.)
     if (isExecutive) {
-      return memo.status === 'pending_sign' && memo.current_signer_order >= 2 && memo.current_signer_order <= 4;
+      return memo.current_signer_order >= 2;
     }
 
     // Parallel group check
@@ -41,7 +44,7 @@ export function filterPendingMemos(
     if (parallelConfig && memo.current_signer_order === parallelConfig.order) {
       const isInGroup = parallelConfig.signers?.some((s: any) => s.user_id === profile.user_id);
       const hasCompleted = (parallelConfig.completed_user_ids || []).includes(profile.user_id);
-      if (isInGroup && !hasCompleted && memo.status === 'pending_sign') {
+      if (isInGroup && !hasCompleted) {
         return true;
       }
     }
@@ -54,6 +57,6 @@ export function filterPendingMemos(
     const nextSignerOrder = memo.current_signer_order === 1 ? 2 : memo.current_signer_order;
     const isCurrentApprover = userSigner && userSigner.order === nextSignerOrder;
     const isNotAuthor = memo.user_id !== profile.user_id;
-    return isCurrentApprover && isNotAuthor && memo.current_signer_order >= 2 && memo.current_signer_order <= 4;
+    return isCurrentApprover && isNotAuthor && memo.current_signer_order >= 2;
   });
 }

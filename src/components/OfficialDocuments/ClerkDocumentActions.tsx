@@ -25,6 +25,7 @@ interface ClerkDocumentActionsProps {
   documentTitle: string;
   documentType: 'memo' | 'doc_receive';
   currentSignerOrder?: number;
+  status?: string;
   isAssigned?: boolean;
   pdfUrl?: string;
   onReject: (documentId: string, reason: string) => void;
@@ -37,6 +38,7 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
   documentTitle,
   documentType,
   currentSignerOrder,
+  status,
   isAssigned = false,
   pdfUrl,
   onReject,
@@ -124,9 +126,9 @@ const ClerkDocumentActions: React.FC<ClerkDocumentActionsProps> = ({
     ));
   };
 
-  // เช็คว่าเอกสารเกษียนหนังสือแล้วหรือยัง (current_signer_order = 5)
-  // และยังไม่ได้มอบหมายงาน (is_assigned = false)
-  const isDocumentCompleted = currentSignerOrder === 5;
+  // เช็คว่าเอกสารเกษียนหนังสือแล้วหรือยัง — ใช้ status เป็น source of truth
+  // (current_signer_order === 5 ชนกับ signer order 5 จริง เช่น ผอ.)
+  const isDocumentCompleted = status === 'completed';
   const canAssignTask = isDocumentCompleted && !isAssigned;
 
   // ถ้าเอกสารเกษียนแล้วและยังไม่ได้มอบหมาย ให้แสดงปุ่ม "มอบหมายงาน"

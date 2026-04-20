@@ -288,9 +288,10 @@ const OfficialDocumentsPage = () => {
   }, [allMemos, docReceiveList]);
 
   const totalCount = combinedForStats.length;
-  const pendingCount = combinedForStats.filter(m => [2, 3, 4].includes(m.current_signer_order)).length;
-  const approvedCount = combinedForStats.filter(m => m.current_signer_order === 5).length;
-  const inProgressCount = combinedForStats.filter(m => m.current_signer_order === 1 || m.current_signer_order === 0).length;
+  // ใช้ status เป็น source of truth — เลี่ยงการชนระหว่าง sentinel COMPLETED=5 กับ signer order 5 จริง (ผอ.)
+  const pendingCount = combinedForStats.filter(m => m.status === 'pending_sign').length;
+  const approvedCount = combinedForStats.filter(m => m.status === 'completed').length;
+  const inProgressCount = combinedForStats.filter(m => m.status === 'draft' || m.status === 'rejected').length;
 
   // Use the getPermissions function from useEmployeeAuth hook
   const permissions = ReactUseMemo(() => getPermissions(), [getPermissions]);

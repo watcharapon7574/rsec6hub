@@ -503,7 +503,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
         if (assignmentFilter === 'assigned') {
           assignmentMatch = memo.is_assigned === true;
         } else if (assignmentFilter === 'not_assigned') {
-          assignmentMatch = memo.current_signer_order === 5 && !memo.is_assigned;
+          assignmentMatch = memo.status === 'completed' && !memo.is_assigned;
         }
       }
 
@@ -724,7 +724,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
           {currentPageData.length > 0 ? (
             currentPageData.map((memo) => {
               // ตรวจสอบว่าเอกสารเสร็จสิ้นแล้วหรือไม่ (current_signer_order === 5)
-              const isCompleted = memo.current_signer_order === 5;
+              const isCompleted = memo.status === 'completed';
               const baseClasses = "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border rounded-lg px-2 sm:px-3 py-2 shadow-sm transition group min-w-0";
               const completedClasses = isCompleted 
                 ? "bg-muted dark:bg-background/80 border-border hover:bg-accent dark:hover:bg-card/80" 
@@ -769,7 +769,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     style={{
                       background: memo.current_signer_order === 1 ? '#2563eb' : // ฉบับร่าง - น้ำเงิน
                                   memo.current_signer_order >= 2 && memo.current_signer_order <= 4 ? '#f59e42' : // รอลงนาม - ส้ม
-                                  memo.current_signer_order === 5 ? '#16a34a' : // เสร็จสิ้น - เขียว
+                                  memo.status === 'completed' ? '#16a34a' : // เสร็จสิ้น - เขียว
                                   memo.current_signer_order === 0 ? '#ef4444' : '#6b7280', // ตีกลับ - แดง
                       color: '#fff',
                       borderRadius: '9999px',
@@ -822,12 +822,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     <>
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                         <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                          memo.current_signer_order === 5
+                          memo.status === 'completed'
                             ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
                         }`}>ตรวจทาน/เสนอ</span>
                         <span className={`sm:text-[10px] text-[9px] ${
-                          memo.current_signer_order === 5
+                          memo.status === 'completed'
                             ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
                         }`}>
@@ -849,12 +849,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           })()}
                         </span>
                         <div className={`w-2 h-2 rounded-full mt-1 ${
-                          memo.current_signer_order === 5
+                          memo.status === 'completed'
                             ? 'bg-muted'
                             : (memo.current_signer_order === 1 ? 'bg-purple-500' : 'bg-purple-200 dark:bg-purple-800')
                         }`}></div>
                       </div>
-                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
+                      <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
 
                       {/* Parallel signers step (ถ้ามี) — กดดูรายชื่อ fixed popup */}
                       {(memo as any)?.parallel_signers?.signers?.length > 0 && (() => {
@@ -899,7 +899,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 }}
                               >
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                                  memo.current_signer_order === 5 ? 'text-muted-foreground'
+                                  memo.status === 'completed' ? 'text-muted-foreground'
                                     : isCurrentStep ? 'text-purple-700 dark:text-purple-300'
                                     : 'text-purple-400 dark:text-purple-600'
                                 }`}>
@@ -911,13 +911,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   ผู้ลงนาม
                                 </span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
-                                  memo.current_signer_order === 5 ? 'bg-muted'
+                                  memo.status === 'completed' ? 'bg-muted'
                                     : isCurrentStep ? 'bg-purple-500'
                                     : 'bg-purple-200 dark:bg-purple-800'
                                 }`}></div>
                               </button>
                             </div>
-                            <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
+                            <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                           </>
                         );
                       })()}
@@ -931,7 +931,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             <React.Fragment key={signer.user_id || `signer-${idx}`}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                 <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                                  memo.current_signer_order === 5
+                                  memo.status === 'completed'
                                     ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
                                 }`}>
@@ -950,7 +950,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   })()}
                                 </span>
                                 <span className={`sm:text-[10px] text-[9px] ${
-                                  memo.current_signer_order === 5
+                                  memo.status === 'completed'
                                     ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
                                 }`}>{(() => {
@@ -962,13 +962,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   return '-';
                                 })()}</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${
-                                  memo.current_signer_order === 5 
+                                  memo.status === 'completed' 
                                     ? 'bg-muted'
                                     : (memo.current_signer_order === signer.order ? 'bg-purple-500' : 'bg-purple-200 dark:bg-purple-800')
                                 }`}></div>
                               </div>
                               {idx < arr.length - 1 && (
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                               )}
                             </React.Fragment>
                           ))
@@ -982,7 +982,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                               <React.Fragment key={pos.signer.order}>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                                    memo.current_signer_order === 5 
+                                    memo.status === 'completed' 
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
                                   }`}>{
@@ -991,28 +991,28 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     (pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || '-')
                                   }</span>
                                   <span className={`sm:text-[10px] text-[9px] ${
-                                    memo.current_signer_order === 5 
+                                    memo.status === 'completed' 
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
                                   }`}>{pos.signer.name || '-'}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
-                                    memo.current_signer_order === 5 
+                                    memo.status === 'completed' 
                                       ? 'bg-muted'
                                       : (memo.current_signer_order === pos.signer.order ? 'bg-purple-500' : 'bg-purple-200 dark:bg-purple-800')
                                   }`}></div>
                                 </div>
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                               </React.Fragment>
                           ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-purple-400 dark:text-purple-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.status === 'completed' ? 'text-muted-foreground' : 'text-purple-400 dark:text-purple-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )
                       )}
                       
                       {/* Connector to final step */}
                       {((memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0) ||
                         (memo.signature_positions && memo.signature_positions.length > 0)) && (
-                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
+                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-purple-200 dark:bg-purple-800'}`} />
                       )}
                     </>
                   )}
@@ -1020,11 +1020,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {memo.status !== 'draft' && memo.status !== 'rejected' && (
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                       <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                        memo.current_signer_order === 5
+                        memo.status === 'completed'
                           ? 'text-foreground'
                           : 'text-purple-400 dark:text-purple-600'
                       }`}>เกษียนหนังสือแล้ว</span>
-                      {memo.current_signer_order === 5 && (
+                      {memo.status === 'completed' && (
                         <div className="w-2 h-2 rounded-full mt-1 bg-gray-700 dark:bg-gray-300"></div>
                       )}
                     </div>
@@ -1032,7 +1032,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 </div>
                 <div className="flex gap-1 ml-auto">
                   {/* เมื่อ current_signer_order = 5 แสดงปุ่ม "ดูเอกสาร" และปุ่มมอบหมายงาน (สำหรับธุรการ) */}
-                  {memo.current_signer_order === 5 ? (
+                  {memo.status === 'completed' ? (
                     <>
                       <Button variant="outline" size="sm" className={`h-7 px-2 flex items-center gap-1 ${reportMemoIds.has(memo.id) ? 'border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400' : 'border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'}`}
                         onClick={() => {

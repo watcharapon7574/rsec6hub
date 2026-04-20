@@ -20,8 +20,19 @@ export const chatService = {
       .select('*')
       .single();
 
-    if (error) throw error;
-    return data;
+    if (!error) return data;
+
+    // Race: SELECT คืน null (เช่น auth session ยังกลับมาไม่เสร็จหลัง bfcache/SW reload → RLS กรอง)
+    // แต่ INSERT ชน unique constraint เพราะ row มีอยู่จริง → รอให้ session พร้อมแล้ว re-select
+    if (error.code === '23505') {
+      await new Promise(r => setTimeout(r, 300));
+      const { data: row } = await (supabase.from('chat_rooms') as any)
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (row) return row;
+    }
+    throw error;
   },
 
   /**

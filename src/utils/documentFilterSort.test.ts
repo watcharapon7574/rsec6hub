@@ -65,30 +65,32 @@ describe('filterBySearch', () => {
 
 describe('filterByStatus', () => {
   const memos = [
-    makeMemo({ id: '1', current_signer_order: 1 }), // draft
-    makeMemo({ id: '2', current_signer_order: 2 }), // pending
-    makeMemo({ id: '3', current_signer_order: 3 }), // pending
-    makeMemo({ id: '4', current_signer_order: 5 }), // completed
-    makeMemo({ id: '5', current_signer_order: 0 }), // rejected
+    makeMemo({ id: '1', current_signer_order: 1, status: 'draft' }),
+    makeMemo({ id: '2', current_signer_order: 2, status: 'pending_sign' }),
+    makeMemo({ id: '3', current_signer_order: 3, status: 'pending_sign' }),
+    makeMemo({ id: '4', current_signer_order: 5, status: 'completed' }),
+    makeMemo({ id: '5', current_signer_order: 0, status: 'rejected' }),
+    // signer order 5 ที่ยังไม่เซ็น (ผอ.) — ต้องอยู่ใน pending_sign ไม่ใช่ completed
+    makeMemo({ id: '6', current_signer_order: 5, status: 'pending_sign' }),
   ];
 
   it('all → return ทั้งหมด', () => {
-    expect(filterByStatus(memos, 'all')).toHaveLength(5);
+    expect(filterByStatus(memos, 'all')).toHaveLength(6);
   });
 
-  it('draft → order 1 เท่านั้น', () => {
+  it('draft → status=draft', () => {
     expect(filterByStatus(memos, 'draft')).toHaveLength(1);
   });
 
-  it('pending_sign → order 2-4', () => {
-    expect(filterByStatus(memos, 'pending_sign')).toHaveLength(2);
+  it('pending_sign → status=pending_sign (รวม signer order 5 ที่ยังไม่เซ็น)', () => {
+    expect(filterByStatus(memos, 'pending_sign')).toHaveLength(3);
   });
 
-  it('completed → order 5', () => {
+  it('completed → status=completed', () => {
     expect(filterByStatus(memos, 'completed')).toHaveLength(1);
   });
 
-  it('rejected → order 0', () => {
+  it('rejected → status=rejected', () => {
     expect(filterByStatus(memos, 'rejected')).toHaveLength(1);
   });
 });
@@ -123,9 +125,9 @@ describe('filterByType', () => {
 
 describe('filterByAssignment', () => {
   const memos = [
-    makeMemo({ id: '1', current_signer_order: 5, is_assigned: true }),
-    makeMemo({ id: '2', current_signer_order: 5, is_assigned: false }),
-    makeMemo({ id: '3', current_signer_order: 2, is_assigned: false }),
+    makeMemo({ id: '1', current_signer_order: 5, status: 'completed', is_assigned: true }),
+    makeMemo({ id: '2', current_signer_order: 5, status: 'completed', is_assigned: false }),
+    makeMemo({ id: '3', current_signer_order: 2, status: 'pending_sign', is_assigned: false }),
   ];
 
   it('all → return ทั้งหมด', () => {

@@ -12,9 +12,11 @@ import ChatInput from './ChatInput';
 
 const AdminChatSheet: React.FC = () => {
   const { isChatOpen, setIsChatOpen, markAsRead: markAsReadContext } = useChatContext();
-  const { user, profile } = useEmployeeAuth();
+  const { user, profile, loading: authLoading } = useEmployeeAuth();
   const userIsAdmin = profile ? checkIsAdmin(profile) : false;
-  const userId = user?.id;
+  // รอให้ auth session กลับมาพร้อมก่อน ไม่งั้น SELECT chat_rooms จะโดน RLS กรอง
+  // แล้ว INSERT ไปชน unique constraint (409) หลัง bfcache/SW reload
+  const userId = authLoading ? undefined : user?.id;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [topBarHeight, setTopBarHeight] = useState(0);

@@ -99,15 +99,15 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
       return false;
     }
 
-    // ไม่แสดงเอกสารที่เสร็จสิ้นแล้ว (current_signer_order = 5)
-    if (memo.current_signer_order === 5) {
+    // ต้องเป็น pending_sign เท่านั้น (ตัด draft/completed/rejected)
+    // ใช้ status แทน current_signer_order === 5 เพราะ order 5 อาจเป็น signer จริง (ผอ.)
+    if (memo.status !== 'pending_sign') {
       return false;
     }
 
     if (isExecutive) {
-      // ผู้ช่วยผอ/รองผอ/ผอ เห็นทุก pending_sign (current_signer_order 2-4)
-      // ไม่ต้องเช็ค signer_list_progress เพราะจะทำให้เอกสารที่ยังไม่มี list ไม่แสดง
-      return memo.status === 'pending_sign' && memo.current_signer_order >= 2 && memo.current_signer_order <= 4;
+      // ผู้ช่วยผอ/รองผอ/ผอ เห็นทุก pending_sign (รวม order 5)
+      return memo.current_signer_order >= 2;
     }
 
     // เช็ค parallel group — ถ้า user อยู่ใน parallel group ที่กำลังรอ → แสดง
@@ -115,7 +115,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     if (parallelConfig && profile && memo.current_signer_order === parallelConfig.order) {
       const isInGroup = parallelConfig.signers?.some((s: any) => s.user_id === profile.user_id);
       const hasCompleted = (parallelConfig.completed_user_ids || []).includes(profile.user_id);
-      if (isInGroup && !hasCompleted && memo.status === 'pending_sign') {
+      if (isInGroup && !hasCompleted) {
         return true;
       }
     }
@@ -128,7 +128,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     const nextSignerOrder = memo.current_signer_order === 1 ? 2 : memo.current_signer_order;
     const isCurrentApprover = userSigner && userSigner.order === nextSignerOrder;
     const isNotAuthor = memo.user_id !== profile.user_id;
-    return isCurrentApprover && isNotAuthor && memo.current_signer_order >= 2 && memo.current_signer_order <= 4;
+    return isCurrentApprover && isNotAuthor && memo.current_signer_order >= 2;
   });
 
   // ฟังก์ชันกรองและจัดเรียงข้อมูล
@@ -140,16 +140,15 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
         memo.author_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         memo.doc_number?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      // กรองตาม current_signer_order
+      // กรองตาม status (ใช้ memo.status เป็น source of truth)
       let statusMatch = true;
       if (statusFilter !== 'all') {
-        const signerOrder = memo.current_signer_order;
         switch (statusFilter) {
           case 'pending_sign':
-            statusMatch = signerOrder >= 2 && signerOrder <= 4;
+            statusMatch = memo.status === 'pending_sign';
             break;
           case 'completed':
-            statusMatch = signerOrder === 5;
+            statusMatch = memo.status === 'completed';
             break;
           default:
             statusMatch = true;
@@ -492,12 +491,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         {/* Step 1: ตรวจทาน/เสนอ (สำหรับ Memo) หรือ ตรวจทาน (สำหรับ doc_receive) */}
                         <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                            memo.current_signer_order === 5
+                            memo.status === 'completed'
                               ? 'text-muted-foreground'
                               : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                           }`}>{memo.__source_table === 'doc_receive' ? 'ตรวจทาน' : 'ตรวจทาน/เสนอ'}</span>
                           <span className={`sm:text-[10px] text-[9px] ${
-                            memo.current_signer_order === 5
+                            memo.status === 'completed'
                               ? 'text-muted-foreground'
                               : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
                           }`}>
@@ -519,12 +518,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                             })()}
                           </span>
                           <div className={`w-2 h-2 rounded-full mt-1 ${
-                            memo.current_signer_order === 5 
+                            memo.status === 'completed' 
                               ? 'bg-muted'
                               : (memo.current_signer_order === 1 ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800')
                           }`}></div>
                         </div>
-                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
+                        <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
 
                         {/* แสดงผู้เสนอ (clerk_teacher) สำหรับหนังสือรับ */}
                         {memo.__source_table === 'doc_receive' && memo.signer_list_progress && Array.isArray(memo.signer_list_progress) && memo.signer_list_progress.length > 0 && (() => {
@@ -534,12 +533,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                               <>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                                    memo.current_signer_order === 5
+                                    memo.status === 'completed'
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                                   }`}>ผู้เสนอ</span>
                                   <span className={`sm:text-[10px] text-[9px] ${
-                                    memo.current_signer_order === 5
+                                    memo.status === 'completed'
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
                                   }`}>
@@ -553,12 +552,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                     })()}
                                   </span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
-                                    memo.current_signer_order === 5
+                                    memo.status === 'completed'
                                       ? 'bg-muted'
                                       : (memo.current_signer_order === proposer.order ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800')
                                   }`}></div>
                                 </div>
-                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
+                                <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
                               </>
                             );
                           }
@@ -620,7 +619,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                   }}
                                 >
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                                    memo.current_signer_order === 5 ? 'text-muted-foreground'
+                                    memo.status === 'completed' ? 'text-muted-foreground'
                                       : isCurrentStep ? 'text-amber-700 dark:text-amber-300'
                                       : 'text-amber-400 dark:text-amber-600'
                                   }`}>
@@ -635,13 +634,13 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                     ผู้ลงนาม
                                   </span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
-                                    memo.current_signer_order === 5 ? 'bg-muted'
+                                    memo.status === 'completed' ? 'bg-muted'
                                       : isCurrentStep ? 'bg-amber-500'
                                       : 'bg-amber-200 dark:bg-amber-800'
                                   }`}></div>
                                 </button>
                               </div>
-                              <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800'}`} />
+                              <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800'}`} />
                             </>
                           );
                         })()}
@@ -655,7 +654,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                               <React.Fragment key={signer.user_id || `signer-${idx}`}>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
                                   <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                                    memo.current_signer_order === 5 
+                                    memo.status === 'completed' 
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                                   }`}>
@@ -674,7 +673,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                     })()}
                                   </span>
                                   <span className={`sm:text-[10px] text-[9px] ${
-                                    memo.current_signer_order === 5
+                                    memo.status === 'completed'
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
                                   }`}>{(() => {
@@ -685,33 +684,33 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                     return <>{name}{needsAnnotation && <PenTool className="inline h-2.5 w-2.5 ml-0.5 text-orange-500" />}</>;
                                   })()}</span>
                                   <div className={`w-2 h-2 rounded-full mt-1 ${
-                                    memo.current_signer_order === 5 
+                                    memo.status === 'completed' 
                                       ? 'bg-muted'
                                       : (memo.current_signer_order === signer.order ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800')
                                   }`}></div>
                                 </div>
                                 {idx < arr.length - 1 && (
-                                  <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
+                                  <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
                                 )}
                               </React.Fragment>
                             ))
                         ) : (
-                          <span className={`text-[9px] ${memo.current_signer_order === 5 ? 'text-muted-foreground' : 'text-amber-400 dark:text-amber-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
+                          <span className={`text-[9px] ${memo.status === 'completed' ? 'text-muted-foreground' : 'text-amber-400 dark:text-amber-600'}`}>ไม่พบข้อมูลลำดับผู้ลงนาม</span>
                         )}
                         
                         {/* Connector to final step */}
                         {memo.signer_list_progress && memo.signer_list_progress.filter(s => s.role !== 'author').length > 0 && (
-                          <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.current_signer_order === 5 ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
+                          <div className={`w-4 sm:w-5 h-0.5 mx-0.5 sm:mx-1 ${memo.status === 'completed' ? 'bg-muted' : 'bg-amber-200 dark:bg-amber-800 dark:bg-amber-800'}`} />
                         )}
                         
                         {/* Step สุดท้าย: เกษียนหนังสือแล้ว */}
                         <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                           <span className={`font-semibold sm:text-[10px] text-[9px] ${
-                            memo.current_signer_order === 5 
+                            memo.status === 'completed' 
                               ? 'text-foreground' 
                               : 'text-amber-400 dark:text-amber-600'
                           }`}>เกษียนหนังสือแล้ว</span>
-                          {memo.current_signer_order === 5 && (
+                          {memo.status === 'completed' && (
                             <div className="w-2 h-2 rounded-full mt-1 bg-gray-700 dark:bg-gray-300"></div>
                           )}
                         </div>
@@ -721,7 +720,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   {/* เช็คว่าผู้ใช้มีสิทธิ์ลงนามไหม */}
                   {(() => {
                     // ถ้าเป็นเอกสารที่เสร็จสิ้นแล้ว (current_signer_order = 5) แสดงเฉพาะปุ่ม "ดูเอกสาร"
-                    if (memo.current_signer_order === 5) {
+                    if (memo.status === 'completed') {
                       return (
                         <Button
                           variant="outline"

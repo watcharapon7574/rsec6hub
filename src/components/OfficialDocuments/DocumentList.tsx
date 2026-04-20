@@ -350,42 +350,43 @@ const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
-  // ฟังก์ชันสำหรับข้อความสถานะตาม current_signer_order
-  const getStatusTextBySignerOrder = (signerOrder: number): string => {
+  // ฟังก์ชันสำหรับข้อความสถานะ — ใช้ status เป็นหลัก, signerOrder เป็น fallback
+  // (เลี่ยงการตีความ order 5 = เสร็จสิ้น เพราะ ผอ. ก็ order 5 เช่นกัน)
+  const getStatusTextBySignerOrder = (signerOrder: number, status?: string): string => {
+    if (status === 'completed') return 'เสร็จสิ้น';
+    if (status === 'rejected') return 'ตีกลับ';
+    if (status === 'draft') return 'ฉบับร่าง';
+    if (status === 'pending_sign') return 'รอลงนาม';
     switch (signerOrder) {
       case 1: return 'ฉบับร่าง';
-      case 2:
-      case 3:
-      case 4: return 'รอลงนาม';
-      case 5: return 'เสร็จสิ้น';
       case 0: return 'ตีกลับ';
-      default: return 'ไม่ระบุ';
+      default: return 'รอลงนาม';
     }
   };
 
-  // ฟังก์ชันสำหรับสีสถานะตาม current_signer_order
-  const getStatusColorBySignerOrder = (signerOrder: number): string => {
+  // ฟังก์ชันสำหรับสีสถานะ
+  const getStatusColorBySignerOrder = (signerOrder: number, status?: string): string => {
+    if (status === 'completed') return 'text-green-600 dark:text-green-400 dark:text-green-600';
+    if (status === 'rejected') return 'text-red-500';
+    if (status === 'draft') return 'text-blue-600 dark:text-blue-400 dark:text-blue-600';
+    if (status === 'pending_sign') return 'text-orange-500';
     switch (signerOrder) {
-      case 1: return 'text-blue-600 dark:text-blue-400 dark:text-blue-600'; // ฉบับร่าง - น้ำเงิน
-      case 2:
-      case 3:
-      case 4: return 'text-orange-500'; // รอลงนาม - ส้ม
-      case 5: return 'text-green-600 dark:text-green-400 dark:text-green-600'; // เสร็จสิ้น - เขียว
-      case 0: return 'text-red-500'; // ตีกลับ - แดง
-      default: return 'text-muted-foreground';
+      case 1: return 'text-blue-600 dark:text-blue-400 dark:text-blue-600';
+      case 0: return 'text-red-500';
+      default: return 'text-orange-500';
     }
   };
 
-  // ฟังก์ชันสำหรับไอคอนสถานะตาม current_signer_order
-  const getStatusIconBySignerOrder = (signerOrder: number): JSX.Element => {
+  // ฟังก์ชันสำหรับไอคอนสถานะ
+  const getStatusIconBySignerOrder = (signerOrder: number, status?: string): JSX.Element => {
+    if (status === 'completed') return <CheckCircle className="h-4 w-4" />;
+    if (status === 'rejected') return <XCircle className="h-4 w-4" />;
+    if (status === 'draft') return <FileText className="h-4 w-4" />;
+    if (status === 'pending_sign') return <Clock className="h-4 w-4" />;
     switch (signerOrder) {
-      case 1: return <FileText className="h-4 w-4" />; // ฉบับร่าง
-      case 2:
-      case 3:
-      case 4: return <Clock className="h-4 w-4" />; // รอลงนาม
-      case 5: return <CheckCircle className="h-4 w-4" />; // เสร็จสิ้น
-      case 0: return <XCircle className="h-4 w-4" />; // ตีกลับ
-      default: return <AlertCircle className="h-4 w-4" />;
+      case 1: return <FileText className="h-4 w-4" />;
+      case 0: return <XCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
@@ -781,7 +782,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       lineHeight: 1
                     }}
                   >
-                    {getStatusTextBySignerOrder(memo.current_signer_order)}
+                    {getStatusTextBySignerOrder(memo.current_signer_order, memo.status)}
                   </span>
                 </div>
                 {/* Progress Stepper: stepper เต็มทุกขนาดจอ (responsive size) */}

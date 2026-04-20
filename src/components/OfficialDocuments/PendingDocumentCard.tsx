@@ -64,29 +64,28 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
     fetchReportMemoIds();
   }, [pendingMemos]);
 
-  // ฟังก์ชันสำหรับข้อความสถานะตาม current_signer_order
-  const getStatusTextBySignerOrder = (signerOrder: number): string => {
+  // ฟังก์ชันสำหรับข้อความสถานะ — ใช้ status เป็นหลัก (order 5 ชนกับ ผอ.)
+  const getStatusTextBySignerOrder = (signerOrder: number, status?: string): string => {
+    if (status === 'completed') return 'เสร็จสิ้น';
+    if (status === 'rejected') return 'ตีกลับ';
+    if (status === 'draft') return 'ฉบับร่าง';
+    if (status === 'pending_sign') return 'รอลงนาม';
     switch (signerOrder) {
       case 1: return 'ฉบับร่าง';
-      case 2:
-      case 3:
-      case 4: return 'รอลงนาม';
-      case 5: return 'เสร็จสิ้น';
       case 0: return 'ตีกลับ';
-      default: return 'ไม่ระบุ';
+      default: return 'รอลงนาม';
     }
   };
 
-  // ฟังก์ชันสำหรับสีสถานะตาม current_signer_order
-  const getStatusColorBySignerOrder = (signerOrder: number): string => {
+  const getStatusColorBySignerOrder = (signerOrder: number, status?: string): string => {
+    if (status === 'completed') return '#16a34a';
+    if (status === 'rejected') return '#ef4444';
+    if (status === 'draft') return '#2563eb';
+    if (status === 'pending_sign') return '#f59e42';
     switch (signerOrder) {
-      case 1: return '#2563eb'; // ฉบับร่าง - น้ำเงิน
-      case 2:
-      case 3:
-      case 4: return '#f59e42'; // รอลงนาม - ส้ม
-      case 5: return '#16a34a'; // เสร็จสิ้น - เขียว
-      case 0: return '#ef4444'; // ตีกลับ - แดง
-      default: return '#6b7280';
+      case 1: return '#2563eb';
+      case 0: return '#ef4444';
+      default: return '#f59e42';
     }
   };
 
@@ -465,7 +464,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                   {memo.doc_number && <span className="text-xs text-muted-foreground whitespace-nowrap">#{memo.doc_number.split('/')[0]}</span>}
                   <span
                     style={{
-                      background: getStatusColorBySignerOrder(memo.current_signer_order),
+                      background: getStatusColorBySignerOrder(memo.current_signer_order, memo.status),
                       color: '#fff',
                       borderRadius: '9999px',
                       padding: '2px 8px',
@@ -476,7 +475,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                       lineHeight: 1
                     }}
                   >
-                    {getStatusTextBySignerOrder(memo.current_signer_order)}
+                    {getStatusTextBySignerOrder(memo.current_signer_order, memo.status)}
                   </span>
                   {/* Progress Stepper: ใช้ signer_list_progress จาก database - ข้ามผู้เขียน */}
                   <div className="flex items-center gap-1 sm:gap-2 ml-2 flex-1 overflow-x-auto">

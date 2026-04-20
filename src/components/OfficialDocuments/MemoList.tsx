@@ -308,16 +308,16 @@ const MemoList: React.FC<MemoListProps> = ({
     }
   };
 
-  // ฟังก์ชันสำหรับข้อความสถานะตาม current_signer_order
-  const getStatusTextBySignerOrder = (signerOrder: number): string => {
+  // ฟังก์ชันสำหรับข้อความสถานะ — ใช้ status เป็นหลัก (order 5 ชนกับ ผอ.)
+  const getStatusTextBySignerOrder = (signerOrder: number, status?: string): string => {
+    if (status === 'completed') return 'เสร็จสิ้น';
+    if (status === 'rejected') return 'ตีกลับ';
+    if (status === 'draft') return 'ฉบับร่าง';
+    if (status === 'pending_sign') return 'รอลงนาม';
     switch (signerOrder) {
       case 1: return 'ฉบับร่าง';
-      case 2:
-      case 3:
-      case 4: return 'รอลงนาม';
-      case 5: return 'เสร็จสิ้น';
       case 0: return 'ตีกลับ';
-      default: return 'ไม่ระบุ';
+      default: return 'รอลงนาม';
     }
   };
 
@@ -591,7 +591,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       lineHeight: 1
                     }}
                   >
-                    {getStatusTextBySignerOrder(memo.current_signer_order)}
+                    {getStatusTextBySignerOrder(memo.current_signer_order, memo.status)}
                   </span>
                 </div>
 

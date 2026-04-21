@@ -315,16 +315,20 @@ const OcrUploadPage = () => {
           ) : (
             <>
               <div className="space-y-3">
-                {pagedDocuments.map((doc) => (
-                  <OcrDocumentCard
-                    key={doc.id}
-                    document={doc}
-                    onDelete={permissions.isAdmin ? deleteDocument : undefined}
-                    onUpdateTags={updateTags}
-                    onTogglePublic={togglePublic}
-                    onRetry={retryDocument}
-                  />
-                ))}
+                {pagedDocuments.map((doc) => {
+                  const canManage =
+                    permissions.isAdmin || doc.user_id === profile?.user_id;
+                  return (
+                    <OcrDocumentCard
+                      key={doc.id}
+                      document={doc}
+                      onDelete={permissions.isAdmin ? deleteDocument : undefined}
+                      onUpdateTags={updateTags}
+                      onTogglePublic={canManage ? togglePublic : undefined}
+                      onRetry={retryDocument}
+                    />
+                  );
+                })}
               </div>
 
               {/* Pagination */}

@@ -479,14 +479,14 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                   {/* ถ้าเป็นฉบับร่าง แสดงแค่ step รอตรวจทาน step เดียว */}
                   {memo.status === 'draft' ? (
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-blue-700 dark:text-blue-300">รอตรวจทาน</span>
+                      <span className="font-semibold sm:text-[8px] text-[9px] text-blue-700 dark:text-blue-300">รอตรวจทาน</span>
                       <div className="w-2 h-2 rounded-full mt-1 bg-blue-500"></div>
                     </div>
                   ) : memo.status === 'rejected' ? (
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
+                      <span className="font-semibold sm:text-[8px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
+                      <span className="sm:text-[8px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -511,12 +511,12 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                   ) : (
                     <>
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                        <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                        <span className={`font-semibold sm:text-[8px] text-[9px] ${
                           memo.status === 'completed' 
                             ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600')
                         }`}>ตรวจทาน/เสนอ</span>
-                        <span className={`sm:text-[10px] text-[9px] ${
+                        <span className={`sm:text-[8px] text-[9px] ${
                           memo.status === 'completed'
                             ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600')
@@ -576,10 +576,10 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                 const scrollClose = () => { popup.remove(); document.removeEventListener('click', close); window.removeEventListener('scroll', scrollClose, true); };
                                 setTimeout(() => { document.addEventListener('click', close); window.addEventListener('scroll', scrollClose, true); }, 0);
                               }}>
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.status === 'completed' ? 'text-muted-foreground' : isCurrentStep ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600'}`}>
+                                <span className={`font-semibold sm:text-[8px] text-[9px] ${memo.status === 'completed' ? 'text-muted-foreground' : isCurrentStep ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600'}`}>
                                   <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
                                 </span>
-                                <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${isCurrentStep ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600'}`}>ผู้ลงนาม</span>
+                                <span className={`sm:text-[8px] text-[9px] underline decoration-dotted ${isCurrentStep ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600'}`}>ผู้ลงนาม</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${memo.status === 'completed' ? 'bg-muted' : isCurrentStep ? 'bg-blue-500' : 'bg-blue-200 dark:bg-blue-800'}`}></div>
                               </button>
                             </div>
@@ -596,7 +596,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                           .map((signer, idx, arr) => (
                             <React.Fragment key={signer.user_id || `signer-${idx}`}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                   memo.status === 'completed' 
                                     ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600')
@@ -611,7 +611,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                     }
                                   })()}
                                 </span>
-                                <span className={`sm:text-[10px] text-[9px] ${
+                                <span className={`sm:text-[8px] text-[9px] ${
                                   memo.status === 'completed'
                                     ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600')
@@ -643,7 +643,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                             .map((pos, idx, arr) => (
                               <React.Fragment key={pos.signer.order}>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                  <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                  <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed' 
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 dark:text-blue-300' : 'text-blue-400 dark:text-blue-600')
@@ -652,7 +652,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                                     (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
                                     (pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || '-')
                                   }</span>
-                                  <span className={`sm:text-[10px] text-[9px] ${
+                                  <span className={`sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed' 
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-blue-700 dark:text-blue-300 font-bold' : 'text-blue-400 dark:text-blue-600')
@@ -681,7 +681,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
                   {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ */}
                   {memo.status !== 'draft' && memo.status !== 'rejected' && (
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
-                      <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                      <span className={`font-semibold sm:text-[8px] text-[9px] ${
                         memo.status === 'completed' 
                           ? 'text-foreground' 
                           : 'text-blue-400 dark:text-blue-600'

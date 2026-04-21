@@ -482,19 +482,19 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                     {/* ถ้าเป็นฉบับร่าง แสดงแค่ step รอตรวจทาน step เดียว */}
                     {memo.status === 'draft' ? (
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                        <span className="font-semibold sm:text-[10px] text-[9px] text-amber-700 dark:text-amber-300">รอตรวจทาน</span>
+                        <span className="font-semibold sm:text-[8px] text-[9px] text-amber-700 dark:text-amber-300">รอตรวจทาน</span>
                         <div className="w-2 h-2 rounded-full mt-1 bg-amber-500"></div>
                       </div>
                     ) : (
                       <>
                         {/* Step 1: ตรวจทาน/เสนอ (สำหรับ Memo) หรือ ตรวจทาน (สำหรับ doc_receive) */}
                         <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                          <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                          <span className={`font-semibold sm:text-[8px] text-[9px] ${
                             memo.status === 'completed'
                               ? 'text-muted-foreground'
                               : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                           }`}>{memo.__source_table === 'doc_receive' ? 'ตรวจทาน' : 'ตรวจทาน/เสนอ'}</span>
-                          <span className={`sm:text-[10px] text-[9px] ${
+                          <span className={`sm:text-[8px] text-[9px] ${
                             memo.status === 'completed'
                               ? 'text-muted-foreground'
                               : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
@@ -531,12 +531,12 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                             return (
                               <>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                  <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                  <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed'
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                                   }`}>ผู้เสนอ</span>
-                                  <span className={`sm:text-[10px] text-[9px] ${
+                                  <span className={`sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed'
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === proposer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
@@ -617,7 +617,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                     setTimeout(() => { document.addEventListener('click', close); window.addEventListener('scroll', scrollClose, true); }, 0);
                                   }}
                                 >
-                                  <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                  <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed' ? 'text-muted-foreground'
                                       : isCurrentStep ? 'text-amber-700 dark:text-amber-300'
                                       : 'text-amber-400 dark:text-amber-600'
@@ -627,7 +627,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                       <PenTool className="inline h-2.5 w-2.5 ml-0.5 text-orange-500" />
                                     )}
                                   </span>
-                                  <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${
+                                  <span className={`sm:text-[8px] text-[9px] underline decoration-dotted ${
                                     isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'
                                   }`}>
                                     ผู้ลงนาม
@@ -652,7 +652,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                             .map((signer, idx, arr) => (
                               <React.Fragment key={signer.user_id || `signer-${idx}`}>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                  <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                  <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed' 
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
@@ -671,7 +671,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                                       }
                                     })()}
                                   </span>
-                                  <span className={`sm:text-[10px] text-[9px] ${
+                                  <span className={`sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed'
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
@@ -704,7 +704,7 @@ const PendingDocumentCard: React.FC<PendingDocumentCardProps> = ({ pendingMemos,
                         
                         {/* Step สุดท้าย: เกษียนหนังสือแล้ว */}
                         <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
-                          <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                          <span className={`font-semibold sm:text-[8px] text-[9px] ${
                             memo.status === 'completed' 
                               ? 'text-foreground' 
                               : 'text-amber-400 dark:text-amber-600'

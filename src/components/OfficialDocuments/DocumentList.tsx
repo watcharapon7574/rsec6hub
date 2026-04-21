@@ -790,14 +790,14 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* ถ้าเป็นฉบับร่าง แสดงแค่ step รอตรวจทาน step เดียว */}
                   {memo.status === 'draft' ? (
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-purple-700 dark:text-purple-300">รอตรวจทาน</span>
+                      <span className="font-semibold sm:text-[8px] text-[9px] text-purple-700 dark:text-purple-300">รอตรวจทาน</span>
                       <div className="w-2 h-2 rounded-full mt-1 bg-purple-500"></div>
                     </div>
                   ) : memo.status === 'rejected' ? (
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
+                      <span className="font-semibold sm:text-[8px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
+                      <span className="sm:text-[8px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -822,12 +822,12 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   ) : (
                     <>
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                        <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                        <span className={`font-semibold sm:text-[8px] text-[9px] ${
                           memo.status === 'completed'
                             ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
                         }`}>ตรวจทาน/เสนอ</span>
-                        <span className={`sm:text-[10px] text-[9px] ${
+                        <span className={`sm:text-[8px] text-[9px] ${
                           memo.status === 'completed'
                             ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
@@ -899,14 +899,14 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                   setTimeout(() => { document.addEventListener('click', close); window.addEventListener('scroll', scrollClose, true); }, 0);
                                 }}
                               >
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                   memo.status === 'completed' ? 'text-muted-foreground'
                                     : isCurrentStep ? 'text-purple-700 dark:text-purple-300'
                                     : 'text-purple-400 dark:text-purple-600'
                                 }`}>
                                   <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
                                 </span>
-                                <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${
+                                <span className={`sm:text-[8px] text-[9px] underline decoration-dotted ${
                                   isCurrentStep ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600'
                                 }`}>
                                   ผู้ลงนาม
@@ -931,7 +931,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           .map((signer, idx, arr) => (
                             <React.Fragment key={signer.user_id || `signer-${idx}`}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                   memo.status === 'completed'
                                     ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
@@ -950,7 +950,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     }
                                   })()}
                                 </span>
-                                <span className={`sm:text-[10px] text-[9px] ${
+                                <span className={`sm:text-[8px] text-[9px] ${
                                   memo.status === 'completed'
                                     ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
@@ -982,7 +982,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                             .map((pos, idx, arr) => (
                               <React.Fragment key={pos.signer.order}>
                                 <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                  <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                  <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed' 
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300' : 'text-purple-400 dark:text-purple-600')
@@ -991,7 +991,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                     (pos.signer.name && pos.signer.name.includes('อานนท์') && pos.signer.name.includes('จ่าแก้ว')) ? 'ผู้อำนวยการ' :
                                     (pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || '-')
                                   }</span>
-                                  <span className={`sm:text-[10px] text-[9px] ${
+                                  <span className={`sm:text-[8px] text-[9px] ${
                                     memo.status === 'completed' 
                                       ? 'text-muted-foreground'
                                       : (memo.current_signer_order === pos.signer.order ? 'text-purple-700 dark:text-purple-300 font-bold' : 'text-purple-400 dark:text-purple-600')
@@ -1020,7 +1020,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                   {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ */}
                   {memo.status !== 'draft' && memo.status !== 'rejected' && (
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
-                      <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                      <span className={`font-semibold sm:text-[8px] text-[9px] ${
                         memo.status === 'completed'
                           ? 'text-foreground'
                           : 'text-purple-400 dark:text-purple-600'

@@ -599,14 +599,14 @@ const MemoList: React.FC<MemoListProps> = ({
                 <div className="flex items-center gap-1 sm:gap-2 ml-2 flex-1 overflow-x-auto">
                   {memo.status === 'draft' ? (
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-amber-700 dark:text-amber-300">รอตรวจทาน</span>
+                      <span className="font-semibold sm:text-[8px] text-[9px] text-amber-700 dark:text-amber-300">รอตรวจทาน</span>
                       <div className="w-2 h-2 rounded-full mt-1 bg-amber-500"></div>
                     </div>
                   ) : memo.status === 'rejected' ? (
                     /* ถ้าถูกตีกลับ แสดงชื่อผู้ตีกลับจาก rejected_name_comment */
                     <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                      <span className="font-semibold sm:text-[10px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
-                      <span className="sm:text-[10px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
+                      <span className="font-semibold sm:text-[8px] text-[9px] text-red-700 dark:text-red-300">ตีกลับ</span>
+                      <span className="sm:text-[8px] text-[9px] text-red-600 dark:text-red-400 dark:text-red-600 font-medium">
                         {(() => {
                           // อ่านชื่อผู้ตีกลับจาก rejected_name_comment JSONB column
                           try {
@@ -632,12 +632,12 @@ const MemoList: React.FC<MemoListProps> = ({
                     <>
                       {/* ธุรการ */}
                       <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                        <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                        <span className={`font-semibold sm:text-[8px] text-[9px] ${
                           memo.status === 'completed'
                             ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                         }`}>ตรวจทาน/เสนอ</span>
-                        <span className={`sm:text-[10px] text-[9px] ${
+                        <span className={`sm:text-[8px] text-[9px] ${
                           memo.status === 'completed'
                             ? 'text-muted-foreground'
                             : (memo.current_signer_order === 1 ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
@@ -697,10 +697,10 @@ const MemoList: React.FC<MemoListProps> = ({
                                 const scrollClose = () => { popup.remove(); document.removeEventListener('click', close); window.removeEventListener('scroll', scrollClose, true); };
                                 setTimeout(() => { document.addEventListener('click', close); window.addEventListener('scroll', scrollClose, true); }, 0);
                               }}>
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${memo.status === 'completed' ? 'text-muted-foreground' : isCurrentStep ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600'}`}>
+                                <span className={`font-semibold sm:text-[8px] text-[9px] ${memo.status === 'completed' ? 'text-muted-foreground' : isCurrentStep ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600'}`}>
                                   <Users className="inline h-3 w-3 mr-0.5" /> {completedCount}/{totalCount}
                                 </span>
-                                <span className={`sm:text-[10px] text-[9px] underline decoration-dotted ${isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'}`}>ผู้ลงนาม</span>
+                                <span className={`sm:text-[8px] text-[9px] underline decoration-dotted ${isCurrentStep ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600'}`}>ผู้ลงนาม</span>
                                 <div className={`w-2 h-2 rounded-full mt-1 ${memo.status === 'completed' ? 'bg-muted' : isCurrentStep ? 'bg-amber-500' : 'bg-amber-200 dark:bg-amber-800'}`}></div>
                               </button>
                             </div>
@@ -717,7 +717,7 @@ const MemoList: React.FC<MemoListProps> = ({
                           .map((signer, idx, arr) => (
                             <React.Fragment key={signer.user_id || `signer-${idx}`}>
                               <div className="flex flex-col items-center min-w-[44px] sm:min-w-[60px]">
-                                <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                                <span className={`font-semibold sm:text-[8px] text-[9px] ${
                                   memo.status === 'completed'
                                     ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
@@ -738,7 +738,7 @@ const MemoList: React.FC<MemoListProps> = ({
                                     }
                                   })()}
                                 </span>
-                                <span className={`sm:text-[10px] text-[9px] ${
+                                <span className={`sm:text-[8px] text-[9px] ${
                                   memo.status === 'completed'
                                     ? 'text-muted-foreground'
                                     : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300 font-bold' : 'text-amber-400 dark:text-amber-600')
@@ -774,7 +774,7 @@ const MemoList: React.FC<MemoListProps> = ({
                   {/* Step 5: เกษียนหนังสือแล้ว - ไม่แสดงถ้าถูกตีกลับ หรือเป็น report memo */}
                   {memo.status !== 'draft' && memo.status !== 'rejected' && !reportMemoIds.has(memo.id) && (
                     <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
-                      <span className={`font-semibold sm:text-[10px] text-[9px] ${
+                      <span className={`font-semibold sm:text-[8px] text-[9px] ${
                         memo.status === 'completed'
                           ? 'text-foreground'
                           : 'text-amber-400 dark:text-amber-600'

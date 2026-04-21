@@ -283,15 +283,17 @@ const OfficialDocumentsPage = () => {
   }, [docReceiveList]);
 
   // นับสถิติจากเอกสารย้อนหลัง 30 วัน (รวม memos + doc_receive)
+  const filteredDocReceiveForStats = ReactUseMemo(
+    () => docReceiveList.filter(doc => !doc.doc_del),
+    [docReceiveList]
+  );
   const combinedForStats = ReactUseMemo(() => {
-    return [...allMemos, ...docReceiveList.filter(doc => !doc.doc_del)];
-  }, [allMemos, docReceiveList]);
+    return [...allMemos, ...filteredDocReceiveForStats];
+  }, [allMemos, filteredDocReceiveForStats]);
 
   const totalCount = combinedForStats.length;
-  // ใช้ status เป็น source of truth — เลี่ยงการชนระหว่าง sentinel COMPLETED=5 กับ signer order 5 จริง (ผอ.)
-  const pendingCount = combinedForStats.filter(m => m.status === 'pending_sign').length;
-  const approvedCount = combinedForStats.filter(m => m.status === 'completed').length;
-  const inProgressCount = combinedForStats.filter(m => m.status === 'draft' || m.status === 'rejected').length;
+  const internalCount = allMemos.length;
+  const externalCount = filteredDocReceiveForStats.length;
 
   // Use the getPermissions function from useEmployeeAuth hook
   const permissions = ReactUseMemo(() => getPermissions(), [getPermissions]);
@@ -396,9 +398,8 @@ const OfficialDocumentsPage = () => {
         {/* Statistics Cards */}
         <StatisticsCards
           totalCount={totalCount}
-          pendingCount={pendingCount}
-          approvedCount={approvedCount}
-          inProgressCount={inProgressCount}
+          internalCount={internalCount}
+          externalCount={externalCount}
           memosThisMonth={combinedForStats}
         />
 

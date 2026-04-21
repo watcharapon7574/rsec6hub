@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, Inbox, Mail } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
@@ -8,17 +8,15 @@ import { useMemo } from 'react';
 
 interface StatisticsCardsProps {
   totalCount: number;
-  pendingCount: number;
-  approvedCount: number;
-  inProgressCount: number;
+  internalCount: number;
+  externalCount: number;
   memosThisMonth: any[];
 }
 
 const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   totalCount,
-  pendingCount,
-  approvedCount,
-  inProgressCount,
+  internalCount,
+  externalCount,
   memosThisMonth
 }) => {
   // แปลงเดือนปัจจุบันเป็นภาษาไทย
@@ -108,49 +106,32 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
           <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-2">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900">
+                  <Inbox className="h-4 w-4 text-orange-600 dark:text-orange-400 dark:text-orange-600" />
+                </div>
+                <span className="text-3xl sm:text-5xl font-bold text-orange-600 dark:text-orange-400 dark:text-orange-600">{internalCount}</span>
+              </div>
+              <div className="mt-2">
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">หนังสือรับภายใน</h3>
+                {renderMonthSummary(internalCount)}
+                {renderMonthSummaryMobile(internalCount)}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="flex-1 min-w-[160px] flex flex-col w-full">
+          <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900">
-                  <AlertCircle className="h-4 w-4 text-purple-600 dark:text-purple-400 dark:text-purple-600" />
+                  <Mail className="h-4 w-4 text-purple-600 dark:text-purple-400 dark:text-purple-600" />
                 </div>
-                <span className="text-3xl sm:text-5xl font-bold text-purple-600 dark:text-purple-400 dark:text-purple-600">{inProgressCount}</span>
+                <span className="text-3xl sm:text-5xl font-bold text-purple-600 dark:text-purple-400 dark:text-purple-600">{externalCount}</span>
               </div>
               <div className="mt-2">
-                <h3 className="font-semibold text-foreground text-sm sm:text-base">รอตรวจทาน</h3>
-                {renderMonthSummary(inProgressCount)}
-                {renderMonthSummaryMobile(inProgressCount)}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="flex-1 min-w-[160px] flex flex-col w-full">
-          <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900">
-                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 dark:text-amber-600" />
-                </div>
-                <span className="text-3xl sm:text-5xl font-bold text-amber-600 dark:text-amber-400 dark:text-amber-600">{pendingCount}</span>
-              </div>
-              <div className="mt-2">
-                <h3 className="font-semibold text-foreground text-sm sm:text-base">รอลงนาม</h3>
-                {renderMonthSummary(pendingCount)}
-                {renderMonthSummaryMobile(pendingCount)}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="flex-1 min-w-[160px] flex flex-col w-full">
-          <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 dark:text-green-600" />
-                </div>
-                <span className="text-3xl sm:text-5xl font-bold text-green-600 dark:text-green-400 dark:text-green-600">{approvedCount}</span>
-              </div>
-              <div className="mt-2">
-                <h3 className="font-semibold text-foreground text-sm sm:text-base">เสร็จสิ้น</h3>
-                {renderMonthSummary(approvedCount)}
-                {renderMonthSummaryMobile(approvedCount)}
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">หนังสือรับภายนอก</h3>
+                {renderMonthSummary(externalCount)}
+                {renderMonthSummaryMobile(externalCount)}
               </div>
             </div>
           </CardContent>

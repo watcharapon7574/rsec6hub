@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -230,6 +230,14 @@ const ApproveDocumentPage: React.FC = () => {
 
   // Use either memo or docReceive (prioritize cache, then database fetch, then doc_receive)
   const memo = isDocReceive ? docReceive : (memoFromMemosTable || memoFromDatabase);
+
+  // Stable PDF URL — เปลี่ยน cache-buster เฉพาะเมื่อ pdf_draft_path เปลี่ยนจริง
+  // ป้องกัน PDFViewer re-fetch ทุก render (และยิง URL ที่ถูกลบไปแล้วตอนตีกลับ)
+  const stablePdfUrl = useMemo(() => {
+    if (!memo?.pdf_draft_path) return null;
+    const base = extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path;
+    return `${base}?t=${Date.now()}`;
+  }, [memo?.pdf_draft_path]);
 
   // Wrapper functions for updating either memos or doc_receive
   const updateDocumentStatus = async (docId: string, status: string, docNumber?: string, rejectionReason?: string, currentSignerOrder?: number, newPdfDraftPath?: string, clerkId?: string) => {
@@ -826,8 +834,6 @@ const ApproveDocumentPage: React.FC = () => {
 
               setShowLoadingModal(false);
               approvedRef.current = true;
-              originalPdfPathRef.current = null;
-              setOriginalPdfPath(null);
               toast({ title: 'สำเร็จ', description: 'บันทึกการลงนามเรียบร้อยแล้ว' });
               navigate('/documents');
               setTimeout(() => { (window as any).__signingInProgress = false; }, 1500);
@@ -1212,10 +1218,10 @@ const ApproveDocumentPage: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {memo.pdf_draft_path ? (
+                {memo.pdf_draft_path && stablePdfUrl && !isRejecting && !isSubmitting ? (
                   <div className="w-full">
-                    <PDFViewer 
-                      fileUrl={(extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path) + '?t=' + Date.now()} 
+                    <PDFViewer
+                      fileUrl={stablePdfUrl}
                       fileName={memo.subject}
                       showSignatureMode={false}
                       showZoomControls={true}
@@ -1224,7 +1230,7 @@ const ApproveDocumentPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    ไม่มีไฟล์ PDF สำหรับแสดง
+                    {isRejecting ? 'กำลังตีกลับเอกสาร...' : isSubmitting ? 'กำลังอนุมัติ...' : 'ไม่มีไฟล์ PDF สำหรับแสดง'}
                   </div>
                 )}
               </CardContent>

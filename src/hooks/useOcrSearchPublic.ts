@@ -9,7 +9,7 @@ interface UseOcrSearchPublicOptions {
 
 export function useOcrSearchPublic({ getTurnstileToken }: UseOcrSearchPublicOptions) {
   const [query, setQuery] = useState('');
-  const [mode, setMode] = useState<SearchMode>('hybrid');
+  const [mode, setMode] = useState<SearchMode>('fulltext');
   const [results, setResults] = useState<OcrChunkSearchResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchTime, setSearchTime] = useState<number | null>(null);

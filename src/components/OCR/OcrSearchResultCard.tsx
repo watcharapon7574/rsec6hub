@@ -11,11 +11,12 @@ import {
   Download,
 } from 'lucide-react';
 import { highlightText } from '@/lib/highlightText';
-import type { OcrChunkSearchResult } from '@/types/ocr';
+import type { OcrChunkSearchResult, SearchMode } from '@/types/ocr';
 
 interface OcrSearchResultCardProps {
   result: OcrChunkSearchResult;
   query: string;
+  mode: SearchMode;
 }
 
 const fileTypeIcons: Record<string, { icon: typeof FileText; color: string }> = {
@@ -41,9 +42,11 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-const OcrSearchResultCard = ({ result, query }: OcrSearchResultCardProps) => {
+const OcrSearchResultCard = ({ result, query, mode }: OcrSearchResultCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const { icon: Icon, color } = fileTypeIcons[result.file_type] || fileTypeIcons.pdf;
+  const showFtsRank = mode !== 'semantic';
+  const showSemanticRank = mode !== 'fulltext';
 
   const snippet = result.content
     ? result.content.substring(0, 300) + (result.content.length > 300 ? '...' : '')
@@ -134,15 +137,15 @@ const OcrSearchResultCard = ({ result, query }: OcrSearchResultCardProps) => {
         </pre>
       )}
 
-      {/* Rank indicators */}
-      {(result.fts_rank || result.semantic_rank) && (
+      {/* Rank indicators — only show ranks relevant to current mode */}
+      {((showFtsRank && result.fts_rank) || (showSemanticRank && result.semantic_rank)) && (
         <div className="flex items-center gap-3 mt-2 ml-7">
-          {result.fts_rank && (
+          {showFtsRank && result.fts_rank && (
             <span className="text-xs text-blue-600 dark:text-blue-400">
               คำค้น #{result.fts_rank}
             </span>
           )}
-          {result.semantic_rank && (
+          {showSemanticRank && result.semantic_rank && (
             <span className="text-xs text-purple-600 dark:text-purple-400">
               ความหมาย #{result.semantic_rank}
             </span>

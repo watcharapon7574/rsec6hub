@@ -109,6 +109,7 @@ const OcrSearchPage = () => {
                     key={result.chunk_id}
                     result={result}
                     query={query}
+                    mode={mode}
                   />
                 ))}
               </div>

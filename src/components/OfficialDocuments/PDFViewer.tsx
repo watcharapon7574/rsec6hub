@@ -887,34 +887,24 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                   return null;
                 }
 
-                // Calculate zoom level based on page width - ใช้ scale state ที่มีอยู่
                 // A4 = 595 x 842 points (8.27 x 11.69 inches)
                 const standardPageWidth = 595; // A4 width in points
                 const standardPageHeight = 842; // A4 height in points
-                const currentZoom = scale; // ใช้ scale state จาก zoomPlugin แทนการคำนวณใหม่
-                
-                // Calculate pin size based on current PDF page dimensions
-                const basePinSizePt = 180; // Base pin size in points (increased for more content space)
-                
-                // Use current PDF page dimensions directly for calculation
-                const currentPageWidth = pageRect.width; // Current PDF page width in pixels
-                const currentPageHeight = pageRect.height; // Current PDF page height in pixels
-                
-                // Scale pin size proportionally with PDF page size
-                // Use the smaller dimension to maintain square pins
-                const pdfSizeScale = Math.min(currentPageWidth, currentPageHeight) / 500; // Normalize against 500px base
-                
-                // ตำแหน่งที่ 2+ แสดงแค่ลายเซ็น → ใช้ pin เล็กลง
-                const isImageOnly = ((pos.signer as any).positionIndex > 1 || pos.signer.role === 'parallel_signer') && pos.signer.role !== 'clerk';
-                const effectivePinSizePt = isImageOnly ? 80 : basePinSizePt; // 80pt สำหรับแค่ลายเซ็น
-                const calculatedSize = effectivePinSizePt * pdfSizeScale;
 
-                // Apply min/max constraints
-                const minPinSize = 30; // Minimum size in pixels
-                const maxPinSize = 200; // Maximum size in pixels
-                const basePinSize = Math.max(minPinSize, Math.min(maxPinSize, calculatedSize));
-                const pinWidth = isImageOnly ? basePinSize * 1.5 : basePinSize; // ลายเซ็นอย่างเดียวให้กว้างขึ้น
-                const pinHeight = basePinSize;
+                // Proper PDF-to-pixel scale — หมุดสเกลตรงตาม zoom จริง
+                const pdfToPixelScale = pageRect.width / standardPageWidth;
+
+                // API box คงที่ 120pt × 60pt ทุกตำแหน่ง (ดู DocumentManagePage.tsx:1220-1221)
+                // ตำแหน่งที่ 1 แสดงเต็มการ์ด (ลายเซ็น+ชื่อ+ตำแหน่ง), ตำแหน่ง 2+ แสดงแค่ลายเซ็น
+                const API_PIN_WIDTH_PT = 120;
+                const API_PIN_HEIGHT_PT = 60;
+                const isImageOnly = ((pos.signer as any).positionIndex > 1 || pos.signer.role === 'parallel_signer') && pos.signer.role !== 'clerk';
+
+                const minPinSizePx = 30; // กันไม่ให้เล็กเกินไปตอน zoom out
+                const pinWidth = Math.max(minPinSizePx, API_PIN_WIDTH_PT * pdfToPixelScale);
+                const pinHeight = Math.max(minPinSizePx, API_PIN_HEIGHT_PT * pdfToPixelScale);
+                // basePinSize ใช้สำหรับสเกล padding/font ภายในหมุด — ใช้ด้านที่เล็กกว่า
+                const basePinSize = Math.min(pinWidth, pinHeight);
                 
                 // Calculate position that sticks to the PDF page
                 // pos.x, pos.y อยู่ในหน่วย PDF points แล้ว แต่ Y-axis ถูก flipped
@@ -1131,61 +1121,62 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                           )}
                         </>
                       ) : (
-                        /* ตำแหน่งแรก - แสดงลายเซ็น + ชื่อ + ตำแหน่ง ครบ */
+                        /* ตำแหน่งแรก - แสดงลายเซ็นในกล่อง API (120×60pt) — ชื่อ/ตำแหน่งลอยด้านล่าง */
                         <>
-                          {/* ลายเซ็น - อยู่บนสุดขนาดใหญ่พอดีกรอบ */}
-                          {pos.signer.signature_url && (
-                            <div className="mb-2 flex justify-center items-center">
+                          {pos.signer.signature_url ? (
+                            <div className="flex justify-center items-center w-full h-full" style={{ padding: '2px' }}>
                               <img
                                 src={pos.signer.signature_url}
                                 alt="ลายเซ็น"
                                 style={{
-                                  maxWidth: '95%', // เพิ่มเป็น 95% ให้ใหญ่พอดีกรอบ
-                                  maxHeight: `${Math.max(40, basePinSize * 0.7)}px`, // Scale signature height with pin size (70%)
+                                  maxWidth: '95%',
+                                  maxHeight: '95%',
                                   width: 'auto',
                                   height: 'auto',
                                   objectFit: 'contain',
                                   opacity: 0.9,
-                                  margin: '0 auto'
                                 }}
                               />
                             </div>
+                          ) : (
+                            <div className="font-semibold truncate leading-tight text-blue-600" style={{ fontSize: '12px' }}>
+                              {pos.signer.name}
+                            </div>
                           )}
+                        </>
+                      )}
+                    </div>
 
-                          {/* ชื่อ */}
-                          <div className="font-semibold truncate leading-tight text-gray-800" style={{ fontSize: '14px' }}>
-                            {pos.signer.name}
-                          </div>
-
-                          {/* ตำแหน่ง - แตกต่างตามบทบาท */}
-                          <div
-                            className="truncate leading-tight text-gray-600"
-                            style={{ fontSize: '12px' }}
-                          >
+                    {/* Label ลอยใต้กล่อง */}
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 pointer-events-none text-center whitespace-nowrap"
+                      style={{
+                        top: `${pinHeight + 4}px`,
+                        lineHeight: 1.2,
+                        textShadow: '0 1px 2px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,0.8)',
+                      }}
+                    >
+                      {/* ชื่อ/ตำแหน่ง — เฉพาะ pin ตำแหน่งแรก ไม่ใช่ clerk/parallel */}
+                      {!isClerk && pos.signer.role !== 'parallel_signer' && (pos.signer as any).positionIndex === 1 && (
+                        <>
+                          <div className="font-semibold text-gray-800" style={{ fontSize: '11px' }}>{pos.signer.name}</div>
+                          <div className="text-gray-600" style={{ fontSize: '10px' }}>
                             {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.job_position || pos.signer.position || ''}`}
                             {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
                             {pos.signer.role === 'deputy_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
                             {pos.signer.role === 'director' && `${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
                           </div>
-
-                          {/* บรรทัดเพิ่มเติม - แตกต่างตามบทบาท */}
-                          <div
-                            className="leading-tight text-gray-500"
-                            style={{ fontSize: '12px' }}
-                          >
-                            {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'หัวหน้าฝ่าย'}`}
-                            {pos.signer.role === 'deputy_director' && (memo?.updated_at ? formatThaiDate(memo.updated_at) : '๑๑ กรกฎาคม ๒๕๖๘')}
-                            {pos.signer.role === 'director' && `เขตการศึกษา ๖ จังหวัดลพบุรี`}
-                          </div>
+                          {(pos.signer.role === 'assistant_director' || pos.signer.role === 'deputy_director' || pos.signer.role === 'director') && (
+                            <div className="text-gray-500" style={{ fontSize: '10px' }}>
+                              {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'หัวหน้าฝ่าย'}`}
+                              {pos.signer.role === 'deputy_director' && (memo?.updated_at ? formatThaiDate(memo.updated_at) : '')}
+                              {pos.signer.role === 'director' && `เขตการศึกษา ๖ จังหวัดลพบุรี`}
+                            </div>
+                          )}
                         </>
                       )}
-                      
-                      {/* พิกัด API */}
-                      <div 
-                        key={`coords-${index}-${pos.x}-${pos.y}-${pinHeight}`}
-                        className="leading-tight text-gray-400"
-                        style={{ fontSize: '12px' }} // Fixed font size for API coordinates
-                      >
+                      {/* พิกัด API — ทุก pin เพื่อใช้ verify */}
+                      <div className="text-gray-400" style={{ fontSize: '9px' }}>
                         P{currentPageNumber} (API: {apiX},{apiY})
                       </div>
                     </div>

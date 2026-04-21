@@ -85,19 +85,8 @@ const ApproveDocumentPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memoId]);
 
-  // Restore hasCompletedAnnotation on page load (กรณี refresh)
-  useEffect(() => {
-    if (memoId && profile?.user_id) {
-      const checkUserId = signOnBehalfUserId || profile.user_id;
-      supabase.from('memo_annotation_layers')
-        .select('id')
-        .eq('memo_id', memoId)
-        .eq('user_id', checkUserId)
-        .then(({ data }) => {
-          if (data && data.length > 0) setHasCompletedAnnotation(true);
-        });
-    }
-  }, [memoId, profile?.user_id, signOnBehalfUserId]);
+  // Restore hasCompletedAnnotation on page load (กรณี refresh) — effect ที่ใช้ effectiveSignerUserId
+  // อยู่ด้านล่างหลังจาก memo/signerListProgress โหลดแล้ว
 
   // โหลด profile ของคนที่ admin ลงนามแทน
   useEffect(() => {
@@ -386,6 +375,31 @@ const ApproveDocumentPage: React.FC = () => {
   const isAdminUser = profile?.is_admin === true;
   const userCanSign = currentUserSigner || currentUserSignature || isAdminUser;
 
+  // ถ้า admin เปิดดูเอกสารที่ตัวเองไม่ได้เป็นผู้ลงนาม ระบบถือว่า "ลงนามแทน"
+  // ผู้ลงนามจริงคือคนที่ order ตรงกับ current_signer_order
+  // ใช้ user_id นี้เป็นเกณฑ์เช็ค annotation_required_for แทนการใช้ user_id ของ admin
+  const isAdminSigningImplicit = isAdminUser && !currentUserSigner && !currentUserSignature && !signOnBehalfUserId;
+  const currentOrderSigner = isAdminSigningImplicit && memo
+    ? (signerListProgress.find((s: any) => s.order === memo.current_signer_order)
+       || signaturePositions.find((p: any) => p.signer?.order === memo.current_signer_order)?.signer)
+    : null;
+  const effectiveSignerUserId = signOnBehalfUserId
+    || currentOrderSigner?.user_id
+    || profile?.user_id
+    || '';
+
+  // Restore hasCompletedAnnotation on page load (กรณี refresh) — เช็คจากผู้ลงนามจริง
+  useEffect(() => {
+    if (!memoId || !effectiveSignerUserId) return;
+    supabase.from('memo_annotation_layers')
+      .select('id')
+      .eq('memo_id', memoId)
+      .eq('user_id', effectiveSignerUserId)
+      .then(({ data }) => {
+        if (data && data.length > 0) setHasCompletedAnnotation(true);
+      });
+  }, [memoId, effectiveSignerUserId]);
+
   useEffect(() => {
     if (!memo || !profile || hasShownPermissionToast) return;
 
@@ -581,7 +595,8 @@ const ApproveDocumentPage: React.FC = () => {
         (window as any).__signingInProgress = true;
 
         // Lazy annotation: วาด PNG overlays ลงบน PDF ล่าสุดก่อนเซ็น (ถ้ามี)
-        const annotatorUserId = signOnBehalfUserId || profile?.user_id;
+        // ใช้ effective signer เพื่อรองรับ admin ลงนามแทนโดยไม่ผ่าน URL ?signOnBehalf
+        const annotatorUserId = effectiveSignerUserId || signOnBehalfUserId || profile?.user_id;
         if (annotatorUserId && hasCompletedAnnotation) {
           try {
             let pageImages = pendingAnnotationImagesRef.current;
@@ -1321,9 +1336,9 @@ const ApproveDocumentPage: React.FC = () => {
             {/* Annotation Requirement */}
             {(() => {
               const annotationRequired = (memo as any)?.annotation_required_for as string[] | null;
-              // เช็คทั้ง user ปัจจุบัน และคนที่ลงนามแทน
-              const checkUserId = signOnBehalfUserId || profile?.user_id || '';
-              const needsAnnotation = annotationRequired?.includes(checkUserId) && !hasCompletedAnnotation;
+              // เช็คจาก "ผู้ลงนามจริง" — รวมกรณี admin เปิดแทนโดยไม่ผ่าน URL ?signOnBehalf
+              // เพื่อไม่ให้ admin bypass annotation ของผู้ลงนามที่ถูกกำหนดให้ขีดเขียน
+              const needsAnnotation = annotationRequired?.includes(effectiveSignerUserId) && !hasCompletedAnnotation;
 
               return needsAnnotation ? (
                 <Card className="border-orange-300 dark:border-orange-700">
@@ -1373,7 +1388,7 @@ const ApproveDocumentPage: React.FC = () => {
                   onClick={() => handleSubmit('approve')}
                   disabled={
                     isSubmitting || isRejecting || signingLockWaiting ||
-                    ((memo as any)?.annotation_required_for?.includes(signOnBehalfUserId || profile?.user_id || '') && !hasCompletedAnnotation)
+                    ((memo as any)?.annotation_required_for?.includes(effectiveSignerUserId) && !hasCompletedAnnotation)
                   }
                   className="bg-green-600 hover:bg-green-700 text-white w-full py-3"
                 >
@@ -1419,7 +1434,7 @@ const ApproveDocumentPage: React.FC = () => {
             setShowLoadingModal(true);
 
             try {
-              const annotatorUserId = signOnBehalfUserId || profile?.user_id;
+              const annotatorUserId = effectiveSignerUserId || signOnBehalfUserId || profile?.user_id;
               if (!annotatorUserId || !memoId || !pageImages || pageImages.size === 0) {
                 setHasCompletedAnnotation(true);
                 return;

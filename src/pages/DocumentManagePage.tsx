@@ -303,15 +303,18 @@ const DocumentManagePage: React.FC = () => {
           const p = profiles.find(pr => pr.user_id === signer.user_id);
           if (!p) { nonAdminSigners.push(signer); continue; }
 
-          if (p.position === 'deputy_director' && !selectedDeputy) {
-            setSelectedDeputy(signer.user_id);
-          } else if ((p.position === 'assistant_director' || p.org_structure_role?.includes('หัวหน้าฝ่าย')) && !selectedAssistant) {
-            setSelectedAssistant(signer.user_id);
-          } else if (p.position === 'director') {
-            // director มีอยู่แล้ว ไม่ต้องทำอะไร
-          } else {
-            nonAdminSigners.push(signer);
+          // Admin roles ต้องอยู่ใน dropdown เสมอ — ไม่ว่า dropdown ปัจจุบันจะเลือกไว้แล้วหรือไม่
+          // ก็ห้าม fallthrough ไปกอง parallel (เดิม else-if ทำให้ deputy หล่นลง parallel ถ้า selectedDeputy มีค่า)
+          if (p.position === 'deputy_director') {
+            if (!selectedDeputy) setSelectedDeputy(signer.user_id);
+            continue;
           }
+          if (p.position === 'assistant_director' || p.org_structure_role?.includes('หัวหน้าฝ่าย')) {
+            if (!selectedAssistant) setSelectedAssistant(signer.user_id);
+            continue;
+          }
+          if (p.position === 'director') continue;
+          nonAdminSigners.push(signer);
         }
 
         if (nonAdminSigners.length > 0) {
@@ -352,6 +355,19 @@ const DocumentManagePage: React.FC = () => {
       }
     }
   }, [selectedGroup, assistantDirectors]);
+
+  // Defensive: ถอน admin ที่ถูกเลือกใน dropdown ออกจาก parallelSigners โดยอัตโนมัติ
+  // ป้องกันสภาพที่ deputy/assistant ค้างอยู่ใน parallel state หลังผู้ใช้สลับ dropdown
+  React.useEffect(() => {
+    const adminIds = new Set<string>();
+    if (selectedDeputy && selectedDeputy !== 'skip') adminIds.add(selectedDeputy);
+    if (selectedAssistant && selectedAssistant !== 'skip') adminIds.add(selectedAssistant);
+    if (adminIds.size === 0) return;
+    setParallelSigners(prev => {
+      const filtered = prev.filter(ps => !adminIds.has(ps.user_id));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [selectedDeputy, selectedAssistant]);
 
   // Build signers list
   const signers = React.useMemo(() => {
@@ -968,11 +984,18 @@ const DocumentManagePage: React.FC = () => {
           };
         });
 
-        // สร้าง parallel_signers config ถ้ามี
-        const parallelSignersConfig = parallelSigners.length > 0
+        // สร้าง parallel_signers config ถ้ามี — กรอง admin (รองผอ./หัวหน้าฝ่าย/ผอ.) ออก
+        // ป้องกัน deputy/assistant หลุดเข้า parallel group เพราะ state ไม่ sync กับ dropdown
+        const adminUserIdsForParallel = new Set(
+          signers.filter(s => s.role !== 'author').map(s => s.user_id)
+        );
+        const cleanParallelSigners = parallelSigners.filter(
+          ps => !adminUserIdsForParallel.has(ps.user_id)
+        );
+        const parallelSignersConfig = cleanParallelSigners.length > 0
           ? {
               order: 2, // parallel signers อยู่ order 2 (หลังผู้เขียน)
-              signers: parallelSigners.map(ps => ({
+              signers: cleanParallelSigners.map(ps => ({
                 user_id: ps.user_id,
                 name: ps.name,
                 require_annotation: annotationRequiredUserIds.includes(ps.user_id),

@@ -404,14 +404,16 @@ const PDFDocumentManagePage: React.FC = () => {
           const authorPositions = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
 
           if (authorPositions.length > 0) {
-            const signaturesPayload = authorPositions.map(pos => ({
+            // จุดแรก: มีชื่อ+ตำแหน่ง / จุดที่ 2+: ลายเซ็น PNG อย่างเดียว
+            const imageOnlyLines = [{ type: "image", file_key: "sig1" }];
+            const signaturesPayload = authorPositions.map((pos, index) => ({
               page: pos.page - 1,
               x: Math.round(pos.x),
               y: Math.round(pos.y),
               rotation: (pos as any).rotation || 0,
               width: 120,
               height: 60,
-              lines
+              lines: index === 0 ? lines : imageOnlyLines
             }));
 
             formData.append('signatures', JSON.stringify(signaturesPayload));

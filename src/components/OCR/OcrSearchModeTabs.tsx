@@ -11,7 +11,6 @@ interface OcrSearchModeTabsProps {
 const modes: { value: SearchMode; label: string; ai?: boolean }[] = [
   { value: 'fulltext', label: 'คำค้น' },
   { value: 'hybrid', label: 'ทั้งหมด', ai: true },
-  { value: 'semantic', label: 'ความหมาย', ai: true },
 ];
 
 const OcrSearchModeTabs = ({ mode, onModeChange, className }: OcrSearchModeTabsProps) => {

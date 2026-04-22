@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { ocrService } from '@/services/ocrService';
@@ -102,6 +103,18 @@ export function useOcrSearch() {
     }
     prevModeRef.current = mode;
   }, [mode, hasSearched, query, executeSearch]);
+
+  // Seed query จาก URL (?q=...) และยิงค้นหาอัตโนมัติ — ใช้ครั้งเดียวต่อค่า q ต่อ user
+  const [searchParams] = useSearchParams();
+  const seededQueryRef = useRef<string | null>(null);
+  useEffect(() => {
+    const q = searchParams.get('q')?.trim();
+    if (!q || !profile?.user_id) return;
+    if (seededQueryRef.current === q) return;
+    seededQueryRef.current = q;
+    setQuery(q);
+    doSearch(q, mode);
+  }, [searchParams, profile?.user_id, mode, doSearch]);
 
   return {
     query,

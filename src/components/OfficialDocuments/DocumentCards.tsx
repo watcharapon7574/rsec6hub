@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentList from './DocumentList';
 import DocReceiveList from './DocReceiveList';
@@ -18,6 +18,7 @@ import ClerkSigningTools from './ClerkSigningTools';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   FileText,
   Settings,
@@ -25,7 +26,8 @@ import {
   Briefcase,
   PenTool,
   Plus,
-  ClipboardList
+  ClipboardList,
+  ArrowRight
 } from 'lucide-react';
 import { isExecutive, isClerk, isTeacher, getPositionDisplayName } from '@/types/database';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
@@ -107,6 +109,49 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
     navigate('/create-document');
   };
 
+  const [searchInput, setSearchInput] = useState('');
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchInput.trim();
+    if (!q) return;
+    navigate(`/ocr-search?q=${encodeURIComponent(q)}`);
+  };
+
+  // Typewriter placeholder — วนตัวอย่างคำค้นแบบพิมพ์-ลบ
+  const [typedPlaceholder, setTypedPlaceholder] = useState('');
+  useEffect(() => {
+    const phrases = ['คำสั่ง', 'วัชรพล', 'ฝ่ายบริหารวิชาการ', 'โครงสร้าง', 'ห้องเรียน', 'หน่วยบริการ'];
+    let phraseIdx = 0;
+    let charIdx = 0;
+    let deleting = false;
+    let timerId: ReturnType<typeof setTimeout>;
+
+    const tick = () => {
+      const phrase = phrases[phraseIdx];
+      if (!deleting) {
+        charIdx++;
+        setTypedPlaceholder(phrase.slice(0, charIdx));
+        if (charIdx >= phrase.length) {
+          deleting = true;
+          timerId = setTimeout(tick, 1400); // หยุดให้อ่าน
+          return;
+        }
+      } else {
+        charIdx--;
+        setTypedPlaceholder(phrase.slice(0, charIdx));
+        if (charIdx <= 0) {
+          deleting = false;
+          phraseIdx = (phraseIdx + 1) % phrases.length;
+          timerId = setTimeout(tick, 350); // หยุดก่อนคำถัดไป
+          return;
+        }
+      }
+      timerId = setTimeout(tick, deleting ? 40 : 90);
+    };
+    timerId = setTimeout(tick, 500);
+    return () => clearTimeout(timerId);
+  }, []);
+
   // กรองเอกสารที่มีสถานะ pending_sign สำหรับการ์ดรอพิจารณา
   const pendingSignMemos = realMemos.filter(memo => memo.status === 'pending_sign');
   
@@ -128,17 +173,49 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
   return (
     <div className="space-y-8">
       {/* Create Document Button - Compact Version */}
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+        <div className="shrink-0">
           <h2 className="text-xl font-bold text-foreground">รายการเอกสาร</h2>
           <p className="text-sm text-muted-foreground mt-1">
             บทบาท: {permissions.displayName}
             {permissions.isAdmin && " (ผู้ดูแลระบบ)"}
           </p>
         </div>
-        <Button 
+        <form
+          onSubmit={handleSearchSubmit}
+          className="flex-1 md:max-w-xl md:mx-auto w-full"
+          role="search"
+        >
+          <div className="relative group">
+            <Input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={`ค้นหาเช่น ${typedPlaceholder}`}
+              className="h-9 pl-12 pr-11 text-sm text-center rounded-full bg-background border-2 border-blue-200 shadow-sm hover:shadow-md focus-visible:border-blue-500 focus-visible:ring-blue-500/20 transition-all"
+              aria-label="ค้นหาเอกสาร"
+            />
+            <button
+              type="submit"
+              aria-label="ค้นหา"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-full bg-blue-500 text-white shadow-sm hover:bg-blue-600 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <img
+              src="/fastS.png"
+              alt="FastSearch"
+              className="pointer-events-none absolute -left-6 top-1/2 -translate-y-1/2 h-[88px] w-[88px] object-contain select-none
+                drop-shadow-[0_4px_10px_rgba(37,99,235,0.35)]
+                -rotate-12 transition-transform duration-300 ease-out
+                group-hover:rotate-0 group-hover:scale-110
+                group-focus-within:rotate-0 group-focus-within:scale-110"
+            />
+          </div>
+        </form>
+        <Button
           onClick={handleCreateDocument}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 shrink-0 self-start md:self-auto"
         >
           <Plus className="h-4 w-4" />
           สร้างเอกสารราชการ

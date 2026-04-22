@@ -23,6 +23,7 @@ interface Step3Props {
   onPositionClick: (x: number, y: number, page: number) => void;
   onPositionRemove: (index: number) => void;
   onPositionRotate?: (index: number) => void;
+  onPositionMove?: (index: number, dx: number, dy: number) => void;
   onPrevious: () => void;
   onNext: () => void;
   isStepComplete: boolean;
@@ -41,6 +42,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
   onPositionClick,
   onPositionRemove,
   onPositionRotate,
+  onPositionMove,
   onPrevious,
   onNext,
   isStepComplete
@@ -268,6 +270,7 @@ const Step3SignaturePositions: React.FC<Step3Props> = ({
                 onPositionClick={onPositionClick}
                 onPositionRemove={onPositionRemove}
                 onPositionRotate={onPositionRotate}
+                onPositionMove={onPositionMove}
                 signaturePositions={signaturePositions}
                 signers={signers}
                 showSignatureMode={true}

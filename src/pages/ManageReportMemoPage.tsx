@@ -726,6 +726,18 @@ const ManageReportMemoPage: React.FC = () => {
     }
   };
 
+  // เลื่อนตำแหน่งหมุดใน PDF points — clamp ภายในหน้า A4 (595×842)
+  const handlePositionMove = (index: number, dx: number, dy: number) => {
+    setSignaturePositions(prev => prev.map((pos, i) => {
+      if (i !== index) return pos;
+      return {
+        ...pos,
+        x: Math.max(0, Math.min(595, pos.x + dx)),
+        y: Math.max(0, Math.min(842, pos.y + dy)),
+      };
+    }));
+  };
+
   // Handle step navigation with PDF merge and signer_list_progress
   const handleNext = async () => {
     // If moving from step 1 to step 2, call PDFmerge API if there are attachments
@@ -1413,6 +1425,7 @@ const ManageReportMemoPage: React.FC = () => {
             onSelectedSignerIndexChange={setSelectedSignerIndex}
             onPositionClick={handlePositionClick}
             onPositionRemove={handlePositionRemove}
+            onPositionMove={handlePositionMove}
             onPrevious={() => setCurrentStep(1)}
             onNext={handleNext}
             isStepComplete={isStepComplete(2)}

@@ -107,6 +107,7 @@ interface PDFViewerProps {
   onPositionClick?: (x: number, y: number, page: number) => void;
   onPositionRemove?: (index: number) => void; // เพิ่มฟังก์ชันลบตำแหน่ง
   onPositionRotate?: (index: number) => void; // หมุนลายเซ็น 90°
+  onPositionMove?: (index: number, dx: number, dy: number) => void; // เลื่อน +dx/+dy ใน PDF points
   signaturePositions?: SignaturePosition[];
   signers?: any[]; // เพิ่ม signers prop เพื่อแสดงข้อมูลที่ถูกต้อง
   memo?: any; // เพิ่ม memo prop เพื่อใช้ updated_at
@@ -123,6 +124,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   onPositionClick,
   onPositionRemove,
   onPositionRotate,
+  onPositionMove,
   signaturePositions = [],
   signers = [],
   memo,
@@ -1046,6 +1048,60 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                         ×
                       </button>
                     )}
+
+                    {/* ปุ่มลูกศรเลื่อนตำแหน่ง ±5pt ใน PDF coords (shift+click = ±20pt) */}
+                    {onPositionMove && (() => {
+                      const NUDGE = 5;
+                      const BIG_NUDGE = 20;
+                      const arrowBtnClass = "absolute w-6 h-6 bg-white/95 hover:bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold shadow-md border border-blue-300 transition-all hover:scale-110";
+                      const arrowBtnStyle: React.CSSProperties = {
+                        zIndex: 10000,
+                        fontSize: '12px',
+                        lineHeight: 1,
+                        cursor: 'pointer',
+                        touchAction: 'manipulation',
+                      };
+                      const handleNudge = (dx: number, dy: number) => (e: React.PointerEvent) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const idx = signaturePositions.indexOf(pos);
+                        if (idx === -1) return;
+                        const factor = e.shiftKey ? BIG_NUDGE / NUDGE : 1;
+                        onPositionMove(idx, dx * factor, dy * factor);
+                      };
+                      return (
+                        <>
+                          {/* Up — PDF y+ */}
+                          <button
+                            onPointerDown={handleNudge(0, NUDGE)}
+                            className={arrowBtnClass}
+                            style={{ ...arrowBtnStyle, top: '0px', left: '50%', transform: 'translate(-50%, -50%)' }}
+                            title="เลื่อนขึ้น (Shift = 20pt)"
+                          >▲</button>
+                          {/* Down — PDF y- */}
+                          <button
+                            onPointerDown={handleNudge(0, -NUDGE)}
+                            className={arrowBtnClass}
+                            style={{ ...arrowBtnStyle, bottom: '0px', left: '50%', transform: 'translate(-50%, 50%)' }}
+                            title="เลื่อนลง (Shift = 20pt)"
+                          >▼</button>
+                          {/* Left — PDF x- */}
+                          <button
+                            onPointerDown={handleNudge(-NUDGE, 0)}
+                            className={arrowBtnClass}
+                            style={{ ...arrowBtnStyle, top: '50%', left: '0px', transform: 'translate(-50%, -50%)' }}
+                            title="เลื่อนซ้าย (Shift = 20pt)"
+                          >◀</button>
+                          {/* Right — PDF x+ */}
+                          <button
+                            onPointerDown={handleNudge(NUDGE, 0)}
+                            className={arrowBtnClass}
+                            style={{ ...arrowBtnStyle, top: '50%', right: '0px', transform: 'translate(50%, -50%)' }}
+                            title="เลื่อนขวา (Shift = 20pt)"
+                          >▶</button>
+                        </>
+                      );
+                    })()}
 
                     {/* Signer Info Tag */}
                     <div 

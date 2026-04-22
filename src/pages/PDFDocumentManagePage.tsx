@@ -589,6 +589,18 @@ const PDFDocumentManagePage: React.FC = () => {
     }
   };
 
+  // เลื่อนตำแหน่งหมุดใน PDF points — clamp ภายในหน้า A4 (595×842)
+  const handlePositionMove = (index: number, dx: number, dy: number) => {
+    setSignaturePositions(prev => prev.map((pos, i) => {
+      if (i !== index) return pos;
+      return {
+        ...pos,
+        x: Math.max(0, Math.min(595, pos.x + dx)),
+        y: Math.max(0, Math.min(842, pos.y + dy)),
+      };
+    }));
+  };
+
   const handleReject = async (reason: string, _annotatedPdfUrl?: string, _annotatedAttachments?: string[]) => {
     if (!memoId) return;
 
@@ -716,6 +728,7 @@ const PDFDocumentManagePage: React.FC = () => {
               onSelectedSignerIndexChange={setSelectedSignerIndex}
               onPositionClick={handlePositionClick}
               onPositionRemove={handlePositionRemove}
+              onPositionMove={handlePositionMove}
               onPrevious={handlePrevious}
               onNext={handleNext}
               isStepComplete={isStepComplete(2)}

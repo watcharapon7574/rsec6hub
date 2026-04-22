@@ -327,8 +327,17 @@ const CreateMemoPage = () => {
   };
 
   const handleAttachedFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const input = e.target;
+    const files = Array.from(input.files || []);
     if (files.length === 0) return;
+
+    // รวมไฟล์ใหม่กับไฟล์ที่เลือกไว้เดิม (append) แบบกันซ้ำด้วย name+size+lastModified
+    const mergeFiles = (prev: File[]): File[] => {
+      const key = (f: File) => `${f.name}__${f.size}__${f.lastModified}`;
+      const seen = new Set(prev.map(key));
+      const deduped = files.filter(f => !seen.has(key(f)));
+      return [...prev, ...deduped];
+    };
 
     // ตรวจสอบไฟล์ PDF ที่แนบมาว่าเป็น A4 หรือไม่
     const pdfFiles = files.filter(f => f.type === 'application/pdf');
@@ -340,17 +349,25 @@ const CreateMemoPage = () => {
           setA4Warning(result);
           setA4WarningFileName(pdfFile.name);
           setA4PendingCallback(() => () => {
-            setSelectedFiles(files);
-            setFormData(prev => ({ ...prev, attached_files: files.map(f => f.name) }));
+            setSelectedFiles(prev => {
+              const merged = mergeFiles(prev);
+              setFormData(fd => ({ ...fd, attached_files: merged.map(f => f.name) }));
+              return merged;
+            });
           });
-          e.target.value = '';
+          input.value = '';
           return;
         }
       }
     }
 
-    setSelectedFiles(files);
-    setFormData(prev => ({ ...prev, attached_files: files.map(f => f.name) }));
+    setSelectedFiles(prev => {
+      const merged = mergeFiles(prev);
+      setFormData(fd => ({ ...fd, attached_files: merged.map(f => f.name) }));
+      return merged;
+    });
+    // reset เพื่อให้เลือกไฟล์ชื่อเดิมซ้ำได้หลังลบออก
+    input.value = '';
   };
 
   const handleUploadSubmit = async () => {

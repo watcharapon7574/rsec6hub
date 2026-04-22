@@ -34,10 +34,47 @@ export interface MemoRecord {
   doc_del?: any; // soft delete field (JSON with deleted_by, deleted_at, deleted_name)
 }
 
+const INITIAL_LIMIT = 60;
+const LOAD_MORE_LIMIT = 60;
+
+const MEMO_SELECT = `
+  *,
+  task_assignments!task_assignments_memo_id_fkey(
+    id,
+    status,
+    deleted_at
+  )
+`;
+
+const transformMemoRow = (memo: any): MemoRecord => {
+  const tasks = memo.task_assignments || [];
+  const hasInProgressTask = tasks.some((task: any) =>
+    task.status === 'in_progress' && task.deleted_at === null
+  );
+  const hasActiveTasks = tasks.some((task: any) =>
+    (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
+  );
+  const { task_assignments, ...rest } = memo;
+  return {
+    ...rest,
+    attached_files: (() => {
+      try {
+        return rest.attached_files ? JSON.parse(rest.attached_files) : [];
+      } catch {
+        return [];
+      }
+    })(),
+    has_in_progress_task: hasInProgressTask,
+    has_active_tasks: hasActiveTasks,
+  } as MemoRecord;
+};
+
 export const useAllMemos = () => {
   const [memos, setMemos] = useState<MemoRecord[]>([]);
   const [completedReportMemos, setCompletedReportMemos] = useState<MemoRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const { toast } = useToast();
   const { profile } = useEmployeeAuth();
 
@@ -45,60 +82,22 @@ export const useAllMemos = () => {
   const fetchMemos = useCallback(async () => {
     try {
       setLoading(true);
-      // แสดงเอกสารย้อนหลัง 30 วัน เพื่อไม่ให้พลาดเอกสารข้ามเดือน
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const startDate = thirtyDaysAgo.toISOString();
 
-      // Query with task_assignments to check for in_progress tasks
       const { data, error } = await (supabase as any)
         .from('memos')
-        .select(`
-          *,
-          task_assignments!task_assignments_memo_id_fkey(
-            id,
-            status,
-            deleted_at
-          )
-        `)
+        .select(MEMO_SELECT)
         .is('doc_del', null)
-        .gte('created_at', startDate)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(INITIAL_LIMIT);
       if (error) {
         console.error('Error fetching memos:', error);
         throw error;
       }
 
-      // Transform data to match MemoRecord type and add has_in_progress_task + has_active_tasks
-      const transformedData = data?.map(memo => {
-        const tasks = memo.task_assignments || [];
-        // Check for in_progress tasks that are not deleted
-        const hasInProgressTask = tasks.some((task: any) =>
-          task.status === 'in_progress' && task.deleted_at === null
-        );
-        // Check for active tasks (pending or in_progress, not completed or cancelled)
-        const hasActiveTasks = tasks.some((task: any) =>
-          (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
-        );
-
-        // Remove task_assignments from the object to keep it clean
-        const { task_assignments, ...memoWithoutTasks } = memo;
-
-        return {
-          ...memoWithoutTasks,
-          attached_files: (() => {
-            try {
-              return memoWithoutTasks.attached_files ? JSON.parse(memoWithoutTasks.attached_files) : [];
-            } catch {
-              return [];
-            }
-          })(),
-          has_in_progress_task: hasInProgressTask,
-          has_active_tasks: hasActiveTasks
-        };
-      }) || [];
+      const transformedData = (data || []).map(transformMemoRow);
 
       setMemos(transformedData as MemoRecord[]);
+      setHasMore(transformedData.length === INITIAL_LIMIT);
 
       // Fetch completed report memos (เอกสารรายงานผลที่เสร็จสิ้น)
       try {
@@ -148,6 +147,41 @@ export const useAllMemos = () => {
       setLoading(false);
     }
   }, [toast]);
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+    const cursor = memos[memos.length - 1]?.created_at;
+    if (!cursor) {
+      setHasMore(false);
+      return;
+    }
+    try {
+      setIsLoadingMore(true);
+      const { data, error } = await (supabase as any)
+        .from('memos')
+        .select(MEMO_SELECT)
+        .is('doc_del', null)
+        .lt('created_at', cursor)
+        .order('created_at', { ascending: false })
+        .limit(LOAD_MORE_LIMIT);
+      if (error) throw error;
+      const transformed = (data || []).map(transformMemoRow);
+      setMemos(prev => {
+        const seen = new Set(prev.map(m => m.id));
+        return [...prev, ...transformed.filter((m: MemoRecord) => !seen.has(m.id))];
+      });
+      setHasMore(transformed.length === LOAD_MORE_LIMIT);
+    } catch (error) {
+      console.error('Error loading more memos:', error);
+      toast({
+        title: 'โหลดเอกสารเก่าไม่สำเร็จ',
+        description: 'กรุณาลองใหม่อีกครั้ง',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [memos, hasMore, isLoadingMore, toast]);
 
   const getMemoById = (id: string): MemoRecord | null => {
     return memos.find(memo => memo.id === id) || null;
@@ -540,7 +574,7 @@ export const useAllMemos = () => {
   useEffect(() => {
     fetchMemos();
 
-    // Realtime subscription for memos table
+    // Realtime subscription for memos table — update in-place เพื่อไม่ reset chunks ที่ lazy-loaded มาแล้ว
     const memosSubscription = supabase
       .channel('realtime_memos')
       .on('postgres_changes',
@@ -549,9 +583,26 @@ export const useAllMemos = () => {
           schema: 'public',
           table: 'memos'
         },
-        (payload) => {
-          // Refetch all memos when any change is detected
-          fetchMemos();
+        (payload: any) => {
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as MemoRecord;
+            setMemos(prev => {
+              if (prev.some(m => m.id === row.id)) return prev;
+              const next = [row, ...prev];
+              next.sort((a, b) =>
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              );
+              return next;
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const row = payload.new as MemoRecord;
+            setMemos(prev =>
+              prev.map(m => (m.id === row.id ? { ...m, ...row } : m))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const id = (payload.old as any)?.id;
+            if (id) setMemos(prev => prev.filter(m => m.id !== id));
+          }
         }
       )
       .subscribe();
@@ -595,6 +646,9 @@ export const useAllMemos = () => {
     memos,
     completedReportMemos,
     loading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
     getMemoById,
     updateMemoStatus,
     updateMemoSigners,

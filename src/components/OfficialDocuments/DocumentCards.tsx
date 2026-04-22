@@ -65,6 +65,12 @@ interface DocumentCardsProps {
   onAssignNumber?: (documentId: string, number: string) => void;
   onSetSigners?: (documentId: string, signers: any[]) => void;
   onRefresh?: () => void;
+  onLoadMoreMemos?: () => void | Promise<void>;
+  hasMoreMemos?: boolean;
+  isLoadingMoreMemos?: boolean;
+  onLoadMoreDocReceive?: () => void | Promise<void>;
+  hasMoreDocReceive?: boolean;
+  isLoadingMoreDocReceive?: boolean;
 }
 
 const DocumentCards: React.FC<DocumentCardsProps> = ({
@@ -77,7 +83,13 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
   onReject,
   onAssignNumber,
   onSetSigners,
-  onRefresh
+  onRefresh,
+  onLoadMoreMemos,
+  hasMoreMemos = false,
+  isLoadingMoreMemos = false,
+  onLoadMoreDocReceive,
+  hasMoreDocReceive = false,
+  isLoadingMoreDocReceive = false,
 }) => {
   const navigate = useNavigate();
   const { profile } = useEmployeeAuth();
@@ -152,6 +164,13 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
     return () => clearTimeout(timerId);
   }, []);
 
+  // Cursor กระพริบในช่อง placeholder
+  const [cursorOn, setCursorOn] = useState(true);
+  useEffect(() => {
+    const id = setInterval(() => setCursorOn(v => !v), 500);
+    return () => clearInterval(id);
+  }, []);
+
   // กรองเอกสารที่มีสถานะ pending_sign สำหรับการ์ดรอพิจารณา
   const pendingSignMemos = realMemos.filter(memo => memo.status === 'pending_sign');
   
@@ -191,8 +210,8 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
               type="search"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={`ค้นหาเช่น ${typedPlaceholder}`}
-              className="h-9 pl-12 pr-11 text-sm text-center rounded-full bg-background border-2 border-blue-200 shadow-sm hover:shadow-md focus-visible:border-blue-500 focus-visible:ring-blue-500/20 transition-all"
+              placeholder={`ค้นหาเช่น ${typedPlaceholder}${cursorOn ? '|' : ' '}`}
+              className="h-9 pl-12 pr-11 text-sm text-center rounded-full bg-background border-2 border-blue-200 shadow-sm hover:shadow-md focus-visible:border-blue-500 focus-visible:ring-blue-500/20 focus:placeholder:text-transparent transition-all"
               aria-label="ค้นหาเอกสาร"
             />
             <button
@@ -249,6 +268,12 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
             onAssignNumber={onAssignNumber}
             onSetSigners={onSetSigners}
             onRefresh={onRefresh}
+            onLoadMoreMemos={onLoadMoreMemos}
+            hasMoreMemos={hasMoreMemos}
+            isLoadingMoreMemos={isLoadingMoreMemos}
+            onLoadMoreDocReceive={onLoadMoreDocReceive}
+            hasMoreDocReceive={hasMoreDocReceive}
+            isLoadingMoreDocReceive={isLoadingMoreDocReceive}
           />
 
           {/* Doc Receive List สำหรับ Admin/ธุรการ - รายการหนังสือรับ (ปิดค่าเริ่มต้น) */}
@@ -272,6 +297,9 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
               onSetSigners={onSetSigners}
               onRefresh={onRefresh}
               defaultCollapsed={true}
+              onLoadMore={onLoadMoreDocReceive}
+              hasMore={hasMoreDocReceive}
+              isLoadingMore={isLoadingMoreDocReceive}
             />
           )}
 
@@ -281,6 +309,9 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
               memoList={realMemos.filter(memo => !memo.__source_table || memo.__source_table !== 'doc_receive')}
               onRefresh={onRefresh}
               defaultCollapsed={true}
+              onLoadMore={onLoadMoreMemos}
+              hasMore={hasMoreMemos}
+              isLoadingMore={isLoadingMoreMemos}
             />
           )}
 
@@ -304,6 +335,12 @@ const DocumentCards: React.FC<DocumentCardsProps> = ({
             onAssignNumber={onAssignNumber}
             onSetSigners={onSetSigners}
             onRefresh={onRefresh}
+            onLoadMoreMemos={onLoadMoreMemos}
+            hasMoreMemos={hasMoreMemos}
+            isLoadingMoreMemos={isLoadingMoreMemos}
+            onLoadMoreDocReceive={onLoadMoreDocReceive}
+            hasMoreDocReceive={hasMoreDocReceive}
+            isLoadingMoreDocReceive={isLoadingMoreDocReceive}
           />
         </>
       )}

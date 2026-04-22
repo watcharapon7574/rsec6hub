@@ -20,7 +20,15 @@ const OfficialDocumentsPage = () => {
   const { toast } = useToast();
   const { profile, getPermissions, isAuthenticated } = useEmployeeAuth();
   const { userMemos, loadUserMemos } = useMemo();
-  const { memos: allMemos, completedReportMemos, loading: memosLoading, refetch: refetchMemos } = useAllMemos();
+  const {
+    memos: allMemos,
+    completedReportMemos,
+    loading: memosLoading,
+    refetch: refetchMemos,
+    loadMore: loadMoreMemos,
+    hasMore: hasMoreMemos,
+    isLoadingMore: isLoadingMoreMemos,
+  } = useAllMemos();
   const { 
     documents: officialDocuments, 
     memos,
@@ -35,62 +43,88 @@ const OfficialDocumentsPage = () => {
   const [docReceiveList, setDocReceiveList] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [hasMoreDocReceive, setHasMoreDocReceive] = useState(false);
+  const [isLoadingMoreDocReceive, setIsLoadingMoreDocReceive] = useState(false);
 
-  // Fetch doc_receive data (ย้อนหลัง 30 วัน)
+  const DOC_RECEIVE_INITIAL = 60;
+  const DOC_RECEIVE_CHUNK = 60;
+  const DOC_RECEIVE_SELECT = `
+    *,
+    task_assignments!task_assignments_doc_receive_id_fkey(
+      id,
+      status,
+      deleted_at
+    )
+  `;
+
+  const transformDocReceive = (doc: any) => {
+    const tasks = doc.task_assignments || [];
+    const hasInProgressTask = tasks.some((task: any) =>
+      task.status === 'in_progress' && task.deleted_at === null
+    );
+    const hasActiveTasks = tasks.some((task: any) =>
+      (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
+    );
+    const { task_assignments, ...rest } = doc;
+    return {
+      ...rest,
+      has_in_progress_task: hasInProgressTask,
+      has_active_tasks: hasActiveTasks,
+    };
+  };
+
+  // Initial fetch: แค่ 60 รายการล่าสุด (ไม่มี date filter — ที่เหลือดึงด้วย loadMore)
   const fetchDocReceive = useCallback(async () => {
     try {
-      // แสดงหนังสือรับย้อนหลัง 30 วัน
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const startDate = thirtyDaysAgo.toISOString();
-
-      // Query with task_assignments to check for in_progress tasks
       const { data, error } = await supabase
         .from('doc_receive' as any)
-        .select(`
-          *,
-          task_assignments!task_assignments_doc_receive_id_fkey(
-            id,
-            status,
-            deleted_at
-          )
-        `)
+        .select(DOC_RECEIVE_SELECT)
         .is('doc_del', null)
-        .gte('created_at', startDate)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(DOC_RECEIVE_INITIAL);
 
       if (error) {
         console.error('Error fetching doc_receive:', error);
         return;
       }
 
-      // Add has_in_progress_task and has_active_tasks fields to each document
-      const docsWithTaskStatus = (data || []).map((doc: any) => {
-        const tasks = doc.task_assignments || [];
-        // Check for in_progress tasks that are not deleted
-        const hasInProgressTask = tasks.some((task: any) =>
-          task.status === 'in_progress' && task.deleted_at === null
-        );
-        // Check for active tasks (pending or in_progress, not completed or cancelled)
-        const hasActiveTasks = tasks.some((task: any) =>
-          (task.status === 'pending' || task.status === 'in_progress') && task.deleted_at === null
-        );
-
-        // Remove task_assignments from the object to keep it clean
-        const { task_assignments, ...docWithoutTasks } = doc;
-
-        return {
-          ...docWithoutTasks,
-          has_in_progress_task: hasInProgressTask,
-          has_active_tasks: hasActiveTasks
-        };
-      });
-
-      setDocReceiveList(docsWithTaskStatus);
+      const transformed = (data || []).map(transformDocReceive);
+      setDocReceiveList(transformed);
+      setHasMoreDocReceive(transformed.length === DOC_RECEIVE_INITIAL);
     } catch (error) {
       console.error('Error fetching doc_receive:', error);
     }
   }, []);
+
+  const loadMoreDocReceive = useCallback(async () => {
+    if (isLoadingMoreDocReceive || !hasMoreDocReceive) return;
+    const cursor = docReceiveList[docReceiveList.length - 1]?.created_at;
+    if (!cursor) {
+      setHasMoreDocReceive(false);
+      return;
+    }
+    try {
+      setIsLoadingMoreDocReceive(true);
+      const { data, error } = await supabase
+        .from('doc_receive' as any)
+        .select(DOC_RECEIVE_SELECT)
+        .is('doc_del', null)
+        .lt('created_at', cursor)
+        .order('created_at', { ascending: false })
+        .limit(DOC_RECEIVE_CHUNK);
+      if (error) throw error;
+      const transformed = (data || []).map(transformDocReceive);
+      setDocReceiveList(prev => {
+        const seen = new Set(prev.map((d: any) => d.id));
+        return [...prev, ...transformed.filter((d: any) => !seen.has(d.id))];
+      });
+      setHasMoreDocReceive(transformed.length === DOC_RECEIVE_CHUNK);
+    } catch (error) {
+      console.error('Error loading more doc_receive:', error);
+    } finally {
+      setIsLoadingMoreDocReceive(false);
+    }
+  }, [docReceiveList, hasMoreDocReceive, isLoadingMoreDocReceive]);
 
   // Manual refresh function
   const handleManualRefresh = async () => {
@@ -133,6 +167,7 @@ const OfficialDocumentsPage = () => {
       console.error('Error refreshing documents:', error);
     }
   };
+
 
   // Authentication guard - ลบออกเพราะ ProtectedRoute จัดการแล้ว
   // useEffect(() => {
@@ -415,6 +450,12 @@ const OfficialDocumentsPage = () => {
           onAssignNumber={assignDocumentNumber}
           onSetSigners={setDocumentForSigning}
           onRefresh={handleDocumentRefresh}
+          onLoadMoreMemos={loadMoreMemos}
+          hasMoreMemos={hasMoreMemos}
+          isLoadingMoreMemos={isLoadingMoreMemos}
+          onLoadMoreDocReceive={loadMoreDocReceive}
+          hasMoreDocReceive={hasMoreDocReceive}
+          isLoadingMoreDocReceive={isLoadingMoreDocReceive}
         />
       </div>
     </div>

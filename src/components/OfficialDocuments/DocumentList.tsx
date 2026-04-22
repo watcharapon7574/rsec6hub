@@ -43,6 +43,12 @@ interface DocumentListProps {
   onAssignNumber?: (documentId: string, number: string) => void;
   onSetSigners?: (documentId: string, signers: any[]) => void;
   onRefresh?: () => void;
+  onLoadMoreMemos?: () => void | Promise<void>;
+  hasMoreMemos?: boolean;
+  isLoadingMoreMemos?: boolean;
+  onLoadMoreDocReceive?: () => void | Promise<void>;
+  hasMoreDocReceive?: boolean;
+  isLoadingMoreDocReceive?: boolean;
 }
 
 const DocumentList: React.FC<DocumentListProps> = ({
@@ -52,7 +58,13 @@ const DocumentList: React.FC<DocumentListProps> = ({
   onReject,
   onAssignNumber,
   onSetSigners,
-  onRefresh
+  onRefresh,
+  onLoadMoreMemos,
+  hasMoreMemos = false,
+  isLoadingMoreMemos = false,
+  onLoadMoreDocReceive,
+  hasMoreDocReceive = false,
+  isLoadingMoreDocReceive = false,
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
@@ -560,6 +572,17 @@ const DocumentList: React.FC<DocumentListProps> = ({
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, typeFilter, assignmentFilter, sortBy, sortOrder]);
+
+  // เอกสารรวม (memos + doc_receive) — ถึงหน้าสุดท้าย + ยังมีเก่ากว่าฝั่งใดฝั่งหนึ่ง → โหลดต่อเฉพาะฝั่งนั้น
+  const hasMoreServer = hasMoreMemos || hasMoreDocReceive;
+  const isLoadingMoreServer = isLoadingMoreMemos || isLoadingMoreDocReceive;
+  useEffect(() => {
+    if (isLoadingMoreServer || !hasMoreServer) return;
+    if (totalPages === 0) return;
+    if (currentPage < totalPages) return;
+    if (hasMoreMemos && onLoadMoreMemos) onLoadMoreMemos();
+    if (hasMoreDocReceive && onLoadMoreDocReceive) onLoadMoreDocReceive();
+  }, [currentPage, totalPages, hasMoreMemos, hasMoreDocReceive, isLoadingMoreServer, hasMoreServer, onLoadMoreMemos, onLoadMoreDocReceive]);
 
   // แสดง Card รายการเอกสารสำหรับทุกตำแหน่ง
   // if (["deputy_director", "director"].includes(permissions.position)) {
@@ -1256,10 +1279,11 @@ const DocumentList: React.FC<DocumentListProps> = ({
         </div>
         
         {/* Pagination */}
-        {totalPages > 1 && (
+        {(totalPages > 1 || hasMoreServer) && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-purple-100 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/50">
             <div className="text-xs text-muted-foreground">
-              แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedMemos.length)} จาก {filteredAndSortedMemos.length} รายการ
+              แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedMemos.length)} จาก {filteredAndSortedMemos.length}{hasMoreServer ? '+' : ''} รายการ
+              {isLoadingMoreServer && <span className="ml-2 text-purple-700">กำลังโหลดเอกสารเก่า…</span>}
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -1272,14 +1296,14 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <ChevronLeft className="h-3 w-3" />
               </Button>
               <span className="text-xs text-muted-foreground px-2">
-                {currentPage} / {totalPages}
+                {currentPage} / {totalPages}{hasMoreServer ? '+' : ''}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-7 w-7 p-0 border-purple-200 dark:border-purple-800"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
+                disabled={currentPage >= totalPages && !hasMoreServer}
               >
                 <ChevronRight className="h-3 w-3" />
               </Button>

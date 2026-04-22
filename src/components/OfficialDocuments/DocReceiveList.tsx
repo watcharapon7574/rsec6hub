@@ -41,6 +41,9 @@ interface DocReceiveListProps {
   onSetSigners?: (documentId: string, signers: any[]) => void;
   onRefresh?: () => void;
   defaultCollapsed?: boolean;
+  onLoadMore?: () => void | Promise<void>;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
 const DocReceiveList: React.FC<DocReceiveListProps> = ({
@@ -50,7 +53,10 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   onAssignNumber,
   onSetSigners,
   onRefresh,
-  defaultCollapsed = false
+  defaultCollapsed = false,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
@@ -557,6 +563,15 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, assignmentFilter, sortBy, sortOrder]);
+
+  // ถึงหน้าสุดท้าย + ยังมีข้อมูลเก่ากว่าบนเซิร์ฟเวอร์ → โหลดต่ออัตโนมัติ
+  useEffect(() => {
+    if (!onLoadMore || !hasMore || isLoadingMore) return;
+    if (totalPages === 0) return;
+    if (currentPage >= totalPages) {
+      onLoadMore();
+    }
+  }, [currentPage, totalPages, hasMore, isLoadingMore, onLoadMore]);
 
   // แสดง Card รายการหนังสือรับ (PDF อัปโหลด) สำหรับทุกตำแหน่ง
   // if (["deputy_director", "director"].includes(permissions.position)) {
@@ -1174,10 +1189,11 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
         </div>
         
         {/* Pagination */}
-        {totalPages > 1 && (
+        {(totalPages > 1 || hasMore) && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-green-100 dark:border-green-900 bg-green-50 dark:bg-green-950/50">
             <div className="text-xs text-muted-foreground">
-              แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedDocReceive.length)} จาก {filteredAndSortedDocReceive.length} รายการ
+              แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedDocReceive.length)} จาก {filteredAndSortedDocReceive.length}{hasMore ? '+' : ''} รายการ
+              {isLoadingMore && <span className="ml-2 text-green-700">กำลังโหลดเอกสารเก่า…</span>}
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -1190,14 +1206,14 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
                 <ChevronLeft className="h-3 w-3" />
               </Button>
               <span className="text-xs text-muted-foreground px-2">
-                {currentPage} / {totalPages}
+                {currentPage} / {totalPages}{hasMore ? '+' : ''}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-7 w-7 p-0 border-green-200 dark:border-green-800"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
+                disabled={currentPage >= totalPages && !hasMore}
               >
                 <ChevronRight className="h-3 w-3" />
               </Button>

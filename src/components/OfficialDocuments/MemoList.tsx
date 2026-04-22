@@ -34,12 +34,18 @@ interface MemoListProps {
   memoList: any[];
   onRefresh?: () => void;
   defaultCollapsed?: boolean;
+  onLoadMore?: () => void | Promise<void>;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
 const MemoList: React.FC<MemoListProps> = ({
   memoList = [],
   onRefresh,
-  defaultCollapsed = false
+  defaultCollapsed = false,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }) => {
   const { getPermissions, profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
@@ -419,6 +425,15 @@ const MemoList: React.FC<MemoListProps> = ({
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, assignmentFilter, sortBy, sortOrder]);
+
+  // ถึงหน้าสุดท้าย + ยังมีข้อมูลเก่ากว่าบนเซิร์ฟเวอร์ → โหลดต่ออัตโนมัติ
+  useEffect(() => {
+    if (!onLoadMore || !hasMore || isLoadingMore) return;
+    if (totalPages === 0) return;
+    if (currentPage >= totalPages) {
+      onLoadMore();
+    }
+  }, [currentPage, totalPages, hasMore, isLoadingMore, onLoadMore]);
 
   // แสดงเฉพาะ Admin หรือธุรการเท่านั้น
   if (!permissions.isAdmin && !permissions.isClerk) {
@@ -978,10 +993,11 @@ const MemoList: React.FC<MemoListProps> = ({
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {(totalPages > 1 || hasMore) && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-amber-100 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/50">
             <div className="text-xs text-muted-foreground">
-              แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedMemos.length)} จาก {filteredAndSortedMemos.length} รายการ
+              แสดง {startIndex + 1}-{Math.min(endIndex, filteredAndSortedMemos.length)} จาก {filteredAndSortedMemos.length}{hasMore ? '+' : ''} รายการ
+              {isLoadingMore && <span className="ml-2 text-amber-700">กำลังโหลดเอกสารเก่า…</span>}
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -994,14 +1010,14 @@ const MemoList: React.FC<MemoListProps> = ({
                 <ChevronLeft className="h-3 w-3" />
               </Button>
               <span className="text-xs text-muted-foreground px-2">
-                {currentPage} / {totalPages}
+                {currentPage} / {totalPages}{hasMore ? '+' : ''}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 className="h-7 w-7 p-0 border-amber-200 dark:border-amber-800"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
+                disabled={currentPage >= totalPages && !hasMore}
               >
                 <ChevronRight className="h-3 w-3" />
               </Button>

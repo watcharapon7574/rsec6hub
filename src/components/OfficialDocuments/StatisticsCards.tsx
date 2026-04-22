@@ -52,30 +52,73 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
     </p>
   );
 
-  // ฟังก์ชันวาดกราฟเส้น SVG (รายวัน)
-  const renderLineChart = () => {
-    const width = 220;
-    const height = 60;
-    const maxY = 55; // padding bottom
-    const minY = 5; // padding top
+  // คำนวณ path ของกราฟเส้น (smooth curve + area fill)
+  const chart = useMemo(() => {
+    const width = 240;
+    const height = 68;
+    const padX = 2;
+    const padTop = 6;
+    const padBottom = 4;
     const days = dailyCounts.length;
+    if (days === 0) return null;
     const max = Math.max(...dailyCounts, 1);
-    // จุดเท่ากับจำนวนวันในเดือน กระจายเต็ม width
-    const points = dailyCounts.map((c, i) => {
-      const x = i * (width - 1) / (days - 1);
-      const y = max === 0 ? maxY : maxY - ((c / max) * (maxY - minY));
-      return `${x},${y}`;
-    }).join(' ');
+    const plotH = height - padTop - padBottom;
+    const plotW = width - padX * 2;
+
+    const pts = dailyCounts.map((c, i) => {
+      const x = days === 1 ? width / 2 : padX + (i * plotW) / (days - 1);
+      const y = padTop + plotH - (c / max) * plotH;
+      return { x, y };
+    });
+
+    // สร้าง smooth curve ด้วย cubic bezier (จุดควบคุมอยู่กึ่งกลางแนวนอน)
+    const linePath = pts.reduce((acc, p, i, arr) => {
+      if (i === 0) return `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+      const prev = arr[i - 1];
+      const cpX = ((prev.x + p.x) / 2).toFixed(1);
+      return `${acc} C ${cpX} ${prev.y.toFixed(1)}, ${cpX} ${p.y.toFixed(1)}, ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+    }, '');
+
+    const last = pts[pts.length - 1];
+    const first = pts[0];
+    const areaPath = `${linePath} L ${last.x.toFixed(1)} ${height} L ${first.x.toFixed(1)} ${height} Z`;
+
+    const todayIdx = Math.min(new Date().getDate() - 1, pts.length - 1);
+    const today = pts[todayIdx];
+
+    return { width, height, linePath, areaPath, today };
+  }, [dailyCounts]);
+
+  const renderLineChart = () => {
+    if (!chart) return null;
     return (
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-        <polyline
+      <svg
+        width={chart.width}
+        height={chart.height}
+        viewBox={`0 0 ${chart.width} ${chart.height}`}
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id="doc-chart-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="doc-chart-stroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#60a5fa" />
+            <stop offset="100%" stopColor="#2563eb" />
+          </linearGradient>
+        </defs>
+        <path d={chart.areaPath} fill="url(#doc-chart-fill)" />
+        <path
+          d={chart.linePath}
           fill="none"
-          stroke="#2563eb"
-          strokeWidth="3"
+          stroke="url(#doc-chart-stroke)"
+          strokeWidth="2.5"
           strokeLinejoin="round"
           strokeLinecap="round"
-          points={points}
         />
+        <circle cx={chart.today.x.toFixed(1)} cy={chart.today.y.toFixed(1)} r="6" fill="#2563eb" opacity="0.15" />
+        <circle cx={chart.today.x.toFixed(1)} cy={chart.today.y.toFixed(1)} r="3" fill="#ffffff" stroke="#2563eb" strokeWidth="2" />
       </svg>
     );
   };
@@ -84,7 +127,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({
     <div className="flex gap-4 items-stretch mb-6 sm:flex-row flex-col">
       {/* การ์ดใหญ่ - เอกสารทั้งหมด */}
       <Card className="flex-[2.5] min-w-[300px] overflow-hidden flex flex-col relative w-full mb-3 sm:mb-0" style={{minHeight: 200}}>
-        <div className="absolute left-[80px] right-[140px] top-[60px] z-0 pointer-events-none flex justify-end">{renderLineChart()}</div>
+        <div className="absolute left-[80px] right-[120px] top-[56px] z-0 pointer-events-none flex justify-end">{renderLineChart()}</div>
         <CardContent className="pt-6 flex-1 flex flex-col justify-between relative z-10">
           <div className="flex items-start justify-between">
             <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900">

@@ -317,17 +317,32 @@ const OfficialDocumentsPage = () => {
     }));
   }, [docReceiveList]);
 
-  // นับสถิติจากเอกสารย้อนหลัง 30 วัน (รวม memos + doc_receive)
+  // นับสถิติเฉพาะเดือนปัจจุบัน (ตาม created_at) เพื่อให้ตรงกับ label "เดือน<ชื่อเดือน>"
+  const isInCurrentMonth = ReactUseMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    return (dateStr?: string | null) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return d.getFullYear() === year && d.getMonth() === month;
+    };
+  }, []);
+
+  const memosThisMonth = ReactUseMemo(
+    () => allMemos.filter(memo => isInCurrentMonth(memo.created_at)),
+    [allMemos, isInCurrentMonth]
+  );
   const filteredDocReceiveForStats = ReactUseMemo(
-    () => docReceiveList.filter(doc => !doc.doc_del),
-    [docReceiveList]
+    () => docReceiveList.filter(doc => !doc.doc_del && isInCurrentMonth(doc.created_at)),
+    [docReceiveList, isInCurrentMonth]
   );
   const combinedForStats = ReactUseMemo(() => {
-    return [...allMemos, ...filteredDocReceiveForStats];
-  }, [allMemos, filteredDocReceiveForStats]);
+    return [...memosThisMonth, ...filteredDocReceiveForStats];
+  }, [memosThisMonth, filteredDocReceiveForStats]);
 
   const totalCount = combinedForStats.length;
-  const internalCount = allMemos.length;
+  const internalCount = memosThisMonth.length;
   const externalCount = filteredDocReceiveForStats.length;
 
   // Use the getPermissions function from useEmployeeAuth hook

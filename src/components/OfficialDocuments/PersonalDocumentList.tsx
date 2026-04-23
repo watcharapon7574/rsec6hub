@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,16 +44,61 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // State สำหรับ realtime updates
-  const [localMemos, setLocalMemos] = useState(realMemos);
+  // State สำหรับ realtime updates — ไม่พึ่ง realMemos ของ parent (ซึ่ง paginated)
+  const [localMemos, setLocalMemos] = useState<any[]>([]);
 
   // State สำหรับติดตาม memo ที่เป็น report memo
   const [reportMemoIds, setReportMemoIds] = useState<Set<string>>(new Set());
 
-  // อัพเดท localMemos เมื่อ realMemos เปลี่ยน
+  // ดึงเอกสารของตัวเองโดยตรงจาก Supabase (ไม่พึ่ง cursor pagination ของตารางหลัก)
+  const fetchOwnDocuments = useCallback(async () => {
+    if (!profile?.user_id) {
+      setLocalMemos([]);
+      return;
+    }
+    try {
+      const [memosRes, docReceiveRes] = await Promise.all([
+        (supabase as any)
+          .from('memos')
+          .select('*, task_assignments!task_assignments_memo_id_fkey(id, status, deleted_at)')
+          .eq('user_id', profile.user_id)
+          .is('doc_del', null)
+          .order('created_at', { ascending: false }),
+        (supabase as any)
+          .from('doc_receive')
+          .select('*')
+          .eq('user_id', profile.user_id)
+          .is('doc_del', null)
+          .order('created_at', { ascending: false }),
+      ]);
+
+      const memos = (memosRes.data || []).map((m: any) => {
+        const { task_assignments, ...rest } = m;
+        return {
+          ...rest,
+          attached_files: (() => {
+            try {
+              return rest.attached_files ? JSON.parse(rest.attached_files) : [];
+            } catch {
+              return [];
+            }
+          })(),
+        };
+      });
+      const docReceives = (docReceiveRes.data || []).map((d: any) => ({
+        ...d,
+        __source_table: 'doc_receive',
+      }));
+
+      setLocalMemos([...memos, ...docReceives]);
+    } catch (error) {
+      console.error('Error fetching personal documents:', error);
+    }
+  }, [profile?.user_id]);
+
   useEffect(() => {
-    setLocalMemos(realMemos);
-  }, [realMemos]);
+    fetchOwnDocuments();
+  }, [fetchOwnDocuments]);
 
   // Fetch report memo info to identify which memos ARE report memos
   useEffect(() => {
@@ -291,8 +336,7 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => { e.stopPropagation(); onRefresh?.(); }}
-            disabled={!onRefresh}
+            onClick={(e) => { e.stopPropagation(); fetchOwnDocuments(); onRefresh?.(); }}
             className="ml-2 p-1 h-8 w-8 text-white/70 hover:text-white disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />

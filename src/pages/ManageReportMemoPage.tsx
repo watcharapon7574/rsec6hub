@@ -407,7 +407,7 @@ const ManageReportMemoPage: React.FC = () => {
   };
 
   // Handle assign document number
-  const stampPdfWithDocNumber = async (docSuffix: string, groupName: string, pdfUrlOverride?: string) => {
+  const stampPdfWithDocNumber = async (docSuffix: string, groupName: string, pdfUrlOverride?: string, stampDateOverride?: string) => {
     if (!reportMemo || !profile?.user_id) return null;
     try {
       const pdfUrl = pdfUrlOverride || extractPdfUrl(reportMemo.pdf_draft_path);
@@ -417,8 +417,9 @@ const ManageReportMemoPage: React.FC = () => {
       if (!pdfRes.ok) throw new Error('ไม่สามารถดาวน์โหลด PDF ต้นฉบับ');
       const pdfBlob = await pdfRes.blob();
 
-      const now = new Date();
-      const thaiDate = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+      // ใช้วันที่ลงเลขครั้งแรก (assigned_at) เมื่อ re-stamp หลังตีกลับ เพื่อไม่ให้ตราวันที่เปลี่ยนทุกรอบ
+      const stampSource = stampDateOverride ? new Date(stampDateOverride) : new Date();
+      const thaiDate = stampSource.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
 
       const formData = new FormData();
       formData.append('pdf', pdfBlob, 'document.pdf');
@@ -774,7 +775,9 @@ const ManageReportMemoPage: React.FC = () => {
 
         try {
           const groupForStamp = selectedGroup || freshStampDepartment || (reportMemo as any).stamp_department || '';
-          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, groupForStamp);
+          // ใช้วันที่ลงเลขครั้งแรก เพื่อไม่ให้ตราวันที่เปลี่ยนทุกรอบการตีกลับ-ส่งใหม่
+          const originalStampDate = (reportMemo as any).doc_number_status?.assigned_at;
+          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, groupForStamp, undefined, originalStampDate);
           if (stampedUrl) {
             await supabase
               .from('memos')

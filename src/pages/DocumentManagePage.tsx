@@ -613,7 +613,7 @@ const DocumentManagePage: React.FC = () => {
   };
 
   // Function to stamp existing PDF with document number (for uploaded memos)
-  const stampPdfWithDocNumber = async (docSuffix: string, groupName?: string, pdfUrlOverride?: string) => {
+  const stampPdfWithDocNumber = async (docSuffix: string, groupName?: string, pdfUrlOverride?: string, stampDateOverride?: string) => {
     if (!memo || !profile?.user_id) return null;
 
     try {
@@ -626,8 +626,9 @@ const DocumentManagePage: React.FC = () => {
       const pdfBlob = await pdfRes.blob();
 
       // Prepare stamp payload for /receive_num2
-      const now = new Date();
-      const thaiDate = now.toLocaleDateString('th-TH', {
+      // ใช้วันที่ลงเลขครั้งแรก (assigned_at) เมื่อ re-stamp หลังตีกลับ เพื่อไม่ให้ตราวันที่เปลี่ยนทุกรอบ
+      const stampSource = stampDateOverride ? new Date(stampDateOverride) : new Date();
+      const thaiDate = stampSource.toLocaleDateString('th-TH', {
         day: 'numeric',
         month: 'short',
         year: '2-digit'
@@ -866,7 +867,9 @@ const DocumentManagePage: React.FC = () => {
 
           // ใช้ฝ่ายจาก state หรือ fallback จาก DB
           const groupForStamp = selectedGroup || freshStampDepartment || (memo as any).stamp_department || '';
-          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, groupForStamp);
+          // ใช้วันที่ลงเลขครั้งแรก เพื่อไม่ให้ตราวันที่เปลี่ยนทุกรอบการตีกลับ-ส่งใหม่
+          const originalStampDate = (memo as any).doc_number_status?.assigned_at;
+          const stampedUrl = await stampPdfWithDocNumber(docNumberSuffix, groupForStamp, undefined, originalStampDate);
           if (stampedUrl) {
             await supabase
               .from('memos')

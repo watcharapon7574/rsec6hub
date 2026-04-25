@@ -23,9 +23,9 @@ const Navbar = () => {
   const navItems = [
     { to: '/dashboard', icon: Home, label: 'หน้าหลัก' },
     { to: '/profile', icon: User, label: 'โปรไฟล์' },
-    { to: '/leave-requests', icon: Calendar, label: 'ขอลา' },
-    { to: '/newsfeed', icon: Newspaper, label: 'นิวส์ฟีด' },
-    { to: '/documents', icon: FileText, label: 'เอกสารราชการ' },
+    { to: '/attendance', icon: Calendar, label: 'FastMen' },
+    { to: '/newsfeed', icon: Newspaper, label: 'FastNews' },
+    { to: '/documents', icon: FileText, label: 'FastSign' },
     { to: '/notifications', icon: Bell, label: 'แจ้งเตือน' },
   ];
 

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import FastDocLogo from '@/components/ui/FastDocLogo';
 import CalendarWidget from '@/components/Dashboard/CalendarWidget';
+import StudentAttendanceWidget from '@/components/Dashboard/StudentAttendanceWidget';
 import {
   Calendar,
   FileText,
@@ -65,7 +66,7 @@ const Dashboard = () => {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/leave-requests')}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/attendance')}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900">
@@ -119,6 +120,11 @@ const Dashboard = () => {
           <CalendarWidget />
         </div>
 
+        {/* Student Attendance Stats */}
+        <div className="mb-6">
+          <StudentAttendanceWidget />
+        </div>
+
         {/* Quick Actions + Recent */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
           {/* Quick Actions */}
@@ -142,7 +148,7 @@ const Dashboard = () => {
                   <Button
                     variant="outline"
                     className="h-auto py-3 flex flex-col items-center gap-1.5"
-                    onClick={() => navigate('/leave-requests')}
+                    onClick={() => navigate('/attendance')}
                   >
                     <Send className="h-5 w-5 text-orange-600" />
                     <span className="text-xs">ขอลา</span>
@@ -228,7 +234,7 @@ const Dashboard = () => {
                     <span className="text-lg font-bold text-white">7</span>
                   </div>
                   <h4 className="font-semibold text-foreground mb-2">คำขอรอพิจารณา</h4>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/leave-requests')}>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/attendance')}>
                     จัดการ
                   </Button>
                 </div>

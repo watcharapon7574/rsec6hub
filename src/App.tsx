@@ -159,11 +159,12 @@ const AppContent = () => {
           <Profile />
         </ProtectedRouteWithAuth>
       } />
-      <Route path="/leave-requests" element={
+      <Route path="/attendance" element={
         <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
           <LeaveRequestsPage />
         </ProtectedRouteWithAuth>
       } />
+      <Route path="/leave-requests" element={<Navigate to="/attendance" replace />} />
       <Route path="/newsfeed" element={
         <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
           <NewsfeedPage />

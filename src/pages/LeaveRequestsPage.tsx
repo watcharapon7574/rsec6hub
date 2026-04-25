@@ -731,12 +731,21 @@ const LeaveRequestsPage: React.FC = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <Card className="mb-6">
           <CardContent className="bg-blue-600 rounded-t-lg pt-6">
-            <div className="flex items-center gap-3">
-              <UserCheck className="h-7 w-7 text-blue-100" />
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-white/15">
+                <UserCheck className="h-6 w-6 text-white" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">FastMen</h1>
-                <p className="text-sm text-blue-100">
+                <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                  บุคลากร
+                  <span className="text-blue-200 font-semibold">· FastMen</span>
+                </h1>
+                <p className="text-sm text-blue-100 mt-0.5">
                   เวลางาน, ขอลา, และข้อมูลบุคลากร
+                </p>
+                <p className="text-xs text-blue-200 mt-0.5">
+                  {profile.first_name} {profile.last_name}
+                  {profile.job_position ? ` · ${profile.job_position}` : ''}
                 </p>
               </div>
             </div>

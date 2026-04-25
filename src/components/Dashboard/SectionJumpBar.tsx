@@ -26,27 +26,49 @@ const SectionJumpBar: React.FC = () => {
   const [activeId, setActiveId] = useState<string>('top');
 
   useEffect(() => {
-    const handleScroll = () => {
-      const offset = 120; // sticky/header offset
-      let current: string = SECTIONS[0].id;
-      for (const s of SECTIONS) {
-        const el = document.getElementById(s.id);
-        if (!el) continue;
-        const top = el.getBoundingClientRect().top;
-        if (top - offset <= 0) current = s.id;
-      }
-      setActiveId(current);
-    };
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const elements = SECTIONS.map((s) => document.getElementById(s.id)).filter(
+      (el): el is HTMLElement => !!el,
+    );
+    if (elements.length === 0) return;
+
+    const visible = new Map<string, number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            visible.set(entry.target.id, entry.intersectionRatio);
+          } else {
+            visible.delete(entry.target.id);
+          }
+        }
+        if (visible.size > 0) {
+          // Pick the section with the largest visible ratio; if tied, the first in SECTIONS order
+          let bestId = SECTIONS[0].id;
+          let bestRatio = -1;
+          for (const s of SECTIONS) {
+            const r = visible.get(s.id);
+            if (r !== undefined && r > bestRatio) {
+              bestRatio = r;
+              bestId = s.id;
+            }
+          }
+          setActiveId(bestId);
+        }
+      },
+      {
+        rootMargin: '-80px 0px -50% 0px',
+        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+      },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   const handleClick = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({ top, behavior: 'smooth' });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
@@ -56,6 +78,7 @@ const SectionJumpBar: React.FC = () => {
         return (
           <button
             key={s.id}
+            type="button"
             onClick={() => handleClick(s.id)}
             className={`group relative flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl transition-all duration-200 ${
               isActive

@@ -50,14 +50,14 @@ const SectionJumpBar: React.FC = () => {
   };
 
   return (
-    <div className="hidden md:flex fixed left-3 top-1/2 -translate-y-1/2 z-40 flex-col gap-2 bg-background/80 backdrop-blur-xl rounded-2xl shadow-lg border border-border/40 p-2">
+    <div className="fixed left-2 md:left-3 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-1.5 md:gap-2 bg-background/85 backdrop-blur-xl rounded-2xl shadow-lg border border-border/40 p-1.5 md:p-2">
       {SECTIONS.map((s) => {
         const isActive = activeId === s.id;
         return (
           <button
             key={s.id}
             onClick={() => handleClick(s.id)}
-            className={`group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ${
+            className={`group relative flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl transition-all duration-200 ${
               isActive
                 ? 'bg-blue-500 text-white shadow-md scale-105'
                 : 'text-muted-foreground hover:bg-muted hover:text-primary'

@@ -73,6 +73,7 @@ type ProfileLite = {
   last_name: string;
   nickname?: string | null;
   job_position?: string | null;
+  position?: string | null;
 };
 
 const toDateStr = (d: Date) => {
@@ -116,9 +117,15 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
     profile.position &&
     ['director', 'deputy_director', 'assistant_director'].includes(profile.position);
 
+  const today = new Date();
+  const days6Ago = new Date(today);
+  days6Ago.setDate(today.getDate() - 6);
+  const rangeStart = toDateStr(days6Ago);
+  const rangeEnd = toDateStr(today);
+  const rangeLabel = `${formatDateThai(rangeStart)} – ${formatDateThai(rangeEnd)}`;
+
   useEffect(() => {
     let cancelled = false;
-    const today = new Date();
     const todayStr = toDateStr(today);
     const days30Ago = new Date(today);
     days30Ago.setDate(today.getDate() - 29);
@@ -134,15 +141,17 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
         .lte('date', todayStr)
         .order('date', { ascending: false });
 
-      const todayQuery = isAdmin
+      const adminQuery = isAdmin
         ? supabase
             .from('std_teacher_attendance')
             .select('*')
-            .eq('date', todayStr)
+            .gte('date', rangeStart)
+            .lte('date', rangeEnd)
+            .order('date', { ascending: false })
             .order('check_in', { ascending: false })
         : Promise.resolve({ data: [] });
 
-      const [myRes, todayRes] = await Promise.all([myQuery, todayQuery]);
+      const [myRes, todayRes] = await Promise.all([myQuery, adminQuery]);
 
       if (cancelled) return;
 
@@ -158,7 +167,7 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
       if (ids.size > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, prefix, first_name, last_name, nickname, job_position')
+          .select('id, prefix, first_name, last_name, nickname, job_position, position')
           .in('id', Array.from(ids));
         if (!cancelled && profiles) {
           const map: Record<string, ProfileLite> = {};
@@ -198,17 +207,36 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
     return { onTime, late, total: myRows.length };
   }, [myRows]);
 
+  // Filter out vacant profiles for admin views
+  const filteredAdminRows = useMemo(() => {
+    return todayAllRows.filter((r) => {
+      const p = profileMap[r.teacher_id];
+      if (!p) return false;
+      if (p.position === 'vacant') return false;
+      const hasName = (p.first_name?.trim() || p.last_name?.trim());
+      return !!hasName;
+    });
+  }, [todayAllRows, profileMap]);
+
+  // Bar chart: count UNIQUE teachers per job_position over the period
   const positionStats = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const r of todayAllRows) {
+    const teachersByLabel = new Map<string, Set<string>>();
+    for (const r of filteredAdminRows) {
       const p = profileMap[r.teacher_id];
       const label = p?.job_position?.trim() || 'ไม่ระบุตำแหน่ง';
-      counts.set(label, (counts.get(label) ?? 0) + 1);
+      if (!teachersByLabel.has(label)) teachersByLabel.set(label, new Set());
+      teachersByLabel.get(label)!.add(r.teacher_id);
     }
-    return Array.from(counts.entries())
-      .map(([label, count]) => ({ label, count }))
+    return Array.from(teachersByLabel.entries())
+      .map(([label, set]) => ({ label, count: set.size }))
       .sort((a, b) => b.count - a.count);
-  }, [todayAllRows, profileMap]);
+  }, [filteredAdminRows, profileMap]);
+
+  const uniqueTeacherCount = useMemo(() => {
+    const ids = new Set<string>();
+    filteredAdminRows.forEach((r) => ids.add(r.teacher_id));
+    return ids.size;
+  }, [filteredAdminRows]);
 
   return (
     <div className="space-y-4">
@@ -359,22 +387,23 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="h-5 w-5 text-muted-foreground" />
-              ครูทั้งหมดวันนี้ ({todayAllRows.length} คน)
+              ครูทั้งหมด 7 วัน ({uniqueTeacherCount} คน)
             </CardTitle>
+            <p className="text-xs text-muted-foreground">{rangeLabel}</p>
           </CardHeader>
           <CardContent className="space-y-4">
               {loading ? (
                 <Skeleton className="h-40 w-full" />
-              ) : todayAllRows.length === 0 ? (
+              ) : filteredAdminRows.length === 0 ? (
                 <p className="text-sm text-center text-muted-foreground py-6">
-                  ยังไม่มีครูเข้างานวันนี้
+                  ยังไม่มีครูเข้างานในช่วงนี้
                 </p>
               ) : (
                 <>
                 {/* Chart by job_position */}
                 <div className="rounded-lg border border-border p-3">
                   <h3 className="text-sm font-semibold text-foreground mb-2">
-                    แบ่งตามตำแหน่ง
+                    แบ่งตามตำแหน่ง (จำนวนครู)
                   </h3>
                   <div style={{ height: Math.max(160, positionStats.length * 36) }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -419,6 +448,7 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>วันที่</TableHead>
                         <TableHead>ครู</TableHead>
                         <TableHead>ตำแหน่ง</TableHead>
                         <TableHead>เข้างาน</TableHead>
@@ -427,8 +457,9 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {todayAllRows.map((r) => (
+                      {filteredAdminRows.map((r) => (
                         <TableRow key={r.id}>
+                          <TableCell>{formatDateThai(r.date)}</TableCell>
                           <TableCell className="font-medium">
                             {fullName(profileMap[r.teacher_id])}
                           </TableCell>

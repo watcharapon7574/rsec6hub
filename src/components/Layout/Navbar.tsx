@@ -23,9 +23,9 @@ const Navbar = () => {
   const navItems = [
     { to: '/dashboard', icon: Home, label: 'หน้าหลัก' },
     { to: '/profile', icon: User, label: 'โปรไฟล์' },
-    { to: '/attendance', icon: Calendar, label: 'FastMen' },
-    { to: '/newsfeed', icon: Newspaper, label: 'FastNews' },
-    { to: '/documents', icon: FileText, label: 'FastSign' },
+    { to: '/attendance', icon: Calendar, label: 'Men' },
+    { to: '/newsfeed', icon: Newspaper, label: 'News' },
+    { to: '/documents', icon: FileText, label: 'Sign' },
     { to: '/notifications', icon: Bell, label: 'แจ้งเตือน' },
   ];
 

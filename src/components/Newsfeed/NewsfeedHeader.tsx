@@ -74,7 +74,9 @@ const NewsfeedHeader = ({ displayName, userInfo, stats, onRefresh }: Props) => {
                 <Newspaper className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">นิวส์ฟีด</h1>
+                <h1 className="text-xl font-bold text-white">
+                  นิวส์ฟีด <span className="text-blue-200 font-semibold">· FastNews</span>
+                </h1>
                 <p className="text-sm text-blue-100 mt-0.5">ติดตามข่าวสารและกิจกรรมของโรงเรียน</p>
                 <p className="text-xs text-blue-200 mt-0.5">{displayName} · {userInfo}</p>
               </div>

@@ -16,9 +16,9 @@ import {
 
 const navItems = [
   { to: '/dashboard', icon: Home, label: 'หน้าหลัก' },
-  { to: '/attendance', icon: Calendar, label: 'FastMen' },
-  { to: '/newsfeed', icon: Newspaper, label: 'FastNews' },
-  // FastSign handled as fan-out trigger
+  { to: '/attendance', icon: Calendar, label: 'Men' },
+  { to: '/newsfeed', icon: Newspaper, label: 'News' },
+  // Sign handled as fan-out trigger
   { to: '/notifications', icon: Bell, label: 'แจ้งเตือน' },
 ];
 
@@ -108,8 +108,8 @@ const FloatingNavbar = () => {
     );
   };
 
-  // Insert FastSign fan trigger after FastNews (index 2) and before แจ้งเตือน (index 3)
-  const beforeDoc = navItems.slice(0, 3); // หน้าหลัก, FastMen, FastNews
+  // Insert Sign fan trigger after News (index 2) and before แจ้งเตือน (index 3)
+  const beforeDoc = navItems.slice(0, 3); // หน้าหลัก, Men, News
   const afterDoc = navItems.slice(3);      // แจ้งเตือน
 
   return (
@@ -205,7 +205,7 @@ const FloatingNavbar = () => {
             >
               <FileText className={`h-5 w-5 mb-0.5 transition-transform duration-300 ${fanOpen ? 'rotate-12' : ''}`} />
               <span className={`text-[10px] leading-none font-medium whitespace-nowrap ${isDocActive || fanOpen ? 'opacity-100' : 'opacity-70'}`}>
-                FastSign
+                Sign
               </span>
               {isDocActive && !fanOpen && (
                 <div className="absolute -top-2 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />

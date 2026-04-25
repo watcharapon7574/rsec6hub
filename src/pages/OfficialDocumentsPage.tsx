@@ -420,6 +420,7 @@ const OfficialDocumentsPage = () => {
                 <h1 className="text-xl font-bold text-white flex items-center gap-2">
                   <FileText className="h-5 w-5 text-blue-100" />
                   เอกสารราชการ
+                  <span className="text-blue-200 font-semibold">· FastSign</span>
                 </h1>
                 <p className="text-sm text-blue-100">จัดการเอกสารราชการและติดตามสถานะการดำเนินงาน</p>
                 {profile && (

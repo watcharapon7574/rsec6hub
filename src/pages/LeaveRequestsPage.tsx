@@ -24,6 +24,16 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Cell,
+} from 'recharts';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -40,7 +50,6 @@ import {
   Plus,
   LogIn,
   LogOut,
-  AlertTriangle,
   UserCheck,
   Users,
 } from 'lucide-react';
@@ -63,6 +72,7 @@ type ProfileLite = {
   first_name: string;
   last_name: string;
   nickname?: string | null;
+  job_position?: string | null;
 };
 
 const toDateStr = (d: Date) => {
@@ -100,7 +110,6 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
   const [loading, setLoading] = useState(true);
   const [myRows, setMyRows] = useState<TeacherAttendance[]>([]);
   const [todayAllRows, setTodayAllRows] = useState<TeacherAttendance[]>([]);
-  const [forgotRows, setForgotRows] = useState<TeacherAttendance[]>([]);
   const [profileMap, setProfileMap] = useState<Record<string, ProfileLite>>({});
 
   const isAdmin =
@@ -113,8 +122,6 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
     const todayStr = toDateStr(today);
     const days30Ago = new Date(today);
     days30Ago.setDate(today.getDate() - 29);
-    const days14Ago = new Date(today);
-    days14Ago.setDate(today.getDate() - 13);
 
     const load = async () => {
       setLoading(true);
@@ -127,46 +134,31 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
         .lte('date', todayStr)
         .order('date', { ascending: false });
 
-      const adminQueries = isAdmin
-        ? [
-            supabase
-              .from('std_teacher_attendance')
-              .select('*')
-              .eq('date', todayStr)
-              .order('check_in', { ascending: false }),
-            supabase
-              .from('std_teacher_attendance')
-              .select('*')
-              .eq('auto_checkout', true)
-              .gte('date', toDateStr(days14Ago))
-              .order('date', { ascending: false }),
-          ]
-        : [Promise.resolve({ data: [] }), Promise.resolve({ data: [] })];
+      const todayQuery = isAdmin
+        ? supabase
+            .from('std_teacher_attendance')
+            .select('*')
+            .eq('date', todayStr)
+            .order('check_in', { ascending: false })
+        : Promise.resolve({ data: [] });
 
-      const [myRes, todayRes, forgotRes] = await Promise.all([
-        myQuery,
-        adminQueries[0],
-        adminQueries[1],
-      ]);
+      const [myRes, todayRes] = await Promise.all([myQuery, todayQuery]);
 
       if (cancelled) return;
 
       const my = (myRes.data as TeacherAttendance[]) ?? [];
       const todayAll = (todayRes.data as TeacherAttendance[]) ?? [];
-      const forgot = (forgotRes.data as TeacherAttendance[]) ?? [];
 
       setMyRows(my);
       setTodayAllRows(todayAll);
-      setForgotRows(forgot);
 
-      // Fetch profiles for admin tables
+      // Fetch profiles for admin table
       const ids = new Set<string>();
       todayAll.forEach((r) => ids.add(r.teacher_id));
-      forgot.forEach((r) => ids.add(r.teacher_id));
       if (ids.size > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, prefix, first_name, last_name, nickname')
+          .select('id, prefix, first_name, last_name, nickname, job_position')
           .in('id', Array.from(ids));
         if (!cancelled && profiles) {
           const map: Record<string, ProfileLite> = {};
@@ -203,9 +195,20 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
   const monthStats = useMemo(() => {
     const onTime = myRows.filter((r) => r.check_in && !r.is_late).length;
     const late = myRows.filter((r) => r.is_late).length;
-    const forgotOut = myRows.filter((r) => r.auto_checkout).length;
-    return { onTime, late, forgotOut, total: myRows.length };
+    return { onTime, late, total: myRows.length };
   }, [myRows]);
+
+  const positionStats = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of todayAllRows) {
+      const p = profileMap[r.teacher_id];
+      const label = p?.job_position?.trim() || 'ไม่ระบุตำแหน่ง';
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [todayAllRows, profileMap]);
 
   return (
     <div className="space-y-4">
@@ -274,9 +277,6 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
                   </span>
                   <span className="text-rose-600 dark:text-rose-400">
                     สาย <strong>{monthStats.late}</strong>
-                  </span>
-                  <span className="text-amber-600 dark:text-amber-400">
-                    ลืมออก <strong>{monthStats.forgotOut}</strong>
                   </span>
                 </div>
               </div>
@@ -355,15 +355,14 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
 
       {/* Admin: today all teachers */}
       {isAdmin && (
-        <>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                ครูทั้งหมดวันนี้ ({todayAllRows.length} คน)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              ครูทั้งหมดวันนี้ ({todayAllRows.length} คน)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
               {loading ? (
                 <Skeleton className="h-40 w-full" />
               ) : todayAllRows.length === 0 ? (
@@ -371,6 +370,51 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
                   ยังไม่มีครูเข้างานวันนี้
                 </p>
               ) : (
+                <>
+                {/* Chart by job_position */}
+                <div className="rounded-lg border border-border p-3">
+                  <h3 className="text-sm font-semibold text-foreground mb-2">
+                    แบ่งตามตำแหน่ง
+                  </h3>
+                  <div style={{ height: Math.max(160, positionStats.length * 36) }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={positionStats}
+                        layout="vertical"
+                        margin={{ top: 8, right: 24, left: 8, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} horizontal={false} />
+                        <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                        <YAxis
+                          type="category"
+                          dataKey="label"
+                          tick={{ fontSize: 11 }}
+                          width={140}
+                        />
+                        <Tooltip
+                          contentStyle={{ borderRadius: 8, fontSize: 12 }}
+                          formatter={(v: number) => [`${v} คน`, 'จำนวน']}
+                        />
+                        <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                          {positionStats.map((_, i) => {
+                            const colors = [
+                              '#3b82f6',
+                              '#10b981',
+                              '#f59e0b',
+                              '#8b5cf6',
+                              '#ec4899',
+                              '#06b6d4',
+                              '#f43f5e',
+                              '#14b8a6',
+                            ];
+                            return <Cell key={i} fill={colors[i % colors.length]} />;
+                          })}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -422,51 +466,10 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
                     </TableBody>
                   </Table>
                 </div>
+                </>
               )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                ลืมออกงาน 14 วันล่าสุด ({forgotRows.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <Skeleton className="h-32 w-full" />
-              ) : forgotRows.length === 0 ? (
-                <p className="text-sm text-center text-muted-foreground py-6">
-                  ไม่มีข้อมูล
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>วันที่</TableHead>
-                        <TableHead>ครู</TableHead>
-                        <TableHead>เข้างาน</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {forgotRows.map((r) => (
-                        <TableRow key={r.id}>
-                          <TableCell>{formatDateThai(r.date)}</TableCell>
-                          <TableCell className="font-medium">
-                            {fullName(profileMap[r.teacher_id])}
-                          </TableCell>
-                          <TableCell>{formatTime(r.check_in)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

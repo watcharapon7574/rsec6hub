@@ -21,12 +21,12 @@ const Navbar = () => {
   if (!isAuthenticated || !profile) return null;
 
   const navItems = [
-    { to: '/dashboard', icon: Home, label: 'หน้าหลัก' },
+    { to: '/dashboard', icon: Home, label: 'Home' },
     { to: '/profile', icon: User, label: 'โปรไฟล์' },
     { to: '/attendance', icon: Calendar, label: 'Men' },
     { to: '/newsfeed', icon: Newspaper, label: 'News' },
     { to: '/documents', icon: FileText, label: 'Sign' },
-    { to: '/notifications', icon: Bell, label: 'แจ้งเตือน' },
+    { to: '/notifications', icon: Bell, label: 'Noti' },
   ];
 
   const handleSignOut = async () => {

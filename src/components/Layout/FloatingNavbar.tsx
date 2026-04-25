@@ -15,11 +15,11 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/dashboard', icon: Home, label: 'หน้าหลัก' },
+  { to: '/dashboard', icon: Home, label: 'Home' },
   { to: '/attendance', icon: Calendar, label: 'Men' },
   { to: '/newsfeed', icon: Newspaper, label: 'News' },
   // Sign handled as fan-out trigger
-  { to: '/notifications', icon: Bell, label: 'แจ้งเตือน' },
+  { to: '/notifications', icon: Bell, label: 'Noti' },
 ];
 
 const docSubItems = [

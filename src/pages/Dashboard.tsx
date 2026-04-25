@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import FastDocLogo from '@/components/ui/FastDocLogo';
 import CalendarWidget from '@/components/Dashboard/CalendarWidget';
 import StudentAttendanceWidget from '@/components/Dashboard/StudentAttendanceWidget';
+import SectionJumpBar from '@/components/Dashboard/SectionJumpBar';
 import {
   Calendar,
   FileText,
@@ -43,7 +44,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <SectionJumpBar />
+      <div id="top" className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Welcome Section */}
         <Card className="mb-6">
           <CardContent className="bg-blue-600 rounded-t-lg pt-6">
@@ -62,7 +64,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div id="quick-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 scroll-mt-20">
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/attendance')}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between mb-2">
@@ -113,17 +115,17 @@ const Dashboard = () => {
         </div>
 
         {/* Google Calendar - full width */}
-        <div className="mb-6">
+        <div id="calendar" className="mb-6 scroll-mt-20">
           <CalendarWidget />
         </div>
 
         {/* Student Attendance Stats */}
-        <div className="mb-6">
+        <div id="student-stats" className="mb-6 scroll-mt-20">
           <StudentAttendanceWidget />
         </div>
 
         {/* Quick Actions + Recent */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
+        <div id="quick-actions" className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6 scroll-mt-20">
           {/* Quick Actions */}
             <Card>
               <CardHeader className="pb-3">

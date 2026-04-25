@@ -12,7 +12,6 @@ import {
   FileText,
   ClipboardList,
   Bell,
-  Users,
   CheckCircle,
   Clock,
   Plus,
@@ -41,8 +40,6 @@ const Dashboard = () => {
     };
     return positions[position] || position;
   };
-
-  const isAdmin = profile?.position && ['director', 'deputy_director', 'assistant_director'].includes(profile.position);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -218,48 +215,6 @@ const Dashboard = () => {
             </Card>
         </div>
 
-        {/* Admin Panel */}
-        {isAdmin && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                สำหรับผู้บริหาร
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-100 dark:border-amber-900">
-                  <div className="bg-amber-500 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-lg font-bold text-white">7</span>
-                  </div>
-                  <h4 className="font-semibold text-foreground mb-2">คำขอรอพิจารณา</h4>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/attendance')}>
-                    จัดการ
-                  </Button>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900">
-                  <div className="bg-blue-500 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-lg font-bold text-white">3</span>
-                  </div>
-                  <h4 className="font-semibold text-foreground mb-2">เอกสารรอลงนาม</h4>
-                  <Button size="sm" variant="outline" onClick={() => navigate('/documents')}>
-                    ลงนาม
-                  </Button>
-                </div>
-                <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900">
-                  <div className="bg-green-500 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-lg font-bold text-white">12</span>
-                  </div>
-                  <h4 className="font-semibold text-foreground mb-2">ประกาศทั้งหมด</h4>
-                  <Button size="sm" variant="outline">
-                    จัดการ
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

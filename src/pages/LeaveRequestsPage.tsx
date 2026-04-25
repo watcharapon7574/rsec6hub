@@ -420,6 +420,7 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
                     <TableHeader>
                       <TableRow>
                         <TableHead>ครู</TableHead>
+                        <TableHead>ตำแหน่ง</TableHead>
                         <TableHead>เข้างาน</TableHead>
                         <TableHead>ออกงาน</TableHead>
                         <TableHead>สถานะ</TableHead>
@@ -430,6 +431,9 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
                         <TableRow key={r.id}>
                           <TableCell className="font-medium">
                             {fullName(profileMap[r.teacher_id])}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {profileMap[r.teacher_id]?.job_position || '-'}
                           </TableCell>
                           <TableCell>{formatTime(r.check_in)}</TableCell>
                           <TableCell>{formatTime(r.check_out)}</TableCell>

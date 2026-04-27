@@ -274,13 +274,28 @@ function deduplicateResults(results: any[]): any[] {
   return filtered
 }
 
-// --- Step 4.5: Boost candidates whose file_name matches query tokens ---
-// RRF scores live in ~0.01–0.04 range; multiplying by (1 + 2*ratio) means a
-// fully-matching file_name triples the score, which is enough to overpower
-// near-ties from semantic search on long unrelated documents.
+// --- Step 4.5: Boost candidates by relevance signals ---
+// Two complementary signals stacked on top of the raw RRF score:
+//   (a) file_name match — query tokens appearing in document title
+//   (b) doc-level chunk frequency — how many chunks of this doc match the query;
+//       a person/term appearing in many chunks of one doc means the doc is
+//       "about" that person/term, not just mentioning them in passing
 const FILENAME_BOOST_WEIGHT = 2.0
+const DOC_FREQ_BOOST_WEIGHT = 0.5
 
-function applyFileNameBoost(query: string, results: any[]): any[] {
+function buildDocChunkCount(rawResults: any[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const r of rawResults) {
+    counts.set(r.document_id, (counts.get(r.document_id) || 0) + 1)
+  }
+  return counts
+}
+
+function applyRelevanceBoost(
+  query: string,
+  results: any[],
+  docChunkCount: Map<string, number>
+): any[] {
   const ratioCache = new Map<string, number>()
   const boosted = results.map((r: any) => {
     const fname = r.file_name || ''
@@ -289,10 +304,14 @@ function applyFileNameBoost(query: string, results: any[]): any[] {
       ratio = fileNameMatchRatio(query, fname)
       ratioCache.set(fname, ratio)
     }
+    const fileNameFactor = 1 + FILENAME_BOOST_WEIGHT * ratio
+    const n = docChunkCount.get(r.document_id) || 1
+    const docFreqFactor = 1 + DOC_FREQ_BOOST_WEIGHT * Math.log(n)
     return {
       ...r,
       _filename_match_ratio: ratio,
-      _boosted_score: r.rrf_score * (1 + FILENAME_BOOST_WEIGHT * ratio),
+      _doc_chunk_count: n,
+      _boosted_score: r.rrf_score * fileNameFactor * docFreqFactor,
     }
   })
   boosted.sort((a, b) => b._boosted_score - a._boosted_score)
@@ -300,7 +319,7 @@ function applyFileNameBoost(query: string, results: any[]): any[] {
 }
 
 function stripInternalFields(results: any[]): any[] {
-  return results.map(({ _filename_match_ratio, _boosted_score, ...rest }) => rest)
+  return results.map(({ _filename_match_ratio, _doc_chunk_count, _boosted_score, ...rest }) => rest)
 }
 
 // --- Step 5: Reranking ---
@@ -387,7 +406,8 @@ serve(async (req) => {
     if (searchError) throw new Error(`Search RPC error: ${searchError.message}`)
 
     const dedupedResults = deduplicateResults(searchResults || [])
-    const boostedResults = applyFileNameBoost(query, dedupedResults)
+    const docChunkCount = buildDocChunkCount(searchResults || [])
+    const boostedResults = applyRelevanceBoost(query, dedupedResults, docChunkCount)
     const rankedResults = useAI
       ? await rerankResults(query, boostedResults, 10)
       : boostedResults.slice(0, 10)

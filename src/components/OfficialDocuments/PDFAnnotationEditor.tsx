@@ -8,9 +8,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import { renderPdfPageToCanvas, loadPdfFromUrl, exportAnnotatedPdf } from '@/utils/pdfAnnotationUtils';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 type Tool = 'pen' | 'highlighter' | 'text' | 'circle' | 'arrow' | 'eraser' | 'pan';
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Viewer, Worker } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin, ToolbarSlot } from '@react-pdf-viewer/default-layout';
 import { zoomPlugin } from '@react-pdf-viewer/zoom';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import '@react-pdf-viewer/zoom/lib/styles/index.css';
@@ -704,7 +705,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         className="flex-1 overflow-auto pdf-grab-scroll"
         style={fullscreenContentStyle}
       >
-        <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
+        <Worker workerUrl={pdfWorkerUrl}>
           <div style={{ height: '100%', width: '100%', position: 'relative' }}>
             {blobUrl && (
               <Viewer
@@ -830,7 +831,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             </div>
           )}
 
-          <Worker workerUrl="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js">
+          <Worker workerUrl={pdfWorkerUrl}>
             <div 
               ref={viewerRef}
               style={{ 

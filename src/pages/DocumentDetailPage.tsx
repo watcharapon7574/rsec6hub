@@ -4,10 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight, MapPin, ClipboardList, Link2, Eye, Paperclip } from 'lucide-react';
+import { ArrowLeft, FileText, User, Calendar, MessageSquare, CheckCircle, Clock, ChevronLeft, ChevronRight, MapPin, ClipboardList, Link2, Eye, Paperclip, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { taskAssignmentService } from '@/services/taskAssignmentService';
 import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
+
+interface RejectionInfo {
+  comment: string;
+  rejected_by: string;
+  position?: string;
+  rejected_at: string;
+  annotated_pdf_path?: string | null;
+  annotated_attachment_paths?: string[];
+}
 
 interface DocumentDetail {
   id: string;
@@ -24,6 +33,7 @@ interface DocumentDetail {
   current_signer_order?: number;
   is_assigned?: boolean;
   attached_files?: string[];
+  rejection?: RejectionInfo | null;
   // Task assignments
   task_assignments?: Array<{
     id: string;
@@ -230,12 +240,63 @@ const DocumentDetailPage: React.FC = () => {
         }
       }
 
+      // Parse rejection details from rejected_name_comment (JSONB) with rejection_reason fallback
+      let rejection: RejectionInfo | null = null;
+      const isRejected = docData.status === 'rejected' || docData.current_signer_order === 0;
+      if (isRejected) {
+        let rejectedData: any = null;
+        if (docData.rejected_name_comment) {
+          try {
+            rejectedData = typeof docData.rejected_name_comment === 'string'
+              ? JSON.parse(docData.rejected_name_comment)
+              : docData.rejected_name_comment;
+          } catch (err) {
+            console.error('Error parsing rejected_name_comment:', err);
+          }
+        }
+
+        if (rejectedData) {
+          rejection = {
+            comment: rejectedData.comment || docData.rejection_reason || 'ไม่มีความคิดเห็น',
+            rejected_by: rejectedData.name || 'ไม่ระบุ',
+            position: rejectedData.position || '',
+            rejected_at: rejectedData.rejected_at || docData.updated_at || new Date().toISOString(),
+          };
+        } else if (docData.rejection_reason) {
+          rejection = {
+            comment: docData.rejection_reason,
+            rejected_by: 'ไม่ระบุ',
+            position: '',
+            rejected_at: docData.updated_at || new Date().toISOString(),
+          };
+        }
+
+        if (rejection) {
+          rejection.annotated_pdf_path = docData.annotated_pdf_path || null;
+          let annotatedAttachments: string[] = [];
+          if (docData.annotated_attachment_paths) {
+            try {
+              const paths = typeof docData.annotated_attachment_paths === 'string'
+                ? JSON.parse(docData.annotated_attachment_paths)
+                : docData.annotated_attachment_paths;
+              if (Array.isArray(paths)) {
+                annotatedAttachments = paths.filter((p: any) => typeof p === 'string');
+              }
+            } catch (err) {
+              console.error('Error parsing annotated_attachment_paths:', err);
+            }
+          }
+          rejection.annotated_attachment_paths = annotatedAttachments;
+        }
+      }
+
       setDocument({
         ...docData,
         id: docData.id,
         document_type: documentType as 'memo' | 'doc_receive',
         task_assignments: filteredTasks || [],
-        attached_files: parsedAttachedFiles
+        attached_files: parsedAttachedFiles,
+        rejection
       } as DocumentDetail);
     } catch (error) {
       console.error('Error fetching document detail:', error);
@@ -599,9 +660,96 @@ const DocumentDetailPage: React.FC = () => {
           })()}
         </div>
 
-        {/* Right Column - PDF Viewer */}
+        {/* Right Column - PDF Viewer or Rejection Details */}
         <div className="lg:sticky lg:top-6 h-fit">
-          {pdfUrl ? (
+          {document.rejection ? (
+            <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
+              <CardHeader className="bg-red-100 dark:bg-red-900 border-b border-red-200 dark:border-red-800">
+                <CardTitle className="text-red-800 dark:text-red-200 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  รายละเอียดการตีกลับ
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-4">
+                <div className="rounded-md border border-red-200 dark:border-red-800 bg-card p-3">
+                  <label className="text-xs font-medium text-red-600 dark:text-red-400">เหตุผล / ความคิดเห็น</label>
+                  <p className="text-sm text-red-800 dark:text-red-200 whitespace-pre-wrap mt-1">
+                    {document.rejection.comment}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-start gap-2">
+                    <User className="h-4 w-4 mt-1 text-red-600 dark:text-red-400" />
+                    <div>
+                      <label className="text-xs font-medium text-red-600 dark:text-red-400">ผู้ตีกลับ</label>
+                      <p className="text-sm text-foreground">
+                        {document.rejection.rejected_by}
+                        {document.rejection.position && ` (${document.rejection.position})`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 mt-1 text-red-600 dark:text-red-400" />
+                    <div>
+                      <label className="text-xs font-medium text-red-600 dark:text-red-400">วันที่ตีกลับ</label>
+                      <p className="text-sm text-foreground">
+                        {new Date(document.rejection.rejected_at).toLocaleDateString('th-TH', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {pdfUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900"
+                    onClick={() => window.open(pdfUrl, '_blank')}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    ดู PDF เอกสาร
+                  </Button>
+                )}
+
+                {document.rejection.annotated_pdf_path && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900"
+                    onClick={() => window.open(document.rejection!.annotated_pdf_path!, '_blank')}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    ดูเอกสารหลักที่มี annotation จากผู้ตีกลับ
+                  </Button>
+                )}
+
+                {document.rejection.annotated_attachment_paths && document.rejection.annotated_attachment_paths.length > 0 && (
+                  <div className="space-y-2">
+                    {document.rejection.annotated_attachment_paths.map((url, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900"
+                        onClick={() => window.open(url, '_blank')}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        ดูไฟล์แนบ annotation #{i + 1}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : pdfUrl ? (
             <PDFViewer
               fileUrl={pdfUrl}
               fileName={document.subject || 'เอกสาร PDF'}

@@ -1136,9 +1136,12 @@ const DocumentManagePage: React.FC = () => {
       await updateMemoSigners(memoId, allSigners, updatedSignaturePositions);
 
       // 2. เรียก API ลายเซ็นสำหรับธุการ (author)
+      // เซ็นเฉพาะเมื่อ author ปักตำแหน่งของตัวเองอย่างน้อย 1 จุด
+      // ถ้าไม่ปัก → ข้ามการเซ็น แล้ว forward ต่อไปเลย (ไป branch !shouldSign)
       let signSuccess = false;
       let signedPdfBlob: Blob | null = null;
-      const shouldSign = memo && memo.pdf_draft_path && authorProfile && authorProfile.signature_url;
+      const authorPositionsForSign = updatedSignaturePositions.filter(pos => pos.signer.order === 1);
+      const shouldSign = memo && memo.pdf_draft_path && authorProfile && authorProfile.signature_url && authorPositionsForSign.length > 0;
 
       if (shouldSign) {
         const extractedPdfUrl = extractPdfUrl(memo.pdf_draft_path);

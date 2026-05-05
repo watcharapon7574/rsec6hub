@@ -12,12 +12,14 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  ClipboardList,
+  Eye,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', icon: Home, label: 'Home' },
   { to: '/attendance', icon: Calendar, label: 'Men' },
-  { to: '/newsfeed', icon: Newspaper, label: 'News' },
+  // News handled as fan-out trigger
   // Sign handled as fan-out trigger
   { to: '/notifications', icon: Bell, label: 'Noti' },
 ];
@@ -28,23 +30,31 @@ const docSubItems = [
   { to: '/ocr-search', icon: Search, label: 'ค้นหา' },
 ];
 
+const newsSubItems = [
+  { to: '/report', icon: ClipboardList, label: 'รายงาน' },
+  { to: '/newsfeed', icon: Eye, label: 'ดูฟีด' },
+];
+
+type FanKey = 'doc' | 'news' | null;
+
 const FloatingNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const [isVisible, setIsVisible] = useState(true);
-  const [fanOpen, setFanOpen] = useState(false);
-  const fanRef = useRef<HTMLDivElement>(null);
+  const [openFan, setOpenFan] = useState<FanKey>(null);
+  const fanContainerRef = useRef<HTMLDivElement>(null);
   const { isChatOpen } = useChatContext();
 
   const isDocActive = currentPath === '/create-document' || currentPath === '/documents' || currentPath === '/ocr-search';
+  const isNewsActive = currentPath === '/newsfeed' || currentPath === '/report';
 
   // Close fan on outside click
   useEffect(() => {
-    if (!fanOpen) return;
+    if (!openFan) return;
     const handleClick = (e: MouseEvent) => {
-      if (fanRef.current && !fanRef.current.contains(e.target as Node)) {
-        setFanOpen(false);
+      if (fanContainerRef.current && !fanContainerRef.current.contains(e.target as Node)) {
+        setOpenFan(null);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -53,11 +63,11 @@ const FloatingNavbar = () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick as any);
     };
-  }, [fanOpen]);
+  }, [openFan]);
 
   // Close fan on route change
   useEffect(() => {
-    setFanOpen(false);
+    setOpenFan(null);
   }, [currentPath]);
 
   // Page scroll hide
@@ -69,7 +79,7 @@ const FloatingNavbar = () => {
 
       if (currentScrollY > 200 && currentScrollY > lastScrollY) {
         setIsVisible(false);
-        setFanOpen(false);
+        setOpenFan(null);
       } else {
         setIsVisible(true);
       }
@@ -108,9 +118,98 @@ const FloatingNavbar = () => {
     );
   };
 
-  // Insert Sign fan trigger after News (index 2) and before แจ้งเตือน (index 3)
-  const beforeDoc = navItems.slice(0, 3); // หน้าหลัก, Men, News
-  const afterDoc = navItems.slice(3);      // แจ้งเตือน
+  // Helper: render a fan-out trigger (News or Sign) with its sub-items
+  const renderFan = (
+    fanKey: 'doc' | 'news',
+    triggerIcon: React.ComponentType<{ className?: string }>,
+    triggerLabel: string,
+    isTriggerActive: boolean,
+    subItems: { to: string; icon: React.ComponentType<{ className?: string }>; label: string }[],
+  ) => {
+    const isOpen = openFan === fanKey;
+    // Position items in an arc — handle 2 or 3 items
+    const arcPositions: { tx: number; ty: number }[] =
+      subItems.length === 2
+        ? [{ tx: -36, ty: -78 }, { tx: 36, ty: -78 }]
+        : [{ tx: -50, ty: -68 }, { tx: 0, ty: -88 }, { tx: 50, ty: -68 }];
+
+    return (
+      <div className="relative flex-shrink-0">
+        {/* Fan-out items */}
+        {subItems.map((sub, i) => {
+          const isSubActive = currentPath === sub.to;
+          const { tx, ty } = arcPositions[i] || { tx: 0, ty: -88 };
+
+          return (
+            <button
+              key={sub.to}
+              onClick={() => {
+                navigate(sub.to);
+                setOpenFan(null);
+              }}
+              className={`
+                absolute left-1/2 top-1/2 z-10
+                flex flex-col items-center justify-center
+                w-12 h-12 rounded-full
+                shadow-lg border border-border/30
+                transition-all duration-300 ease-out
+                ${isSubActive
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-background/95 backdrop-blur-md text-foreground hover:bg-blue-50 dark:hover:bg-blue-950'
+                }
+                ${isOpen
+                  ? 'opacity-100 scale-100'
+                  : 'opacity-0 scale-0 pointer-events-none'
+                }
+              `}
+              style={{
+                transform: isOpen
+                  ? `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(1)`
+                  : `translate(-50%, -50%) scale(0)`,
+                transitionDelay: isOpen ? `${i * 50}ms` : '0ms',
+              }}
+            >
+              <sub.icon className="h-5 w-5" />
+              <span className="text-[8px] leading-none mt-0.5 font-bold whitespace-nowrap">
+                {sub.label}
+              </span>
+            </button>
+          );
+        })}
+
+        {/* Trigger button */}
+        <button
+          onClick={() => setOpenFan((prev) => (prev === fanKey ? null : fanKey))}
+          className={`
+            relative flex flex-col items-center justify-center
+            w-14 h-14 rounded-xl flex-shrink-0
+            transition-all duration-300 ease-out
+            ${isTriggerActive && !isOpen
+              ? 'bg-blue-500 text-white shadow-lg transform -translate-y-1 scale-110'
+              : isOpen
+                ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 transform -translate-y-1 scale-110'
+                : 'text-muted-foreground hover:bg-muted hover:text-primary hover:transform hover:-translate-y-0.5'
+            }
+          `}
+        >
+          {(() => {
+            const Icon = triggerIcon;
+            return <Icon className={`h-5 w-5 mb-0.5 transition-transform duration-300 ${isOpen ? 'rotate-12' : ''}`} />;
+          })()}
+          <span className={`text-[10px] leading-none font-medium whitespace-nowrap ${isTriggerActive || isOpen ? 'opacity-100' : 'opacity-70'}`}>
+            {triggerLabel}
+          </span>
+          {isTriggerActive && !isOpen && (
+            <div className="absolute -top-2 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+          )}
+        </button>
+      </div>
+    );
+  };
+
+  // Layout: Home, Men, [News fan], [Sign fan], Noti
+  const beforeFans = navItems.slice(0, 2);  // Home, Men
+  const afterFans = navItems.slice(2);      // Noti
 
   return (
     <div
@@ -135,85 +234,11 @@ const FloatingNavbar = () => {
       </div>
 
       <div className="bg-background/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/30 px-3 py-3">
-        <div className="flex items-center space-x-1">
-          {beforeDoc.map((item) => renderNavItem(item))}
-
-          {/* เอกสาร — Fan-out trigger */}
-          <div ref={fanRef} className="relative flex-shrink-0">
-            {/* Fan-out items */}
-            {docSubItems.map((sub, i) => {
-              const isSubActive = currentPath === sub.to;
-              // 3 items in arc: wider spread + higher
-              const positions = [
-                { tx: -50, ty: -68 },
-                { tx: 0, ty: -88 },
-                { tx: 50, ty: -68 },
-              ];
-              const { tx, ty } = positions[i];
-
-              return (
-                <button
-                  key={sub.to}
-                  onClick={() => {
-                    navigate(sub.to);
-                    setFanOpen(false);
-                  }}
-                  className={`
-                    absolute left-1/2 top-1/2 z-10
-                    flex flex-col items-center justify-center
-                    w-12 h-12 rounded-full
-                    shadow-lg border border-border/30
-                    transition-all duration-300 ease-out
-                    ${isSubActive
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-background/95 backdrop-blur-md text-foreground hover:bg-blue-50 dark:hover:bg-blue-950'
-                    }
-                    ${fanOpen
-                      ? 'opacity-100 scale-100'
-                      : 'opacity-0 scale-0 pointer-events-none'
-                    }
-                  `}
-                  style={{
-                    transform: fanOpen
-                      ? `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(1)`
-                      : `translate(-50%, -50%) scale(0)`,
-                    transitionDelay: fanOpen ? `${i * 50}ms` : '0ms',
-                  }}
-                >
-                  <sub.icon className="h-5 w-5" />
-                  <span className="text-[8px] leading-none mt-0.5 font-bold whitespace-nowrap">
-                    {sub.label}
-                  </span>
-                </button>
-              );
-            })}
-
-            {/* Trigger button */}
-            <button
-              onClick={() => setFanOpen((v) => !v)}
-              className={`
-                relative flex flex-col items-center justify-center
-                w-14 h-14 rounded-xl flex-shrink-0
-                transition-all duration-300 ease-out
-                ${isDocActive && !fanOpen
-                  ? 'bg-blue-500 text-white shadow-lg transform -translate-y-1 scale-110'
-                  : fanOpen
-                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 transform -translate-y-1 scale-110'
-                    : 'text-muted-foreground hover:bg-muted hover:text-primary hover:transform hover:-translate-y-0.5'
-                }
-              `}
-            >
-              <FileText className={`h-5 w-5 mb-0.5 transition-transform duration-300 ${fanOpen ? 'rotate-12' : ''}`} />
-              <span className={`text-[10px] leading-none font-medium whitespace-nowrap ${isDocActive || fanOpen ? 'opacity-100' : 'opacity-70'}`}>
-                Sign
-              </span>
-              {isDocActive && !fanOpen && (
-                <div className="absolute -top-2 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-              )}
-            </button>
-          </div>
-
-          {afterDoc.map((item) => renderNavItem(item))}
+        <div ref={fanContainerRef} className="flex items-center space-x-1">
+          {beforeFans.map((item) => renderNavItem(item))}
+          {renderFan('news', Newspaper, 'News', isNewsActive, newsSubItems)}
+          {renderFan('doc', FileText, 'Sign', isDocActive, docSubItems)}
+          {afterFans.map((item) => renderNavItem(item))}
         </div>
       </div>
     </div>

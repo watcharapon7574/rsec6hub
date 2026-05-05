@@ -16,6 +16,7 @@ import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import LeaveRequestsPage from "@/pages/LeaveRequestsPage";
 import NewsfeedPage from "@/pages/NewsfeedPage";
+import ReportPage from "@/pages/ReportPage";
 import OfficialDocumentsPage from "@/pages/OfficialDocumentsPage";
 import CreateDocumentPage from "@/pages/CreateDocumentPage";
 import CreateMemoPage from "@/pages/CreateMemoPage";
@@ -171,6 +172,11 @@ const AppContent = () => {
         </ProtectedRouteWithAuth>
       } />
       <Route path="/daily-reports" element={<Navigate to="/newsfeed" replace />} />
+      <Route path="/report" element={
+        <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
+          <ReportPage />
+        </ProtectedRouteWithAuth>
+      } />
       <Route path="/documents" element={
         <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
           <OfficialDocumentsPage />

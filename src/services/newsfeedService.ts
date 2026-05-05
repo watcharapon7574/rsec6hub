@@ -265,11 +265,14 @@ export class NewsfeedService {
     authorPosition?: string;
     authorAvatarUrl?: string;
     title?: string;
-    description: string;
+    description: string | null;
     category?: string;
     tags?: string[];
     images?: string[];
     youtubeUrl?: string | null;
+    location?: { name: string; lat?: number; lng?: number } | null;
+    reportType?: string | null;
+    formData?: Record<string, unknown> | null;
   }): Promise<FeedPost> {
     const { data: created, error } = await (supabase
       .from('feed_posts') as any)
@@ -279,11 +282,14 @@ export class NewsfeedService {
         author_position: data.authorPosition || null,
         author_avatar_url: data.authorAvatarUrl || null,
         title: data.title || null,
-        description: data.description,
+        description: data.description ?? '',
         category: data.category || null,
         tags: data.tags || [],
         images: data.images || [],
         youtube_url: data.youtubeUrl || null,
+        location: data.location || null,
+        report_type: data.reportType || null,
+        form_data: data.formData || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

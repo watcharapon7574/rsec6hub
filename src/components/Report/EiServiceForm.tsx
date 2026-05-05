@@ -24,33 +24,21 @@ const EiServiceFormFields = ({ value, onChange }: Props) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <Label className="mb-1.5 text-sm">
-            จำนวนนักเรียน <span className="text-xs text-gray-400 font-normal">(ไม่บังคับ)</span>
-          </Label>
-          <Input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            placeholder="0"
-            value={value.studentCount}
-            onChange={(e) => update({ studentCount: e.target.value })}
-          />
-        </div>
-        <div>
-          <Label className="mb-1.5 text-sm">
-            จำนวนผู้ปกครอง <span className="text-xs text-gray-400 font-normal">(ไม่บังคับ)</span>
-          </Label>
-          <Input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            placeholder="0"
-            value={value.parentCount}
-            onChange={(e) => update({ parentCount: e.target.value })}
-          />
-        </div>
+      <div>
+        <Label className="mb-1.5 text-sm">
+          จำนวนผู้ปกครอง <span className="text-xs text-gray-400 font-normal">(ไม่บังคับ)</span>
+        </Label>
+        <Input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          placeholder="0"
+          value={value.parentCount}
+          onChange={(e) => update({ parentCount: e.target.value })}
+        />
+        <p className="text-xs text-gray-400 mt-1">
+          จำนวนนักเรียนจะดึงจากระบบรับ-ส่งนักเรียนโดยอัตโนมัติ
+        </p>
       </div>
 
       <div>

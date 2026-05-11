@@ -23,7 +23,8 @@ export const useAssignedTasks = (
     try {
       const data = await taskAssignmentService.getUserAssignedTasks(
         undefined, // use current user
-        statusFilter
+        statusFilter,
+        10000 // โหลดทั้งหมด ไม่ตัดที่ 50 รายการ
       );
       setTasks(data);
 

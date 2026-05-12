@@ -1,5 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Format a Date as YYYY-MM-DD using the picker's wall-clock day. Using
+// toISOString() would shift Bangkok-midnight (UTC+7) back one day, which is
+// the source of the "เลือกวันที่แล้วย้อนหลัง 1 วัน" bug.
+const toLocalDateString = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 // =====================================================
 // Types & Interfaces
 // =====================================================
@@ -170,10 +180,10 @@ class TaskAssignmentService {
         updateData.task_description = options.taskDescription;
       }
       if (options?.eventDate) {
-        updateData.event_date = options.eventDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        updateData.event_date = toLocalDateString(options.eventDate);
       }
       if (options?.eventEndDate) {
-        updateData.event_end_date = options.eventEndDate.toISOString().split('T')[0];
+        updateData.event_end_date = toLocalDateString(options.eventEndDate);
       }
       if (options?.eventTime) {
         updateData.event_time = options.eventTime;

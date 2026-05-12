@@ -221,7 +221,7 @@ const CommonFields = ({ value, onChange, imageLimit, userId }: Props) => {
                   key={t}
                   type="button"
                   onClick={() => addTag(t)}
-                  className="px-2 py-1 rounded-full text-xs border border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition"
+                  className="px-2 py-1 rounded-full text-xs border border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 active:bg-blue-100 transition"
                 >
                   + {t}
                 </button>

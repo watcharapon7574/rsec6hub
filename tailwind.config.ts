@@ -8,6 +8,11 @@ export default {
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
 	],
+	// Compile `hover:` utilities behind `@media (hover: hover)` so they don't
+	// stay stuck on touch devices after a tap (mobile sticky-hover bug).
+	future: {
+		hoverOnlyWhenSupported: true,
+	},
 	prefix: "",
 	theme: {
 		container: {

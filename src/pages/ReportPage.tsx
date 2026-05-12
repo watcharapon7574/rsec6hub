@@ -101,6 +101,31 @@ const ReportPage = () => {
     );
   }, [staffName, positionText]);
 
+  // Backfill workplace/serviceUnit when profile loads after the user already
+  // picked a report type — only fills if the field is still empty so we never
+  // overwrite something the user typed.
+  useEffect(() => {
+    const wp = profile?.workplace;
+    if (!wp) return;
+    setFormByType((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      if (next.lunch && !next.lunch.workplace.trim()) {
+        next.lunch = { ...next.lunch, workplace: wp };
+        changed = true;
+      }
+      if (next.ei_service && !next.ei_service.workplace.trim()) {
+        next.ei_service = { ...next.ei_service, workplace: wp };
+        changed = true;
+      }
+      if (next.student_dev && !next.student_dev.serviceUnit.trim()) {
+        next.student_dev = { ...next.student_dev, serviceUnit: wp };
+        changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [profile?.workplace]);
+
   const pickType = (t: ReportType) => {
     setReportType(t);
     if (formByType[t]) return;

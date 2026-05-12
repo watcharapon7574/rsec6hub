@@ -301,20 +301,28 @@ export class NewsfeedService {
   }
 
   static async getRecentUserTags(userId: string, limit = 30): Promise<string[]> {
+    // form_data.tags stores only the user-added tags; the top-level `tags`
+    // column also includes builtins like report_type:/report_date:/duty_time:.
     const { data, error } = await (supabase
       .from('feed_posts') as any)
-      .select('tags')
+      .select('tags, form_data')
       .eq('user_id', userId)
-      .not('tags', 'is', null)
       .order('created_at', { ascending: false })
       .limit(60);
     if (error) throw error;
+    const BUILTIN_PREFIX = /^(report_type|report_date|duty_time):/;
     const counts = new Map<string, number>();
-    for (const row of (data as { tags: string[] | null }[] | null) ?? []) {
-      if (!Array.isArray(row.tags)) continue;
-      for (const raw of row.tags) {
-        const t = (raw ?? '').trim();
-        if (!t) continue;
+    type Row = { tags: string[] | null; form_data: { tags?: unknown } | null };
+    for (const row of (data as Row[] | null) ?? []) {
+      const userTags = Array.isArray(row.form_data?.tags)
+        ? (row.form_data!.tags as unknown[])
+        : Array.isArray(row.tags)
+          ? row.tags.filter((t) => typeof t === 'string' && !BUILTIN_PREFIX.test(t))
+          : [];
+      for (const raw of userTags) {
+        if (typeof raw !== 'string') continue;
+        const t = raw.trim();
+        if (!t || BUILTIN_PREFIX.test(t)) continue;
         counts.set(t, (counts.get(t) ?? 0) + 1);
       }
     }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Calendar, Clock, ImagePlus, Youtube, X, Loader2, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,7 +18,28 @@ const CommonFields = ({ value, onChange, imageLimit, userId }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [recentTags, setRecentTags] = useState<string[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    NewsfeedService.getRecentUserTags(userId)
+      .then((tags) => {
+        if (!cancelled) setRecentTags(tags);
+      })
+      .catch(() => {
+        /* silent — tag suggestions are best-effort */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const tagSuggestions = useMemo(
+    () => recentTags.filter((t) => !value.tags.includes(t)).slice(0, 12),
+    [recentTags, value.tags],
+  );
 
   const update = (patch: Partial<CommonReportFields>) => onChange({ ...value, ...patch });
 
@@ -51,15 +72,15 @@ const CommonFields = ({ value, onChange, imageLimit, userId }: Props) => {
     update({ images: value.images.filter((_, i) => i !== idx) });
   };
 
-  const addTag = () => {
-    const t = tagInput.trim();
+  const addTag = (raw?: string) => {
+    const t = (raw ?? tagInput).trim();
     if (!t) return;
     if (value.tags.includes(t)) {
-      setTagInput('');
+      if (raw === undefined) setTagInput('');
       return;
     }
     update({ tags: [...value.tags, t] });
-    setTagInput('');
+    if (raw === undefined) setTagInput('');
   };
 
   const removeTag = (idx: number) => update({ tags: value.tags.filter((_, i) => i !== idx) });
@@ -187,10 +208,27 @@ const CommonFields = ({ value, onChange, imageLimit, userId }: Props) => {
               }
             }}
           />
-          <Button type="button" variant="outline" onClick={addTag}>
+          <Button type="button" variant="outline" onClick={() => addTag()}>
             เพิ่ม
           </Button>
         </div>
+        {tagSuggestions.length > 0 && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-500 mb-1">เคยใช้</p>
+            <div className="flex flex-wrap gap-1.5">
+              {tagSuggestions.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => addTag(t)}
+                  className="px-2 py-1 rounded-full text-xs border border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition"
+                >
+                  + {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {value.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {value.tags.map((t, idx) => (

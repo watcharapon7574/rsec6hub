@@ -103,9 +103,27 @@ const ReportPage = () => {
 
   const pickType = (t: ReportType) => {
     setReportType(t);
-    if (!formByType[t]) {
-      setFormByType((prev) => ({ ...prev, [t]: initialFormByType(t) }));
+    if (formByType[t]) return;
+    const workplace = profile?.workplace ?? '';
+    if (t === 'lunch') {
+      const initial = initialFormByType('lunch');
+      if (workplace) initial.workplace = workplace;
+      setFormByType((prev) => ({ ...prev, lunch: initial }));
+      return;
     }
+    if (t === 'ei_service') {
+      const initial = initialFormByType('ei_service');
+      if (workplace) initial.workplace = workplace;
+      setFormByType((prev) => ({ ...prev, ei_service: initial }));
+      return;
+    }
+    if (t === 'student_dev') {
+      const initial = initialFormByType('student_dev');
+      if (workplace) initial.serviceUnit = workplace;
+      setFormByType((prev) => ({ ...prev, student_dev: initial }));
+      return;
+    }
+    setFormByType((prev) => ({ ...prev, [t]: initialFormByType(t) }));
   };
 
   const goBackToSelector = () => {

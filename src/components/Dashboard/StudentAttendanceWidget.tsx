@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, LogIn, LogOut, UserX, MapPin, TrendingUp } from 'lucide-react';
+import { Users, LogIn, LogOut, AlarmClock, MapPin, TrendingUp } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -15,11 +15,29 @@ import { supabase } from '@/integrations/supabase/client';
 
 const THAI_DAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
-const toDateStr = (d: Date) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+// std_attendance.date is stored as a Bangkok-local date (Asia/Bangkok, UTC+7) —
+// compute "today" in that zone regardless of the device clock.
+const bangkokDateStr = (d: Date = new Date()) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const y = parts.find((p) => p.type === 'year')?.value ?? '1970';
+  const m = parts.find((p) => p.type === 'month')?.value ?? '01';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '01';
   return `${y}-${m}-${day}`;
+};
+
+const shiftDateStr = (dateStr: string, days: number) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
 };
 
 interface ServicePoint {
@@ -39,6 +57,7 @@ interface AttendanceRow {
 
 const StudentAttendanceWidget: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const [todayStr, setTodayStr] = useState(() => bangkokDateStr());
   const [totalStudents, setTotalStudents] = useState(0);
   const [todayRows, setTodayRows] = useState<AttendanceRow[]>([]);
   const [last7Rows, setLast7Rows] = useState<Pick<AttendanceRow, 'date'>[]>([]);
@@ -46,14 +65,12 @@ const StudentAttendanceWidget: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    const today = new Date();
-    const todayStr = toDateStr(today);
-    const weekAgo = new Date(today);
-    weekAgo.setDate(today.getDate() - 6);
-    const weekAgoStr = toDateStr(weekAgo);
 
     const load = async () => {
       setLoading(true);
+      const today = bangkokDateStr();
+      const weekAgo = shiftDateStr(today, -6);
+
       const [studentsRes, todayRes, weekRes, spRes] = await Promise.all([
         supabase
           .from('std_students')
@@ -62,19 +79,21 @@ const StudentAttendanceWidget: React.FC = () => {
         supabase
           .from('std_attendance')
           .select('id, student_id, date, service_point_id, check_in, check_out')
-          .eq('date', todayStr),
+          .eq('date', today),
         supabase
           .from('std_attendance')
           .select('date')
-          .gte('date', weekAgoStr)
-          .lte('date', todayStr),
+          .gte('date', weekAgo)
+          .lte('date', today),
         supabase
           .from('std_service_points')
           .select('id, short_name, name')
-          .eq('is_active', true),
+          .eq('is_active', true)
+          .order('short_name', { ascending: true }),
       ]);
 
       if (cancelled) return;
+      setTodayStr(today);
       setTotalStudents(studentsRes.count ?? 0);
       setTodayRows((todayRes.data as AttendanceRow[]) ?? []);
       setLast7Rows((weekRes.data as Pick<AttendanceRow, 'date'>[]) ?? []);
@@ -102,50 +121,51 @@ const StudentAttendanceWidget: React.FC = () => {
   const stats = useMemo(() => {
     const checkedIn = todayRows.filter((r) => r.check_in).length;
     const checkedOut = todayRows.filter((r) => r.check_out).length;
+    const forgotCheckout = todayRows.filter((r) => r.check_in && !r.check_out).length;
     const present = todayRows.length;
-    const absent = Math.max(0, totalStudents - present);
-    return { present, checkedIn, checkedOut, absent };
-  }, [todayRows, totalStudents]);
+    return { present, checkedIn, checkedOut, forgotCheckout };
+  }, [todayRows]);
 
   const chartData = useMemo(() => {
-    const today = new Date();
     const buckets: Record<string, number> = {};
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      buckets[toDateStr(d)] = 0;
+      buckets[shiftDateStr(todayStr, -i)] = 0;
     }
     for (const row of last7Rows) {
       if (row.date in buckets) buckets[row.date]++;
     }
     return Object.entries(buckets).map(([date, count]) => {
-      const d = new Date(date);
+      const [y, m, d] = date.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
       return {
         date,
-        label: `${THAI_DAYS_SHORT[d.getDay()]} ${d.getDate()}`,
+        label: `${THAI_DAYS_SHORT[dt.getUTCDay()]} ${d}`,
         count,
       };
     });
-  }, [last7Rows]);
+  }, [last7Rows, todayStr]);
 
   const byServicePoint = useMemo(() => {
-    const map = new Map<string, number>();
+    type Counts = { in: number; out: number; forgot: number };
+    const map = new Map<string, Counts>();
     for (const row of todayRows) {
       if (!row.service_point_id) continue;
-      map.set(row.service_point_id, (map.get(row.service_point_id) ?? 0) + 1);
+      const c = map.get(row.service_point_id) ?? { in: 0, out: 0, forgot: 0 };
+      if (row.check_in) c.in++;
+      if (row.check_out) c.out++;
+      if (row.check_in && !row.check_out) c.forgot++;
+      map.set(row.service_point_id, c);
     }
-    return servicePoints
-      .map((sp) => ({
-        id: sp.id,
-        name: sp.short_name || sp.name,
-        count: map.get(sp.id) ?? 0,
-      }))
-      .sort((a, b) => b.count - a.count);
+    return servicePoints.map((sp) => ({
+      id: sp.id,
+      name: sp.short_name || sp.name,
+      ...(map.get(sp.id) ?? { in: 0, out: 0, forgot: 0 }),
+    }));
   }, [todayRows, servicePoints]);
 
   const statCards = [
     {
-      label: 'มาเช็คชื่อวันนี้',
+      label: 'มาวันนี้',
       value: stats.present,
       total: totalStudents,
       icon: Users,
@@ -167,9 +187,9 @@ const StudentAttendanceWidget: React.FC = () => {
       fg: 'text-amber-600 dark:text-amber-400',
     },
     {
-      label: 'ขาด',
-      value: stats.absent,
-      icon: UserX,
+      label: 'ค้างส่ง',
+      value: stats.forgotCheckout,
+      icon: AlarmClock,
       bg: 'bg-rose-100 dark:bg-rose-900',
       fg: 'text-rose-600 dark:text-rose-400',
     },
@@ -180,11 +200,10 @@ const StudentAttendanceWidget: React.FC = () => {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Users className="h-5 w-5 text-muted-foreground" />
-          สถิตินักเรียนวันนี้
+          สถิติรับ-ส่งนักเรียนวันนี้
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {statCards.map((s) => (
             <div
@@ -213,7 +232,6 @@ const StudentAttendanceWidget: React.FC = () => {
           ))}
         </div>
 
-        {/* 7-day chart */}
         <div className="rounded-lg border border-border p-3">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -257,7 +275,6 @@ const StudentAttendanceWidget: React.FC = () => {
           )}
         </div>
 
-        {/* Service points */}
         <div className="rounded-lg border border-border p-3">
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -266,30 +283,36 @@ const StudentAttendanceWidget: React.FC = () => {
             </h3>
           </div>
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-10" />
+                <Skeleton key={i} className="h-12" />
               ))}
             </div>
           ) : byServicePoint.length === 0 ? (
             <p className="text-sm text-muted-foreground">ยังไม่มีข้อมูลหน่วยบริการ</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {byServicePoint.map((sp) => (
                 <div
                   key={sp.id}
-                  className="flex items-center justify-between p-2 rounded-md bg-muted/40"
+                  className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40"
                 >
                   <span className="text-sm text-foreground truncate" title={sp.name}>
                     {sp.name}
                   </span>
-                  <span
-                    className={`text-sm font-semibold ${
-                      sp.count > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {sp.count}
-                  </span>
+                  <div className="flex items-center gap-3 text-xs font-medium shrink-0 tabular-nums">
+                    <span className="text-green-600 dark:text-green-400" title="รับเข้า">
+                      รับ {sp.in}
+                    </span>
+                    <span className="text-amber-600 dark:text-amber-400" title="ส่งกลับ">
+                      ส่ง {sp.out}
+                    </span>
+                    {sp.forgot > 0 && (
+                      <span className="text-rose-600 dark:text-rose-400" title="ค้างส่ง">
+                        ค้าง {sp.forgot}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

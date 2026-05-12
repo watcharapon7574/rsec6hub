@@ -300,6 +300,30 @@ export class NewsfeedService {
     return NewsfeedService.transformPost(created);
   }
 
+  static async getRecentUserTags(userId: string, limit = 30): Promise<string[]> {
+    const { data, error } = await (supabase
+      .from('feed_posts') as any)
+      .select('tags')
+      .eq('user_id', userId)
+      .not('tags', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(60);
+    if (error) throw error;
+    const counts = new Map<string, number>();
+    for (const row of (data as { tags: string[] | null }[] | null) ?? []) {
+      if (!Array.isArray(row.tags)) continue;
+      for (const raw of row.tags) {
+        const t = (raw ?? '').trim();
+        if (!t) continue;
+        counts.set(t, (counts.get(t) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([t]) => t);
+  }
+
   static async uploadPostImage(file: File, userId: string): Promise<string> {
     const ext = file.name.split('.').pop() || 'jpg';
     const path = `newsfeed/${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;

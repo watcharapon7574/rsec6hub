@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, LogIn, LogOut, AlarmClock, MapPin, TrendingUp } from 'lucide-react';
+import { Users, LogIn, LogOut, AlarmClock, MapPin, TrendingUp, School } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -44,6 +44,7 @@ interface ServicePoint {
   id: string;
   short_name: string | null;
   name: string;
+  is_headquarters: boolean | null;
 }
 
 interface AttendanceRow {
@@ -55,6 +56,17 @@ interface AttendanceRow {
   check_out: string | null;
 }
 
+interface Classroom {
+  id: string;
+  name: string;
+  service_point_id: string | null;
+}
+
+interface StudentLite {
+  id: string;
+  classroom_id: string | null;
+}
+
 const StudentAttendanceWidget: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [todayStr, setTodayStr] = useState(() => bangkokDateStr());
@@ -62,6 +74,8 @@ const StudentAttendanceWidget: React.FC = () => {
   const [todayRows, setTodayRows] = useState<AttendanceRow[]>([]);
   const [last7Rows, setLast7Rows] = useState<Pick<AttendanceRow, 'date'>[]>([]);
   const [servicePoints, setServicePoints] = useState<ServicePoint[]>([]);
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [students, setStudents] = useState<StudentLite[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,10 +85,10 @@ const StudentAttendanceWidget: React.FC = () => {
       const today = bangkokDateStr();
       const weekAgo = shiftDateStr(today, -6);
 
-      const [studentsRes, todayRes, weekRes, spRes] = await Promise.all([
+      const [studentsRes, todayRes, weekRes, spRes, classroomsRes] = await Promise.all([
         supabase
           .from('std_students')
-          .select('*', { count: 'exact', head: true })
+          .select('id, classroom_id', { count: 'exact' })
           .eq('is_active', true),
         supabase
           .from('std_attendance')
@@ -87,17 +101,25 @@ const StudentAttendanceWidget: React.FC = () => {
           .lte('date', today),
         supabase
           .from('std_service_points')
-          .select('id, short_name, name')
+          .select('id, short_name, name, is_headquarters')
           .eq('is_active', true)
-          .order('short_name', { ascending: true }),
+          .order('is_headquarters', { ascending: false })
+          .order('name', { ascending: true }),
+        supabase
+          .from('std_classrooms')
+          .select('id, name, service_point_id')
+          .eq('is_active', true)
+          .order('name', { ascending: true }),
       ]);
 
       if (cancelled) return;
       setTodayStr(today);
       setTotalStudents(studentsRes.count ?? 0);
+      setStudents((studentsRes.data as StudentLite[]) ?? []);
       setTodayRows((todayRes.data as AttendanceRow[]) ?? []);
       setLast7Rows((weekRes.data as Pick<AttendanceRow, 'date'>[]) ?? []);
       setServicePoints((spRes.data as ServicePoint[]) ?? []);
+      setClassrooms((classroomsRes.data as Classroom[]) ?? []);
       setLoading(false);
     };
 
@@ -162,6 +184,38 @@ const StudentAttendanceWidget: React.FC = () => {
       ...(map.get(sp.id) ?? { in: 0, out: 0, forgot: 0 }),
     }));
   }, [todayRows, servicePoints]);
+
+  const hqId = useMemo(
+    () => servicePoints.find((sp) => sp.is_headquarters)?.id ?? null,
+    [servicePoints],
+  );
+
+  const byClassroom = useMemo(() => {
+    if (!hqId) return [];
+    type Counts = { in: number; out: number; forgot: number };
+    const studentToClassroom = new Map<string, string>();
+    for (const s of students) {
+      if (s.classroom_id) studentToClassroom.set(s.id, s.classroom_id);
+    }
+    const counts = new Map<string, Counts>();
+    for (const row of todayRows) {
+      if (row.service_point_id !== hqId) continue;
+      const cid = studentToClassroom.get(row.student_id);
+      if (!cid) continue;
+      const c = counts.get(cid) ?? { in: 0, out: 0, forgot: 0 };
+      if (row.check_in) c.in++;
+      if (row.check_out) c.out++;
+      if (row.check_in && !row.check_out) c.forgot++;
+      counts.set(cid, c);
+    }
+    return classrooms
+      .filter((cl) => cl.service_point_id === hqId)
+      .map((cl) => ({
+        id: cl.id,
+        name: cl.name,
+        ...(counts.get(cl.id) ?? { in: 0, out: 0, forgot: 0 }),
+      }));
+  }, [hqId, classrooms, students, todayRows]);
 
   const statCards = [
     {
@@ -318,6 +372,50 @@ const StudentAttendanceWidget: React.FC = () => {
             </div>
           )}
         </div>
+
+        {hqId && byClassroom.length > 0 && (
+          <div className="rounded-lg border border-border p-3">
+            <div className="flex items-center gap-2 mb-3">
+              <School className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">
+                ห้องเรียน — ศูนย์ฯ หลัก ({byClassroom.length})
+              </h3>
+            </div>
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {byClassroom.map((cl) => (
+                  <div
+                    key={cl.id}
+                    className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40"
+                  >
+                    <span className="text-sm text-foreground truncate" title={cl.name}>
+                      {cl.name}
+                    </span>
+                    <div className="flex items-center gap-3 text-xs font-medium shrink-0 tabular-nums">
+                      <span className="text-green-600 dark:text-green-400" title="รับเข้า">
+                        รับ {cl.in}
+                      </span>
+                      <span className="text-amber-600 dark:text-amber-400" title="ส่งกลับ">
+                        ส่ง {cl.out}
+                      </span>
+                      {cl.forgot > 0 && (
+                        <span className="text-rose-600 dark:text-rose-400" title="ค้างส่ง">
+                          ค้าง {cl.forgot}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

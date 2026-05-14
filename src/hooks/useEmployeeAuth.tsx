@@ -1,9 +1,24 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/database';
-import { signIn, signOut, getCurrentProfile, isAuthenticated, refreshProfile, sendOTP, getSessionTimeRemaining } from '@/services/authService';
+import {
+  signIn,
+  signOut,
+  getCurrentProfile,
+  isAuthenticated,
+  refreshProfile,
+  sendOTP,
+  getSessionTimeRemaining,
+} from '@/services/authService';
 import { getStoredAuthData, clearAuthStorage } from '@/services/auth/storage';
 import { validateSession, getCurrentSessionToken } from '@/services/sessionService';
 import { getPermissions } from '@/utils/permissionUtils';
@@ -21,7 +36,26 @@ function clearSupabaseSession() {
   }
 }
 
-export const useEmployeeAuth = () => {
+interface EmployeeAuthContextValue {
+  profile: Profile | null;
+  user: User | null;
+  loading: boolean;
+  isAuthenticated: boolean;
+  signIn: (phone: string, otp: string) => ReturnType<typeof signIn>;
+  sendOTP: (phone: string, telegramChatId?: string) => ReturnType<typeof sendOTP>;
+  signOut: () => ReturnType<typeof signOut>;
+  refreshProfile: () => Promise<Profile | null>;
+  getPermissions: () => ReturnType<typeof getPermissions>;
+  getSessionTimeRemaining: typeof getSessionTimeRemaining;
+}
+
+const EmployeeAuthContext = createContext<EmployeeAuthContextValue | null>(null);
+
+// EmployeeAuthProvider — singleton ของ auth state ทั้งแอป
+// ก่อนหน้านี้ useEmployeeAuth เป็น hook ธรรมดา ทำให้ทุก component ที่เรียกสร้าง
+// state + setInterval + onAuthStateChange ของตัวเอง (48 instances → self-DDoS)
+// ตอนนี้ย้าย logic ทั้งหมดมาไว้ที่นี่ Provider เดียว ทำงาน 1 instance/แอป
+export const EmployeeAuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,18 +85,20 @@ export const useEmployeeAuth = () => {
 
     const sessionToken = getCurrentSessionToken();
     if (sessionToken) {
-      validateSession(sessionToken).then(({ valid, reason }) => {
-        if (!valid && (reason === 'invalidated' || reason === 'expired')) {
-          clearAuthStorage();
-          setUser(null);
-          setIsAuth(false);
-          setProfile(null);
-          clearSupabaseSession();
-          window.location.reload();
-        }
-      }).catch(() => {
-        // ไม่ kick ออกถ้า network error
-      });
+      validateSession(sessionToken)
+        .then(({ valid, reason }) => {
+          if (!valid && (reason === 'invalidated' || reason === 'expired')) {
+            clearAuthStorage();
+            setUser(null);
+            setIsAuth(false);
+            setProfile(null);
+            clearSupabaseSession();
+            window.location.reload();
+          }
+        })
+        .catch(() => {
+          // ไม่ kick ออกถ้า network error
+        });
     }
   }, []);
 
@@ -94,114 +130,114 @@ export const useEmployeeAuth = () => {
     let isMounted = true;
 
     // Set up Supabase Auth state listener เป็นหลัก
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!isMounted) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
 
-        if (session?.user) {
-          // ตรวจสอบ 8-hour session limit ก่อน
-          // ⚠️ ข้าม enforcement ถ้ากำลังลงนามอยู่ เพื่อป้องกัน signOut ระหว่างลงนาม
-          const isSigningInProgress = !!(window as any).__signingInProgress;
-          const storedAuth = getStoredAuthData();
-          if (storedAuth) {
-            const currentTime = new Date().getTime();
-            if (currentTime > storedAuth.expirationTime) {
-              if (isSigningInProgress) {
-                // กำลังลงนามอยู่ → ข้ามการบังคับ signOut ไว้ก่อน
-              } else {
-                // Session 8 ชม. หมดอายุแล้ว → บังคับ sign out (local only เพื่อป้องกัน 403 loop)
-                clearAuthStorage();
-                setUser(null);
-                setIsAuth(false);
-                setProfile(null);
-                setLoading(false);
-                // Defer signOut เพื่อไม่ให้ขัดกับ onAuthStateChange
-                clearSupabaseSession();
-                return;
-              }
-            }
-          } else if (event !== 'SIGNED_IN') {
+      if (session?.user) {
+        // ตรวจสอบ 8-hour session limit ก่อน
+        // ⚠️ ข้าม enforcement ถ้ากำลังลงนามอยู่ เพื่อป้องกัน signOut ระหว่างลงนาม
+        const isSigningInProgress = !!(window as any).__signingInProgress;
+        const storedAuth = getStoredAuthData();
+        if (storedAuth) {
+          const currentTime = new Date().getTime();
+          if (currentTime > storedAuth.expirationTime) {
             if (isSigningInProgress) {
+              // กำลังลงนามอยู่ → ข้ามการบังคับ signOut ไว้ก่อน
             } else {
-              // ไม่มี auth data แต่มี Supabase session (อาจถูกเคลียร์ไปแล้วเพราะหมดอายุ)
-              // ใช้ scope: 'local' เพื่อเคลียร์ session ใน browser เท่านั้น
-              // ไม่ call server (ป้องกัน 403 ถ้า session หมดอายุแล้ว → วนลูป)
+              // Session 8 ชม. หมดอายุแล้ว → บังคับ sign out (local only เพื่อป้องกัน 403 loop)
+              clearAuthStorage();
               setUser(null);
               setIsAuth(false);
               setProfile(null);
               setLoading(false);
+              // Defer signOut เพื่อไม่ให้ขัดกับ onAuthStateChange
               clearSupabaseSession();
               return;
             }
           }
+        } else if (event !== 'SIGNED_IN') {
+          if (isSigningInProgress) {
+            // กำลังลงนามอยู่ → ข้ามการ clear
+          } else {
+            // ไม่มี auth data แต่มี Supabase session (อาจถูกเคลียร์ไปแล้วเพราะหมดอายุ)
+            // ใช้ scope: 'local' เพื่อเคลียร์ session ใน browser เท่านั้น
+            // ไม่ call server (ป้องกัน 403 ถ้า session หมดอายุแล้ว → วนลูป)
+            setUser(null);
+            setIsAuth(false);
+            setProfile(null);
+            setLoading(false);
+            clearSupabaseSession();
+            return;
+          }
+        }
 
-          setUser(session.user);
-          setIsAuth(true);
-          setLoading(false); // Reset loading when authenticated
+        setUser(session.user);
+        setIsAuth(true);
+        setLoading(false); // Reset loading when authenticated
 
-          // Fetch profile using user_metadata phone or user_id (non-blocking)
-          if (session.user.user_metadata?.phone) {
-            // Don't await - make it non-blocking
-            refreshProfile(session.user.user_metadata.phone).then(profileData => {
+        // Fetch profile using user_metadata phone or user_id (non-blocking)
+        if (session.user.user_metadata?.phone) {
+          // Don't await - make it non-blocking
+          refreshProfile(session.user.user_metadata.phone)
+            .then((profileData) => {
               if (isMounted && profileData) {
                 setProfile(profileData);
               }
-            }).catch(error => {
+            })
+            .catch((error) => {
               console.error('Failed to load profile from Supabase user:', error);
             });
-          } else if (session.user.id) {
-            // ผู้ใช้ใหม่ไม่มี phone ใน user_metadata
-            // โหลด profile จาก localStorage ก่อน (ทันที) แล้วค่อย refresh จาก DB ทีหลัง
-            const cachedProfile = getCurrentProfile();
-            if (cachedProfile && isMounted) {
-              setProfile(cachedProfile);
-            }
-
-            // Refresh จาก DB แบบ non-blocking (ไม่ await เพราะอาจ deadlock กับ Supabase internal lock)
-            supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .maybeSingle()
-              .then(({ data: profileData }) => {
-                if (profileData && isMounted) {
-                  const dbProfile = {
-                    ...profileData,
-                    marital_status: profileData.marital_status as Profile['marital_status'],
-                    position: profileData.position as Profile['position']
-                  } as Profile;
-                  setProfile(dbProfile);
-                }
-              })
-              .catch(error => {
-                console.error('Failed to load profile by user_id:', error);
-              });
+        } else if (session.user.id) {
+          // ผู้ใช้ใหม่ไม่มี phone ใน user_metadata
+          // โหลด profile จาก localStorage ก่อน (ทันที) แล้วค่อย refresh จาก DB ทีหลัง
+          const cachedProfile = getCurrentProfile();
+          if (cachedProfile && isMounted) {
+            setProfile(cachedProfile);
           }
-        } else {
-          // No Supabase session
-          setUser(null);
 
-          // ตรวจสอบระบบเดิมเป็น fallback เท่านั้น (ไม่ใช้ session monitoring)
-          const authStatus = isAuthenticated();
-          const currentProfile = getCurrentProfile();
-
-          if (authStatus && currentProfile) {
-            setIsAuth(true);
-            setProfile(currentProfile);
-          } else {
-            setIsAuth(false);
-            setProfile(null);
-          }
+          // Refresh จาก DB แบบ non-blocking (ไม่ await เพราะอาจ deadlock กับ Supabase internal lock)
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle()
+            .then(({ data: profileData }) => {
+              if (profileData && isMounted) {
+                const dbProfile = {
+                  ...profileData,
+                  marital_status: profileData.marital_status as Profile['marital_status'],
+                  position: profileData.position as Profile['position'],
+                } as Profile;
+                setProfile(dbProfile);
+              }
+            });
         }
+      } else {
+        // No Supabase session
+        setUser(null);
 
-        if (isMounted) {
-          setLoading(false);
+        // ตรวจสอบระบบเดิมเป็น fallback เท่านั้น (ไม่ใช้ session monitoring)
+        const authStatus = isAuthenticated();
+        const currentProfile = getCurrentProfile();
+
+        if (authStatus && currentProfile) {
+          setIsAuth(true);
+          setProfile(currentProfile);
+        } else {
+          setIsAuth(false);
+          setProfile(null);
         }
       }
-    );
+
+      if (isMounted) {
+        setLoading(false);
+      }
+    });
 
     // Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(() => {
       if (isMounted) {
         // Always set loading to false after checking session
         setLoading(false);
@@ -237,7 +273,7 @@ export const useEmployeeAuth = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [checkSessionHealth]);
+  }, [checkSessionHealth, checkSessionFromDB]);
 
   // ตรวจ DB session ทุก 60 วินาที เพื่อให้ kill session จากเครื่องอื่นทำงานได้
   // แยกจาก visibility/focus เพราะอันนี้ต้องใช้ network
@@ -249,7 +285,7 @@ export const useEmployeeAuth = () => {
     return () => clearInterval(interval);
   }, [checkSessionFromDB]);
 
-  const handleSendOTP = async (phone: string, telegramChatId?: string) => {
+  const handleSendOTP = useCallback(async (phone: string, telegramChatId?: string) => {
     try {
       setLoading(true);
       const result = await sendOTP(phone, telegramChatId);
@@ -260,18 +296,18 @@ export const useEmployeeAuth = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleSignIn = async (phone: string, otp: string) => {
+  const handleSignIn = useCallback(async (phone: string, otp: string) => {
     try {
       setLoading(true);
       const result = await signIn(phone, otp);
-      
+
       if (!result.error && result.profile) {
         setProfile(result.profile);
         setIsAuth(true);
       }
-      
+
       return result;
     } catch (err) {
       console.error('Sign in error:', err);
@@ -279,9 +315,9 @@ export const useEmployeeAuth = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
       // Clear states FIRST to prevent race conditions
       setProfile(null);
@@ -289,18 +325,18 @@ export const useEmployeeAuth = () => {
 
       // Then call the actual sign out
       const result = await signOut();
-      
+
       return result;
     } catch (err) {
       console.error('Sign out error in hook:', err);
       // States are already cleared above
       return { error: err as Error };
     }
-  };
+  }, []);
 
-  const handleRefreshProfile = async () => {
+  const handleRefreshProfile = useCallback(async () => {
     if (!profile || !profile.phone) return null;
-    
+
     try {
       const refreshedProfile = await refreshProfile(profile.phone);
       if (refreshedProfile) {
@@ -312,18 +348,33 @@ export const useEmployeeAuth = () => {
       console.error('Error refreshing profile:', err);
       return null;
     }
-  };
+  }, [profile]);
 
-  return {
-    profile,
-    user,
-    loading,
-    isAuthenticated: isAuth || !!user, // ถือว่า authenticated ถ้ามี Supabase user หรือ legacy auth
-    signIn: handleSignIn,
-    sendOTP: handleSendOTP,
-    signOut: handleSignOut,
-    refreshProfile: handleRefreshProfile,
-    getPermissions: () => getPermissions(profile),
-    getSessionTimeRemaining,
-  };
+  const value = useMemo<EmployeeAuthContextValue>(
+    () => ({
+      profile,
+      user,
+      loading,
+      isAuthenticated: isAuth || !!user, // ถือว่า authenticated ถ้ามี Supabase user หรือ legacy auth
+      signIn: handleSignIn,
+      sendOTP: handleSendOTP,
+      signOut: handleSignOut,
+      refreshProfile: handleRefreshProfile,
+      getPermissions: () => getPermissions(profile),
+      getSessionTimeRemaining,
+    }),
+    [profile, user, loading, isAuth, handleSignIn, handleSendOTP, handleSignOut, handleRefreshProfile],
+  );
+
+  return <EmployeeAuthContext.Provider value={value}>{children}</EmployeeAuthContext.Provider>;
+};
+
+// Public hook — อ่านค่าจาก Provider ที่ครอบ root อยู่
+// ทุก call site (~48 จุด) ใช้เหมือนเดิม แต่ไม่สร้าง side effect ของตัวเอง
+export const useEmployeeAuth = (): EmployeeAuthContextValue => {
+  const ctx = useContext(EmployeeAuthContext);
+  if (!ctx) {
+    throw new Error('useEmployeeAuth must be used within <EmployeeAuthProvider>');
+  }
+  return ctx;
 };

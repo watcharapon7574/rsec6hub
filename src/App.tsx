@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Particles } from "@/components/ui/particles";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useLayoutEffect } from "react";
-import { useEmployeeAuth } from "@/hooks/useEmployeeAuth";
+import { useEmployeeAuth, EmployeeAuthProvider } from "@/hooks/useEmployeeAuth";
 import TopBar from "@/components/Layout/TopBar";
 import FloatingNavbar from "@/components/Layout/FloatingNavbar";
 import PullToRefresh from "@/components/PWA/PullToRefresh";
@@ -15,6 +15,7 @@ import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
 import Profile from "@/pages/Profile";
 import LeaveRequestsPage from "@/pages/LeaveRequestsPage";
+import NewLeaveRequestPage from "@/pages/NewLeaveRequestPage";
 import NewsfeedPage from "@/pages/NewsfeedPage";
 import ReportPage from "@/pages/ReportPage";
 import OfficialDocumentsPage from "@/pages/OfficialDocumentsPage";
@@ -166,6 +167,11 @@ const AppContent = () => {
         </ProtectedRouteWithAuth>
       } />
       <Route path="/leave-requests" element={<Navigate to="/attendance" replace />} />
+      <Route path="/leave/new" element={
+        <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
+          <NewLeaveRequestPage />
+        </ProtectedRouteWithAuth>
+      } />
       <Route path="/newsfeed" element={
         <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
           <NewsfeedPage />
@@ -338,9 +344,11 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppContent />
-          <InstallPrompt />
-          <LoadingQueue />
+          <EmployeeAuthProvider>
+            <AppContent />
+            <InstallPrompt />
+            <LoadingQueue />
+          </EmployeeAuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

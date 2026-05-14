@@ -329,50 +329,6 @@ const StudentAttendanceWidget: React.FC = () => {
           )}
         </div>
 
-        <div className="rounded-lg border border-border p-3">
-          <div className="flex items-center gap-2 mb-3">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">
-              ตามหน่วยบริการ ({servicePoints.length})
-            </h3>
-          </div>
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-12" />
-              ))}
-            </div>
-          ) : byServicePoint.length === 0 ? (
-            <p className="text-sm text-muted-foreground">ยังไม่มีข้อมูลหน่วยบริการ</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {byServicePoint.map((sp) => (
-                <div
-                  key={sp.id}
-                  className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40"
-                >
-                  <span className="text-sm text-foreground truncate" title={sp.name}>
-                    {sp.name}
-                  </span>
-                  <div className="flex items-center gap-3 text-xs font-medium shrink-0 tabular-nums">
-                    <span className="text-green-600 dark:text-green-400" title="รับเข้า">
-                      รับ {sp.in}
-                    </span>
-                    <span className="text-amber-600 dark:text-amber-400" title="ส่งกลับ">
-                      ส่ง {sp.out}
-                    </span>
-                    {sp.forgot > 0 && (
-                      <span className="text-rose-600 dark:text-rose-400" title="ค้างส่ง">
-                        ค้าง {sp.forgot}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {hqId && byClassroom.length > 0 && (
           <div className="rounded-lg border border-border p-3">
             <div className="flex items-center gap-2 mb-3">
@@ -416,6 +372,50 @@ const StudentAttendanceWidget: React.FC = () => {
             )}
           </div>
         )}
+
+        <div className="rounded-lg border border-border p-3">
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">
+              ตามหน่วยบริการ ({servicePoints.length})
+            </h3>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-12" />
+              ))}
+            </div>
+          ) : byServicePoint.length === 0 ? (
+            <p className="text-sm text-muted-foreground">ยังไม่มีข้อมูลหน่วยบริการ</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {byServicePoint.map((sp) => (
+                <div
+                  key={sp.id}
+                  className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40"
+                >
+                  <span className="text-sm text-foreground truncate" title={sp.name}>
+                    {sp.name}
+                  </span>
+                  <div className="flex items-center gap-3 text-xs font-medium shrink-0 tabular-nums">
+                    <span className="text-green-600 dark:text-green-400" title="รับเข้า">
+                      รับ {sp.in}
+                    </span>
+                    <span className="text-amber-600 dark:text-amber-400" title="ส่งกลับ">
+                      ส่ง {sp.out}
+                    </span>
+                    {sp.forgot > 0 && (
+                      <span className="text-rose-600 dark:text-rose-400" title="ค้างส่ง">
+                        ค้าง {sp.forgot}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

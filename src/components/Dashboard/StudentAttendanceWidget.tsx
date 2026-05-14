@@ -158,7 +158,7 @@ const StudentAttendanceWidget: React.FC = () => {
     }
     return servicePoints.map((sp) => ({
       id: sp.id,
-      name: sp.short_name || sp.name,
+      name: sp.name || sp.short_name || '',
       ...(map.get(sp.id) ?? { in: 0, out: 0, forgot: 0 }),
     }));
   }, [todayRows, servicePoints]);

@@ -67,6 +67,46 @@ interface StudentLite {
   classroom_id: string | null;
 }
 
+interface AttendanceRowProps {
+  name: string;
+  count: number;
+  out: number;
+  forgot: number;
+}
+
+// Visual hierarchy: name + big "X คน" total up top so the eye lands on the
+// headline number first; รับ/ส่ง/ค้าง breakdown sits underneath for detail.
+const AttendanceLine: React.FC<AttendanceRowProps> = ({ name, count, out, forgot }) => (
+  <div className="p-3 rounded-md bg-muted/40">
+    <div className="flex items-center justify-between gap-3 mb-1">
+      <span className="text-sm font-medium text-foreground truncate" title={name}>
+        {name}
+      </span>
+      <div className="flex items-baseline gap-1 shrink-0">
+        <span
+          className={`text-xl font-bold tabular-nums leading-none ${
+            count > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
+          }`}
+        >
+          {count}
+        </span>
+        <span className="text-xs text-muted-foreground">คน</span>
+      </div>
+    </div>
+    <div className="flex items-center gap-3 text-[11px] font-medium tabular-nums">
+      <span className={count > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground/70'}>
+        รับ {count}
+      </span>
+      <span className={out > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground/70'}>
+        ส่ง {out}
+      </span>
+      <span className={forgot > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-muted-foreground/70'}>
+        ค้าง {forgot}
+      </span>
+    </div>
+  </div>
+);
+
 const StudentAttendanceWidget: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [todayStr, setTodayStr] = useState(() => bangkokDateStr());
@@ -340,33 +380,19 @@ const StudentAttendanceWidget: React.FC = () => {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12" />
+                  <Skeleton key={i} className="h-16" />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {byClassroom.map((cl) => (
-                  <div
+                  <AttendanceLine
                     key={cl.id}
-                    className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40"
-                  >
-                    <span className="text-sm text-foreground truncate" title={cl.name}>
-                      {cl.name}
-                    </span>
-                    <div className="flex items-center gap-3 text-xs font-medium shrink-0 tabular-nums">
-                      <span className="text-green-600 dark:text-green-400" title="รับเข้า">
-                        รับ {cl.in}
-                      </span>
-                      <span className="text-amber-600 dark:text-amber-400" title="ส่งกลับ">
-                        ส่ง {cl.out}
-                      </span>
-                      {cl.forgot > 0 && (
-                        <span className="text-rose-600 dark:text-rose-400" title="ค้างส่ง">
-                          ค้าง {cl.forgot}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    name={cl.name}
+                    count={cl.in}
+                    out={cl.out}
+                    forgot={cl.forgot}
+                  />
                 ))}
               </div>
             )}
@@ -383,7 +409,7 @@ const StudentAttendanceWidget: React.FC = () => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-12" />
+                <Skeleton key={i} className="h-16" />
               ))}
             </div>
           ) : byServicePoint.length === 0 ? (
@@ -391,27 +417,13 @@ const StudentAttendanceWidget: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {byServicePoint.map((sp) => (
-                <div
+                <AttendanceLine
                   key={sp.id}
-                  className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40"
-                >
-                  <span className="text-sm text-foreground truncate" title={sp.name}>
-                    {sp.name}
-                  </span>
-                  <div className="flex items-center gap-3 text-xs font-medium shrink-0 tabular-nums">
-                    <span className="text-green-600 dark:text-green-400" title="รับเข้า">
-                      รับ {sp.in}
-                    </span>
-                    <span className="text-amber-600 dark:text-amber-400" title="ส่งกลับ">
-                      ส่ง {sp.out}
-                    </span>
-                    {sp.forgot > 0 && (
-                      <span className="text-rose-600 dark:text-rose-400" title="ค้างส่ง">
-                        ค้าง {sp.forgot}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                  name={sp.name}
+                  count={sp.in}
+                  out={sp.out}
+                  forgot={sp.forgot}
+                />
               ))}
             </div>
           )}

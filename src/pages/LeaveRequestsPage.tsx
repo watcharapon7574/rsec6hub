@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +53,65 @@ import {
   LogOut,
   UserCheck,
   Users,
+  ShieldCheck,
+  Download,
+  CheckCircle2,
+  XCircle,
+  Stethoscope,
+  Briefcase,
+  Palmtree,
+  Baby,
+  Heart,
+  Flower,
+  Shield,
+  GraduationCap,
+  Globe,
+  HeartPulse,
+  LayoutDashboard,
+  TrendingUp,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  X,
+  Paperclip,
+  Upload,
+  ExternalLink,
+  Eye,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  getLeaveSteps,
+  isAttachmentRequired,
+  LEAVE_STATUS_COLORS,
+  LEAVE_STATUS_LABELS,
+  LEAVE_TYPE_ATTACHMENTS,
+  LEAVE_TYPE_LABELS,
+  LEAVE_TYPE_ORDER,
+  LeaveBalance,
+  LeaveRequest,
+  LeaveStepState,
+  LeaveType,
+} from '@/types/leave';
+import {
+  calculateLeaveDays,
+  formatFiscalPeriod,
+  getFiscalPeriod,
+} from '@/utils/fiscalYear';
+import {
+  approveLeave,
+  ApproverContext,
+  createLeaveRequest,
+  generateLeavePdf,
+  getLeavesInRange,
+  getMyBalance,
+  getMyRequests,
+  getOverviewStats,
+  getPendingApprovalsByRoles,
+  LeaveOverviewStats,
+  rejectLeave,
+} from '@/services/leaveService';
+import { getPermissions } from '@/utils/permissionUtils';
 
 type TeacherAttendance = {
   id: string;
@@ -510,195 +569,1065 @@ const AttendanceTab: React.FC<{ profile: { id: string; position?: string } }> = 
   );
 };
 
-// ───────────────── Tab 2: ขอลา (mock เดิม) ─────────────────
-const LeaveTab: React.FC = () => {
+// ───────────────── Tab 2: ขอลา ─────────────────
+// theme ตาม StatisticsCards: icon pill + ตัวเลขใหญ่ + label หนา
+const LEAVE_TYPE_THEME: Record<
+  LeaveType,
+  { icon: LucideIcon; pill: string; text: string }
+> = {
+  sick_leave: {
+    icon: Stethoscope,
+    pill: 'bg-red-100 dark:bg-red-900',
+    text: 'text-red-600 dark:text-red-400',
+  },
+  personal_leave: {
+    icon: Briefcase,
+    pill: 'bg-blue-100 dark:bg-blue-900',
+    text: 'text-blue-600 dark:text-blue-400',
+  },
+  annual_leave: {
+    icon: Palmtree,
+    pill: 'bg-green-100 dark:bg-green-900',
+    text: 'text-green-600 dark:text-green-400',
+  },
+  maternity_leave: {
+    icon: Baby,
+    pill: 'bg-pink-100 dark:bg-pink-900',
+    text: 'text-pink-600 dark:text-pink-400',
+  },
+  paternity_leave: {
+    icon: Heart,
+    pill: 'bg-rose-100 dark:bg-rose-900',
+    text: 'text-rose-600 dark:text-rose-400',
+  },
+  ordination_leave: {
+    icon: Flower,
+    pill: 'bg-amber-100 dark:bg-amber-900',
+    text: 'text-amber-600 dark:text-amber-400',
+  },
+  military_leave: {
+    icon: Shield,
+    pill: 'bg-slate-100 dark:bg-slate-800',
+    text: 'text-slate-600 dark:text-slate-300',
+  },
+  study_leave: {
+    icon: GraduationCap,
+    pill: 'bg-indigo-100 dark:bg-indigo-900',
+    text: 'text-indigo-600 dark:text-indigo-400',
+  },
+  international_org_leave: {
+    icon: Globe,
+    pill: 'bg-purple-100 dark:bg-purple-900',
+    text: 'text-purple-600 dark:text-purple-400',
+  },
+  spouse_follow_leave: {
+    icon: Users,
+    pill: 'bg-teal-100 dark:bg-teal-900',
+    text: 'text-teal-600 dark:text-teal-400',
+  },
+  rehabilitation_leave: {
+    icon: HeartPulse,
+    pill: 'bg-orange-100 dark:bg-orange-900',
+    text: 'text-orange-600 dark:text-orange-400',
+  },
+};
+
+// ───────────────── Stepper: หน.บุคคล → ผอ → อนุมัติ ─────────────────
+const STEP_CLASS: Record<LeaveStepState, string> = {
+  done: 'bg-green-500 text-white border-green-500',
+  current: 'bg-blue-500 text-white border-blue-500 animate-pulse',
+  pending: 'bg-muted text-muted-foreground border-border',
+  rejected: 'bg-red-500 text-white border-red-500',
+};
+
+const STEP_CONNECTOR_CLASS: Record<LeaveStepState, string> = {
+  done: 'bg-green-500',
+  current: 'bg-gradient-to-r from-green-500 to-border',
+  pending: 'bg-border',
+  rejected: 'bg-red-500',
+};
+
+const LeaveProgress: React.FC<{
+  req: LeaveRequest;
+  showLabels?: boolean;
+}> = ({ req, showLabels = true }) => {
+  const steps = getLeaveSteps(req);
+  const items: Array<{ state: LeaveStepState; label: string }> = [
+    { state: 'done', label: 'ส่งคำขอ' },
+    { state: steps.step1, label: 'หน.บุคคล' },
+    { state: steps.step2, label: 'ผอ.' },
+    { state: steps.step3, label: 'อนุมัติ' },
+  ];
+
+  return (
+    <div className={`flex items-center ${showLabels ? 'gap-1' : 'gap-0.5'}`}>
+      {items.map((item, i) => (
+        <React.Fragment key={i}>
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className={`${
+                showLabels ? 'w-7 h-7' : 'w-5 h-5'
+              } rounded-full border-2 flex items-center justify-center transition-colors ${STEP_CLASS[item.state]}`}
+            >
+              {item.state === 'done' && (
+                <Check className={showLabels ? 'h-4 w-4' : 'h-3 w-3'} />
+              )}
+              {item.state === 'rejected' && (
+                <X className={showLabels ? 'h-4 w-4' : 'h-3 w-3'} />
+              )}
+              {item.state === 'current' && (
+                <Clock className={showLabels ? 'h-4 w-4' : 'h-3 w-3'} />
+              )}
+              {item.state === 'pending' && (
+                <span
+                  className={`rounded-full bg-current ${
+                    showLabels ? 'w-1.5 h-1.5' : 'w-1 h-1'
+                  } opacity-60`}
+                />
+              )}
+            </div>
+            {showLabels && (
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                {item.label}
+              </span>
+            )}
+          </div>
+          {i < items.length - 1 && (
+            <div
+              className={`h-0.5 flex-1 min-w-[12px] ${
+                showLabels ? '-mt-4' : ''
+              } ${STEP_CONNECTOR_CLASS[item.state]}`}
+            />
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
+
+// ───────────────── Leave Detail Dialog ─────────────────
+const LeaveDetailDialog: React.FC<{
+  request: LeaveRequest | null;
+  onClose: () => void;
+  approver?: ApproverContext | null;
+  canApprove?: boolean;
+  onChanged?: () => void;
+}> = ({ request, onClose, approver, canApprove, onChanged }) => {
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    leave_type: '',
-    start_date: '',
-    end_date: '',
-    reason: '',
-  });
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const [leaveRequests, setLeaveRequests] = useState([
-    {
-      id: '1',
-      leave_type: 'sick_leave',
-      start_date: '2025-01-15',
-      end_date: '2025-01-16',
-      days_count: 2,
-      reason: 'ป่วยเป็นไข้',
-      status: 'pending',
-      created_at: '2025-01-10',
-    },
-    {
-      id: '2',
-      leave_type: 'personal_leave',
-      start_date: '2025-01-20',
-      end_date: '2025-01-20',
-      days_count: 1,
-      reason: 'ธุระส่วนตัว',
-      status: 'approved',
-      created_at: '2025-01-05',
-    },
-  ]);
+  useEffect(() => {
+    if (!request) {
+      setRejecting(false);
+      setRejectReason('');
+    }
+  }, [request]);
 
-  const leaveTypeLabels: Record<string, string> = {
-    sick_leave: 'ลาป่วย',
-    personal_leave: 'ลากิจ',
-    annual_leave: 'ลาพักผ่อน',
-    maternity_leave: 'ลาคลอด',
-    ordination_leave: 'ลาบวช',
+  if (!request) return null;
+
+  const theme = LEAVE_TYPE_THEME[request.leave_type];
+  const Icon = theme.icon;
+  const attachmentCfg = LEAVE_TYPE_ATTACHMENTS[request.leave_type];
+
+  const handleApprove = async () => {
+    if (!approver) return;
+    setBusy(true);
+    try {
+      await approveLeave(request.id, approver);
+      toast({ title: 'อนุมัติแล้ว' });
+      onChanged?.();
+      onClose();
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const statusLabels: Record<string, string> = {
-    pending: 'รอพิจารณา',
-    approved: 'อนุมัติ',
-    rejected: 'ไม่อนุมัติ',
-    in_progress: 'กำลังพิจารณา',
-  };
-
-  const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
-    approved: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
-    rejected: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
-    in_progress: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
-  };
-
-  const calculateDays = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const timeDiff = end.getTime() - start.getTime();
-    return Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (
-      !formData.leave_type ||
-      !formData.start_date ||
-      !formData.end_date ||
-      !formData.reason
-    ) {
-      toast({ title: 'กรุณากรอกข้อมูลให้ครบถ้วน', variant: 'destructive' });
+  const handleReject = async () => {
+    if (!approver || !rejectReason.trim()) {
+      toast({ title: 'กรุณากรอกเหตุผล', variant: 'destructive' });
       return;
     }
-    const days = calculateDays(formData.start_date, formData.end_date);
-    const newRequest = {
-      id: (leaveRequests.length + 1).toString(),
-      ...formData,
-      days_count: days,
-      status: 'pending' as const,
-      created_at: new Date().toISOString().split('T')[0],
+    setBusy(true);
+    try {
+      await rejectLeave(request.id, approver, rejectReason);
+      toast({ title: 'ปฏิเสธแล้ว' });
+      onChanged?.();
+      onClose();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const attachments = request.form_data?.attachments ?? [];
+
+  return (
+    <Dialog open={!!request} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-start gap-3">
+            <div className={`p-2.5 rounded-xl ${theme.pill} flex-shrink-0`}>
+              <Icon className={`h-6 w-6 ${theme.text}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-base font-bold">
+                {LEAVE_TYPE_LABELS[request.leave_type]}
+              </div>
+              <div className="text-xs text-muted-foreground font-normal mt-0.5">
+                {request.user_name} · {request.user_position}
+              </div>
+              <div className="mt-1.5">
+                <Badge className={LEAVE_STATUS_COLORS[request.status]}>
+                  {LEAVE_STATUS_LABELS[request.status]}
+                </Badge>
+              </div>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="rounded-xl border bg-muted/30 p-4">
+            <div className="text-xs font-semibold text-muted-foreground mb-3">
+              สถานะการลงนาม
+            </div>
+            <LeaveProgress req={request} showLabels />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <div className="text-xs text-muted-foreground">วันที่เริ่มลา</div>
+              <div className="font-medium">
+                {new Date(request.start_date).toLocaleDateString('th-TH', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">วันที่สิ้นสุด</div>
+              <div className="font-medium">
+                {new Date(request.end_date).toLocaleDateString('th-TH', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">จำนวนวัน</div>
+              <div className="font-medium">{request.days_count} วัน</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">ปีงบประมาณ</div>
+              <div className="font-medium">
+                {request.fiscal_year} (ครึ่งที่ {request.fiscal_half})
+              </div>
+            </div>
+            {request.form_data?.contact_phone && (
+              <div className="col-span-2">
+                <div className="text-xs text-muted-foreground">
+                  เบอร์ติดต่อระหว่างลา
+                </div>
+                <div className="font-medium">
+                  {request.form_data.contact_phone}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">
+              เหตุผลการลา
+            </div>
+            <div className="rounded-lg border bg-muted/20 p-3 text-sm whitespace-pre-wrap">
+              {request.reason}
+            </div>
+          </div>
+
+          {attachmentCfg.required !== 'never' && (
+            <div>
+              <div className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+                <Paperclip className="h-3 w-3" />
+                เอกสารแนบ ({attachmentCfg.label})
+              </div>
+              {attachments.length === 0 ? (
+                <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
+                  ยังไม่มีเอกสารแนบ
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {attachments.map((name, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() =>
+                        toast({
+                          title: 'เปิดเอกสาร (mock)',
+                          description: name,
+                        })
+                      }
+                      className="w-full flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                    >
+                      <Paperclip className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      <span className="flex-1 text-left truncate">{name}</span>
+                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {request.signatures.length > 0 && (
+            <div>
+              <div className="text-xs text-muted-foreground mb-1.5">
+                ประวัติการลงนาม
+              </div>
+              <div className="space-y-2">
+                {request.signatures
+                  .slice()
+                  .sort((a, b) => a.order - b.order)
+                  .map((sig, i) => (
+                    <div
+                      key={i}
+                      className={`rounded-lg border p-2.5 ${
+                        sig.status === 'rejected'
+                          ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900'
+                          : 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 text-sm">
+                          {sig.status === 'rejected' ? (
+                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          )}
+                          <span className="font-medium">{sig.signer_name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({sig.signer_role === 'hr_head' ? 'หน.บุคคล' : 'ผอ.'})
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(sig.signed_at).toLocaleString('th-TH', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
+                        </div>
+                      </div>
+                      {sig.comment && (
+                        <div className="mt-1.5 text-xs text-muted-foreground italic">
+                          "{sig.comment}"
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {request.rejection_reason && (
+            <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 p-3">
+              <div className="text-xs text-red-700 dark:text-red-300 font-semibold mb-1">
+                เหตุผลที่ไม่อนุมัติ
+              </div>
+              <div className="text-sm text-red-700 dark:text-red-300">
+                {request.rejection_reason}
+              </div>
+            </div>
+          )}
+
+          {request.status === 'approved' && (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                generateLeavePdf(request);
+                toast({
+                  title: 'กำลังสร้าง PDF',
+                  description: '(mock) ระบบจะ download ใบลาเมื่อ template พร้อม',
+                });
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" /> โหลดใบลา PDF
+            </Button>
+          )}
+
+          {canApprove && approver && (
+            <>
+              {!rejecting ? (
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  <Button
+                    variant="destructive"
+                    onClick={() => setRejecting(true)}
+                    disabled={busy}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" /> ปฏิเสธ
+                  </Button>
+                  <Button onClick={handleApprove} disabled={busy}>
+                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                    {busy ? 'กำลังบันทึก...' : 'อนุมัติ'}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2 rounded-lg border border-red-200 bg-red-50/40 dark:bg-red-950/30 p-3">
+                  <Label className="text-red-700 dark:text-red-300 text-sm">
+                    เหตุผลที่ไม่อนุมัติ
+                  </Label>
+                  <Textarea
+                    rows={3}
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="ระบุเหตุผลเพื่อแจ้งผู้ขอลา..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRejecting(false)}
+                      disabled={busy}
+                    >
+                      ยกเลิก
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleReject}
+                      disabled={busy}
+                    >
+                      {busy ? 'กำลังบันทึก...' : 'ยืนยันปฏิเสธ'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+type LeaveProfile = {
+  id: string;
+  prefix?: string | null;
+  first_name: string;
+  last_name: string;
+  position?: string | null;
+  job_position?: string | null;
+  org_structure_role?: string | null;
+  signature_url?: string | null;
+};
+
+// ───────────────── Leave Calendar (เดือน) ─────────────────
+const THAI_MONTH_NAMES = [
+  'มกราคม',
+  'กุมภาพันธ์',
+  'มีนาคม',
+  'เมษายน',
+  'พฤษภาคม',
+  'มิถุนายน',
+  'กรกฎาคม',
+  'สิงหาคม',
+  'กันยายน',
+  'ตุลาคม',
+  'พฤศจิกายน',
+  'ธันวาคม',
+];
+const THAI_WEEKDAYS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
+const toLocalISODate = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const shortName = (full?: string) => {
+  if (!full) return '-';
+  const parts = full.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return `${parts[0].slice(0, 4)} ${parts[parts.length - 1].slice(0, 6)}`;
+};
+
+const LeaveCalendar: React.FC = () => {
+  const [cursor, setCursor] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    const start = new Date(year, month, 1);
+    const end = new Date(year, month + 1, 0);
+    (async () => {
+      const data = await getLeavesInRange(
+        toLocalISODate(start),
+        toLocalISODate(end),
+      );
+      if (alive) {
+        setLeaves(data);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
     };
-    setLeaveRequests([newRequest, ...leaveRequests]);
-    setFormData({ leave_type: '', start_date: '', end_date: '', reason: '' });
-    setIsDialogOpen(false);
-    toast({
-      title: 'ส่งคำขอลาสำเร็จ',
-      description: 'คำขอลาของคุณได้ถูกส่งเพื่อรอการพิจารณาแล้ว',
+  }, [year, month]);
+
+  const days = useMemo(() => {
+    const firstOfMonth = new Date(year, month, 1);
+    const firstDayOfWeek = firstOfMonth.getDay();
+    const start = new Date(year, month, 1 - firstDayOfWeek);
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
     });
+  }, [year, month]);
+
+  const dayLeaves = (date: Date) => {
+    const ds = toLocalISODate(date);
+    return leaves.filter((l) => l.start_date <= ds && l.end_date >= ds);
+  };
+
+  const todayStr = toLocalISODate(new Date());
+  const selectedLeaves = selectedDate
+    ? leaves.filter(
+        (l) => l.start_date <= selectedDate && l.end_date >= selectedDate,
+      )
+    : [];
+
+  return (
+    <Card>
+      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          ปฏิทินการลา
+        </CardTitle>
+        <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8"
+            onClick={() => setCursor(new Date(year, month - 1, 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="text-sm font-semibold min-w-[140px] text-center">
+            {THAI_MONTH_NAMES[month]} {year + 543}
+          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8"
+            onClick={() => setCursor(new Date(year, month + 1, 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <Skeleton className="h-80 rounded-lg" />
+        ) : (
+          <div className="grid grid-cols-7 gap-1">
+            {THAI_WEEKDAYS.map((w, i) => (
+              <div
+                key={w}
+                className={`text-center text-xs font-semibold py-1 ${
+                  i === 0
+                    ? 'text-red-500'
+                    : i === 6
+                      ? 'text-blue-500'
+                      : 'text-muted-foreground'
+                }`}
+              >
+                {w}
+              </div>
+            ))}
+            {days.map((d) => {
+              const ds = toLocalISODate(d);
+              const isCurrentMonth = d.getMonth() === month;
+              const isToday = ds === todayStr;
+              const isSelected = ds === selectedDate;
+              const dl = dayLeaves(d);
+              const visible = dl.slice(0, 2);
+              const extra = dl.length - visible.length;
+              return (
+                <button
+                  key={ds}
+                  type="button"
+                  onClick={() => setSelectedDate(ds === selectedDate ? null : ds)}
+                  className={`min-h-[68px] rounded-lg border p-1 text-left transition-colors ${
+                    isSelected
+                      ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/60 dark:bg-blue-950/30'
+                      : isToday
+                        ? 'border-blue-300 bg-blue-50 dark:bg-blue-950/30'
+                        : isCurrentMonth
+                          ? 'bg-card hover:bg-muted/40'
+                          : 'bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                  }`}
+                >
+                  <div
+                    className={`text-xs font-semibold ${
+                      isToday
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : !isCurrentMonth
+                          ? 'opacity-50'
+                          : ''
+                    }`}
+                  >
+                    {d.getDate()}
+                  </div>
+                  <div className="mt-1 space-y-0.5">
+                    {visible.map((l) => {
+                      const theme = LEAVE_TYPE_THEME[l.leave_type];
+                      return (
+                        <div
+                          key={l.id}
+                          className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${theme.pill} ${theme.text}`}
+                          title={`${l.user_name} · ${LEAVE_TYPE_LABELS[l.leave_type]}`}
+                        >
+                          {shortName(l.user_name)}
+                        </div>
+                      );
+                    })}
+                    {extra > 0 && (
+                      <div className="text-[10px] text-muted-foreground px-1">
+                        +{extra} อื่นๆ
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {selectedDate && (
+          <div className="mt-4 rounded-lg border bg-muted/30 p-3">
+            <div className="text-sm font-semibold mb-2">
+              ผู้ลาวันที่{' '}
+              {new Date(selectedDate).toLocaleDateString('th-TH', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+              {selectedLeaves.length > 0 && (
+                <span className="text-muted-foreground font-normal ml-1">
+                  ({selectedLeaves.length} คน)
+                </span>
+              )}
+            </div>
+            {selectedLeaves.length === 0 ? (
+              <p className="text-xs text-muted-foreground">ไม่มีผู้ลา</p>
+            ) : (
+              <div className="space-y-1.5">
+                {selectedLeaves.map((l) => {
+                  const theme = LEAVE_TYPE_THEME[l.leave_type];
+                  const Icon = theme.icon;
+                  return (
+                    <div
+                      key={l.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <div className={`p-1.5 rounded ${theme.pill}`}>
+                        <Icon className={`h-3.5 w-3.5 ${theme.text}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">
+                          {l.user_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {LEAVE_TYPE_LABELS[l.leave_type]} ·{' '}
+                          {new Date(l.start_date).toLocaleDateString('th-TH')} -{' '}
+                          {new Date(l.end_date).toLocaleDateString('th-TH')}
+                        </div>
+                      </div>
+                      {l.status === 'in_progress' && (
+                        <Badge className={LEAVE_STATUS_COLORS.in_progress}>
+                          รอ ผอ.
+                        </Badge>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// ───────────────── Tab 1: ภาพรวม (admin/HR/ผอ) ─────────────────
+const OverviewTab: React.FC = () => {
+  const [stats, setStats] = useState<LeaveOverviewStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const s = await getOverviewStats();
+      if (alive) {
+        setStats(s);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (loading || !stats) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+    );
+  }
+
+  const statCards = [
+    {
+      label: 'ใบลาทั้งหมด',
+      value: stats.totalRequests,
+      icon: FileText,
+      pill: 'bg-blue-100 dark:bg-blue-900',
+      text: 'text-blue-600 dark:text-blue-400',
+    },
+    {
+      label: 'รออนุมัติ',
+      value: stats.pending,
+      icon: Clock,
+      pill: 'bg-yellow-100 dark:bg-yellow-900',
+      text: 'text-yellow-600 dark:text-yellow-400',
+    },
+    {
+      label: 'อนุมัติแล้ว',
+      value: stats.approved,
+      icon: CheckCircle2,
+      pill: 'bg-green-100 dark:bg-green-900',
+      text: 'text-green-600 dark:text-green-400',
+    },
+    {
+      label: 'ลาวันนี้',
+      value: stats.onLeaveToday,
+      icon: Users,
+      pill: 'bg-purple-100 dark:bg-purple-900',
+      text: 'text-purple-600 dark:text-purple-400',
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {statCards.map((s) => (
+          <Card key={s.label}>
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className={`p-2 rounded-lg ${s.pill}`}>
+                  <s.icon className={`h-4 w-4 ${s.text}`} />
+                </div>
+                <span className={`text-3xl sm:text-4xl font-bold ${s.text}`}>
+                  {s.value}
+                </span>
+              </div>
+              <h3 className="font-semibold text-foreground text-sm">{s.label}</h3>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <LeaveCalendar />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              สถิติตามประเภทการลา
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              เฉพาะที่อนุมัติแล้ว · ครึ่งปีงบปัจจุบัน
+            </p>
+          </CardHeader>
+          <CardContent>
+            {stats.byType.length === 0 ? (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                ยังไม่มีข้อมูล
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {stats.byType.map((t) => {
+                  const theme = LEAVE_TYPE_THEME[t.leave_type];
+                  const Icon = theme.icon;
+                  const max = Math.max(...stats.byType.map((x) => x.days));
+                  const pct = max > 0 ? (t.days / max) * 100 : 0;
+                  return (
+                    <div key={t.leave_type} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2">
+                          <Icon className={`h-3.5 w-3.5 ${theme.text}`} />
+                          <span className="font-medium">
+                            {LEAVE_TYPE_LABELS[t.leave_type]}
+                          </span>
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {t.count} ครั้ง · {t.days} วัน
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              ผู้ที่กำลังลา (วันนี้)
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {stats.currentlyOnLeave.length} คน
+            </p>
+          </CardHeader>
+          <CardContent>
+            {stats.currentlyOnLeave.length === 0 ? (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                ไม่มีคนลาวันนี้
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {stats.currentlyOnLeave.map((r) => {
+                  const theme = LEAVE_TYPE_THEME[r.leave_type];
+                  const Icon = theme.icon;
+                  return (
+                    <div
+                      key={r.id}
+                      className="flex items-center gap-3 p-2 rounded-lg border bg-card"
+                    >
+                      <div className={`p-2 rounded-lg ${theme.pill}`}>
+                        <Icon className={`h-4 w-4 ${theme.text}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {r.user_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {LEAVE_TYPE_LABELS[r.leave_type]} ·{' '}
+                          {new Date(r.start_date).toLocaleDateString('th-TH')}{' '}
+                          - {new Date(r.end_date).toLocaleDateString('th-TH')}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            ใบลาล่าสุด
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ผู้ขอ</TableHead>
+                  <TableHead>ประเภท</TableHead>
+                  <TableHead>วันที่</TableHead>
+                  <TableHead>จำนวน</TableHead>
+                  <TableHead>สถานะ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.recent.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">
+                      <div>{r.user_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {r.user_position}
+                      </div>
+                    </TableCell>
+                    <TableCell>{LEAVE_TYPE_LABELS[r.leave_type]}</TableCell>
+                    <TableCell className="text-xs">
+                      {new Date(r.start_date).toLocaleDateString('th-TH')} -{' '}
+                      {new Date(r.end_date).toLocaleDateString('th-TH')}
+                    </TableCell>
+                    <TableCell>{r.days_count} วัน</TableCell>
+                    <TableCell>
+                      <Badge className={LEAVE_STATUS_COLORS[r.status]}>
+                        {LEAVE_STATUS_LABELS[r.status]}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
+  const navigate = useNavigate();
+  const [balance, setBalance] = useState<LeaveBalance[]>([]);
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [detailReq, setDetailReq] = useState<LeaveRequest | null>(null);
+  const period = useMemo(() => getFiscalPeriod(), []);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      const [b, r] = await Promise.all([
+        getMyBalance(profile.id),
+        getMyRequests(profile.id),
+      ]);
+      if (!alive) return;
+      setBalance(b);
+      setRequests(r);
+      setLoading(false);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [profile.id]);
+
+  const refresh = async () => {
+    const [b, r] = await Promise.all([
+      getMyBalance(profile.id),
+      getMyRequests(profile.id),
+    ]);
+    setBalance(b);
+    setRequests(r);
   };
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            โควต้าการลา
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {formatFiscalPeriod(period.year, period.half)}
+          </p>
+        </div>
+      </div>
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {balance.map((b) => {
+            const theme = LEAVE_TYPE_THEME[b.leave_type];
+            const Icon = theme.icon;
+            const remain = b.quota_days - b.used_days - b.pending_days;
+            const pct =
+              b.quota_days > 0 ? (b.used_days / b.quota_days) * 100 : 0;
+            const danger = remain <= 0;
+            return (
+              <Card
+                key={b.leave_type}
+                className={`flex flex-col w-full ${
+                  danger ? 'border-red-300' : ''
+                }`}
+              >
+                <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`p-2 rounded-lg ${theme.pill}`}>
+                        <Icon className={`h-4 w-4 ${theme.text}`} />
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-3xl sm:text-4xl font-bold ${theme.text}`}>
+                          {b.used_days}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          / {b.quota_days}
+                        </span>
+                      </div>
+                    </div>
+                    <h3 className="font-semibold text-foreground text-sm line-clamp-1">
+                      {LEAVE_TYPE_LABELS[b.leave_type]}
+                    </h3>
+                    <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full ${danger ? 'bg-red-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.min(100, pct)}%` }}
+                      />
+                    </div>
+                    {b.pending_days > 0 && (
+                      <p className="mt-1.5 text-[11px] text-yellow-600 dark:text-yellow-400">
+                        รออนุมัติ {b.pending_days} วัน
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-muted-foreground" />
             คำขอลาของฉัน
           </CardTitle>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" /> ขอลาใหม่
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>ยื่นคำขอลา</DialogTitle>
-                <DialogDescription>กรอกข้อมูลคำขอลาของคุณให้ครบถ้วน</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="leave_type">ประเภทการลา</Label>
-                  <Select
-                    value={formData.leave_type}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, leave_type: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกประเภทการลา" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sick_leave">ลาป่วย</SelectItem>
-                      <SelectItem value="personal_leave">ลากิจ</SelectItem>
-                      <SelectItem value="annual_leave">ลาพักผ่อน</SelectItem>
-                      <SelectItem value="maternity_leave">ลาคลอด</SelectItem>
-                      <SelectItem value="ordination_leave">ลาบวช</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start_date">วันที่เริ่มลา</Label>
-                    <Input
-                      id="start_date"
-                      type="date"
-                      value={formData.start_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, start_date: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="end_date">วันที่สิ้นสุด</Label>
-                    <Input
-                      id="end_date"
-                      type="date"
-                      value={formData.end_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, end_date: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                {formData.start_date && formData.end_date && (
-                  <div className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    จำนวนวันลา: {calculateDays(formData.start_date, formData.end_date)} วัน
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="reason">เหตุผลการลา</Label>
-                  <Textarea
-                    id="reason"
-                    placeholder="กรอกเหตุผลการลา..."
-                    value={formData.reason}
-                    onChange={(e) =>
-                      setFormData({ ...formData, reason: e.target.value })
-                    }
-                    rows={3}
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    ยกเลิก
-                  </Button>
-                  <Button type="submit">ส่งคำขอ</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={() => navigate('/leave/new')}
+          >
+            <Plus className="h-4 w-4" /> ขอลาใหม่
+          </Button>
         </CardHeader>
         <CardContent>
-          {leaveRequests.length === 0 ? (
+          {loading ? (
+            <Skeleton className="h-32" />
+          ) : requests.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>ยังไม่มีคำขอลา</p>
@@ -709,43 +1638,345 @@ const LeaveTab: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ประเภทการลา</TableHead>
-                    <TableHead>วันที่ลา</TableHead>
-                    <TableHead>จำนวนวัน</TableHead>
-                    <TableHead>เหตุผล</TableHead>
-                    <TableHead>สถานะ</TableHead>
+                    <TableHead className="text-left w-0 pr-2">ประเภท</TableHead>
+                    <TableHead className="text-left w-0 pr-2">วันที่</TableHead>
+                    <TableHead className="text-left w-0 pr-2">จำนวน</TableHead>
+                    <TableHead className="text-left w-0 pr-2">สถานะ</TableHead>
+                    <TableHead className="text-left">ความคืบหน้า</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaveRequests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium">
-                        {leaveTypeLabels[request.leave_type]}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(request.start_date).toLocaleDateString('th-TH')} -{' '}
-                        {new Date(request.end_date).toLocaleDateString('th-TH')}
-                      </TableCell>
-                      <TableCell>{request.days_count} วัน</TableCell>
-                      <TableCell className="max-w-xs truncate">{request.reason}</TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[request.status]}>
-                          {statusLabels[request.status]}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {requests.map((r) => {
+                    const theme = LEAVE_TYPE_THEME[r.leave_type];
+                    const Icon = theme.icon;
+                    const sameDay = r.start_date === r.end_date;
+                    const startD = new Date(r.start_date);
+                    const endD = new Date(r.end_date);
+                    const dateText = sameDay
+                      ? startD.toLocaleDateString('th-TH', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: '2-digit',
+                        })
+                      : `${startD.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} – ${endD.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}`;
+                    return (
+                      <TableRow
+                        key={r.id}
+                        onClick={() => setDetailReq(r)}
+                        className="cursor-pointer hover:bg-muted/50"
+                      >
+                        <TableCell className="text-left whitespace-nowrap pr-2">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`p-1 rounded ${theme.pill}`}>
+                              <Icon className={`h-3 w-3 ${theme.text}`} />
+                            </div>
+                            <span className="text-sm font-medium">
+                              {LEAVE_TYPE_LABELS[r.leave_type]}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-left whitespace-nowrap pr-2 text-xs">
+                          {dateText}
+                        </TableCell>
+                        <TableCell className="text-left whitespace-nowrap pr-2 text-sm tabular-nums">
+                          {r.days_count} วัน
+                        </TableCell>
+                        <TableCell className="text-left whitespace-nowrap pr-2">
+                          <Badge
+                            className={`${LEAVE_STATUS_COLORS[r.status]} text-[11px] px-1.5 py-0`}
+                          >
+                            {LEAVE_STATUS_LABELS[r.status]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-left">
+                          <LeaveProgress req={r} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <LeaveDetailDialog
+        request={detailReq}
+        onClose={() => setDetailReq(null)}
+      />
+    </div>
+  );
+};
+
+// ───────────────── Tab 3: อนุมัติลา (หน.บุคคล / ผอ) ─────────────────
+const ApprovalTab: React.FC<{
+  profile: LeaveProfile;
+  onListChange?: () => void;
+}> = ({ profile, onListChange }) => {
+  const perms = getPermissions(profile as never);
+  const canDirector = profile.position === 'director' || perms.isAdmin;
+  const canHrHead =
+    perms.isAdmin || /บุคคล/.test(profile.org_structure_role ?? '');
+  const allowedRoles = useMemo<Array<'hr_head' | 'director'>>(() => {
+    const r: Array<'hr_head' | 'director'> = [];
+    if (canHrHead) r.push('hr_head');
+    if (canDirector) r.push('director');
+    return r;
+  }, [canHrHead, canDirector]);
+
+  const [list, setList] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [detailReq, setDetailReq] = useState<LeaveRequest | null>(null);
+
+  const userName = `${profile.prefix ?? ''}${profile.first_name} ${profile.last_name}`.trim();
+
+  // เลือก role อัตโนมัติตาม step ของใบลา → admin กดแทนทั้ง หน.บุคคล และ ผอ. ได้
+  const detailApprover = useMemo<ApproverContext | null>(() => {
+    if (!detailReq) return null;
+    const needed: 'hr_head' | 'director' =
+      detailReq.current_signer_order === 1 ? 'hr_head' : 'director';
+    if (!allowedRoles.includes(needed)) return null;
+    return {
+      user_id: profile.id,
+      user_name: userName,
+      role: needed,
+      signature_url: profile.signature_url ?? null,
+    };
+  }, [detailReq, allowedRoles, profile, userName]);
+
+  const refresh = async () => {
+    setLoading(true);
+    setList(await getPendingApprovalsByRoles(allowedRoles));
+    setLoading(false);
+    onListChange?.();
+  };
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowedRoles.join(',')]);
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-muted-foreground" />
+            ใบลารอลงนาม
+          </CardTitle>
+          {allowedRoles.length > 1 && (
+            <span className="text-xs text-muted-foreground">
+              ลงนามแทน หน.บุคคล &amp; ผอ.
+            </span>
+          )}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-32" />
+          ) : list.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckCircle2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>ไม่มีใบลารอลงนาม</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-left w-0 pr-2">ประเภท</TableHead>
+                    <TableHead className="text-left w-0 pr-2">ชื่อ</TableHead>
+                    <TableHead className="text-left w-0 pr-2">วันที่</TableHead>
+                    <TableHead className="text-left w-0 pr-2">จำนวน</TableHead>
+                    <TableHead className="text-left w-0 pr-2">สถานะ</TableHead>
+                    <TableHead className="text-left">ความคืบหน้า</TableHead>
+                    <TableHead className="text-right">ดู</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.map((r) => {
+                    const theme = LEAVE_TYPE_THEME[r.leave_type];
+                    const Icon = theme.icon;
+                    const hasAttachment =
+                      (r.form_data?.attachments?.length ?? 0) > 0;
+                    const sameDay = r.start_date === r.end_date;
+                    const startD = new Date(r.start_date);
+                    const endD = new Date(r.end_date);
+                    const dateText = sameDay
+                      ? startD.toLocaleDateString('th-TH', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: '2-digit',
+                        })
+                      : `${startD.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} – ${endD.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}`;
+                    return (
+                      <TableRow
+                        key={r.id}
+                        onClick={() => setDetailReq(r)}
+                        className="cursor-pointer hover:bg-muted/50"
+                      >
+                        <TableCell className="text-left whitespace-nowrap pr-2">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`p-1 rounded ${theme.pill}`}>
+                              <Icon className={`h-3 w-3 ${theme.text}`} />
+                            </div>
+                            <span className="text-sm font-medium">
+                              {LEAVE_TYPE_LABELS[r.leave_type]}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-left whitespace-nowrap pr-2">
+                          <div className="text-sm font-medium leading-tight">
+                            {r.user_name}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground leading-tight">
+                            {r.user_position}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-left whitespace-nowrap pr-2 text-xs">
+                          {dateText}
+                        </TableCell>
+                        <TableCell className="text-left whitespace-nowrap pr-2 text-sm tabular-nums">
+                          {r.days_count} วัน
+                        </TableCell>
+                        <TableCell className="text-left whitespace-nowrap pr-2">
+                          <div className="flex items-center gap-1">
+                            <Badge
+                              className={`${LEAVE_STATUS_COLORS[r.status]} text-[11px] px-1.5 py-0`}
+                            >
+                              {LEAVE_STATUS_LABELS[r.status]}
+                            </Badge>
+                            {hasAttachment && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[11px] text-blue-600 dark:text-blue-400"
+                                title={r.form_data?.attachments?.join(', ')}
+                              >
+                                <Paperclip className="h-3 w-3" />
+                                {r.form_data?.attachments?.length}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-left">
+                          <LeaveProgress req={r} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDetailReq(r);
+                            }}
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" />
+                            ดู
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <LeaveDetailDialog
+        request={detailReq}
+        onClose={() => setDetailReq(null)}
+        approver={detailApprover}
+        canApprove={!!detailApprover}
+        onChanged={refresh}
+      />
     </div>
   );
 };
 
 // ───────────────── Page ─────────────────
+// ───────────────── Admin Tabs (overview + attendance + leave + approve) ─────────────────
+const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string; position?: string } }> = ({
+  profile,
+  rawProfile,
+}) => {
+  const perms = getPermissions(profile as never);
+  const canDirector = profile.position === 'director' || perms.isAdmin;
+  const canHrHead =
+    perms.isAdmin || /บุคคล/.test(profile.org_structure_role ?? '');
+  const allowedRoles = useMemo<Array<'hr_head' | 'director'>>(() => {
+    const r: Array<'hr_head' | 'director'> = [];
+    if (canHrHead) r.push('hr_head');
+    if (canDirector) r.push('director');
+    return r;
+  }, [canHrHead, canDirector]);
+  const allowedKey = allowedRoles.join(',');
+
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const refreshCount = useCallback(async () => {
+    if (allowedRoles.length === 0) return;
+    const list = await getPendingApprovalsByRoles(allowedRoles);
+    setPendingCount(list.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowedKey]);
+
+  useEffect(() => {
+    refreshCount();
+  }, [refreshCount]);
+
+  const triggerClass =
+    'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/60';
+
+  return (
+    <Tabs
+      defaultValue="overview"
+      className="space-y-4"
+      onValueChange={(v) => {
+        if (v === 'approve') refreshCount();
+      }}
+    >
+      <div className="overflow-x-auto -mx-1 px-1">
+        <TabsList className="bg-card border shadow-sm h-auto p-1.5 rounded-2xl inline-flex w-auto gap-1">
+          <TabsTrigger value="overview" className={triggerClass}>
+            <LayoutDashboard className="h-4 w-4" />
+            ภาพรวม
+          </TabsTrigger>
+          <TabsTrigger value="attendance" className={triggerClass}>
+            <UserCheck className="h-4 w-4" />
+            เข้า-ออกงาน
+          </TabsTrigger>
+          <TabsTrigger value="leave" className={triggerClass}>
+            <FileText className="h-4 w-4" />
+            ขอลา
+          </TabsTrigger>
+          <TabsTrigger value="approve" className={triggerClass}>
+            <ShieldCheck className="h-4 w-4" />
+            อนุมัติลา
+            {pendingCount > 0 && (
+              <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white min-w-[18px] leading-none">
+                {pendingCount}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value="overview">
+        <OverviewTab />
+      </TabsContent>
+      <TabsContent value="attendance">
+        <AttendanceTab profile={rawProfile} />
+      </TabsContent>
+      <TabsContent value="leave">
+        <LeaveTab profile={profile} />
+      </TabsContent>
+      <TabsContent value="approve">
+        <ApprovalTab profile={profile} onListChange={refreshCount} />
+      </TabsContent>
+    </Tabs>
+  );
+};
+
 const LeaveRequestsPage: React.FC = () => {
   const { profile } = useEmployeeAuth();
 
@@ -783,26 +2014,26 @@ const LeaveRequestsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="attendance" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="attendance" className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
-              เข้า-ออกงาน
-            </TabsTrigger>
-            <TabsTrigger value="leave" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              ขอลา
-            </TabsTrigger>
-          </TabsList>
+        {(() => {
+          const perms = getPermissions(profile as never);
+          const canApprove =
+            perms.isAdmin ||
+            profile.position === 'director' ||
+            /บุคคล/.test(
+              (profile as { org_structure_role?: string | null }).org_structure_role ?? '',
+            );
 
-          <TabsContent value="attendance">
-            <AttendanceTab profile={profile} />
-          </TabsContent>
+          if (!canApprove) {
+            return <LeaveTab profile={profile as unknown as LeaveProfile} />;
+          }
 
-          <TabsContent value="leave">
-            <LeaveTab />
-          </TabsContent>
-        </Tabs>
+          return (
+            <LeaveAdminTabs
+              profile={profile as unknown as LeaveProfile}
+              rawProfile={profile}
+            />
+          );
+        })()}
       </div>
     </div>
   );

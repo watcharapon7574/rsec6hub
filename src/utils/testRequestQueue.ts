@@ -12,6 +12,7 @@
 
 import { requestQueue, railwayPDFQueue } from './requestQueue';
 import { supabase } from '@/integrations/supabase/client';
+import { railwayFetch } from './railwayFetch';
 
 export const testRequestQueue = {
   /**
@@ -184,8 +185,8 @@ export const testRequestQueue = {
         console.log(`📤 PDF Request ${i + 1} started`);
 
         try {
-          // Call Railway PDF API
-          const response = await fetch('https://pdf-memo-docx-production-25de.up.railway.app/pdf', {
+          // Call PDF API via failover-aware wrapper
+          const response = await railwayFetch('/pdf', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

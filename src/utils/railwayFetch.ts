@@ -25,11 +25,10 @@ export const PDF_API_HOSTS: readonly string[] = parseHosts(
 export const RAILWAY_PDF_API = PDF_API_HOSTS[0];
 
 const PRIMARY_DOWN_MS = 5 * 60 * 1000; // 5 minutes
-const REQUEST_TIMEOUT_MS = 10_000;
 
 // In-memory sticky failover state. Once we see the primary host fail we skip
-// it for 5 minutes — avoids paying the 10s timeout on every subsequent request
-// while the primary is still down. Reset on a successful primary response.
+// it for 5 minutes — avoids forcing every subsequent request to wait for the
+// primary to fail again. Reset on a successful primary response.
 let primaryDownUntil = 0;
 
 export const markPrimaryHealthy = () => {
@@ -51,8 +50,11 @@ const shouldFailover = (status: number) => status >= 500 && status <= 599;
  * Fetch wrapper for PDF API that:
  *   - attaches the Supabase JWT,
  *   - tries each configured host in order (primary → backups),
- *   - times each attempt out at 10s,
  *   - falls back on network errors and 5xx, but returns 2xx/3xx/4xx as-is.
+ *
+ * No default timeout — large uploads (PDF + signature image) on slow networks
+ * need to be able to run as long as the browser allows. Callers that want a
+ * timeout should pass `init.signal` (e.g. `AbortSignal.timeout(ms)`).
  */
 export async function railwayFetch(endpoint: string, init: RequestInit = {}): Promise<Response> {
   const {
@@ -74,7 +76,6 @@ export async function railwayFetch(endpoint: string, init: RequestInit = {}): Pr
       const res = await fetch(`${host}${endpoint}`, {
         ...init,
         headers: baseHeaders,
-        signal: init.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
 
       if (!shouldFailover(res.status)) {

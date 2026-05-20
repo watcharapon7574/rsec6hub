@@ -389,6 +389,19 @@ const CreateReportMemoPage = () => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    // Reject non-PDF up front — /PDFmerge only accepts PDFs and silently 500s on .docx etc.
+    const isPdf = (f: File) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+    const rejected = files.filter(f => !isPdf(f));
+    if (rejected.length > 0) {
+      toast({
+        title: 'รองรับเฉพาะไฟล์ PDF',
+        description: `ไม่สามารถแนบไฟล์: ${rejected.map(f => f.name).join(', ')} — กรุณาแปลงเป็น PDF ก่อน`,
+        variant: 'destructive',
+      });
+      e.target.value = '';
+      return;
+    }
+
     // ตรวจสอบไฟล์ PDF ที่แนบมาว่าเป็น A4 หรือไม่
     const pdfFiles = files.filter(f => f.type === 'application/pdf');
     if (pdfFiles.length > 0) {
@@ -1216,7 +1229,7 @@ const CreateReportMemoPage = () => {
                         id="report-upload-attached-files"
                         type="file"
                         multiple
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        accept="application/pdf,.pdf"
                         onChange={handleAttachedFiles}
                         className="block w-full text-sm text-muted-foreground
                           file:mr-4 file:py-2 file:px-4
@@ -1425,7 +1438,7 @@ const CreateReportMemoPage = () => {
                           id="attached_files"
                           type="file"
                           multiple
-                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                          accept="application/pdf,.pdf"
                           onChange={handleAttachedFiles}
                           className="block w-full text-sm text-muted-foreground
                             file:mr-4 file:py-2 file:px-4

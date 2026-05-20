@@ -331,6 +331,19 @@ const CreateMemoPage = () => {
     const files = Array.from(input.files || []);
     if (files.length === 0) return;
 
+    // Reject non-PDF up front — /PDFmerge only accepts PDFs and silently 500s on .docx etc.
+    const isPdf = (f: File) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+    const rejected = files.filter(f => !isPdf(f));
+    if (rejected.length > 0) {
+      toast({
+        title: 'รองรับเฉพาะไฟล์ PDF',
+        description: `ไม่สามารถแนบไฟล์: ${rejected.map(f => f.name).join(', ')} — กรุณาแปลงเป็น PDF ก่อน`,
+        variant: 'destructive',
+      });
+      input.value = '';
+      return;
+    }
+
     // รวมไฟล์ใหม่กับไฟล์ที่เลือกไว้เดิม (append) แบบกันซ้ำด้วย name+size+lastModified
     const mergeFiles = (prev: File[]): File[] => {
       const key = (f: File) => `${f.name}__${f.size}__${f.lastModified}`;
@@ -1251,7 +1264,7 @@ const CreateMemoPage = () => {
                         id="upload-attached-files"
                         type="file"
                         multiple
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        accept="application/pdf,.pdf"
                         onChange={handleAttachedFiles}
                         className="block w-full text-sm text-muted-foreground
                           file:mr-4 file:py-2 file:px-4

@@ -13,16 +13,42 @@ interface MemoMergeRequest {
   attachedFiles: string[];
 }
 
+const getFileName = (url: string): string => {
+  try {
+    const path = new URL(url).pathname;
+    return decodeURIComponent(path.split('/').pop() || url);
+  } catch {
+    return url;
+  }
+};
+
+const isPdfUrl = (url: string): boolean => {
+  // Strip query string before checking the extension so signed URLs still match.
+  const withoutQuery = url.split('?')[0].toLowerCase();
+  return withoutQuery.endsWith('.pdf');
+};
+
 // PDF Merge API call for memo documents
 export async function mergeMemoWithAttachments(memoData: MemoMergeRequest): Promise<{ success: boolean; mergedPdfUrl?: string; error?: string }> {
   try {
+    // Block non-PDF attachments up front — the Railway /PDFmerge endpoint only
+    // accepts PDFs and returns an opaque 500 if it gets a .docx/etc.
+    const nonPdfAttachments = memoData.attachedFiles.filter((url) => !isPdfUrl(url));
+    if (nonPdfAttachments.length > 0) {
+      const names = nonPdfAttachments.map(getFileName).join(', ');
+      return {
+        success: false,
+        error: `พบไฟล์แนบที่ไม่ใช่ PDF: ${names} — กรุณาแปลงเป็น PDF ก่อนรวมไฟล์`,
+      };
+    }
+
     // Fetch the main PDF file
     const mainPdfResponse = await fetch(memoData.mainPdfPath);
     if (!mainPdfResponse.ok) {
       throw new Error(`Failed to fetch main PDF: ${mainPdfResponse.status} ${mainPdfResponse.statusText}`);
     }
     let currentPdfBlob = await mainPdfResponse.blob();
-    
+
     // Fetch all attached files
     const attachedBlobs: Blob[] = [];
     for (let i = 0; i < memoData.attachedFiles.length; i++) {

@@ -1092,6 +1092,155 @@ class TaskAssignmentService {
   }
 
   /**
+   * แก้ไขรายชื่อผู้รับมอบหมายของเอกสาร (เฉพาะธุรการ)
+   * - คน pending ที่ถูกถอด → soft-delete
+   * - คนใหม่ที่เพิ่ม → createTaskAssignment + ส่ง Telegram เฉพาะคนใหม่
+   * - คน pending ที่เหลือ → อัปเดต task details
+   * - คน in_progress/completed → ห้ามแตะ (caller ต้องล็อกใน UI)
+   * - หัวหน้าทีมถูกถอด → re-elect จากคนที่เหลือ (RSEC seniority)
+   */
+  async updateAssignments(
+    documentId: string,
+    documentType: DocumentType,
+    selectedUserIds: string[],
+    options?: TaskDetailsOptions
+  ): Promise<{ created: string[]; deleted: string[]; updated: string[] }> {
+    try {
+      // Load all active assignments for this document
+      const existing = await this.getTaskAssignmentsByDocument(documentId, documentType);
+
+      const lockedAssignments = existing.filter(a => a.status !== 'pending');
+      const pendingAssignments = existing.filter(a => a.status === 'pending');
+
+      const lockedUserIds = new Set(lockedAssignments.map(a => a.assigned_to));
+      const pendingUserIds = new Set(pendingAssignments.map(a => a.assigned_to));
+      const selectedSet = new Set(selectedUserIds);
+
+      // Compute diff
+      const toDelete = pendingAssignments.filter(a => !selectedSet.has(a.assigned_to));
+      const toAddUserIds = selectedUserIds.filter(uid => !lockedUserIds.has(uid) && !pendingUserIds.has(uid));
+      const toUpdateAssignments = pendingAssignments.filter(a => selectedSet.has(a.assigned_to));
+
+      // Build task detail update payload
+      const updatePayload: Record<string, any> = {};
+      if (options?.taskDescription !== undefined) updatePayload.task_description = options.taskDescription || null;
+      if (options?.eventDate !== undefined) updatePayload.event_date = options.eventDate ? toLocalDateString(options.eventDate) : null;
+      if (options?.eventEndDate !== undefined) updatePayload.event_end_date = options.eventEndDate ? toLocalDateString(options.eventEndDate) : null;
+      if (options?.eventTime !== undefined) updatePayload.event_time = options.eventTime || null;
+      if (options?.eventEndTime !== undefined) updatePayload.event_end_time = options.eventEndTime || null;
+      if (options?.location !== undefined) updatePayload.location = options.location || null;
+      if (options?.note !== undefined) updatePayload.note = options.note || null;
+
+      // 1) Soft-delete pending assignments that are no longer selected
+      const deletedIds: string[] = [];
+      for (const a of toDelete) {
+        const { error } = await (supabase as any)
+          .from('task_assignments')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', a.id);
+        if (!error) deletedIds.push(a.id);
+      }
+
+      // 2) Update task details on retained pending assignments
+      const updatedIds: string[] = [];
+      if (toUpdateAssignments.length > 0 && Object.keys(updatePayload).length > 0) {
+        const ids = toUpdateAssignments.map(a => a.id);
+        const { error } = await (supabase as any)
+          .from('task_assignments')
+          .update(updatePayload)
+          .in('id', ids);
+        if (!error) updatedIds.push(...ids);
+      }
+
+      // 3) Re-elect team leader if the previous pending leader was removed
+      // Skip re-election if any locked (acknowledged) assignment is already team_leader.
+      const hasLockedLeader = lockedAssignments.some(a => a.is_team_leader);
+      const removedLeader = toDelete.some(a => a.is_team_leader);
+      let newLeaderForAddedUserId: string | undefined;
+      if (!hasLockedLeader && removedLeader) {
+        // Pick new leader from remaining pending users (existing retained + new)
+        // We need profiles to apply RSEC seniority for multi-user cases.
+        const remainingUserIds = [
+          ...toUpdateAssignments.map(a => a.assigned_to),
+          ...toAddUserIds,
+        ];
+
+        let electedLeaderUserId: string | null = null;
+        if (remainingUserIds.length === 1) {
+          electedLeaderUserId = remainingUserIds[0];
+        } else if (remainingUserIds.length > 1) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, employee_id')
+            .in('user_id', remainingUserIds);
+          if (profiles && profiles.length > 0) {
+            electedLeaderUserId = this.getMostSeniorUser(
+              profiles.map(p => ({ userId: p.user_id, employeeId: p.employee_id }))
+            );
+          }
+        }
+
+        if (electedLeaderUserId) {
+          // First, clear any existing is_team_leader=true on pending assignments
+          // (shouldn't happen, but defensive)
+          const retainedIds = toUpdateAssignments.map(a => a.id);
+          if (retainedIds.length > 0) {
+            await (supabase as any)
+              .from('task_assignments')
+              .update({ is_team_leader: false })
+              .in('id', retainedIds);
+          }
+
+          // If new leader is in retained pending: flip the flag on their assignment
+          const retained = toUpdateAssignments.find(a => a.assigned_to === electedLeaderUserId);
+          if (retained) {
+            await (supabase as any)
+              .from('task_assignments')
+              .update({ is_team_leader: true })
+              .eq('id', retained.id);
+          }
+          // If new leader is in toAdd: pass isTeamLeader=true when creating it
+          if (toAddUserIds.includes(electedLeaderUserId)) {
+            newLeaderForAddedUserId = electedLeaderUserId;
+          }
+        }
+      }
+
+      // 4) Create new assignments for newly added users
+      const createdIds: string[] = [];
+      for (const userId of toAddUserIds) {
+        const isLeader = newLeaderForAddedUserId === userId;
+        try {
+          const id = await this.createTaskAssignment(
+            documentId,
+            documentType,
+            userId,
+            { ...options, isTeamLeader: isLeader }
+          );
+          createdIds.push(id);
+        } catch (err) {
+          // Skip duplicates silently
+          const msg = err instanceof Error ? err.message : String(err);
+          if (!msg.includes('ได้รับมอบหมายงานในเอกสารนี้แล้ว')) {
+            throw err;
+          }
+        }
+      }
+
+      // 5) Send Telegram only for newly added users
+      if (toAddUserIds.length > 0) {
+        this.sendGroupNotification(documentId, documentType, toAddUserIds, options)
+          .catch(err => console.error('Group notification failed:', err));
+      }
+
+      return { created: createdIds, deleted: deletedIds, updated: updatedIds };
+    } catch (error) {
+      console.error('Failed to update assignments:', error);
+      throw error;
+    }
+  }
+
+  /**
    * เสร็จสิ้นงานด้วยการสร้างบันทึกข้อความรายงาน
    * - Link memo ID กับ task assignment
    * - เปลี่ยนสถานะเป็น completed

@@ -36,13 +36,16 @@ interface Step2SelectUsersProps {
   /** Track selection source for assignment */
   selectionInfo?: SelectionInfo;
   onSelectionInfoChange?: (info: SelectionInfo) => void;
+  /** Map of user_id -> status label; locked users cannot be removed (edit mode) */
+  lockedUsers?: Record<string, string>;
 }
 
 const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
   selectedUsers,
   onUsersChange,
   selectionInfo,
-  onSelectionInfoChange
+  onSelectionInfoChange,
+  lockedUsers = {}
 }) => {
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [savedGroups, setSavedGroups] = useState<UserGroup[]>([]);
@@ -66,15 +69,19 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
     return [];
   };
 
-  // Clear all selections
+  // Clear all selections — keep locked users (those already acknowledged/completed)
   const handleClear = () => {
-    onUsersChange([]);
+    const lockedUserIds = Object.keys(lockedUsers);
+    const retained = selectedUsers.filter(u => lockedUserIds.includes(u.user_id));
+    onUsersChange(retained);
     if (onSelectionInfoChange) {
-      onSelectionInfoChange({ source: null });
+      onSelectionInfoChange({ source: retained.length > 0 ? (selectionInfo?.source ?? null) : null });
     }
     toast({
       title: 'ล้างการเลือกแล้ว',
-      description: 'สามารถเลือกผู้รับมอบหมายใหม่ได้',
+      description: lockedUserIds.length > 0
+        ? `คงเหลือคนที่ทราบแล้ว ${retained.length} คน`
+        : 'สามารถเลือกผู้รับมอบหมายใหม่ได้',
     });
   };
 
@@ -344,6 +351,7 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
             hidePositions={isNameOrGroupMode}
             onClearAll={handleClear}
             leaderUserIds={getDisplayLeaderIds()}
+            lockedUsers={lockedUsers}
           />
         )}
 

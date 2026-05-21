@@ -1498,7 +1498,21 @@ const DocumentList: React.FC<DocumentListProps> = ({
             )}
           </div>
 
-          <DialogFooter className="flex-shrink-0 border-t pt-4">
+          <DialogFooter className="flex-shrink-0 border-t pt-4 flex-col sm:flex-row gap-2">
+            {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && selectedMemoForAssignees && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const docType = selectedMemoForAssignees.__source_table === 'doc_receive' ? 'doc_receive' : 'memo';
+                  setShowAssigneesModal(false);
+                  navigate(`/task-assignment?documentId=${selectedMemoForAssignees.id}&documentType=${docType}&mode=edit`);
+                }}
+                className="w-full sm:w-auto border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                แก้ไข
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setShowAssigneesModal(false)} className="w-full sm:w-auto">
               ปิด
             </Button>

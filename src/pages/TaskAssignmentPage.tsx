@@ -37,6 +37,7 @@ const TaskAssignmentPage = () => {
 
   const documentId = searchParams.get('documentId');
   const documentType = searchParams.get('documentType') as DocumentType;
+  const isEditMode = searchParams.get('mode') === 'edit';
 
   const [document, setDocument] = useState<DocumentData | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Profile[]>([]);
@@ -46,6 +47,8 @@ const TaskAssignmentPage = () => {
   const [loadingDocument, setLoadingDocument] = useState(true);
   const [directorComment, setDirectorComment] = useState<string>('');
   const [currentStep, setCurrentStep] = useState(1);
+  /** user_id -> status label ('ทราบแล้ว' / 'เสร็จ') for users that cannot be removed in edit mode */
+  const [lockedUsers, setLockedUsers] = useState<Record<string, string>>({});
 
   // New states for Step3 task details
   const [taskDescription, setTaskDescription] = useState('');
@@ -108,6 +111,66 @@ const TaskAssignmentPage = () => {
         if (directorSigner?.comment) {
           setDirectorComment(directorSigner.comment);
         }
+
+        // Edit mode: load existing assignments and pre-populate state
+        if (isEditMode) {
+          const existing = await taskAssignmentService.getTaskAssignmentsByDocument(documentId, documentType);
+          if (existing.length > 0) {
+            const userIds = existing.map(a => a.assigned_to);
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('user_id, first_name, last_name, position, employee_id')
+              .in('user_id', userIds);
+            const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+
+            // Preserve order: leader first, then by assigned_at
+            const ordered = [...existing].sort((a, b) => {
+              if (a.is_team_leader !== b.is_team_leader) return a.is_team_leader ? -1 : 1;
+              return new Date(a.assigned_at).getTime() - new Date(b.assigned_at).getTime();
+            });
+
+            const users: Profile[] = ordered
+              .map(a => {
+                const p = profileMap.get(a.assigned_to);
+                return p ? {
+                  user_id: p.user_id,
+                  first_name: p.first_name,
+                  last_name: p.last_name,
+                  position: p.position,
+                } as Profile : null;
+              })
+              .filter((u): u is Profile => u !== null);
+            setSelectedUsers(users);
+
+            // Lock non-pending users
+            const locks: Record<string, string> = {};
+            for (const a of ordered) {
+              if (a.status === 'in_progress') locks[a.assigned_to] = 'ทราบแล้ว';
+              else if (a.status === 'completed') locks[a.assigned_to] = 'เสร็จ';
+            }
+            setLockedUsers(locks);
+
+            // Pre-populate task details from the first assignment (shared across batch)
+            const first = ordered[0];
+            if (first.task_description) setTaskDescription(first.task_description);
+            if (first.event_date) setEventDate(new Date(first.event_date + 'T00:00:00'));
+            if (first.event_end_date) setEventEndDate(new Date(first.event_end_date + 'T00:00:00'));
+            if (first.event_time) setEventTime(first.event_time);
+            if (first.event_end_time) setEventEndTime(first.event_end_time);
+            if (first.location) setLocation(first.location);
+            if (first.note) setNote(first.note);
+
+            // Reconstruct selectionInfo from assignment_source
+            const source = first.assignment_source;
+            if (source) {
+              const leaderIds = ordered.filter(a => a.is_team_leader).map(a => a.assigned_to);
+              setSelectionInfo({
+                source,
+                groupLeaderIds: leaderIds.length > 0 ? leaderIds : undefined,
+              });
+            }
+          }
+        }
       } catch (error: any) {
         console.error('Error loading document:', error);
         toast({
@@ -122,7 +185,7 @@ const TaskAssignmentPage = () => {
     };
 
     loadDocument();
-  }, [documentId, documentType, navigate]);
+  }, [documentId, documentType, navigate, isEditMode]);
 
   // Navigation handlers
   const handleNext = () => {
@@ -182,26 +245,40 @@ const TaskAssignmentPage = () => {
         return;
       }
 
-      await taskAssignmentService.createMultipleTaskAssignments(
-        documentId,
-        documentType,
-        userIds,
-        {
-          note: note || undefined,
-          taskDescription: taskDescription || undefined,
-          eventDate: eventDate,
-          eventEndDate: eventEndDate,
-          eventTime: eventTime || undefined,
-          eventEndTime: eventEndTime || undefined,
-          location: location || undefined,
-          selectionInfo: selectionInfo
-        }
-      );
+      const assignOptions = {
+        note: note || undefined,
+        taskDescription: taskDescription || undefined,
+        eventDate: eventDate,
+        eventEndDate: eventEndDate,
+        eventTime: eventTime || undefined,
+        eventEndTime: eventEndTime || undefined,
+        location: location || undefined,
+        selectionInfo: selectionInfo,
+      };
 
-      toast({
-        title: '✅ มอบหมายงานสำเร็จ',
-        description: `มอบหมายงานให้ ${selectedUsers.length} คนเรียบร้อยแล้ว`,
-      });
+      if (isEditMode) {
+        const result = await taskAssignmentService.updateAssignments(
+          documentId,
+          documentType,
+          userIds,
+          assignOptions,
+        );
+        toast({
+          title: '✅ บันทึกการแก้ไขสำเร็จ',
+          description: `เพิ่ม ${result.created.length} • ลบ ${result.deleted.length} • อัปเดต ${result.updated.length}`,
+        });
+      } else {
+        await taskAssignmentService.createMultipleTaskAssignments(
+          documentId,
+          documentType,
+          userIds,
+          assignOptions,
+        );
+        toast({
+          title: '✅ มอบหมายงานสำเร็จ',
+          description: `มอบหมายงานให้ ${selectedUsers.length} คนเรียบร้อยแล้ว`,
+        });
+      }
 
       // Navigate back to documents page
       setTimeout(() => {
@@ -256,8 +333,12 @@ const TaskAssignmentPage = () => {
               <Users className="h-6 w-6 text-pink-500" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-muted-foreground">มอบหมายงาน</h1>
-              <p className="text-muted-foreground">ทำตามขั้นตอนเพื่อมอบหมายงานให้ผู้รับผิดชอบ</p>
+              <h1 className="text-3xl font-bold text-muted-foreground">{isEditMode ? 'แก้ไขการมอบหมาย' : 'มอบหมายงาน'}</h1>
+              <p className="text-muted-foreground">
+                {isEditMode
+                  ? 'เพิ่ม/ลบผู้รับมอบหมายและปรับรายละเอียดงาน (คนที่ทราบแล้วไม่สามารถลบได้)'
+                  : 'ทำตามขั้นตอนเพื่อมอบหมายงานให้ผู้รับผิดชอบ'}
+              </p>
             </div>
           </div>
         </div>
@@ -287,6 +368,7 @@ const TaskAssignmentPage = () => {
               onUsersChange={setSelectedUsers}
               selectionInfo={selectionInfo}
               onSelectionInfoChange={setSelectionInfo}
+              lockedUsers={lockedUsers}
             />
           )}
 
@@ -366,12 +448,12 @@ const TaskAssignmentPage = () => {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    กำลังมอบหมาย...
+                    {isEditMode ? 'กำลังบันทึก...' : 'กำลังมอบหมาย...'}
                   </>
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    มอบหมายงาน
+                    {isEditMode ? 'บันทึกการแก้ไข' : 'มอบหมายงาน'}
                   </>
                 )}
               </Button>
@@ -383,9 +465,11 @@ const TaskAssignmentPage = () => {
       {/* Loading Modal */}
       <Dialog open={loading}>
         <DialogContent className="sm:max-w-md">
-          <DialogTitle>กำลังมอบหมายงาน</DialogTitle>
+          <DialogTitle>{isEditMode ? 'กำลังบันทึกการแก้ไข' : 'กำลังมอบหมายงาน'}</DialogTitle>
           <DialogDescription>
-            กรุณารอสักครู่... ระบบกำลังมอบหมายงานให้กับผู้ที่คุณเลือก
+            {isEditMode
+              ? 'กรุณารอสักครู่... ระบบกำลังอัปเดตรายชื่อและรายละเอียดงาน'
+              : 'กรุณารอสักครู่... ระบบกำลังมอบหมายงานให้กับผู้ที่คุณเลือก'}
           </DialogDescription>
           <div className="flex flex-col items-center gap-4 mt-4">
             <svg className="animate-spin h-12 w-12 text-pink-500" viewBox="0 0 24 24">

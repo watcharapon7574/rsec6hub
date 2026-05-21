@@ -1326,7 +1326,20 @@ const DocReceiveList: React.FC<DocReceiveListProps> = ({
             )}
           </div>
 
-          <DialogFooter className="flex-shrink-0 border-t pt-4">
+          <DialogFooter className="flex-shrink-0 border-t pt-4 flex-col sm:flex-row gap-2">
+            {(permissions.isAdmin || permissions.isClerk || permissions.position === 'director') && selectedDocForAssignees && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAssigneesModal(false);
+                  navigate(`/task-assignment?documentId=${selectedDocForAssignees.id}&documentType=doc_receive&mode=edit`);
+                }}
+                className="w-full sm:w-auto border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                แก้ไข
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setShowAssigneesModal(false)} className="w-full sm:w-auto">
               ปิด
             </Button>

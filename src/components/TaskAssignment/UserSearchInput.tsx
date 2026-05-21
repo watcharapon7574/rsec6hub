@@ -31,6 +31,8 @@ interface UserSearchInputProps {
   onClearAll?: () => void;
   /** User IDs who are group leaders (will show crown icon) */
   leaderUserIds?: string[];
+  /** Map of user_id -> status label; locked users cannot be removed */
+  lockedUsers?: Record<string, string>;
 }
 
 const UserSearchInput: React.FC<UserSearchInputProps> = ({
@@ -43,7 +45,8 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
   onPositionSelect,
   hidePositions = false,
   onClearAll,
-  leaderUserIds = []
+  leaderUserIds = [],
+  lockedUsers = {}
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
@@ -184,8 +187,9 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
     }
   };
 
-  // ลบผู้ใช้ที่เลือก
+  // ลบผู้ใช้ที่เลือก (ป้องกันไม่ให้ลบคนที่ล็อกไว้)
   const handleRemoveUser = (userId: string) => {
+    if (lockedUsers[userId]) return;
     onUsersChange(selectedUsers.filter(u => u.user_id !== userId));
   };
 
@@ -240,6 +244,7 @@ const UserSearchInput: React.FC<UserSearchInputProps> = ({
         onRemoveUser={handleRemoveUser}
         onClearAll={onClearAll}
         leaderUserIds={leaderUserIds}
+        lockedUsers={lockedUsers}
       />
 
       {/* Helper text */}

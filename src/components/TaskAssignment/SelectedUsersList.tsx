@@ -17,13 +17,16 @@ interface SelectedUsersListProps {
   onClearAll?: () => void;
   /** User IDs who are group leaders (will show crown icon) */
   leaderUserIds?: string[];
+  /** Map of user_id -> status label (e.g. 'ทราบแล้ว', 'เสร็จ'). Users here cannot be removed. */
+  lockedUsers?: Record<string, string>;
 }
 
 const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
   selectedUsers,
   onRemoveUser,
   onClearAll,
-  leaderUserIds = []
+  leaderUserIds = [],
+  lockedUsers = {}
 }) => {
   if (selectedUsers.length === 0) {
     return null;
@@ -50,12 +53,16 @@ const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
       <div className="flex flex-wrap gap-2">
         {selectedUsers.map((user) => {
           const isLeader = leaderUserIds.includes(user.user_id);
+          const lockLabel = lockedUsers[user.user_id];
+          const isLocked = !!lockLabel;
           return (
             <Badge
               key={user.user_id}
               variant="secondary"
               className={`pl-3 pr-2 py-1.5 text-sm border ${
-                isLeader
+                isLocked
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600'
+                  : isLeader
                   ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 border-yellow-400 dark:border-yellow-600'
                   : 'bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300 border-pink-300 dark:border-pink-700'
               }`}
@@ -69,18 +76,24 @@ const SelectedUsersList: React.FC<SelectedUsersListProps> = ({
               <span className="mr-2">
                 {user.first_name} {user.last_name}
               </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onRemoveUser(user.user_id)}
-                className={`h-4 w-4 p-0 rounded-full ${
-                  isLeader
-                    ? 'hover:bg-yellow-200 dark:hover:bg-yellow-800'
-                    : 'hover:bg-pink-200 dark:hover:bg-pink-800'
-                }`}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+              {isLocked ? (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                  {lockLabel}
+                </span>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemoveUser(user.user_id)}
+                  className={`h-4 w-4 p-0 rounded-full ${
+                    isLeader
+                      ? 'hover:bg-yellow-200 dark:hover:bg-yellow-800'
+                      : 'hover:bg-pink-200 dark:hover:bg-pink-800'
+                  }`}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
             </Badge>
           );
         })}

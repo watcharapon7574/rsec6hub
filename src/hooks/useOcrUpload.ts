@@ -153,13 +153,6 @@ export function useOcrUpload() {
       if (result.tags.length > 0) {
         updates.tags = result.tags;
       }
-      if (result.suggestedFileName) {
-        let ext = '';
-        if (fileBlob instanceof File && fileBlob.name.includes('.')) {
-          ext = '.' + fileBlob.name.split('.').pop();
-        }
-        updates.file_name = result.suggestedFileName + ext;
-      }
       if (Object.keys(updates).length > 0) {
         await ocrService.updateDocument(docId, updates as any);
       }

@@ -198,7 +198,9 @@ const MemoList: React.FC<MemoListProps> = ({
           event: '*',
           schema: 'public',
           table: 'memos',
-          filter: profile?.user_id ? `created_by=neq.${profile.user_id}` : undefined,
+          // memos schema uses user_id (not created_by) — wrong column name caused
+          // a flood of "invalid column for filter created_by" errors in postgres logs.
+          filter: profile?.user_id ? `user_id=neq.${profile.user_id}` : undefined,
         },
         async (payload: any) => {
 

@@ -6,9 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Hard request timeout so a hung auth/DB call can't burn the 150s worker
+// wall-clock limit and return WORKER_RESOURCE_LIMIT to the client.
+const REQUEST_TIMEOUT_MS = 30_000
+
 serve(async (req) => {
   console.log('🔐 Verify OTP Function called:', req.method, req.url)
-  
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -20,6 +24,25 @@ serve(async (req) => {
     })
   }
 
+  const timeoutPromise = new Promise<Response>((_, reject) =>
+    setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), REQUEST_TIMEOUT_MS)
+  )
+
+  try {
+    return await Promise.race([handleVerifyOtp(req), timeoutPromise])
+  } catch (err) {
+    if ((err as Error)?.message === 'REQUEST_TIMEOUT') {
+      console.error('⏱️ verify-otp request timeout after 30s')
+      return new Response(
+        JSON.stringify({ error: 'ระบบใช้เวลาประมวลผลนานเกินไป กรุณาลองใหม่อีกครั้ง' }),
+        { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    throw err
+  }
+})
+
+async function handleVerifyOtp(req: Request): Promise<Response> {
   try {
     // Create admin client with service role key
     const supabaseAdmin = createClient(
@@ -412,11 +435,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('💥 Error in verify-otp function:', error)
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'เกิดข้อผิดพลาดในระบบ',
-        details: error.message 
+        details: error.message
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
-})
+}

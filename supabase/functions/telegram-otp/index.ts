@@ -704,23 +704,39 @@ serve(async (req) => {
 })
 
 async function sendTelegramMessage(botToken: string, chatId: number, text: string) {
-  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: 'HTML'
+  // Hard timeout so a hung Telegram API call can't burn the 150s worker wall-clock
+  // limit and return WORKER_RESOURCE_LIMIT (HTTP 546) to the client.
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10_000)
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML'
+      }),
+      signal: controller.signal
     })
-  })
 
-  if (!response.ok) {
-    const error = await response.text()
-    console.error('Telegram API error:', error)
-    throw new Error('Failed to send Telegram message')
+    if (!response.ok) {
+      const error = await response.text()
+      console.error('Telegram API error:', error)
+      throw new Error('Failed to send Telegram message')
+    }
+
+    return response.json()
+  } catch (err) {
+    if ((err as Error)?.name === 'AbortError') {
+      console.error('Telegram API timeout after 10s')
+      throw new Error('Telegram API timeout')
+    }
+    throw err
+  } finally {
+    clearTimeout(timeoutId)
   }
-
-  return response.json()
 }

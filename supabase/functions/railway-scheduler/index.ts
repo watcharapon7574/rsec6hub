@@ -2,6 +2,23 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const RAILWAY_API_URL = "https://backboard.railway.com/graphql/v2";
 
+// Hard timeout so a hung Railway API call can't burn the 150s worker wall-clock
+// limit and return WORKER_RESOURCE_LIMIT to the client.
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15_000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if ((err as Error)?.name === 'AbortError') {
+      throw new Error(`Railway API timeout after ${timeoutMs / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 interface Schedule {
   id: string;
   service_id: string;
@@ -143,7 +160,7 @@ Deno.serve(async (req) => {
           }
         `;
 
-        const statusResponse = await fetch(RAILWAY_API_URL, {
+        const statusResponse = await fetchWithTimeout(RAILWAY_API_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -203,7 +220,7 @@ Deno.serve(async (req) => {
             }
           `;
 
-          const serviceResponse = await fetch(RAILWAY_API_URL, {
+          const serviceResponse = await fetchWithTimeout(RAILWAY_API_URL, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -252,7 +269,7 @@ Deno.serve(async (req) => {
           console.log(`🚀 Redeploying service`);
         }
 
-        const response = await fetch(RAILWAY_API_URL, {
+        const response = await fetchWithTimeout(RAILWAY_API_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

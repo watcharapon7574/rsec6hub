@@ -218,6 +218,16 @@ export const EmployeeAuthProvider = ({ children }: { children: ReactNode }) => {
         // No Supabase session
         setUser(null);
 
+        // ผู้ใช้กด logout → เคลียร์ state ทันที อย่า fallback ไป legacy localStorage
+        // เพราะ clearAuthStorage() ใน signOut() ยังไม่ทันรัน → จะอ่านค่าค้างแล้วตั้ง isAuth=true กลับมา
+        // ส่งผลให้ navigate('/auth') แล้ว AuthPage redirect กลับ /dashboard ทันที (เด้งกลับหน้าเดิม)
+        if (event === 'SIGNED_OUT') {
+          setIsAuth(false);
+          setProfile(null);
+          if (isMounted) setLoading(false);
+          return;
+        }
+
         // ตรวจสอบระบบเดิมเป็น fallback เท่านั้น (ไม่ใช้ session monitoring)
         const authStatus = isAuthenticated();
         const currentProfile = getCurrentProfile();

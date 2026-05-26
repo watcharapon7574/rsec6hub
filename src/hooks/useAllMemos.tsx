@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
@@ -78,6 +78,13 @@ interface UseAllMemosOptions {
 
 export const useAllMemos = ({ enableRealtime = false }: UseAllMemosOptions = {}) => {
   const [memos, setMemos] = useState<MemoRecord[]>([]);
+  // Stable per-hook-instance id for Realtime channel name — avoid creating a
+  // fresh server-side channel on every render/re-run of the effect.
+  const channelIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  );
   const [completedReportMemos, setCompletedReportMemos] = useState<MemoRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -587,7 +594,7 @@ export const useAllMemos = ({ enableRealtime = false }: UseAllMemosOptions = {})
     let memosSubscription: ReturnType<typeof supabase.channel> | null = null;
     if (enableRealtime) {
       memosSubscription = supabase
-        .channel(`realtime_memos-${profile?.user_id ?? 'anon'}-${Date.now()}`)
+        .channel(`realtime_memos-${profile?.user_id ?? 'anon'}-${channelIdRef.current}`)
         .on('postgres_changes',
           {
             event: '*',

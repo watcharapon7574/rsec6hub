@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -78,6 +78,14 @@ const MemoList: React.FC<MemoListProps> = ({
 
   // State สำหรับ realtime updates
   const [localMemos, setLocalMemos] = useState(memoList);
+
+  // Stable per-mount id for Realtime channel name — กัน server-side state ค้าง
+  // จากการ remount (Date.now() บน render ทุกครั้งทำให้สร้าง channel ใหม่ทุก mount → state สะสม)
+  const channelIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  );
 
   // State สำหรับติดตาม memo ที่มี draft report memo
   const [draftReportMemos, setDraftReportMemos] = useState<Record<string, string>>({});
@@ -189,6 +197,11 @@ const MemoList: React.FC<MemoListProps> = ({
     };
 
     fetchReportMemoInfo();
+    // localMemos จงใจไม่ใส่ใน deps — เราต้องการ refetch เฉพาะตอน "ชุด id" เปลี่ยน
+    // (memo เข้า/ออก list) ไม่ใช่ตอน memo content (เช่น status) อัพเดทผ่าน realtime
+    // closure จะอ่าน .id อย่างเดียวซึ่ง stable ตาม key — กัน react-hooks/exhaustive-deps
+    // "ช่วย fix" กลับไปเป็น flood pattern เดิม (2.85M PostgREST calls)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memoIdsKey, permissions.isAdmin, permissions.isClerk]);
 
   // Setup realtime listeners
@@ -198,9 +211,11 @@ const MemoList: React.FC<MemoListProps> = ({
       return;
     }
 
-    // unique channel name → กัน channel name collision ตอน admin หลายคน online พร้อมกัน
+    // Stable channel name (user_id + per-mount uuid) — Supabase scope channels
+    // per client connection, so collision across users isn't the concern;
+    // the goal is to avoid creating a fresh channel on every render/remount.
     const subscription = (supabase as any)
-      .channel(`memo-list-realtime-${profile?.user_id ?? 'anon'}-${Date.now()}`)
+      .channel(`memo-list-realtime-${profile?.user_id ?? 'anon'}-${channelIdRef.current}`)
       .on(
         'postgres_changes',
         {

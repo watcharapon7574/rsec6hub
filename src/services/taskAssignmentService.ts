@@ -680,13 +680,16 @@ class TaskAssignmentService {
   /**
    * Subscribe to task assignment changes (Realtime)
    * userId: required — กรองเฉพาะ assignment ของ user คนนี้ ไม่ flood ทุก row ในระบบ
+   * Caller passes a stable subId (e.g. from useRef) so the same hook instance
+   * keeps the same channel across renders.
    */
   subscribeToTaskAssignments(
     callback: (payload: any) => void,
-    userId: string
+    userId: string,
+    subId: string
   ) {
     const channel = supabase
-      .channel(`task_assignments_changes-${userId}-${Date.now()}`)
+      .channel(`task_assignments_changes-${userId}-${subId}`)
       .on(
         'postgres_changes',
         {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { taskAssignmentService, TaskStatus } from '@/services/taskAssignmentService';
 import type { TaskAssignmentWithDetails } from '@/services/taskAssignmentService';
 import { toast } from '@/hooks/use-toast';
@@ -16,6 +16,12 @@ export const useAssignedTasks = (
   const [error, setError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const { profile } = useEmployeeAuth();
+  // Stable per-mount id for Realtime channel name
+  const channelIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  );
 
   // ดึงรายการงานที่ได้รับมอบหมาย
   const fetchTasks = useCallback(async () => {
@@ -118,13 +124,24 @@ export const useAssignedTasks = (
         // Refresh task list
         fetchTasks();
       },
-      profile.user_id
+      profile.user_id,
+      channelIdRef.current
     );
 
     return () => {
       taskAssignmentService.unsubscribeFromTaskAssignments(channel);
     };
   }, [enableRealtime, fetchTasks, profile?.user_id]);
+
+  // Safety net for missed UPDATE events (เช่น admin re-assign จาก userA → userB:
+  // userA's filter assigned_to=eq.userA จะไม่ match new row → list ค้างจน user มาเปิดใหม่)
+  // เลือก focus-based แทน setInterval เพื่อไม่ poll พื้นหลังถี่ๆ
+  useEffect(() => {
+    if (!enableRealtime) return;
+    const onFocus = () => fetchTasks();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [enableRealtime, fetchTasks]);
 
   return {
     tasks,

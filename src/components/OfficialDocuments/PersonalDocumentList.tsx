@@ -22,13 +22,9 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   onRefresh,
   defaultCollapsed = false
 }) => {
-  const { getPermissions, profile } = useEmployeeAuth();
+  const { profile } = useEmployeeAuth();
   const { profiles } = useProfiles();
-  const permissions = getPermissions();
   const navigate = useNavigate();
-
-  // เช็คเลขาฝ่ายจาก org_structure_role (เริ่มต้นด้วย "เลขา")
-  const isSecretary = (profile?.org_structure_role || '').startsWith('เลขา');
 
   // State สำหรับ collapsible
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
@@ -315,11 +311,6 @@ const PersonalDocumentList: React.FC<PersonalDocumentListProps> = ({
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
-
-  // แสดงเฉพาะสำหรับ clerk_teacher, ผู้ช่วยผอ, รองผอ, และเลขาฝ่าย
-  if (!isSecretary && !["clerk_teacher", "assistant_director", "deputy_director"].includes(permissions.position)) {
-    return null;
-  }
 
   return (
     <Card>

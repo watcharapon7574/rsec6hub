@@ -679,18 +679,21 @@ class TaskAssignmentService {
 
   /**
    * Subscribe to task assignment changes (Realtime)
+   * userId: required — กรองเฉพาะ assignment ของ user คนนี้ ไม่ flood ทุก row ในระบบ
    */
   subscribeToTaskAssignments(
-    callback: (payload: any) => void
+    callback: (payload: any) => void,
+    userId: string
   ) {
     const channel = supabase
-      .channel('task_assignments_changes')
+      .channel(`task_assignments_changes-${userId}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'task_assignments',
+          filter: `assigned_to=eq.${userId}`,
         },
         callback
       )

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { taskAssignmentService, TaskStatus } from '@/services/taskAssignmentService';
 import type { TaskAssignmentWithDetails } from '@/services/taskAssignmentService';
 import { toast } from '@/hooks/use-toast';
+import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 
 /**
  * Hook สำหรับจัดการงานที่ได้รับมอบหมาย (ฝั่งผู้รับมอบหมาย)
@@ -14,6 +15,7 @@ export const useAssignedTasks = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const { profile } = useEmployeeAuth();
 
   // ดึงรายการงานที่ได้รับมอบหมาย
   const fetchTasks = useCallback(async () => {
@@ -98,13 +100,14 @@ export const useAssignedTasks = (
     fetchTasks();
   }, [fetchTasks]);
 
-  // Realtime subscription - ฟังทุกการเปลี่ยนแปลงบน task_assignments
+  // Realtime subscription — กรองเฉพาะ row ที่ assigned_to = current user
+  // (เดิมไม่มี filter → ทุก user รับ event ของ task_assignment ทั้งระบบ + เด้ง toast ผิดๆ)
   useEffect(() => {
-    if (!enableRealtime) return;
+    if (!enableRealtime || !profile?.user_id) return;
 
     const channel = taskAssignmentService.subscribeToTaskAssignments(
       (payload) => {
-        // Show toast notification for new assignments
+        // ทุก event ผ่าน filter assigned_to=eq.userId แล้ว → INSERT = งานใหม่ของ user จริง
         if (payload.eventType === 'INSERT') {
           toast({
             title: '📋 มีงานใหม่มอบหมายให้คุณ',
@@ -114,13 +117,14 @@ export const useAssignedTasks = (
 
         // Refresh task list
         fetchTasks();
-      }
+      },
+      profile.user_id
     );
 
     return () => {
       taskAssignmentService.unsubscribeFromTaskAssignments(channel);
     };
-  }, [enableRealtime, fetchTasks]);
+  }, [enableRealtime, fetchTasks, profile?.user_id]);
 
   return {
     tasks,

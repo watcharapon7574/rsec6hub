@@ -28,7 +28,7 @@ const OfficialDocumentsPage = () => {
     loadMore: loadMoreMemos,
     hasMore: hasMoreMemos,
     isLoadingMore: isLoadingMoreMemos,
-  } = useAllMemos();
+  } = useAllMemos({ enableRealtime: true });
   const { 
     documents: officialDocuments, 
     memos,

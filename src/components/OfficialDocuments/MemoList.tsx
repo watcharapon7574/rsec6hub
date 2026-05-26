@@ -90,6 +90,14 @@ const MemoList: React.FC<MemoListProps> = ({
     setLocalMemos(memoList);
   }, [memoList]);
 
+  // Stable key from the SET of memo IDs — เปลี่ยนเฉพาะเมื่อมี memo เข้า/ออกจาก list
+  // ไม่ trigger ตอน memo content (เช่น status) อัพเดทผ่าน realtime → ตัด PostgREST flood
+  // ที่ ยิง .in('memo_id'/'report_memo_id', memoIds) ทุก event
+  const memoIdsKey = useMemo(
+    () => localMemos.map(m => m.id).sort().join(','),
+    [localMemos]
+  );
+
   // Fetch draft report memos and identify which memos ARE report memos
   useEffect(() => {
     const fetchReportMemoInfo = async () => {
@@ -181,7 +189,7 @@ const MemoList: React.FC<MemoListProps> = ({
     };
 
     fetchReportMemoInfo();
-  }, [localMemos, permissions.isAdmin, permissions.isClerk]);
+  }, [memoIdsKey, permissions.isAdmin, permissions.isClerk]);
 
   // Setup realtime listeners
   useEffect(() => {
@@ -190,8 +198,9 @@ const MemoList: React.FC<MemoListProps> = ({
       return;
     }
 
+    // unique channel name → กัน channel name collision ตอน admin หลายคน online พร้อมกัน
     const subscription = (supabase as any)
-      .channel('memo-list-realtime')
+      .channel(`memo-list-realtime-${profile?.user_id ?? 'anon'}-${Date.now()}`)
       .on(
         'postgres_changes',
         {

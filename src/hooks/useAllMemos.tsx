@@ -69,7 +69,14 @@ const transformMemoRow = (memo: any): MemoRecord => {
   } as MemoRecord;
 };
 
-export const useAllMemos = () => {
+interface UseAllMemosOptions {
+  // ค่า default = false: หลายๆ page เรียก useAllMemos แค่เพื่อ getMemoById / refetch
+  // ไม่ต้องการ realtime — เปิดเฉพาะ page ที่แสดง list สด (เช่น OfficialDocumentsPage)
+  // เลี่ยงไม่ให้เกิด unfiltered memos sub × N tabs/pages → DB CPU เผา
+  enableRealtime?: boolean;
+}
+
+export const useAllMemos = ({ enableRealtime = false }: UseAllMemosOptions = {}) => {
   const [memos, setMemos] = useState<MemoRecord[]>([]);
   const [completedReportMemos, setCompletedReportMemos] = useState<MemoRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -574,38 +581,43 @@ export const useAllMemos = () => {
   useEffect(() => {
     fetchMemos();
 
-    // Realtime subscription for memos table — update in-place เพื่อไม่ reset chunks ที่ lazy-loaded มาแล้ว
-    const memosSubscription = supabase
-      .channel('realtime_memos')
-      .on('postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'memos'
-        },
-        (payload: any) => {
-          if (payload.eventType === 'INSERT') {
-            const row = payload.new as MemoRecord;
-            setMemos(prev => {
-              if (prev.some(m => m.id === row.id)) return prev;
-              const next = [row, ...prev];
-              next.sort((a, b) =>
-                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    // Realtime subscription for memos table — เปิดเฉพาะตอน caller ระบุ enableRealtime: true
+    // (เช่น list page) ไม่งั้น 9+ pages ที่เรียก useAllMemos() จะมี unfiltered sub บาน
+    // window event handlers ด้านล่างยังคงทำงาน → local update ระหว่าง user เดียวกันยังเด้ง
+    let memosSubscription: ReturnType<typeof supabase.channel> | null = null;
+    if (enableRealtime) {
+      memosSubscription = supabase
+        .channel(`realtime_memos-${profile?.user_id ?? 'anon'}-${Date.now()}`)
+        .on('postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'memos'
+          },
+          (payload: any) => {
+            if (payload.eventType === 'INSERT') {
+              const row = payload.new as MemoRecord;
+              setMemos(prev => {
+                if (prev.some(m => m.id === row.id)) return prev;
+                const next = [row, ...prev];
+                next.sort((a, b) =>
+                  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                );
+                return next;
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              const row = payload.new as MemoRecord;
+              setMemos(prev =>
+                prev.map(m => (m.id === row.id ? { ...m, ...row } : m))
               );
-              return next;
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            const row = payload.new as MemoRecord;
-            setMemos(prev =>
-              prev.map(m => (m.id === row.id ? { ...m, ...row } : m))
-            );
-          } else if (payload.eventType === 'DELETE') {
-            const id = (payload.old as any)?.id;
-            if (id) setMemos(prev => prev.filter(m => m.id !== id));
+            } else if (payload.eventType === 'DELETE') {
+              const id = (payload.old as any)?.id;
+              if (id) setMemos(prev => prev.filter(m => m.id !== id));
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    }
 
     // Listen for smart updates
     const handleMemoUpdated = (event: CustomEvent) => {
@@ -636,11 +648,11 @@ export const useAllMemos = () => {
     window.addEventListener('memo-deleted', handleMemoDeleted as EventListener);
 
     return () => {
-      memosSubscription.unsubscribe();
+      memosSubscription?.unsubscribe();
       window.removeEventListener('memo-updated', handleMemoUpdated as EventListener);
       window.removeEventListener('memo-deleted', handleMemoDeleted as EventListener);
     };
-  }, [fetchMemos]);
+  }, [fetchMemos, enableRealtime, profile?.user_id]);
 
   return {
     memos,

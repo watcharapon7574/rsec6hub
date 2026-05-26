@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { AlertTriangle, MessageCircle, PenTool, CheckCircle2, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PDFAnnotationEditor from './PDFAnnotationEditor';
-import { uploadAnnotatedPdf } from '@/utils/pdfAnnotationUtils';
+import { uploadAnnotatedPdf, PdfTooLargeError } from '@/utils/pdfAnnotationUtils';
 
 interface AnnotatableFile {
   label: string;
@@ -127,7 +127,15 @@ export const RejectionCard: React.FC<RejectionCardProps> = ({
       });
     } catch (error) {
       console.error('Error uploading annotated PDF:', error);
-      toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึก annotation ได้", variant: "destructive" });
+      if (error instanceof PdfTooLargeError) {
+        toast({
+          title: "ไฟล์ใหญ่เกินไป",
+          description: `เอกสารที่ขีดเขียนมีขนาด ${error.sizeMB.toFixed(1)} MB (จำกัด ${error.limitMB} MB) — กรุณาลด annotation หรือแบ่งเอกสาร`,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึก annotation ได้", variant: "destructive" });
+      }
     } finally {
       setIsSavingAnnotation(false);
     }

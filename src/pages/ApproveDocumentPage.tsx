@@ -626,8 +626,19 @@ const ApproveDocumentPage: React.FC = () => {
             if (pageImages && pageImages.size > 0) {
               const pdfRes = await fetch(extractedPdfUrl);
               const pdfBytes = await pdfRes.arrayBuffer();
-              const { exportAnnotatedPdf } = await import('@/utils/pdfAnnotationUtils');
+              const { exportAnnotatedPdf, MAX_ANNOTATED_PDF_MB } = await import('@/utils/pdfAnnotationUtils');
               const annotatedBlob = await exportAnnotatedPdf(pdfBytes, pageImages);
+
+              // Size guard — bail out with a clear message instead of letting storage return 413
+              const sizeMB = annotatedBlob.size / 1024 / 1024;
+              if (sizeMB > MAX_ANNOTATED_PDF_MB) {
+                toast({
+                  title: 'ไฟล์ใหญ่เกินไป',
+                  description: `PDF ที่รวม annotation มีขนาด ${sizeMB.toFixed(1)} MB (จำกัด ${MAX_ANNOTATED_PDF_MB} MB) — กรุณาลด annotation หรือแบ่งเอกสาร`,
+                  variant: 'destructive',
+                });
+                throw new Error(`Annotated PDF too large: ${sizeMB.toFixed(1)} MB`);
+              }
 
               // อัพโหลด PDF ที่วาด annotation แล้ว
               const fileName = `annotated_${memoId}_${Date.now()}.pdf`;

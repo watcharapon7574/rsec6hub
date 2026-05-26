@@ -5,6 +5,54 @@ import { supabase } from '@/integrations/supabase/client';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
+// Bucket `documents` hard limit is 200 MB; cap at 180 MB so we fail in code
+// with a nice message instead of getting a generic 413 from storage.
+export const MAX_ANNOTATED_PDF_MB = 180;
+
+export class PdfTooLargeError extends Error {
+  constructor(public sizeMB: number, public limitMB: number = MAX_ANNOTATED_PDF_MB) {
+    super(`PDF size ${sizeMB.toFixed(1)} MB exceeds limit ${limitMB} MB`);
+    this.name = 'PdfTooLargeError';
+  }
+}
+
+// Downscale (if wider than maxWidth) and re-encode a PNG. Annotation overlays
+// from Fabric.js often arrive oversampled and uncompressed — re-encoding through
+// a canvas typically shrinks them substantially even at scale=1.
+async function compressPngBytes(pngBytes: Uint8Array, maxWidth = 1500): Promise<Uint8Array> {
+  const blob = new Blob([pngBytes], { type: 'image/png' });
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('Failed to decode PNG for compression'));
+      i.src = url;
+    });
+
+    const scale = Math.min(1, maxWidth / img.naturalWidth);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return pngBytes;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const compressedBlob = await new Promise<Blob | null>(resolve =>
+      canvas.toBlob(resolve, 'image/png')
+    );
+    if (!compressedBlob) return pngBytes;
+    const compressedBytes = new Uint8Array(await compressedBlob.arrayBuffer());
+
+    return compressedBytes.byteLength < pngBytes.byteLength ? compressedBytes : pngBytes;
+  } catch (err) {
+    console.warn('compressPngBytes failed, embedding original:', err);
+    return pngBytes;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 /**
  * Render a PDF page to a canvas element
  */
@@ -59,9 +107,10 @@ export async function exportAnnotatedPdf(
     const page = pages[pageIndex];
     const { width, height } = page.getSize();
 
-    // Convert data URL to bytes
+    // Convert data URL to bytes, then compress to keep annotated PDF size bounded
     const base64 = dataUrl.split(',')[1];
-    const pngBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const rawBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const pngBytes = await compressPngBytes(rawBytes);
 
     const pngImage = await pdfDoc.embedPng(pngBytes);
 
@@ -86,6 +135,11 @@ export async function uploadAnnotatedPdf(
   documentId: string,
   userId: string
 ): Promise<string> {
+  const sizeMB = blob.size / 1024 / 1024;
+  if (sizeMB > MAX_ANNOTATED_PDF_MB) {
+    throw new PdfTooLargeError(sizeMB);
+  }
+
   const fileName = `annotated_${documentId}_${Date.now()}.pdf`;
   const filePath = `memos/${userId}/${fileName}`;
 
@@ -163,7 +217,8 @@ export async function mergeAnnotationLayers(
         console.warn(`⚠️ Failed to fetch layer: ${layer.layer_url}`);
         continue;
       }
-      const pngBytes = new Uint8Array(await response.arrayBuffer());
+      const rawBytes = new Uint8Array(await response.arrayBuffer());
+      const pngBytes = await compressPngBytes(rawBytes);
       const pngImage = await pdfDoc.embedPng(pngBytes);
 
       page.drawImage(pngImage, { x: 0, y: 0, width, height });

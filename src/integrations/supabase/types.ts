@@ -1990,6 +1990,29 @@ export type Database = {
           tags: string[]
         }[]
       }
+      ocr_docs_name_tag_match: {
+        Args: {
+          match_count?: number
+          tokens: string[]
+        }
+        Returns: {
+          chunk_id: string
+          chunk_index: number
+          content: string
+          context_summary: string
+          created_at: string
+          document_id: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          fts_rank: number
+          page_number: number
+          rrf_score: number
+          semantic_rank: number
+          tags: string[]
+        }[]
+      }
       ocr_hybrid_search: {
         Args: {
           full_text_weight?: number

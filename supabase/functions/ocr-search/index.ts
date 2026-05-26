@@ -192,36 +192,37 @@ function segmentThai(text: string): string {
   }
 }
 
-// Common Thai particles/stopwords that shouldn't drive file_name matching
+// Thai particles + generic government-doc terms that would otherwise create
+// false-positive name/tag matches across almost every document
 const THAI_STOPWORDS = new Set([
+  // particles / function words
   'ของ', 'และ', 'ใน', 'ที่', 'เป็น', 'มี', 'ให้', 'จาก', 'ได้', 'ไป',
   'มา', 'เพื่อ', 'หรือ', 'ก็', 'แต่', 'จะ', 'นี้', 'นั้น', 'กับ', 'แก่',
   'โดย', 'ตาม', 'ถึง', 'การ', 'ความ', 'ทุก', 'อยู่', 'เลย', 'นะ', 'ครับ', 'คะ', 'ค่ะ',
+  // generic doc nouns — too common in filenames to be discriminative
+  'เอกสาร', 'หนังสือ', 'บันทึก', 'ราชการ', 'เรื่อง', 'ฉบับ', 'แบบ', 'เลขที่',
 ])
 
-// Returns the share of meaningful query tokens that appear in file_name (0..1)
-function fileNameMatchRatio(query: string, fileName: string): number {
-  if (!fileName) return 0
+// Returns deduplicated meaningful tokens from a query.
+// Used for the name/tag candidate fetch and for filename / tag scoring.
+function extractMeaningfulTokens(query: string): string[] {
+  const segmented = segmentThai(query)
   const seen = new Set<string>()
-  const tokens = segmentThai(query)
-    .split(' ')
-    .map((t) => t.trim())
-    .filter((t) => {
-      if (t.length < 2) return false
-      if (THAI_STOPWORDS.has(t)) return false
-      if (seen.has(t)) return false
-      seen.add(t)
-      return true
-    })
-  if (tokens.length === 0) return 0
-  let matched = 0
-  for (const t of tokens) {
-    if (fileName.includes(t)) matched++
+  const out: string[] = []
+  for (const raw of segmented.split(/\s+/)) {
+    const t = raw.trim()
+    if (t.length < 2) continue
+    if (THAI_STOPWORDS.has(t)) continue
+    // reject 1-2 digit pure-numeric tokens (e.g., "1", "12") — too noisy
+    if (/^\d{1,2}$/.test(t)) continue
+    if (seen.has(t)) continue
+    seen.add(t)
+    out.push(t)
   }
-  return matched / tokens.length
+  return out
 }
 
-// --- Step 1: Query Rewriting (for semantic search only) ---
+// --- Step 1: Query Rewriting (for semantic/vector channel only) ---
 
 async function rewriteQueryForSemantic(query: string): Promise<string> {
   const prompt = `คุณเป็นผู้เชี่ยวชาญในการค้นหาเอกสารราชการไทย\n\nผู้ใช้ค้นหา: "${query}"\n\nให้สร้างประโยคเต็มที่อธิบายสิ่งที่ต้องการค้นหา เพื่อใช้กับ vector search\nรวมชื่อเฉพาะ ตัวเลข และคำสำคัญจาก query เดิมไว้ด้วยเสมอ\n\nตอบเป็นข้อความเท่านั้น ไม่ต้องมี JSON หรือ markdown`
@@ -235,7 +236,7 @@ async function rewriteQueryForSemantic(query: string): Promise<string> {
   }
 }
 
-// --- Step 3: Embedding (Vertex only — dims must match stored vectors) ---
+// --- Embedding (Vertex only — dims must match stored vectors) ---
 
 async function generateQueryEmbedding(text: string): Promise<number[]> {
   const data = await callVertexAI('gemini-embedding-001', 'predict', {
@@ -245,24 +246,114 @@ async function generateQueryEmbedding(text: string): Promise<number[]> {
   return data.predictions[0].embeddings.values
 }
 
-// --- Dedup: best chunk per page, max 3 pages per document ---
+// --- Deterministic scoring ---
+//
+// score = WEIGHT_NAME * nameMatch + WEIGHT_TAG * tagMatch + WEIGHT_CONTENT * contentRRFNorm
+//
+// nameMatch (0..1.5):
+//   token_match_ratio (= matched / total_meaningful_tokens) ∈ [0,1]
+//   + 0.5 bonus if the full raw query appears as a substring of file_name
+//
+// tagMatch (0..1.5):
+//   token_match_ratio against the union of all tag strings
+//   + 0.5 bonus if any tag exact-matches (case-insensitive) the full raw query
+//
+// contentRRFNorm (0..1):
+//   chunk's rrf_score / max(rrf_score in batch). Rows from the name/tag-only
+//   RPC carry rrf_score=0, so they contribute nothing to the content channel —
+//   their score comes entirely from name/tag signals.
+//
+// With weights 4 / 3 / 1, a full file_name match (≥ 4.0) always outranks any
+// content-only match (≤ 1.0). Partial name (0.5×4=2) still beats content (1),
+// and partial tag (0.5×3=1.5) does too — name/tag dominate as intended.
 
+const WEIGHT_NAME = 4.0
+const WEIGHT_TAG = 3.0
+const WEIGHT_CONTENT = 1.0
+const FULL_MATCH_BONUS = 0.5
 const MAX_PAGES_PER_DOC = 3
+const RESULT_LIMIT = 10
+const RPC_MATCH_COUNT = 30
 
-function deduplicateResults(results: any[]): any[] {
+function nameMatchScore(tokens: string[], fileName: string | null, rawQuery: string): number {
+  if (!fileName || tokens.length === 0) return 0
+  const fnLower = fileName.toLowerCase()
+  let matched = 0
+  for (const t of tokens) {
+    if (fnLower.includes(t.toLowerCase())) matched++
+  }
+  const ratio = matched / tokens.length
+  const qLower = rawQuery.trim().toLowerCase()
+  if (qLower.length >= 2 && fnLower.includes(qLower)) {
+    return ratio + FULL_MATCH_BONUS
+  }
+  return ratio
+}
+
+function tagMatchScore(tokens: string[], tags: string[] | null, rawQuery: string): number {
+  if (!tags || tags.length === 0 || tokens.length === 0) return 0
+  const tagsLower = tags.map((t) => (t || '').toLowerCase()).filter(Boolean)
+  if (tagsLower.length === 0) return 0
+  let matched = 0
+  for (const t of tokens) {
+    const tLower = t.toLowerCase()
+    if (tagsLower.some((tag) => tag.includes(tLower))) matched++
+  }
+  const ratio = matched / tokens.length
+  const qLower = rawQuery.trim().toLowerCase()
+  if (qLower.length >= 2 && tagsLower.some((tag) => tag === qLower)) {
+    return ratio + FULL_MATCH_BONUS
+  }
+  return ratio
+}
+
+// Union of chunk-search results and name/tag-only results.
+// For docs present in chunk-search, drop the name/tag representative chunk
+// (the chunk-search rows already carry the name/tag signal through scoring,
+//  and they have non-zero rrf_score which is more informative).
+function mergeCandidates(chunkRows: any[], nameTagRows: any[]): any[] {
+  const docsCovered = new Set(chunkRows.map((r) => r.document_id))
+  const merged = [...chunkRows]
+  for (const r of nameTagRows) {
+    if (!docsCovered.has(r.document_id)) merged.push(r)
+  }
+  return merged
+}
+
+function scoreAndRank(query: string, tokens: string[], candidates: any[]): any[] {
+  const maxRrf = candidates.reduce((m, r) => Math.max(m, r.rrf_score || 0), 0) || 1
+  return candidates.map((r) => {
+    const nameScore = nameMatchScore(tokens, r.file_name, query)
+    const tagScore = tagMatchScore(tokens, r.tags, query)
+    const contentScore = (r.rrf_score || 0) / maxRrf
+    const total =
+      WEIGHT_NAME * nameScore +
+      WEIGHT_TAG * tagScore +
+      WEIGHT_CONTENT * contentScore
+    return {
+      ...r,
+      _name_score: nameScore,
+      _tag_score: tagScore,
+      _content_score: contentScore,
+      _score: total,
+    }
+  })
+}
+
+// Best chunk per (doc, page) by combined score, then cap pages per doc.
+function dedupeAndCap(scored: any[]): any[] {
   const bestByDocPage = new Map<string, any>()
-  for (const r of results) {
+  for (const r of scored) {
     const key = `${r.document_id}:${r.page_number}`
     const existing = bestByDocPage.get(key)
-    if (!existing || r.rrf_score > existing.rrf_score) {
+    if (!existing || r._score > existing._score) {
       bestByDocPage.set(key, r)
     }
   }
+  const sorted = [...bestByDocPage.values()].sort((a, b) => b._score - a._score)
 
-  const sorted = [...bestByDocPage.values()].sort((a, b) => b.rrf_score - a.rrf_score)
   const docPageCount = new Map<string, number>()
   const filtered: any[] = []
-
   for (const r of sorted) {
     const count = docPageCount.get(r.document_id) || 0
     if (count < MAX_PAGES_PER_DOC) {
@@ -270,90 +361,13 @@ function deduplicateResults(results: any[]): any[] {
       docPageCount.set(r.document_id, count + 1)
     }
   }
-
   return filtered
 }
 
-// --- Step 4.5: Boost candidates by relevance signals ---
-// Two complementary signals stacked on top of the raw RRF score:
-//   (a) file_name match — query tokens appearing in document title
-//   (b) doc-level chunk frequency — how many chunks of this doc match the query;
-//       a person/term appearing in many chunks of one doc means the doc is
-//       "about" that person/term, not just mentioning them in passing
-const FILENAME_BOOST_WEIGHT = 2.0
-const DOC_FREQ_BOOST_WEIGHT = 0.5
-
-function buildDocChunkCount(rawResults: any[]): Map<string, number> {
-  const counts = new Map<string, number>()
-  for (const r of rawResults) {
-    counts.set(r.document_id, (counts.get(r.document_id) || 0) + 1)
-  }
-  return counts
-}
-
-function applyRelevanceBoost(
-  query: string,
-  results: any[],
-  docChunkCount: Map<string, number>
-): any[] {
-  const ratioCache = new Map<string, number>()
-  const boosted = results.map((r: any) => {
-    const fname = r.file_name || ''
-    let ratio = ratioCache.get(fname)
-    if (ratio === undefined) {
-      ratio = fileNameMatchRatio(query, fname)
-      ratioCache.set(fname, ratio)
-    }
-    const fileNameFactor = 1 + FILENAME_BOOST_WEIGHT * ratio
-    const n = docChunkCount.get(r.document_id) || 1
-    const docFreqFactor = 1 + DOC_FREQ_BOOST_WEIGHT * Math.log(n)
-    return {
-      ...r,
-      _filename_match_ratio: ratio,
-      _doc_chunk_count: n,
-      _boosted_score: r.rrf_score * fileNameFactor * docFreqFactor,
-    }
-  })
-  boosted.sort((a, b) => b._boosted_score - a._boosted_score)
-  return boosted
-}
-
 function stripInternalFields(results: any[]): any[] {
-  return results.map(({ _filename_match_ratio, _doc_chunk_count, _boosted_score, ...rest }) => rest)
-}
-
-// --- Step 5: Reranking ---
-
-async function rerankResults(
-  query: string,
-  results: any[],
-  topK: number = 10
-): Promise<any[]> {
-  if (results.length <= topK) return results
-
-  try {
-    const numbered = results
-      .map((r: any, i: number) => {
-        const fname = r.file_name ? `📄 ชื่อไฟล์: ${r.file_name}\n` : ''
-        const summary = (r.context_summary || '').substring(0, 100)
-        const content = r.content.substring(0, 300)
-        return `[${i}] ${fname}${summary}\n${content}`
-      })
-      .join('\n\n')
-
-    const prompt = `คุณเป็นผู้เชี่ยวชาญในการจัดลำดับความเกี่ยวข้องของเอกสาร\n\nคำค้นหา: "${query}"\n\nเอกสารที่พบ:\n${numbered}\n\nให้จัดลำดับเอกสารตามความเกี่ยวข้องกับคำค้นหา จากมากไปน้อย\nเลือกแค่ ${topK} อันดับแรกที่เกี่ยวข้องที่สุด\nให้น้ำหนักสูงสุดกับ "ชื่อไฟล์" (📄) ที่ตรงกับคำค้นหา รองลงมาคือเนื้อหาและชื่อเฉพาะหรือตัวเลขที่ตรงกัน\nตอบเป็น JSON array ของ index numbers เท่านั้น เช่น [3, 0, 7, 1, 5]\nไม่ต้องมีคำอธิบาย:`
-
-    const text = await generateText(prompt, { maxTokens: 100, temperature: 0.0 })
-    const cleaned = text.replace(/```json|```/g, '').trim()
-    const rankedIndices: number[] = JSON.parse(cleaned)
-    const reranked = rankedIndices
-      .filter((i: number) => i >= 0 && i < results.length)
-      .map((i: number) => results[i])
-    return reranked.length > 0 ? reranked : results.slice(0, topK)
-  } catch (err) {
-    console.warn('Reranking failed, using original order:', err)
-    return results.slice(0, topK)
-  }
+  return results.map(
+    ({ _name_score, _tag_score, _content_score, _score, ...rest }) => rest
+  )
 }
 
 // --- Main Handler ---
@@ -375,43 +389,46 @@ serve(async (req) => {
 
     const searchMode = mode || 'hybrid'
     const startTime = Date.now()
-    const useAI = searchMode !== 'fulltext'
+    const useVector = searchMode !== 'fulltext'
 
-    const segmentedOriginalQuery = segmentThai(query)
+    const segmentedQuery = segmentThai(query)
+    const tokens = extractMeaningfulTokens(query)
 
     let semanticQuery = query
-    let embeddingStr = `[${new Array(768).fill(0).join(',')}]` // zero vector; unused when semantic_weight=0
+    let embeddingStr = `[${new Array(768).fill(0).join(',')}]`
 
-    if (useAI) {
+    if (useVector) {
       semanticQuery = await rewriteQueryForSemantic(query)
       const queryEmbedding = await generateQueryEmbedding(semanticQuery)
       embeddingStr = `[${queryEmbedding.join(',')}]`
     }
 
-    const fullTextWeight = searchMode === 'semantic' ? 0.0 : 1.0
-    const semanticWeight = searchMode === 'fulltext' ? 0.0 : 1.0
+    const chunkPromise = supabase.rpc('ocr_chunk_hybrid_search', {
+      query_text: segmentedQuery,
+      query_embedding: embeddingStr,
+      match_count: RPC_MATCH_COUNT,
+      full_text_weight: 1.0,
+      semantic_weight: useVector ? 1.0 : 0.0,
+      rrf_k: 50,
+    })
 
-    const { data: searchResults, error: searchError } = await supabase.rpc(
-      'ocr_chunk_hybrid_search',
-      {
-        query_text: segmentedOriginalQuery,
-        query_embedding: embeddingStr,
-        match_count: 30,
-        full_text_weight: fullTextWeight,
-        semantic_weight: semanticWeight,
-        rrf_k: 50,
-      }
-    )
+    const nameTagPromise =
+      tokens.length > 0
+        ? supabase.rpc('ocr_docs_name_tag_match', {
+            tokens,
+            match_count: RPC_MATCH_COUNT,
+          })
+        : Promise.resolve({ data: [], error: null })
 
-    if (searchError) throw new Error(`Search RPC error: ${searchError.message}`)
+    const [chunkRes, nameTagRes] = await Promise.all([chunkPromise, nameTagPromise])
 
-    const dedupedResults = deduplicateResults(searchResults || [])
-    const docChunkCount = buildDocChunkCount(searchResults || [])
-    const boostedResults = applyRelevanceBoost(query, dedupedResults, docChunkCount)
-    const rankedResults = useAI
-      ? await rerankResults(query, boostedResults, 10)
-      : boostedResults.slice(0, 10)
-    const results = stripInternalFields(rankedResults)
+    if (chunkRes.error) throw new Error(`Chunk search error: ${chunkRes.error.message}`)
+    if (nameTagRes.error) throw new Error(`Name/tag search error: ${nameTagRes.error.message}`)
+
+    const candidates = mergeCandidates(chunkRes.data || [], nameTagRes.data || [])
+    const scored = scoreAndRank(query, tokens, candidates)
+    const deduped = dedupeAndCap(scored)
+    const results = stripInternalFields(deduped.slice(0, RESULT_LIMIT))
 
     if (user_id) {
       supabase
@@ -433,13 +450,14 @@ serve(async (req) => {
         results,
         metadata: {
           original_query: query,
-          segmented_query: segmentedOriginalQuery,
+          segmented_query: segmentedQuery,
           semantic_query: semanticQuery,
-          total_candidates: (searchResults || []).length,
-          after_dedup: dedupedResults.length,
-          reranked: useAI && results.length < dedupedResults.length,
+          meaningful_tokens: tokens,
+          chunk_candidates: (chunkRes.data || []).length,
+          name_tag_candidates: (nameTagRes.data || []).length,
+          merged_candidates: candidates.length,
           elapsed_ms: elapsed,
-          ai_used: useAI,
+          vector_used: useVector,
         },
       }),
       { headers: { 'Content-Type': 'application/json', ...corsHeaders } }

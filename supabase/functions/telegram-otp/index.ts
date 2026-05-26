@@ -27,7 +27,15 @@ async function withAbort<T>(
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), ms)
   try {
-    return await build(controller.signal)
+    const result = await build(controller.signal)
+    // Supabase JS catches AbortError internally and returns { data:null, error }
+    // instead of throwing — explicitly throw if the signal fired so the caller's
+    // outer catch can map "DB timeout:" → 503 instead of treating it as a
+    // generic DB error and falling through to subsequent queries.
+    if (controller.signal.aborted) {
+      throw new Error(`DB timeout: ${label} after ${ms}ms`)
+    }
+    return result
   } catch (err) {
     if (controller.signal.aborted) {
       throw new Error(`DB timeout: ${label} after ${ms}ms`)
@@ -220,7 +228,14 @@ serve(async (req) => {
           )
 
           if (recentError) {
+            // DB stressed enough that even rate-limit lookup fails — bail out
+            // now instead of burning another 6s on profile-lookup that's
+            // going to fail the same way.
             console.error('Error checking rate limit:', recentError)
+            return new Response(
+              JSON.stringify({ error: 'ระบบหนาแน่น กรุณาลองใหม่อีกครั้งในอีกสักครู่' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 503 }
+            )
           } else if (recentOtps && recentOtps.length >= 3) {
             return new Response(
               JSON.stringify({ error: 'กรุณารอ 5 นาทีก่อนขอรหัส OTP ใหม่' }),

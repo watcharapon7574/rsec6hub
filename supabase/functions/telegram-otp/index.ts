@@ -9,6 +9,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Per-call timeout for Supabase DB queries — กัน function ค้าง 150s
+// (WORKER_RESOURCE_LIMIT, HTTP 546) ตอน DB pool ตัน เพราะ realtime/PostgREST flood
+// ค่า 6s = เผื่อ DB stress + cold pool แต่ยัง fail เร็วพอที่ user กดใหม่ได้
+const DB_TIMEOUT_MS = 6000
+
+function withTimeout<T>(p: PromiseLike<T>, label: string, ms: number = DB_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`DB timeout: ${label} after ${ms}ms`)),
+      ms,
+    )
+    Promise.resolve(p).then(
+      (v) => { clearTimeout(timer); resolve(v) },
+      (e) => { clearTimeout(timer); reject(e) },
+    )
+  })
+}
+
 interface TelegramMessage {
   chat: {
     id: number
@@ -164,11 +182,14 @@ serve(async (req) => {
         // Skip rate limiting for admin phone since multiple admins share the same number
         if (!isAdminPhone) {
           const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-          const { data: recentOtps, error: recentError } = await supabaseClient
-            .from('otp_codes')
-            .select('id')
-            .eq('phone', normalizedPhone)
-            .gte('created_at', fiveMinutesAgo.toISOString())
+          const { data: recentOtps, error: recentError } = await withTimeout(
+            supabaseClient
+              .from('otp_codes')
+              .select('id')
+              .eq('phone', normalizedPhone)
+              .gte('created_at', fiveMinutesAgo.toISOString()),
+            'rate-limit-check',
+          )
 
           if (recentError) {
             console.error('Error checking rate limit:', recentError)
@@ -189,11 +210,14 @@ serve(async (req) => {
 
         if (!isAdminPhone) {
           // Check if user exists and get telegram_chat_id (normal user flow)
-          const { data: profileData, error: profileError } = await supabaseClient
-            .from('profiles')
-            .select('telegram_chat_id, first_name, last_name, user_id')
-            .eq('phone', normalizedPhone)
-            .maybeSingle()
+          const { data: profileData, error: profileError } = await withTimeout(
+            supabaseClient
+              .from('profiles')
+              .select('telegram_chat_id, first_name, last_name, user_id')
+              .eq('phone', normalizedPhone)
+              .maybeSingle(),
+            'profile-lookup',
+          )
 
           if (profileError) {
             console.error('Profile lookup error:', profileError)
@@ -245,22 +269,28 @@ serve(async (req) => {
         }
 
         // Invalidate any existing unused OTPs for this phone
-        await supabaseClient
-          .from('otp_codes')
-          .update({ is_used: true })
-          .eq('phone', normalizedPhone)
-          .eq('is_used', false)
+        await withTimeout(
+          supabaseClient
+            .from('otp_codes')
+            .update({ is_used: true })
+            .eq('phone', normalizedPhone)
+            .eq('is_used', false),
+          'invalidate-old-otps',
+        )
 
         // Admin phone uses unique OTP per recipient
         if (isAdminPhone) {
           console.log('🔑 Admin login detected, generating unique OTP for each recipient')
 
           // Get all active admin OTP recipients
-          const { data: adminRecipients, error: recipientsError } = await supabaseClient
-            .from('admin_otp_recipients')
-            .select('telegram_chat_id, recipient_name')
-            .eq('admin_phone', normalizedPhone)
-            .eq('is_active', true)
+          const { data: adminRecipients, error: recipientsError } = await withTimeout(
+            supabaseClient
+              .from('admin_otp_recipients')
+              .select('telegram_chat_id, recipient_name')
+              .eq('admin_phone', normalizedPhone)
+              .eq('is_active', true),
+            'admin-recipients',
+          )
 
           if (recipientsError) {
             console.error('Failed to get admin recipients:', recipientsError)
@@ -276,14 +306,17 @@ serve(async (req) => {
             const otpCode = Math.floor(1000 + Math.random() * 9000).toString()
             const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
-            const { error: otpError } = await supabaseClient
-              .from('otp_codes')
-              .insert({
-                phone: normalizedPhone,
-                otp_code: otpCode,
-                telegram_chat_id: chatId,
-                expires_at: expiresAt.toISOString()
-              })
+            const { error: otpError } = await withTimeout(
+              supabaseClient
+                .from('otp_codes')
+                .insert({
+                  phone: normalizedPhone,
+                  otp_code: otpCode,
+                  telegram_chat_id: chatId,
+                  expires_at: expiresAt.toISOString()
+                }),
+              'otp-insert-admin-fallback',
+            )
 
             if (otpError) {
               console.error('Failed to save OTP:', otpError)
@@ -342,9 +375,12 @@ serve(async (req) => {
             }
 
             // Insert all OTP records into database
-            const { error: otpError } = await supabaseClient
-              .from('otp_codes')
-              .insert(otpInserts)
+            const { error: otpError } = await withTimeout(
+              supabaseClient
+                .from('otp_codes')
+                .insert(otpInserts),
+              'otp-insert-admin-bulk',
+            )
 
             if (otpError) {
               console.error('Failed to save OTPs:', otpError)
@@ -367,14 +403,17 @@ serve(async (req) => {
           const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
           // Save OTP to database
-          const { error: otpError } = await supabaseClient
-            .from('otp_codes')
-            .insert({
-              phone: normalizedPhone,
-              otp_code: otpCode,
-              telegram_chat_id: chatId,
-              expires_at: expiresAt.toISOString()
-            })
+          const { error: otpError } = await withTimeout(
+            supabaseClient
+              .from('otp_codes')
+              .insert({
+                phone: normalizedPhone,
+                otp_code: otpCode,
+                telegram_chat_id: chatId,
+                expires_at: expiresAt.toISOString()
+              }),
+            'otp-insert',
+          )
 
           if (otpError) {
             console.error('Failed to save OTP:', otpError)
@@ -423,12 +462,15 @@ serve(async (req) => {
         console.log('🔍 Verifying OTP for phone:', phone, '-> normalized:', normalizedPhone, 'OTP:', otp)
 
         // Debug: Check all OTPs for this phone
-        const { data: allOtps, error: debugError } = await supabaseClient
-          .from('otp_codes')
-          .select('*')
-          .eq('phone', normalizedPhone)
-          .order('created_at', { ascending: false })
-          .limit(5)
+        const { data: allOtps, error: debugError } = await withTimeout(
+          supabaseClient
+            .from('otp_codes')
+            .select('*')
+            .eq('phone', normalizedPhone)
+            .order('created_at', { ascending: false })
+            .limit(5),
+          'verify-debug-list',
+        )
 
         if (!debugError && allOtps) {
           console.log('📋 Recent OTPs for phone:', normalizedPhone)
@@ -439,16 +481,19 @@ serve(async (req) => {
         }
 
         // Find valid OTP in our system
-        const { data: otpRecord, error: otpError } = await supabaseClient
-          .from('otp_codes')
-          .select('*')
-          .eq('phone', normalizedPhone)
-          .eq('otp_code', otp)
-          .eq('is_used', false)
-          .gt('expires_at', new Date().toISOString())
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
+        const { data: otpRecord, error: otpError } = await withTimeout(
+          supabaseClient
+            .from('otp_codes')
+            .select('*')
+            .eq('phone', normalizedPhone)
+            .eq('otp_code', otp)
+            .eq('is_used', false)
+            .gt('expires_at', new Date().toISOString())
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          'verify-find-valid-otp',
+        )
 
         if (otpError) {
           console.error('❌ OTP lookup error:', otpError)
@@ -461,14 +506,17 @@ serve(async (req) => {
         console.log('🔎 OTP search result:', otpRecord ? 'Found' : 'Not found')
         if (!otpRecord) {
           // Check if OTP exists but is expired or used
-          const { data: expiredOtp } = await supabaseClient
-            .from('otp_codes')
-            .select('*')
-            .eq('phone', normalizedPhone)
-            .eq('otp_code', otp)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
+          const { data: expiredOtp } = await withTimeout(
+            supabaseClient
+              .from('otp_codes')
+              .select('*')
+              .eq('phone', normalizedPhone)
+              .eq('otp_code', otp)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+            'verify-find-expired-otp',
+          )
 
           if (expiredOtp) {
             const isExpired = new Date(expiredOtp.expires_at) < new Date()
@@ -499,11 +547,14 @@ serve(async (req) => {
 
         try {
           // Get profile to get user metadata
-          const { data: profile, error: profileError } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('phone', normalizedPhone)
-            .maybeSingle()
+          const { data: profile, error: profileError } = await withTimeout(
+            supabaseClient
+              .from('profiles')
+              .select('*')
+              .eq('phone', normalizedPhone)
+              .maybeSingle(),
+            'verify-profile-lookup',
+          )
 
           if (profileError) {
             console.error('Profile lookup error:', profileError)
@@ -520,17 +571,21 @@ serve(async (req) => {
             console.log('Creating new Supabase Auth user for phone:', formattedPhone)
             
             // Create user with phone and metadata
-            const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
-              phone: formattedPhone,
-              phone_confirm: true,
-              user_metadata: {
-                phone: normalizedPhone,
-                employee_id: profile.employee_id,
-                first_name: profile.first_name,
-                last_name: profile.last_name,
-                position: profile.position
-              }
-            })
+            const { data: authData, error: authError } = await withTimeout(
+              supabaseClient.auth.admin.createUser({
+                phone: formattedPhone,
+                phone_confirm: true,
+                user_metadata: {
+                  phone: normalizedPhone,
+                  employee_id: profile.employee_id,
+                  first_name: profile.first_name,
+                  last_name: profile.last_name,
+                  position: profile.position
+                }
+              }),
+              'verify-create-auth-user',
+              10000, // auth.admin can be slower
+            )
 
             if (authError) {
               console.error('Failed to create auth user:', authError)
@@ -541,27 +596,37 @@ serve(async (req) => {
             console.log('Created new auth user:', authUser.id)
 
             // Update profile with new user_id
-            const { error: updateError } = await supabaseClient
-              .from('profiles')
-              .update({ user_id: authUser.id })
-              .eq('id', profile.id)
+            const { error: updateError } = await withTimeout(
+              supabaseClient
+                .from('profiles')
+                .update({ user_id: authUser.id })
+                .eq('id', profile.id),
+              'verify-update-profile-userid',
+            )
 
             if (updateError) {
               console.error('Failed to update profile with user_id:', updateError)
             }
           } else {
             // Get existing auth user
-            const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(profile.user_id)
+            const { data: userData, error: userError } = await withTimeout(
+              supabaseClient.auth.admin.getUserById(profile.user_id),
+              'verify-get-auth-user',
+              10000,
+            )
             if (!userError && userData.user) {
               authUser = userData.user
             }
           }
 
           // Mark OTP as used
-          await supabaseClient
-            .from('otp_codes')
-            .update({ is_used: true })
-            .eq('id', otpRecord.id)
+          await withTimeout(
+            supabaseClient
+              .from('otp_codes')
+              .update({ is_used: true })
+              .eq('id', otpRecord.id),
+            'verify-mark-otp-used',
+          )
 
           // Return success with user information for session creation
           return new Response(

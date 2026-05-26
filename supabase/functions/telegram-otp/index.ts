@@ -13,7 +13,34 @@ const corsHeaders = {
 // (WORKER_RESOURCE_LIMIT, HTTP 546) ตอน DB pool ตัน เพราะ realtime/PostgREST flood
 // ค่า 6s = เผื่อ DB stress + cold pool แต่ยัง fail เร็วพอที่ user กดใหม่ได้
 const DB_TIMEOUT_MS = 6000
+const AUTH_TIMEOUT_MS = 10000
 
+// Build + run a Supabase query with AbortSignal so when the timer fires the
+// underlying request is actually cancelled — connection returns to pool,
+// instead of hanging in the background while function reports a fake failure.
+// Use this for `.from(...).select/insert/update(...)` query builders.
+async function withAbort<T>(
+  build: (signal: AbortSignal) => PromiseLike<T>,
+  label: string,
+  ms: number = DB_TIMEOUT_MS,
+): Promise<T> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  try {
+    return await build(controller.signal)
+  } catch (err) {
+    if (controller.signal.aborted) {
+      throw new Error(`DB timeout: ${label} after ${ms}ms`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+// Fallback for SDK methods that do NOT expose abortSignal (auth.admin.*).
+// The underlying fetch is not actually cancelled — it continues running until
+// the server responds. Only use this when withAbort isn't an option.
 function withTimeout<T>(p: PromiseLike<T>, label: string, ms: number = DB_TIMEOUT_MS): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(
@@ -182,12 +209,13 @@ serve(async (req) => {
         // Skip rate limiting for admin phone since multiple admins share the same number
         if (!isAdminPhone) {
           const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-          const { data: recentOtps, error: recentError } = await withTimeout(
-            supabaseClient
+          const { data: recentOtps, error: recentError } = await withAbort(
+            (signal) => supabaseClient
               .from('otp_codes')
               .select('id')
               .eq('phone', normalizedPhone)
-              .gte('created_at', fiveMinutesAgo.toISOString()),
+              .gte('created_at', fiveMinutesAgo.toISOString())
+              .abortSignal(signal),
             'rate-limit-check',
           )
 
@@ -210,12 +238,13 @@ serve(async (req) => {
 
         if (!isAdminPhone) {
           // Check if user exists and get telegram_chat_id (normal user flow)
-          const { data: profileData, error: profileError } = await withTimeout(
-            supabaseClient
+          const { data: profileData, error: profileError } = await withAbort(
+            (signal) => supabaseClient
               .from('profiles')
               .select('telegram_chat_id, first_name, last_name, user_id')
               .eq('phone', normalizedPhone)
-              .maybeSingle(),
+              .maybeSingle()
+              .abortSignal(signal),
             'profile-lookup',
           )
 
@@ -269,12 +298,13 @@ serve(async (req) => {
         }
 
         // Invalidate any existing unused OTPs for this phone
-        await withTimeout(
-          supabaseClient
+        await withAbort(
+          (signal) => supabaseClient
             .from('otp_codes')
             .update({ is_used: true })
             .eq('phone', normalizedPhone)
-            .eq('is_used', false),
+            .eq('is_used', false)
+            .abortSignal(signal),
           'invalidate-old-otps',
         )
 
@@ -283,12 +313,13 @@ serve(async (req) => {
           console.log('🔑 Admin login detected, generating unique OTP for each recipient')
 
           // Get all active admin OTP recipients
-          const { data: adminRecipients, error: recipientsError } = await withTimeout(
-            supabaseClient
+          const { data: adminRecipients, error: recipientsError } = await withAbort(
+            (signal) => supabaseClient
               .from('admin_otp_recipients')
               .select('telegram_chat_id, recipient_name')
               .eq('admin_phone', normalizedPhone)
-              .eq('is_active', true),
+              .eq('is_active', true)
+              .abortSignal(signal),
             'admin-recipients',
           )
 
@@ -306,15 +337,16 @@ serve(async (req) => {
             const otpCode = Math.floor(1000 + Math.random() * 9000).toString()
             const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
-            const { error: otpError } = await withTimeout(
-              supabaseClient
+            const { error: otpError } = await withAbort(
+              (signal) => supabaseClient
                 .from('otp_codes')
                 .insert({
                   phone: normalizedPhone,
                   otp_code: otpCode,
                   telegram_chat_id: chatId,
                   expires_at: expiresAt.toISOString()
-                }),
+                })
+                .abortSignal(signal),
               'otp-insert-admin-fallback',
             )
 
@@ -375,10 +407,11 @@ serve(async (req) => {
             }
 
             // Insert all OTP records into database
-            const { error: otpError } = await withTimeout(
-              supabaseClient
+            const { error: otpError } = await withAbort(
+              (signal) => supabaseClient
                 .from('otp_codes')
-                .insert(otpInserts),
+                .insert(otpInserts)
+                .abortSignal(signal),
               'otp-insert-admin-bulk',
             )
 
@@ -403,15 +436,16 @@ serve(async (req) => {
           const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
 
           // Save OTP to database
-          const { error: otpError } = await withTimeout(
-            supabaseClient
+          const { error: otpError } = await withAbort(
+            (signal) => supabaseClient
               .from('otp_codes')
               .insert({
                 phone: normalizedPhone,
                 otp_code: otpCode,
                 telegram_chat_id: chatId,
                 expires_at: expiresAt.toISOString()
-              }),
+              })
+              .abortSignal(signal),
             'otp-insert',
           )
 
@@ -462,13 +496,14 @@ serve(async (req) => {
         console.log('🔍 Verifying OTP for phone:', phone, '-> normalized:', normalizedPhone, 'OTP:', otp)
 
         // Debug: Check all OTPs for this phone
-        const { data: allOtps, error: debugError } = await withTimeout(
-          supabaseClient
+        const { data: allOtps, error: debugError } = await withAbort(
+          (signal) => supabaseClient
             .from('otp_codes')
             .select('*')
             .eq('phone', normalizedPhone)
             .order('created_at', { ascending: false })
-            .limit(5),
+            .limit(5)
+            .abortSignal(signal),
           'verify-debug-list',
         )
 
@@ -481,8 +516,8 @@ serve(async (req) => {
         }
 
         // Find valid OTP in our system
-        const { data: otpRecord, error: otpError } = await withTimeout(
-          supabaseClient
+        const { data: otpRecord, error: otpError } = await withAbort(
+          (signal) => supabaseClient
             .from('otp_codes')
             .select('*')
             .eq('phone', normalizedPhone)
@@ -491,7 +526,8 @@ serve(async (req) => {
             .gt('expires_at', new Date().toISOString())
             .order('created_at', { ascending: false })
             .limit(1)
-            .maybeSingle(),
+            .maybeSingle()
+            .abortSignal(signal),
           'verify-find-valid-otp',
         )
 
@@ -506,15 +542,16 @@ serve(async (req) => {
         console.log('🔎 OTP search result:', otpRecord ? 'Found' : 'Not found')
         if (!otpRecord) {
           // Check if OTP exists but is expired or used
-          const { data: expiredOtp } = await withTimeout(
-            supabaseClient
+          const { data: expiredOtp } = await withAbort(
+            (signal) => supabaseClient
               .from('otp_codes')
               .select('*')
               .eq('phone', normalizedPhone)
               .eq('otp_code', otp)
               .order('created_at', { ascending: false })
               .limit(1)
-              .maybeSingle(),
+              .maybeSingle()
+              .abortSignal(signal),
             'verify-find-expired-otp',
           )
 
@@ -547,12 +584,13 @@ serve(async (req) => {
 
         try {
           // Get profile to get user metadata
-          const { data: profile, error: profileError } = await withTimeout(
-            supabaseClient
+          const { data: profile, error: profileError } = await withAbort(
+            (signal) => supabaseClient
               .from('profiles')
               .select('*')
               .eq('phone', normalizedPhone)
-              .maybeSingle(),
+              .maybeSingle()
+              .abortSignal(signal),
             'verify-profile-lookup',
           )
 
@@ -571,6 +609,8 @@ serve(async (req) => {
             console.log('Creating new Supabase Auth user for phone:', formattedPhone)
             
             // Create user with phone and metadata
+            // NOTE: auth.admin.* doesn't expose abortSignal — using Promise.race fallback.
+            // If this times out, the request still completes in the background.
             const { data: authData, error: authError } = await withTimeout(
               supabaseClient.auth.admin.createUser({
                 phone: formattedPhone,
@@ -584,7 +624,7 @@ serve(async (req) => {
                 }
               }),
               'verify-create-auth-user',
-              10000, // auth.admin can be slower
+              AUTH_TIMEOUT_MS,
             )
 
             if (authError) {
@@ -596,11 +636,12 @@ serve(async (req) => {
             console.log('Created new auth user:', authUser.id)
 
             // Update profile with new user_id
-            const { error: updateError } = await withTimeout(
-              supabaseClient
+            const { error: updateError } = await withAbort(
+              (signal) => supabaseClient
                 .from('profiles')
                 .update({ user_id: authUser.id })
-                .eq('id', profile.id),
+                .eq('id', profile.id)
+                .abortSignal(signal),
               'verify-update-profile-userid',
             )
 
@@ -609,10 +650,11 @@ serve(async (req) => {
             }
           } else {
             // Get existing auth user
+            // NOTE: auth.admin.* doesn't expose abortSignal — see withTimeout caveat above.
             const { data: userData, error: userError } = await withTimeout(
               supabaseClient.auth.admin.getUserById(profile.user_id),
               'verify-get-auth-user',
-              10000,
+              AUTH_TIMEOUT_MS,
             )
             if (!userError && userData.user) {
               authUser = userData.user
@@ -620,11 +662,12 @@ serve(async (req) => {
           }
 
           // Mark OTP as used
-          await withTimeout(
-            supabaseClient
+          await withAbort(
+            (signal) => supabaseClient
               .from('otp_codes')
               .update({ is_used: true })
-              .eq('id', otpRecord.id),
+              .eq('id', otpRecord.id)
+              .abortSignal(signal),
             'verify-mark-otp-used',
           )
 
@@ -758,12 +801,18 @@ serve(async (req) => {
     console.error('Error stack:', err.stack)
     console.error('Error name:', err.name)
     console.error('Error message:', err.message)
+    // Map internal DB-timeout label to a user-facing Thai message so we don't
+    // leak internal labels like "DB timeout: rate-limit-check after 6000ms".
+    const isTimeout = err.message?.startsWith('DB timeout:')
+    const userMessage = isTimeout
+      ? 'ระบบหนาแน่น กรุณาลองใหม่อีกครั้งในอีกสักครู่'
+      : (err.message || 'Internal server error')
     return new Response(
       JSON.stringify({
-        error: err.message || 'Internal server error',
-        details: err.toString()
+        error: userMessage,
+        // keep details only in logs (above); don't echo to client
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: isTimeout ? 503 : 500 }
     )
   }
 })

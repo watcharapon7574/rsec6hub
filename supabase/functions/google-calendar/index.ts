@@ -5,6 +5,10 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  // Cache CORS preflight for 24h so the browser stops re-sending OPTIONS
+  // before every GET. Drops total request count roughly in half.
+  'Access-Control-Max-Age': '86400',
 }
 
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_CALENDAR_API_KEY') || 'AIzaSyACXC0P_lc2SCv29IntKtG_GjddGpG1yNI'

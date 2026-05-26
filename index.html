@@ -167,10 +167,18 @@
             const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
             console.log('✅ SW registered:', registration);
 
-            // ตรวจสอบอัปเดททุก 60 วินาที
+            // ตรวจสอบอัปเดททุก 60 วินาที (tab ที่ active)
             setInterval(() => {
               registration.update();
             }, 60000);
+
+            // PWA installed / background tab: setInterval ไม่ tick → ตอน user กลับมา
+            // ที่ tab ก็ check update ทันทีเพื่อปิด recovery gap หลัง deploy ฉุกเฉิน
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible') {
+                registration.update();
+              }
+            });
 
             // เมื่อมี SW ใหม่พร้อม
             registration.addEventListener('updatefound', () => {

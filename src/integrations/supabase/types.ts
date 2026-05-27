@@ -3519,7 +3519,8 @@ export type Database = {
       register_manual_leave_entry: {
         Args: {
           p_days_count: number
-          p_director_signer_name?: string
+          p_director_signer_name: string
+          p_director_user_id: string
           p_end_date: string
           p_fiscal_half: number
           p_fiscal_year: number

@@ -40,6 +40,7 @@ import {
 } from '@/types/leave';
 import { calculateLeaveDays, toLocalISODate } from '@/utils/fiscalYear';
 import { createLeaveRequest, getMyBalance } from '@/services/leaveService';
+import { supabase } from '@/integrations/supabase/client';
 
 const NewLeaveRequestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ const NewLeaveRequestPage: React.FC = () => {
     contact_phone: '',
     attachment_name: '',
   });
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [delegations, setDelegations] = useState<
     Record<DelegationArea, { enabled: boolean; name: string }>
   >({
@@ -75,7 +77,7 @@ const NewLeaveRequestPage: React.FC = () => {
   useEffect(() => {
     if (!profile) return;
     let alive = true;
-    getMyBalance(profile.id).then((b) => {
+    getMyBalance().then((b) => {
       if (alive) setBalance(b);
     });
     if (profile.phone) {
@@ -159,8 +161,31 @@ const NewLeaveRequestPage: React.FC = () => {
           (a) => delegations[a].enabled && delegations[a].name.trim() !== '',
         )
         .map((a) => ({ area: a, delegate_name: delegations[a].name.trim() }));
+
+      // อัปโหลดไฟล์ก่อน insert request — ใช้ folder UUID ที่ unique ต่อใบลา
+      // path: {auth.uid}/{folder_uuid}/{filename} ตรงกับ storage RLS
+      const attachments: { path: string; name: string; uploaded_at: string }[] = [];
+      if (attachmentFile) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('ยังไม่ได้เข้าสู่ระบบ');
+        const folderId = crypto.randomUUID();
+        const safeName = attachmentFile.name.replace(/[^\w.\-ก-๙]/g, '_');
+        const path = `${user.id}/${folderId}/${safeName}`;
+        const { error: upErr } = await supabase.storage
+          .from('leave-attachments')
+          .upload(path, attachmentFile, {
+            contentType: attachmentFile.type || 'application/octet-stream',
+            upsert: false,
+          });
+        if (upErr) throw new Error(`อัปโหลดไฟล์ไม่สำเร็จ: ${upErr.message}`);
+        attachments.push({
+          path,
+          name: attachmentFile.name,
+          uploaded_at: new Date().toISOString(),
+        });
+      }
+
       await createLeaveRequest(
-        profile.id,
         userName,
         profile.job_position ?? profile.position ?? '',
         {
@@ -170,9 +195,7 @@ const NewLeaveRequestPage: React.FC = () => {
           reason: formData.reason,
           form_data: {
             contact_phone: formData.contact_phone,
-            attachments: formData.attachment_name.trim()
-              ? [formData.attachment_name.trim()]
-              : [],
+            attachments: attachments.length ? attachments : undefined,
             delegations: delegationList.length ? delegationList : undefined,
           },
         },
@@ -449,9 +472,18 @@ const NewLeaveRequestPage: React.FC = () => {
                       id="attachment"
                       type="file"
                       className="hidden"
+                      accept="image/png,image/jpeg,image/heic,application/pdf"
                       onChange={(e) => {
                         const f = e.target.files?.[0];
                         if (f) {
+                          if (f.size > 10 * 1024 * 1024) {
+                            toast({
+                              title: 'ไฟล์ใหญ่เกิน 10MB',
+                              variant: 'destructive',
+                            });
+                            return;
+                          }
+                          setAttachmentFile(f);
                           setFormData((d) => ({
                             ...d,
                             attachment_name: f.name,

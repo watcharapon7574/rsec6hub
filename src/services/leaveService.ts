@@ -202,7 +202,6 @@ export async function getOverviewStats(): Promise<LeaveOverviewStats> {
 }
 
 export async function getMyBalance(
-  _userId: string,
   fiscalYear?: number,
 ): Promise<LeaveBalance[]> {
   const period = getFiscalPeriod();
@@ -236,7 +235,7 @@ export async function getMyBalance(
   });
 }
 
-export async function getMyRequests(_userId: string): Promise<LeaveRequest[]> {
+export async function getMyRequests(): Promise<LeaveRequest[]> {
   const authId = await getCurrentAuthUserId();
   const { data, error } = await sb
     .from('leave_requests')
@@ -248,7 +247,6 @@ export async function getMyRequests(_userId: string): Promise<LeaveRequest[]> {
 }
 
 export async function createLeaveRequest(
-  _userId: string,
   userName: string,
   userPosition: string,
   input: NewLeaveRequestInput,
@@ -445,6 +443,8 @@ export async function addManualRegistryEntry(
     p_fiscal_year: period.year,
     p_fiscal_half: period.half,
     p_reason: input.reason,
+    p_director_user_id: input.director_user_id,
+    p_director_signer_name: input.director_name,
     p_remarks: input.remarks ?? null,
   });
   if (error) throw new Error(error.message ?? 'addManualRegistryEntry failed');

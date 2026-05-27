@@ -10,9 +10,12 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// ─── Config (hardcoded ตาม pattern telegram-notify) ──────────────────────
-const BOT_TOKEN = '7742304832:AAFZgUUeN_5ZTA-rJNOAmJ6VZGpyKUTA2Zg';
-const GROUP_CHAT_ID = '-1003977441825'; // กลุ่ม "วันนี้ใครลา?"
+// ─── Config (env vars set via `supabase secrets set`) ────────────────────
+const BOT_TOKEN = Deno.env.get('LEAVE_TELEGRAM_BOT_TOKEN') ?? '';
+const GROUP_CHAT_ID = Deno.env.get('LEAVE_TELEGRAM_GROUP_CHAT_ID') ?? '';
+if (!BOT_TOKEN || !GROUP_CHAT_ID) {
+  console.error('Missing LEAVE_TELEGRAM_BOT_TOKEN / LEAVE_TELEGRAM_GROUP_CHAT_ID secret');
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -181,6 +184,38 @@ function getSupabase() {
   );
 }
 
+// ─── Auth: HR head / admin for UI, shared secret for cron ───────────────
+// 1) X-Cron-Auth header == CRON_AUTH_TOKEN → cron job (server-to-server)
+// 2) otherwise: Authorization Bearer JWT + profile.is_admin || org_structure_role ~ 'บุคคล'
+async function authorize(req: Request): Promise<void> {
+  const cronToken = req.headers.get('X-Cron-Auth');
+  const expectedCronToken = Deno.env.get('CRON_AUTH_TOKEN');
+  if (cronToken && expectedCronToken && cronToken === expectedCronToken) {
+    return; // cron path
+  }
+
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const jwt = authHeader.replace(/^Bearer\s+/i, '');
+  if (!jwt) throw new Error('Unauthorized — missing token');
+
+  const sbAdmin = getSupabase();
+  const { data: userData, error: userErr } = await sbAdmin.auth.getUser(jwt);
+  if (userErr || !userData?.user) throw new Error('Unauthorized — invalid token');
+
+  const { data: profile, error: profErr } = await sbAdmin
+    .from('profiles')
+    .select('is_admin, org_structure_role')
+    .eq('user_id', userData.user.id)
+    .maybeSingle();
+  if (profErr) throw new Error(`profile lookup: ${profErr.message}`);
+
+  const isAdmin = profile?.is_admin === true;
+  const isHr = /บุคคล/.test(profile?.org_structure_role ?? '');
+  if (!isAdmin && !isHr) {
+    throw new Error('Forbidden — HR head หรือ admin เท่านั้น');
+  }
+}
+
 async function fetchTodayLeaves(todayISO: string): Promise<LeaveRow[]> {
   const sb = getSupabase();
   // ครอบคลุม: approved ทุกประเภท + sick ที่ pending/in_progress (ยังไม่อนุมัติแต่ลาวันนี้)
@@ -223,6 +258,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    await authorize(req);
     const payload = (await req.json()) as Payload;
     if (!payload?.type) {
       throw new Error('payload.type required');
@@ -263,11 +299,16 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    const status = /Unauthorized/.test(message)
+      ? 401
+      : /Forbidden/.test(message)
+        ? 403
+        : 500;
     console.error('❌ leave-telegram-notify error:', message);
     return new Response(
       JSON.stringify({ ok: false, error: message }),
       {
-        status: 500,
+        status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     );

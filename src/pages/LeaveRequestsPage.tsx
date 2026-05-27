@@ -894,23 +894,44 @@ const LeaveDetailDialog: React.FC<{
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  {attachments.map((name, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() =>
-                        toast({
-                          title: 'เปิดเอกสาร (mock)',
-                          description: name,
-                        })
-                      }
-                      className="w-full flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
-                    >
-                      <Paperclip className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                      <span className="flex-1 text-left truncate">{name}</span>
-                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                  ))}
+                  {attachments.map((a, i) => {
+                    const isLegacyString = typeof a === 'string';
+                    const displayName = isLegacyString ? a : a.name;
+                    const storagePath = isLegacyString ? null : a.path;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={async () => {
+                          if (!storagePath) {
+                            toast({
+                              title: 'ไฟล์เก่า (mock) ไม่มีในระบบ',
+                              description: displayName,
+                              variant: 'destructive',
+                            });
+                            return;
+                          }
+                          const { data, error } = await supabase.storage
+                            .from('leave-attachments')
+                            .createSignedUrl(storagePath, 300);
+                          if (error || !data?.signedUrl) {
+                            toast({
+                              title: 'เปิดเอกสารไม่สำเร็จ',
+                              description: error?.message ?? 'ไม่พบไฟล์',
+                              variant: 'destructive',
+                            });
+                            return;
+                          }
+                          window.open(data.signedUrl, '_blank', 'noopener');
+                        }}
+                        className="w-full flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                      >
+                        <Paperclip className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                        <span className="flex-1 text-left truncate">{displayName}</span>
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1583,8 +1604,8 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
     (async () => {
       setLoading(true);
       const [b, r] = await Promise.all([
-        getMyBalance(profile.id),
-        getMyRequests(profile.id),
+        getMyBalance(),
+        getMyRequests(),
       ]);
       if (!alive) return;
       setBalance(b);
@@ -1598,8 +1619,8 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
 
   const refresh = async () => {
     const [b, r] = await Promise.all([
-      getMyBalance(profile.id),
-      getMyRequests(profile.id),
+      getMyBalance(),
+      getMyRequests(),
     ]);
     setBalance(b);
     setRequests(r);
@@ -2021,9 +2042,31 @@ const LeaveRegistryTab: React.FC = () => {
     start_date: today,
     end_date: today,
     reason: '',
+    director_user_id: '',
+    director_name: '',
     remarks: '',
   };
   const [form, setForm] = useState<NewManualRegistryEntryInput>(emptyForm);
+  const [directors, setDirectors] = useState<
+    Array<{ user_id: string; name: string; position: string | null }>
+  >([]);
+
+  useEffect(() => {
+    // โหลดรายชื่อผู้ที่อนุมัติในฐานะ ผอ. ได้ (position=director หรือ is_admin)
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, position, is_admin')
+        .or('position.eq.director,is_admin.eq.true');
+      setDirectors(
+        (data ?? []).map((p) => ({
+          user_id: p.user_id,
+          name: `${p.first_name} ${p.last_name}`.trim(),
+          position: p.position,
+        })),
+      );
+    })();
+  }, []);
 
   const refresh = async () => {
     setLoading(true);
@@ -2041,11 +2084,12 @@ const LeaveRegistryTab: React.FC = () => {
       !form.user_position.trim() ||
       !form.start_date ||
       !form.end_date ||
-      !form.reason.trim()
+      !form.reason.trim() ||
+      !form.director_user_id
     ) {
       toast({
         title: 'กรอกข้อมูลไม่ครบ',
-        description: 'ชื่อ, ตำแหน่ง, วันที่, และเหตุผล จำเป็นต้องกรอก',
+        description: 'ชื่อ, ตำแหน่ง, วันที่, เหตุผล, และ ผอ.ผู้ลงนาม จำเป็นต้องกรอก',
         variant: 'destructive',
       });
       return;
@@ -2192,6 +2236,42 @@ const LeaveRegistryTab: React.FC = () => {
                       setForm({ ...form, reason: e.target.value })
                     }
                   />
+                </div>
+                <div className="space-y-1">
+                  <Label>ผอ.ผู้ลงนาม (กระดาษ)</Label>
+                  <Select
+                    value={form.director_user_id}
+                    onValueChange={(v) => {
+                      const d = directors.find((x) => x.user_id === v);
+                      setForm({
+                        ...form,
+                        director_user_id: v,
+                        director_name: d?.name ?? '',
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="เลือก ผอ. ที่ลงนามบนกระดาษ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {directors.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">
+                          ไม่พบ ผอ. ในระบบ
+                        </div>
+                      ) : (
+                        directors.map((d) => (
+                          <SelectItem key={d.user_id} value={d.user_id}>
+                            {d.name}
+                            {d.position && d.position !== 'director' && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({d.position})
+                              </span>
+                            )}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1">
                   <Label>หมายเหตุ (ถ้ามี)</Label>

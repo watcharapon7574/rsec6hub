@@ -181,6 +181,14 @@ export interface Delegation {
   delegate_name: string;
 }
 
+// path คือ key ใน bucket leave-attachments (relative ไม่รวม bucket name)
+// name คือชื่อไฟล์ที่ผู้ใช้แสดง (เพื่อโชว์ใน UI)
+export interface LeaveAttachment {
+  path: string;
+  name: string;
+  uploaded_at?: string;
+}
+
 export interface LeaveFormData {
   contact_address?: string;
   contact_phone?: string;
@@ -188,7 +196,7 @@ export interface LeaveFormData {
   delegate_name?: string | null;
   delegations?: Delegation[];
   medical_certificate_url?: string | null;
-  attachments?: string[];
+  attachments?: LeaveAttachment[];
   notes?: string | null;
 }
 
@@ -223,6 +231,8 @@ export interface NewManualRegistryEntryInput {
   start_date: string;
   end_date: string;
   reason: string;
+  director_user_id: string;
+  director_name: string;
   remarks?: string;
 }
 

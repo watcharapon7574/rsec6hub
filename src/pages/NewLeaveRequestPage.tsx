@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Button } from '@/components/ui/button';
@@ -14,23 +14,32 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
+  AlertTriangle,
   ArrowLeft,
+  BookOpen,
   CalendarDays,
   Clock,
   FileText,
   Paperclip,
+  UserCheck,
   Upload,
 } from 'lucide-react';
 import {
+  DELEGATION_AREA_LABELS,
+  DELEGATION_AREA_ORDER,
+  DelegationArea,
   isAttachmentRequired,
   LEAVE_TYPE_ATTACHMENTS,
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_ORDER,
+  LEAVE_TYPE_REGULATION,
+  LeaveBalance,
   LeaveType,
 } from '@/types/leave';
 import { calculateLeaveDays } from '@/utils/fiscalYear';
-import { createLeaveRequest } from '@/services/leaveService';
+import { createLeaveRequest, getMyBalance } from '@/services/leaveService';
 
 const NewLeaveRequestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,6 +61,49 @@ const NewLeaveRequestPage: React.FC = () => {
     contact_phone: '',
     attachment_name: '',
   });
+  const [delegations, setDelegations] = useState<
+    Record<DelegationArea, { enabled: boolean; name: string }>
+  >({
+    daily_student_care: { enabled: false, name: '' },
+    teaching: { enabled: false, name: '' },
+    classroom: { enabled: false, name: '' },
+    service_unit: { enabled: false, name: '' },
+  });
+  const [balance, setBalance] = useState<LeaveBalance[]>([]);
+
+  useEffect(() => {
+    if (!profile) return;
+    let alive = true;
+    getMyBalance(profile.id).then((b) => {
+      if (alive) setBalance(b);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [profile]);
+
+  const days =
+    formData.start_date && formData.end_date
+      ? calculateLeaveDays(formData.start_date, formData.end_date)
+      : 0;
+
+  const selectedBalance = useMemo(
+    () =>
+      formData.leave_type
+        ? balance.find((b) => b.leave_type === formData.leave_type)
+        : undefined,
+    [balance, formData.leave_type],
+  );
+  const remaining = selectedBalance
+    ? selectedBalance.quota_days -
+      selectedBalance.used_days -
+      selectedBalance.pending_days
+    : null;
+  const overQuota =
+    remaining !== null && days > 0 && days > remaining;
+  const regulation = formData.leave_type
+    ? LEAVE_TYPE_REGULATION[formData.leave_type as LeaveType]
+    : null;
 
   if (!profile) {
     return (
@@ -60,11 +112,6 @@ const NewLeaveRequestPage: React.FC = () => {
       </div>
     );
   }
-
-  const days =
-    formData.start_date && formData.end_date
-      ? calculateLeaveDays(formData.start_date, formData.end_date)
-      : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,10 +136,23 @@ const NewLeaveRequestPage: React.FC = () => {
       });
       return;
     }
+    if (overQuota) {
+      toast({
+        title: 'เกินโควต้าการลา',
+        description: `${LEAVE_TYPE_LABELS[formData.leave_type as LeaveType]} เหลือ ${remaining} วัน แต่ขอลา ${days} วัน`,
+        variant: 'destructive',
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       const userName =
         `${profile.prefix ?? ''}${profile.first_name} ${profile.last_name}`.trim();
+      const delegationList = DELEGATION_AREA_ORDER
+        .filter(
+          (a) => delegations[a].enabled && delegations[a].name.trim() !== '',
+        )
+        .map((a) => ({ area: a, delegate_name: delegations[a].name.trim() }));
       await createLeaveRequest(
         profile.id,
         userName,
@@ -107,6 +167,7 @@ const NewLeaveRequestPage: React.FC = () => {
             attachments: formData.attachment_name.trim()
               ? [formData.attachment_name.trim()]
               : [],
+            delegations: delegationList.length ? delegationList : undefined,
           },
         },
       );
@@ -186,6 +247,42 @@ const NewLeaveRequestPage: React.FC = () => {
                 </Select>
               </div>
 
+              {regulation && (
+                <div className="rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 px-3 py-2.5 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-blue-900 dark:text-blue-200">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    ระเบียบการลา
+                  </div>
+                  <p className="text-[12px] leading-relaxed text-blue-900/90 dark:text-blue-100/90">
+                    {regulation.rule}
+                  </p>
+                  {regulation.extendable && (
+                    <p className="text-[11px] leading-relaxed text-blue-800/80 dark:text-blue-200/80">
+                      • {regulation.extendable}
+                    </p>
+                  )}
+                  {selectedBalance && (
+                    <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-blue-200/60 dark:border-blue-800/60">
+                      <span className="text-[11px] text-blue-900/80 dark:text-blue-100/80">
+                        ใช้ไป {selectedBalance.used_days}
+                        {selectedBalance.pending_days > 0 &&
+                          ` (รออนุมัติ ${selectedBalance.pending_days})`}{' '}
+                        / {selectedBalance.quota_days} วัน
+                      </span>
+                      <span
+                        className={`text-[12px] font-semibold ${
+                          (remaining ?? 0) <= 0
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-blue-700 dark:text-blue-300'
+                        }`}
+                      >
+                        เหลือ {remaining} วัน
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="start_date">
@@ -216,9 +313,24 @@ const NewLeaveRequestPage: React.FC = () => {
               </div>
 
               {days > 0 && (
-                <div className="text-sm text-muted-foreground flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
-                  <Clock className="h-4 w-4" />
+                <div
+                  className={`text-sm flex items-center gap-2 rounded-lg px-3 py-2 ${
+                    overQuota
+                      ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900'
+                      : 'bg-muted/40 text-muted-foreground'
+                  }`}
+                >
+                  {overQuota ? (
+                    <AlertTriangle className="h-4 w-4" />
+                  ) : (
+                    <Clock className="h-4 w-4" />
+                  )}
                   จำนวนวันลา: <span className="font-semibold">{days} วัน</span>
+                  {overQuota && (
+                    <span className="ml-auto text-xs font-semibold">
+                      เกินโควต้า {days - (remaining ?? 0)} วัน
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -248,6 +360,56 @@ const NewLeaveRequestPage: React.FC = () => {
                   }
                   rows={4}
                 />
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                  <UserCheck className="h-4 w-4" />
+                  มอบหมายหน้าที่ระหว่างลา
+                  <span className="text-[11px] font-normal text-muted-foreground">
+                    (ถ้ามี)
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {DELEGATION_AREA_ORDER.map((area) => {
+                    const d = delegations[area];
+                    return (
+                      <div
+                        key={area}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <Checkbox
+                          id={`delegation-${area}`}
+                          checked={d.enabled}
+                          onCheckedChange={(v) =>
+                            setDelegations((prev) => ({
+                              ...prev,
+                              [area]: { ...prev[area], enabled: v === true },
+                            }))
+                          }
+                        />
+                        <Label
+                          htmlFor={`delegation-${area}`}
+                          className="cursor-pointer min-w-[160px] text-xs sm:text-sm"
+                        >
+                          {DELEGATION_AREA_LABELS[area]}
+                        </Label>
+                        <Input
+                          className="flex-1 h-8 text-xs"
+                          placeholder="ชื่อผู้ปฏิบัติหน้าที่แทน"
+                          value={d.name}
+                          disabled={!d.enabled}
+                          onChange={(e) =>
+                            setDelegations((prev) => ({
+                              ...prev,
+                              [area]: { ...prev[area], name: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {attachmentCfg && attachmentCfg.required !== 'never' && (
@@ -309,7 +471,7 @@ const NewLeaveRequestPage: React.FC = () => {
                 >
                   ยกเลิก
                 </Button>
-                <Button type="submit" disabled={submitting}>
+                <Button type="submit" disabled={submitting || overQuota}>
                   <CalendarDays className="h-4 w-4 mr-1" />
                   {submitting ? 'กำลังส่ง...' : 'ส่งคำขอ'}
                 </Button>

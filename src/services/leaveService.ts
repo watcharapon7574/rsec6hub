@@ -1,4 +1,5 @@
 import {
+  HrDecision,
   LEAVE_TYPE_ORDER,
   LEAVE_TYPE_QUOTAS_PER_HALF,
   LeaveBalance,
@@ -372,7 +373,7 @@ export async function getPendingApprovalsByRoles(
 export async function approveLeave(
   requestId: string,
   approver: ApproverContext,
-  comment?: string,
+  options?: { comment?: string; hrDecision?: HrDecision },
 ): Promise<LeaveRequest> {
   const req = _mockStore.requests.find((r) => r.id === requestId);
   if (!req) throw new Error('ไม่พบใบลา');
@@ -385,7 +386,8 @@ export async function approveLeave(
     status: 'approved',
     signed_at: new Date().toISOString(),
     signature_url: approver.signature_url,
-    comment: comment ?? null,
+    comment: options?.comment ?? null,
+    hr_decision: approver.role === 'hr_head' ? (options?.hrDecision ?? null) : null,
   };
   req.signatures = [...req.signatures.filter((s) => s.order !== order), sig];
   if (order === 1) {

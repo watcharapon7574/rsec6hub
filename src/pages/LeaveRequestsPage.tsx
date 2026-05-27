@@ -65,7 +65,6 @@ import {
   Flower,
   Shield,
   GraduationCap,
-  Globe,
   HeartPulse,
   LayoutDashboard,
   TrendingUp,
@@ -81,7 +80,11 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
+  DELEGATION_AREA_LABELS,
   getLeaveSteps,
+  HR_DECISION_LABELS,
+  HR_DECISION_ORDER,
+  HrDecision,
   isAttachmentRequired,
   LEAVE_STATUS_COLORS,
   LEAVE_STATUS_LABELS,
@@ -615,11 +618,6 @@ const LEAVE_TYPE_THEME: Record<
     pill: 'bg-indigo-100 dark:bg-indigo-900',
     text: 'text-indigo-600 dark:text-indigo-400',
   },
-  international_org_leave: {
-    icon: Globe,
-    pill: 'bg-purple-100 dark:bg-purple-900',
-    text: 'text-purple-600 dark:text-purple-400',
-  },
   spouse_follow_leave: {
     icon: Users,
     pill: 'bg-teal-100 dark:bg-teal-900',
@@ -731,12 +729,18 @@ const LeaveDetailDialog: React.FC<{
   const Icon = theme.icon;
   const attachmentCfg = LEAVE_TYPE_ATTACHMENTS[request.leave_type];
 
-  const handleApprove = async () => {
+  const handleApprove = async (hrDecision?: HrDecision) => {
     if (!approver) return;
     setBusy(true);
     try {
-      await approveLeave(request.id, approver);
-      toast({ title: 'อนุมัติแล้ว' });
+      await approveLeave(request.id, approver, { hrDecision });
+      toast({
+        title: 'อนุมัติแล้ว',
+        description:
+          approver.role === 'hr_head' && hrDecision
+            ? HR_DECISION_LABELS[hrDecision]
+            : undefined,
+      });
       onChanged?.();
       onClose();
     } finally {
@@ -846,6 +850,29 @@ const LeaveDetailDialog: React.FC<{
             </div>
           </div>
 
+          {request.form_data?.delegations &&
+            request.form_data.delegations.length > 0 && (
+              <div>
+                <div className="text-xs text-muted-foreground mb-1.5">
+                  มอบหมายหน้าที่ระหว่างลา
+                </div>
+                <div className="space-y-1.5">
+                  {request.form_data.delegations.map((d, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm"
+                    >
+                      <span className="font-medium min-w-[160px]">
+                        {DELEGATION_AREA_LABELS[d.area]}
+                      </span>
+                      <span className="text-muted-foreground">→</span>
+                      <span>{d.delegate_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           {attachmentCfg.required !== 'never' && (
             <div>
               <div className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
@@ -917,6 +944,11 @@ const LeaveDetailDialog: React.FC<{
                           })}
                         </div>
                       </div>
+                      {sig.signer_role === 'hr_head' && sig.hr_decision && (
+                        <div className="mt-1.5 text-xs font-medium text-green-700 dark:text-green-300">
+                          ความเห็น: {HR_DECISION_LABELS[sig.hr_decision]}
+                        </div>
+                      )}
                       {sig.comment && (
                         <div className="mt-1.5 text-xs text-muted-foreground italic">
                           "{sig.comment}"
@@ -958,19 +990,51 @@ const LeaveDetailDialog: React.FC<{
           {canApprove && approver && (
             <>
               {!rejecting ? (
-                <div className="flex justify-end gap-2 pt-2 border-t">
-                  <Button
-                    variant="destructive"
-                    onClick={() => setRejecting(true)}
-                    disabled={busy}
-                  >
-                    <XCircle className="h-4 w-4 mr-1" /> ปฏิเสธ
-                  </Button>
-                  <Button onClick={handleApprove} disabled={busy}>
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    {busy ? 'กำลังบันทึก...' : 'อนุมัติ'}
-                  </Button>
-                </div>
+                approver.role === 'hr_head' ? (
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="text-xs text-muted-foreground">
+                      ความเห็น หน.บุคคล (เลือก 1)
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {HR_DECISION_ORDER.map((d) => (
+                        <Button
+                          key={d}
+                          variant="outline"
+                          className="justify-start"
+                          onClick={() => handleApprove(d)}
+                          disabled={busy}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-1 text-green-600" />
+                          {HR_DECISION_LABELS[d]}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setRejecting(true)}
+                        disabled={busy}
+                      >
+                        <XCircle className="h-4 w-4 mr-1" /> ปฏิเสธ
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-end gap-2 pt-2 border-t">
+                    <Button
+                      variant="destructive"
+                      onClick={() => setRejecting(true)}
+                      disabled={busy}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" /> ปฏิเสธ
+                    </Button>
+                    <Button onClick={() => handleApprove()} disabled={busy}>
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      {busy ? 'กำลังบันทึก...' : 'อนุมัติ'}
+                    </Button>
+                  </div>
+                )
               ) : (
                 <div className="space-y-2 rounded-lg border border-red-200 bg-red-50/40 dark:bg-red-950/30 p-3">
                   <Label className="text-red-700 dark:text-red-300 text-sm">

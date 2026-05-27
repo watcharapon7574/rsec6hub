@@ -7,7 +7,6 @@ export type LeaveType =
   | 'ordination_leave'
   | 'military_leave'
   | 'study_leave'
-  | 'international_org_leave'
   | 'spouse_follow_leave'
   | 'rehabilitation_leave';
 
@@ -20,7 +19,6 @@ export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
   ordination_leave: 'ลาอุปสมบท / ไปประกอบพิธีฮัจย์',
   military_leave: 'ลาเข้ารับการตรวจเลือก/เตรียมพล',
   study_leave: 'ลาไปศึกษา ฝึกอบรม ดูงาน',
-  international_org_leave: 'ลาไปปฏิบัติงานในองค์การระหว่างประเทศ',
   spouse_follow_leave: 'ลาติดตามคู่สมรส',
   rehabilitation_leave: 'ลาฟื้นฟูสมรรถภาพด้านอาชีพ',
 };
@@ -34,24 +32,80 @@ export const LEAVE_TYPE_ORDER: LeaveType[] = [
   'ordination_leave',
   'military_leave',
   'study_leave',
-  'international_org_leave',
   'spouse_follow_leave',
   'rehabilitation_leave',
 ];
 
-// TODO ยืนยันกับฝ่ายบุคคล: โควต้า/ครึ่งปีงบประมาณ (6 เดือน เริ่ม 1 ต.ค.)
+// เพดานวันลาสูงสุดต่อปีงบประมาณ ตามระเบียบสำนักนายกฯ ว่าด้วยการลาของข้าราชการ พ.ศ. 2555
+// ใช้เป็นทั้งโควต้าใน UI และ cap ตอน validate (ครึ่งปี = ใช้เพดานเต็มได้ เพราะระเบียบไม่ได้แบ่งครึ่ง)
 export const LEAVE_TYPE_QUOTAS_PER_HALF: Record<LeaveType, number> = {
-  sick_leave: 30,
-  personal_leave: 23,
+  sick_leave: 60,
+  personal_leave: 45,
   annual_leave: 10,
   maternity_leave: 90,
   paternity_leave: 15,
   ordination_leave: 120,
   military_leave: 60,
-  study_leave: 180,
-  international_org_leave: 365,
+  study_leave: 365,
   spouse_follow_leave: 365,
-  rehabilitation_leave: 180,
+  rehabilitation_leave: 365,
+};
+
+// ระเบียบ/เงื่อนไขการลา (ข้อความทางการจาก Excel ของฝ่ายบุคคล)
+export interface LeaveRegulation {
+  maxDays: number;
+  rule: string;
+  extendable?: string;
+}
+
+export const LEAVE_TYPE_REGULATION: Record<LeaveType, LeaveRegulation> = {
+  sick_leave: {
+    maxDays: 60,
+    rule: 'ปีละไม่เกิน 60 วันทำการ',
+    extendable: 'กรณีจำเป็น ผู้มีอำนาจอนุญาตให้ลาต่อได้อีกไม่เกิน 60 วันทำการ',
+  },
+  personal_leave: {
+    maxDays: 45,
+    rule: 'ปีละไม่เกิน 45 วันทำการ',
+    extendable: 'ปีแรกที่เข้ารับราชการ ลาได้ไม่เกิน 15 วัน',
+  },
+  annual_leave: {
+    maxDays: 10,
+    rule: 'ปีละ 10 วันทำการ',
+    extendable: 'สะสมได้ไม่เกิน 20 วัน (รับราชการ 10 ปีขึ้นไป สะสมได้ไม่เกิน 30 วัน) — หยุดภาคการศึกษาเกินวันลาพักผ่อน จะไม่มีสิทธิลาพักผ่อน',
+  },
+  maternity_leave: {
+    maxDays: 90,
+    rule: 'ไม่เกิน 90 วัน/ครั้ง',
+    extendable: 'ลาต่อเนื่องเป็นลากิจส่วนตัวเพื่อเลี้ยงดูบุตรได้ไม่เกิน 150 วันทำการ (ไม่ได้รับเงินเดือนระหว่างลา)',
+  },
+  paternity_leave: {
+    maxDays: 15,
+    rule: '15 วันทำการ',
+  },
+  ordination_leave: {
+    maxDays: 120,
+    rule: 'ไม่เกิน 120 วัน',
+  },
+  military_leave: {
+    maxDays: 60,
+    rule: 'ตรวจเลือก: รายงานผู้บังคับบัญชาก่อนไม่น้อยกว่า 48 ชม. / เตรียมพล: รายงานภายใน 48 ชม. เสร็จภารกิจกลับภายใน 7 วัน',
+    extendable: 'กรณีเตรียมพล ต่อได้ไม่เกิน 15 วัน',
+  },
+  study_leave: {
+    maxDays: 365 * 4,
+    rule: 'ไม่เกิน 4 ปี',
+    extendable: 'ต่อได้ไม่เกิน 6 ปี',
+  },
+  spouse_follow_leave: {
+    maxDays: 365 * 2,
+    rule: 'ไม่เกิน 2 ปี',
+    extendable: 'ต่อได้ไม่เกิน 4 ปี',
+  },
+  rehabilitation_leave: {
+    maxDays: 365,
+    rule: 'ไม่เกิน 12 เดือน',
+  },
 };
 
 export type LeaveStatus = 'draft' | 'pending' | 'in_progress' | 'approved' | 'rejected';
@@ -74,6 +128,21 @@ export const LEAVE_STATUS_COLORS: Record<LeaveStatus, string> = {
 
 export type LeaveSignerOrder = 1 | 2;
 
+// ความเห็นของ หน.บุคคล ตามใบลา (3 ตัวเลือก) — ทุกตัวส่งต่อให้ ผอ. ตัดสินใจ
+export type HrDecision = 'acknowledge' | 'consider' | 'recommend_approve';
+
+export const HR_DECISION_LABELS: Record<HrDecision, string> = {
+  acknowledge: 'เพื่อโปรดทราบ',
+  consider: 'เพื่อโปรดพิจารณา',
+  recommend_approve: 'เห็นควรอนุญาต',
+};
+
+export const HR_DECISION_ORDER: HrDecision[] = [
+  'acknowledge',
+  'consider',
+  'recommend_approve',
+];
+
 export interface LeaveSignature {
   order: LeaveSignerOrder;
   signer_user_id: string;
@@ -83,6 +152,33 @@ export interface LeaveSignature {
   signed_at: string;
   signature_url?: string | null;
   comment?: string | null;
+  hr_decision?: HrDecision | null;
+}
+
+// มอบหมายหน้าที่ระหว่างลา (ตามใบลาบุคลากร ศกศ.6 ลพบุรี)
+export type DelegationArea =
+  | 'daily_student_care'
+  | 'teaching'
+  | 'classroom'
+  | 'service_unit';
+
+export const DELEGATION_AREA_LABELS: Record<DelegationArea, string> = {
+  daily_student_care: 'ครูดูแลนักเรียนประจำวัน',
+  teaching: 'การจัดการเรียนการสอน',
+  classroom: 'ห้องเรียน',
+  service_unit: 'หน่วยบริการ',
+};
+
+export const DELEGATION_AREA_ORDER: DelegationArea[] = [
+  'daily_student_care',
+  'teaching',
+  'classroom',
+  'service_unit',
+];
+
+export interface Delegation {
+  area: DelegationArea;
+  delegate_name: string;
 }
 
 export interface LeaveFormData {
@@ -90,6 +186,7 @@ export interface LeaveFormData {
   contact_phone?: string;
   delegate_user_id?: string | null;
   delegate_name?: string | null;
+  delegations?: Delegation[];
   medical_certificate_url?: string | null;
   attachments?: string[];
   notes?: string | null;
@@ -142,13 +239,12 @@ export interface AttachmentRequirement {
   hint?: string;
 }
 
-// TODO ยืนยันกับฝ่ายบุคคลว่าประเภทไหนต้องแนบอะไร
+// อ้างอิงจากระเบียบสำนักนายกฯ ว่าด้วยการลาของข้าราชการ พ.ศ. 2555
 export const LEAVE_TYPE_ATTACHMENTS: Record<LeaveType, AttachmentRequirement> = {
   sick_leave: {
-    required: 'conditional',
-    conditionDays: 3,
+    required: 'always',
     label: 'ใบรับรองแพทย์',
-    hint: 'จำเป็นเมื่อลาเกิน 3 วัน',
+    hint: 'แนบได้เลย หรือนำมาแนบหลังได้รับอนุมัติ',
   },
   personal_leave: { required: 'never', label: '' },
   annual_leave: { required: 'never', label: '' },
@@ -157,18 +253,11 @@ export const LEAVE_TYPE_ATTACHMENTS: Record<LeaveType, AttachmentRequirement> = 
     label: 'ใบรับรองแพทย์ / สูติบัตร',
   },
   paternity_leave: { required: 'always', label: 'สูติบัตรบุตร' },
-  ordination_leave: {
-    required: 'always',
-    label: 'หนังสือยืนยันจากวัด/มัสยิด',
-  },
+  ordination_leave: { required: 'never', label: '' },
   military_leave: { required: 'always', label: 'หมายเรียก' },
   study_leave: {
     required: 'always',
     label: 'หนังสือตอบรับการเข้าศึกษา/อบรม',
-  },
-  international_org_leave: {
-    required: 'always',
-    label: 'หนังสือเชิญจากองค์การระหว่างประเทศ',
   },
   spouse_follow_leave: {
     required: 'always',

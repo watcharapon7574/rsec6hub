@@ -101,8 +101,10 @@ function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;');
 }
 
-// ─── Telegram send ────────────────────────────────────────────────────────
-async function sendTelegram(text: string): Promise<unknown> {
+// ─── Telegram send (retry 3 ครั้ง backoff) ───────────────────────────────
+// Telegram API 429 rate-limit ส่ง retry-after มาด้วย; 5xx transient หาย retry ได้;
+// แก้ปัญหา daily cron ส่งครั้งเดียวล้มเหลว = ประกาศวันนั้นหายไปเงียบๆ
+async function sendTelegramOnce(text: string): Promise<unknown> {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10_000);
@@ -131,6 +133,26 @@ async function sendTelegram(text: string): Promise<unknown> {
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+async function sendTelegram(text: string): Promise<unknown> {
+  const MAX_ATTEMPTS = 3;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await sendTelegramOnce(text);
+    } catch (err) {
+      lastErr = err;
+      if (attempt < MAX_ATTEMPTS) {
+        const backoffMs = attempt * 1000; // 1s, 2s
+        console.warn(
+          `Telegram send failed (attempt ${attempt}/${MAX_ATTEMPTS}): ${(err as Error)?.message ?? err}; retry in ${backoffMs}ms`,
+        );
+        await new Promise((r) => setTimeout(r, backoffMs));
+      }
+    }
+  }
+  throw lastErr;
 }
 
 // ─── Message formatters (Style A) ────────────────────────────────────────
@@ -184,16 +206,21 @@ function getSupabase() {
   );
 }
 
-// ─── Auth: HR head / admin for UI, shared secret for cron ───────────────
-// 1) X-Cron-Auth header == CRON_AUTH_TOKEN → cron job (server-to-server)
-// 2) otherwise: Authorization Bearer JWT + profile.is_admin || org_structure_role ~ 'บุคคล'
-async function authorize(req: Request): Promise<void> {
+// ─── Auth ───────────────────────────────────────────────────────────────
+//   daily_rollcall: cron (X-Cron-Auth) หรือ HR head/admin เท่านั้น
+//   sick_immediate: cron, HR head/admin, หรือ "เจ้าของใบลา" (teacher ที่ยื่นเอง)
+async function authorize(
+  req: Request,
+  payload: Payload,
+): Promise<void> {
+  // 1) cron — shared secret bypass
   const cronToken = req.headers.get('X-Cron-Auth');
   const expectedCronToken = Deno.env.get('CRON_AUTH_TOKEN');
   if (cronToken && expectedCronToken && cronToken === expectedCronToken) {
-    return; // cron path
+    return;
   }
 
+  // 2) ต้องมี JWT
   const authHeader = req.headers.get('Authorization') ?? '';
   const jwt = authHeader.replace(/^Bearer\s+/i, '');
   if (!jwt) throw new Error('Unauthorized — missing token');
@@ -201,19 +228,38 @@ async function authorize(req: Request): Promise<void> {
   const sbAdmin = getSupabase();
   const { data: userData, error: userErr } = await sbAdmin.auth.getUser(jwt);
   if (userErr || !userData?.user) throw new Error('Unauthorized — invalid token');
+  const callerUid = userData.user.id;
 
+  // 3) HR head / admin → ผ่านทุก type
   const { data: profile, error: profErr } = await sbAdmin
     .from('profiles')
     .select('is_admin, org_structure_role')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', callerUid)
     .maybeSingle();
   if (profErr) throw new Error(`profile lookup: ${profErr.message}`);
-
   const isAdmin = profile?.is_admin === true;
   const isHr = /บุคคล/.test(profile?.org_structure_role ?? '');
-  if (!isAdmin && !isHr) {
-    throw new Error('Forbidden — HR head หรือ admin เท่านั้น');
+  if (isAdmin || isHr) return;
+
+  // 4) sick_immediate: เจ้าของใบลายิง alert ของตัวเองได้
+  //    (เคสนี้ trigger จาก createLeaveRequest ฝั่ง browser ของ teacher เอง)
+  if (payload.type === 'sick_immediate' && payload.request_id) {
+    const { data: leave, error: leaveErr } = await sbAdmin
+      .from('leave_requests')
+      .select('user_id, leave_type')
+      .eq('id', payload.request_id)
+      .maybeSingle();
+    if (leaveErr) throw new Error(`leave lookup: ${leaveErr.message}`);
+    if (leave?.user_id === callerUid) return;
   }
+
+  throw new Error('Forbidden — ไม่มีสิทธิ์เรียกฟังก์ชันนี้');
+}
+
+// คำนำหน้าไทย — strip ก่อน sort เพื่อให้เรียงตามชื่อจริง ไม่ใช่ "นาง"<"นาย"<"น.ส."
+const THAI_PREFIX_RE = /^(นาย|นาง(?:สาว)?|น\.ส\.|ว่าที่[^\s]*\s+|ดร\.\s*|ผศ\.\s*|รศ\.\s*|ศ\.\s*)/;
+function stripThaiPrefix(name: string): string {
+  return name.replace(THAI_PREFIX_RE, '').trim();
 }
 
 async function fetchTodayLeaves(todayISO: string): Promise<LeaveRow[]> {
@@ -228,10 +274,17 @@ async function fetchTodayLeaves(todayISO: string): Promise<LeaveRow[]> {
     .gte('end_date', todayISO)
     .or(
       'status.eq.approved,and(leave_type.eq.sick_leave,status.in.(pending,in_progress))',
-    )
-    .order('user_name', { ascending: true });
+    );
   if (error) throw new Error(`fetchTodayLeaves: ${error.message}`);
-  return (data as LeaveRow[]) ?? [];
+  const rows = (data as LeaveRow[]) ?? [];
+  // sort ตามชื่อจริง (ไม่นับคำนำหน้า) ด้วย Thai collation
+  rows.sort((a, b) =>
+    stripThaiPrefix(a.user_name ?? '').localeCompare(
+      stripThaiPrefix(b.user_name ?? ''),
+      'th',
+    ),
+  );
+  return rows;
 }
 
 async function fetchOneLeave(id: string): Promise<LeaveRow | null> {
@@ -258,11 +311,11 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    await authorize(req);
     const payload = (await req.json()) as Payload;
     if (!payload?.type) {
       throw new Error('payload.type required');
     }
+    await authorize(req, payload);
 
     let messageText: string;
     let summary: Record<string, unknown> = { type: payload.type };

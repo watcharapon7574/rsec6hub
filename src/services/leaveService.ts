@@ -277,11 +277,15 @@ export async function createLeaveRequest(
   if (error) throw new Error(error.message ?? 'createLeaveRequest failed');
   const created = mapDbRequest(data as DbLeaveRequest, []);
 
-  // ลาป่วยที่ start_date <= วันนี้ → ประกาศกลุ่ม Telegram ทันที (best-effort,
+  // ลาป่วยที่ครอบคลุมวันนี้ → ประกาศกลุ่ม Telegram ทันที (best-effort,
   // ไม่ block: ถ้า notify ล้มเหลว ใบลายังถูกสร้างสำเร็จ)
+  // ต้อง check ทั้ง start_date <= today AND end_date >= today เพราะใบลาที่
+  // ลาจบไปแล้ว (e.g., ย้อนหลังเมื่อวาน) ไม่ควรขึ้นข้อความ "ลาป่วยวันนี้"
+  const todayStr = toLocalISODate(new Date());
   if (
     created.leave_type === 'sick_leave' &&
-    created.start_date <= toLocalISODate(new Date())
+    created.start_date <= todayStr &&
+    created.end_date >= todayStr
   ) {
     void supabase.functions
       .invoke('leave-telegram-notify', {

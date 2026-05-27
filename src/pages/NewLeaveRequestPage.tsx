@@ -180,7 +180,7 @@ const NewLeaveRequestPage: React.FC = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('ยังไม่ได้เข้าสู่ระบบ');
         const folderId = crypto.randomUUID();
-        const safeName = attachmentFile.name.replace(/[^\w.\-ก-๙]/g, '_');
+        const safeName = attachmentFile.name.replace(/[^\w.\-]/g, '_');
         const path = `${user.id}/${folderId}/${safeName}`;
         const { error: upErr } = await supabase.storage
           .from('leave-attachments')

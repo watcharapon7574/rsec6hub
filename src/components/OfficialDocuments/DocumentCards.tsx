@@ -29,7 +29,7 @@ import {
   ClipboardList,
   ArrowRight
 } from 'lucide-react';
-import { isExecutive, isClerk, isTeacher, getPositionDisplayName } from '@/types/database';
+import { isExecutive, isTeacher, getPositionDisplayName } from '@/types/database';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 
 interface Document {

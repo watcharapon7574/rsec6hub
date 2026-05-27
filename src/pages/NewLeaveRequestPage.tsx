@@ -103,9 +103,7 @@ const NewLeaveRequestPage: React.FC = () => {
         : undefined,
     [balance, formData.leave_type],
   );
-  const isOfficial =
-    (profile as { is_government_official?: boolean } | null)?.is_government_official ===
-    true;
+  const isOfficial = profile?.is_government_official === true;
   const remaining = selectedBalance
     ? selectedBalance.quota_days -
       selectedBalance.used_days -

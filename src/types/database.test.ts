@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   isAdmin,
   isExecutive,
-  isClerk,
   isTeacher,
   getPositionDisplayName,
   type Profile,
@@ -54,16 +53,6 @@ describe('isExecutive', () => {
     it(`${pos} → ไม่ใช่ executive`, () => {
       expect(isExecutive(pos)).toBe(false);
     });
-  });
-});
-
-describe('isClerk', () => {
-  it('clerk_teacher → clerk', () => {
-    expect(isClerk('clerk_teacher')).toBe(true);
-  });
-
-  it('government_teacher → ไม่ใช่ clerk', () => {
-    expect(isClerk('government_teacher')).toBe(false);
   });
 });
 

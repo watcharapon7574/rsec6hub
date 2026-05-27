@@ -80,9 +80,8 @@ export const isExecutive = (position: Position): boolean => {
   return ['director', 'deputy_director', 'assistant_director'].includes(position);
 };
 
-export const isClerk = (position: Position): boolean => {
-  return ['clerk_teacher'].includes(position);
-};
+// "ธุรการ" คือ role assignment ไม่ใช่ position — ใช้ profile.is_clerk แทน
+// (ดู permissionUtils.getPermissions)
 
 export const isTeacher = (position: Position): boolean => {
   return ['government_teacher', 'contract_teacher'].includes(position);

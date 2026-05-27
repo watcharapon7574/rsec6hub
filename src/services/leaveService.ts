@@ -1,7 +1,7 @@
 import {
   HrDecision,
   LEAVE_TYPE_ORDER,
-  LEAVE_TYPE_QUOTAS_PER_HALF,
+  LEAVE_TYPE_QUOTAS_PER_YEAR,
   LeaveBalance,
   LeaveRequest,
   LeaveSignature,
@@ -11,8 +11,8 @@ import {
 } from '@/types/leave';
 import {
   calculateLeaveDays,
-  FiscalHalf,
   getFiscalPeriod,
+  toLocalISODate,
 } from '@/utils/fiscalYear';
 
 // TODO: เปลี่ยน mock เป็น call Supabase เมื่อ schema ลงตัว
@@ -219,7 +219,7 @@ export async function getOverviewStats(): Promise<LeaveOverviewStats> {
   const inPeriod = _mockStore.requests.filter(
     (r) => r.fiscal_year === period.year && r.fiscal_half === period.half,
   );
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalISODate(new Date());
   const currentlyOnLeave = inPeriod.filter(
     (r) => r.status === 'approved' && r.start_date <= today && r.end_date >= today,
   );
@@ -258,18 +258,13 @@ export async function getOverviewStats(): Promise<LeaveOverviewStats> {
 export async function getMyBalance(
   _userId: string,
   fiscalYear?: number,
-  fiscalHalf?: FiscalHalf,
 ): Promise<LeaveBalance[]> {
   const period = getFiscalPeriod();
   const year = fiscalYear ?? period.year;
-  const half = fiscalHalf ?? period.half;
 
   return LEAVE_TYPE_ORDER.map((leaveType) => {
     const rows = _mockStore.requests.filter(
-      (r) =>
-        r.leave_type === leaveType &&
-        r.fiscal_year === year &&
-        r.fiscal_half === half,
+      (r) => r.leave_type === leaveType && r.fiscal_year === year,
     );
     const used = rows
       .filter((r) => r.status === 'approved')
@@ -280,8 +275,7 @@ export async function getMyBalance(
     return {
       leave_type: leaveType,
       fiscal_year: year,
-      fiscal_half: half,
-      quota_days: LEAVE_TYPE_QUOTAS_PER_HALF[leaveType],
+      quota_days: LEAVE_TYPE_QUOTAS_PER_YEAR[leaveType],
       used_days: used,
       pending_days: pending,
     };

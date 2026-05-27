@@ -54,6 +54,19 @@ export function formatFiscalPeriod(year: number, half: FiscalHalf): string {
   return `ครึ่งหลัง ปีงบ ${year} (เม.ย. ${String(be).padStart(2, '0')} - ก.ย. ${String(be).padStart(2, '0')})`;
 }
 
+export function formatFiscalYear(year: number): string {
+  const beStart = (year - 1) % 100;
+  const beEnd = year % 100;
+  return `ปีงบประมาณ ${year} (ต.ค. ${String(beStart).padStart(2, '0')} - ก.ย. ${String(beEnd).padStart(2, '0')})`;
+}
+
+export function toLocalISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function calculateLeaveDays(startDate: string, endDate: string): number {
   const start = new Date(startDate);
   const end = new Date(endDate);

@@ -77,6 +77,7 @@ import {
   Upload,
   ExternalLink,
   Eye,
+  PenLine,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -98,8 +99,9 @@ import {
 } from '@/types/leave';
 import {
   calculateLeaveDays,
-  formatFiscalPeriod,
+  formatFiscalYear,
   getFiscalPeriod,
+  toLocalISODate,
 } from '@/utils/fiscalYear';
 import {
   approveLeave,
@@ -1102,12 +1104,6 @@ const THAI_MONTH_NAMES = [
 ];
 const THAI_WEEKDAYS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
-const toLocalISODate = (d: Date) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
 
 const shortName = (full?: string) => {
   if (!full) return '-';
@@ -1611,7 +1607,7 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
             โควต้าการลา
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {formatFiscalPeriod(period.year, period.half)}
+            {formatFiscalYear(period.year)}
           </p>
         </div>
       </div>
@@ -1853,7 +1849,7 @@ const ApprovalTab: React.FC<{
                     <TableHead className="text-left w-0 pr-2">จำนวน</TableHead>
                     <TableHead className="text-left w-0 pr-2">สถานะ</TableHead>
                     <TableHead className="text-left">ความคืบหน้า</TableHead>
-                    <TableHead className="text-right">ดู</TableHead>
+                    <TableHead className="text-right">ลงนาม</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1924,17 +1920,36 @@ const ApprovalTab: React.FC<{
                           <LeaveProgress req={r} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDetailReq(r);
-                            }}
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1" />
-                            ดู
-                          </Button>
+                          {(() => {
+                            const needed: 'hr_head' | 'director' =
+                              r.current_signer_order === 1 ? 'hr_head' : 'director';
+                            const canSignNow = allowedRoles.includes(needed);
+                            const waitLabel =
+                              needed === 'hr_head' ? 'หน.บุคคล' : 'ผอ.';
+                            return (
+                              <Button
+                                size="sm"
+                                disabled={!canSignNow}
+                                title={
+                                  canSignNow
+                                    ? undefined
+                                    : `ยังไม่ถึงคิว — รอ ${waitLabel} ลงนามก่อน`
+                                }
+                                className={
+                                  canSignNow
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md font-semibold ring-2 ring-emerald-200 dark:ring-emerald-900'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed'
+                                }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (canSignNow) setDetailReq(r);
+                                }}
+                              >
+                                <PenLine className="h-3.5 w-3.5 mr-1" />
+                                ลงนาม
+                              </Button>
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     );
@@ -1988,8 +2003,10 @@ const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string
     refreshCount();
   }, [refreshCount]);
 
-  const triggerClass =
+  const personalTriggerClass =
     'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/60';
+  const adminTriggerClass =
+    'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-emerald-50 dark:data-[state=inactive]:hover:bg-emerald-950/30';
 
   return (
     <Tabs
@@ -2000,29 +2017,49 @@ const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string
       }}
     >
       <div className="overflow-x-auto -mx-1 px-1">
-        <TabsList className="bg-card border shadow-sm h-auto p-1.5 rounded-2xl inline-flex w-auto gap-1">
-          <TabsTrigger value="overview" className={triggerClass}>
-            <LayoutDashboard className="h-4 w-4" />
-            ภาพรวม
-          </TabsTrigger>
-          <TabsTrigger value="attendance" className={triggerClass}>
-            <UserCheck className="h-4 w-4" />
-            เข้า-ออกงาน
-          </TabsTrigger>
-          <TabsTrigger value="leave" className={triggerClass}>
-            <FileText className="h-4 w-4" />
-            ขอลา
-          </TabsTrigger>
-          <TabsTrigger value="approve" className={triggerClass}>
-            <ShieldCheck className="h-4 w-4" />
-            อนุมัติลา
-            {pendingCount > 0 && (
-              <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white min-w-[18px] leading-none">
-                {pendingCount}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
+        <div className="bg-card border shadow-sm rounded-2xl p-1.5 inline-flex items-stretch gap-2 w-auto">
+          {/* กลุ่ม: ของฉัน */}
+          <div className="flex flex-col">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600/70 dark:text-blue-400/70 px-3 pt-0.5 pb-1">
+              ของฉัน
+            </span>
+            <TabsList className="bg-transparent border-0 shadow-none p-0 h-auto inline-flex gap-1 rounded-none">
+              <TabsTrigger value="attendance" className={personalTriggerClass}>
+                <UserCheck className="h-4 w-4" />
+                เข้า-ออกงาน
+              </TabsTrigger>
+              <TabsTrigger value="leave" className={personalTriggerClass}>
+                <FileText className="h-4 w-4" />
+                ขอลา
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* เส้นคั่นแนวตั้ง */}
+          <div className="w-px bg-border self-stretch my-1" />
+
+          {/* กลุ่ม: บริหาร */}
+          <div className="flex flex-col">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600/80 dark:text-emerald-400/80 px-3 pt-0.5 pb-1">
+              บริหาร
+            </span>
+            <TabsList className="bg-transparent border-0 shadow-none p-0 h-auto inline-flex gap-1 rounded-none">
+              <TabsTrigger value="overview" className={adminTriggerClass}>
+                <LayoutDashboard className="h-4 w-4" />
+                ภาพรวม
+              </TabsTrigger>
+              <TabsTrigger value="approve" className={adminTriggerClass}>
+                <ShieldCheck className="h-4 w-4" />
+                อนุมัติลา
+                {pendingCount > 0 && (
+                  <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white min-w-[18px] leading-none">
+                    {pendingCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
       </div>
 
       <TabsContent value="overview">

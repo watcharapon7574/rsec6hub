@@ -38,7 +38,7 @@ import {
   LeaveBalance,
   LeaveType,
 } from '@/types/leave';
-import { calculateLeaveDays } from '@/utils/fiscalYear';
+import { calculateLeaveDays, toLocalISODate } from '@/utils/fiscalYear';
 import { createLeaveRequest, getMyBalance } from '@/services/leaveService';
 
 const NewLeaveRequestPage: React.FC = () => {
@@ -46,7 +46,7 @@ const NewLeaveRequestPage: React.FC = () => {
   const { profile } = useEmployeeAuth();
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalISODate(new Date());
   const [formData, setFormData] = useState<{
     leave_type: LeaveType | '';
     start_date: string;

@@ -37,8 +37,8 @@ export const LEAVE_TYPE_ORDER: LeaveType[] = [
 ];
 
 // เพดานวันลาสูงสุดต่อปีงบประมาณ ตามระเบียบสำนักนายกฯ ว่าด้วยการลาของข้าราชการ พ.ศ. 2555
-// ใช้เป็นทั้งโควต้าใน UI และ cap ตอน validate (ครึ่งปี = ใช้เพดานเต็มได้ เพราะระเบียบไม่ได้แบ่งครึ่ง)
-export const LEAVE_TYPE_QUOTAS_PER_HALF: Record<LeaveType, number> = {
+// ใช้เป็นทั้งโควต้าใน UI และ cap ตอน validate — ค่าเป็นรายปี (รวม 2 ครึ่งปีงบประมาณ)
+export const LEAVE_TYPE_QUOTAS_PER_YEAR: Record<LeaveType, number> = {
   sick_leave: 60,
   personal_leave: 45,
   annual_leave: 10,
@@ -46,9 +46,9 @@ export const LEAVE_TYPE_QUOTAS_PER_HALF: Record<LeaveType, number> = {
   paternity_leave: 15,
   ordination_leave: 120,
   military_leave: 60,
-  study_leave: 365,
-  spouse_follow_leave: 365,
-  rehabilitation_leave: 365,
+  study_leave: 1460, // 4 ปี
+  spouse_follow_leave: 730, // 2 ปี
+  rehabilitation_leave: 365, // 12 เดือน
 };
 
 // ระเบียบ/เงื่อนไขการลา (ข้อความทางการจาก Excel ของฝ่ายบุคคล)
@@ -217,7 +217,6 @@ export interface LeaveRequest {
 export interface LeaveBalance {
   leave_type: LeaveType;
   fiscal_year: number;
-  fiscal_half: 1 | 2;
   quota_days: number;
   used_days: number;
   pending_days: number;
@@ -232,17 +231,19 @@ export interface NewLeaveRequestInput {
 }
 
 // ─── เอกสารแนบ (ตามประเภท) ───
+// after_approval_ok: ระบบบังคับให้แนบในที่สุด แต่ตอนยื่นไม่ block
+//   (เคสลาป่วยที่ยังไม่มีใบรับรองแพทย์ในมือ — นำมาแนบหลังอนุมัติได้)
 export interface AttachmentRequirement {
-  required: 'always' | 'never' | 'conditional';
+  required: 'always' | 'never' | 'conditional' | 'after_approval_ok';
   label: string;
-  conditionDays?: number; // ถ้า conditional: บังคับเมื่อจำนวนวัน > นี้
+  conditionDays?: number;
   hint?: string;
 }
 
 // อ้างอิงจากระเบียบสำนักนายกฯ ว่าด้วยการลาของข้าราชการ พ.ศ. 2555
 export const LEAVE_TYPE_ATTACHMENTS: Record<LeaveType, AttachmentRequirement> = {
   sick_leave: {
-    required: 'always',
+    required: 'after_approval_ok',
     label: 'ใบรับรองแพทย์',
     hint: 'แนบได้เลย หรือนำมาแนบหลังได้รับอนุมัติ',
   },
@@ -269,6 +270,7 @@ export const LEAVE_TYPE_ATTACHMENTS: Record<LeaveType, AttachmentRequirement> = 
   },
 };
 
+// บังคับ ณ ตอนยื่นใบลา (after_approval_ok = ไม่บังคับช่วงยื่น แต่ต้องแนบหลังอนุมัติ)
 export function isAttachmentRequired(
   leave_type: LeaveType,
   days: number,
@@ -276,6 +278,7 @@ export function isAttachmentRequired(
   const cfg = LEAVE_TYPE_ATTACHMENTS[leave_type];
   if (cfg.required === 'always') return true;
   if (cfg.required === 'never') return false;
+  if (cfg.required === 'after_approval_ok') return false;
   return days > (cfg.conditionDays ?? 0);
 }
 

@@ -335,7 +335,13 @@ Deno.serve(async (req: Request) => {
 
     if (payload.type === 'daily_rollcall') {
       const todayISO = payload.date ?? todayISOBangkok();
-      const variant: RollcallVariant = payload.variant ?? 'morning';
+      // ไม่ใช้ ?? เพราะอยากให้ค่า invalid (เช่น 'lunchtime') โผล่ error ออกมาเลย
+      // แทนที่จะ silently fallback เป็น morning
+      const rawVariant = payload.variant ?? 'morning';
+      if (rawVariant !== 'morning' && rawVariant !== 'evening') {
+        throw new Error(`unknown variant: ${rawVariant}`);
+      }
+      const variant: RollcallVariant = rawVariant;
       const rows = await fetchTodayLeaves(todayISO);
       messageText = formatDailyRollcall(rows, todayISO, variant);
       summary = { ...summary, date: todayISO, variant, count: rows.length };

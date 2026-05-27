@@ -2085,14 +2085,18 @@ const LeaveRegistryTab: React.FC = () => {
   const handleAnnounceToday = async () => {
     setAnnouncing(true);
     try {
+      // เลือก variant ตามช่วงเวลา local — ก่อนเที่ยง = "ผู้ลาวันนี้" (heads-up),
+      // หลังเที่ยง = "สรุปการลาวันนี้" — ให้ tone ตรงกับ cron 08:30/16:30
+      const variant = new Date().getHours() < 12 ? 'morning' : 'evening';
       const { data, error } = await supabase.functions.invoke(
         'leave-telegram-notify',
-        { body: { type: 'daily_rollcall' } },
+        { body: { type: 'daily_rollcall', variant } },
       );
       if (error) throw error;
       const count = (data as { summary?: { count?: number } })?.summary?.count ?? 0;
+      const tone = variant === 'morning' ? 'ประกาศ' : 'สรุป';
       toast({
-        title: 'ส่งประกาศแล้ว',
+        title: `ส่ง${tone}แล้ว`,
         description:
           count > 0
             ? `แจ้งผู้ลาวันนี้ ${count} คน เข้ากลุ่ม Telegram`

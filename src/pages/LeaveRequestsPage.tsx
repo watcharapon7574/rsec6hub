@@ -107,6 +107,8 @@ import {
 } from '@/types/leave';
 import {
   calculateLeaveDays,
+  formatBuddhistDate,
+  formatBuddhistYear,
   formatFiscalYear,
   getFiscalPeriod,
   toLocalISODate,
@@ -816,21 +818,13 @@ const LeaveDetailDialog: React.FC<{
             <div>
               <div className="text-xs text-muted-foreground">วันที่เริ่มลา</div>
               <div className="font-medium">
-                {new Date(request.start_date).toLocaleDateString('th-TH', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
+                {formatBuddhistDate(request.start_date)}
               </div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">วันที่สิ้นสุด</div>
               <div className="font-medium">
-                {new Date(request.end_date).toLocaleDateString('th-TH', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
+                {formatBuddhistDate(request.end_date)}
               </div>
             </div>
             <div>
@@ -840,7 +834,7 @@ const LeaveDetailDialog: React.FC<{
             <div>
               <div className="text-xs text-muted-foreground">ปีงบประมาณ</div>
               <div className="font-medium">
-                {request.fiscal_year} (ครึ่งที่ {request.fiscal_half})
+                {formatBuddhistYear(request.fiscal_year)} (ครึ่งที่ {request.fiscal_half})
               </div>
             </div>
             {request.form_data?.contact_phone && (
@@ -2336,6 +2330,8 @@ const LeaveRegistryTab: React.FC = () => {
                     <Label>วันที่เริ่ม</Label>
                     <Input
                       type="date"
+                      min="2020-01-01"
+                      max="2099-12-31"
                       value={form.start_date}
                       onChange={(e) =>
                         setForm({ ...form, start_date: e.target.value })
@@ -2346,6 +2342,8 @@ const LeaveRegistryTab: React.FC = () => {
                     <Label>วันที่สิ้นสุด</Label>
                     <Input
                       type="date"
+                      min="2020-01-01"
+                      max="2099-12-31"
                       value={form.end_date}
                       onChange={(e) =>
                         setForm({ ...form, end_date: e.target.value })

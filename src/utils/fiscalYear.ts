@@ -67,6 +67,23 @@ export function toLocalISODate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+// guard against 3-digit BE years from legacy records where the user typed a
+// 2-digit year into <input type="date"> and the browser padded "27" → "0027" CE
+// → BE 570. New entries are prevented by min/max on the date input, but old
+// rows in the DB still surface here.
+export function formatBuddhistDate(dateStr: string): string {
+  const formatted = new Date(dateStr).toLocaleDateString('th-TH', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  return formatted.replace(/\b(\d{3})\b/g, '2$1');
+}
+
+export function formatBuddhistYear(year: number): string {
+  return year < 1000 ? String(year + 2000) : String(year);
+}
+
 export function calculateLeaveDays(startDate: string, endDate: string): number {
   const start = new Date(startDate);
   const end = new Date(endDate);

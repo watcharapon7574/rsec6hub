@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 import {
   HrDecision,
   LEAVE_TYPE_ORDER,
@@ -5,9 +6,11 @@ import {
   LeaveBalance,
   LeaveRequest,
   LeaveSignature,
+  LeaveSignerOrder,
   LeaveStatus,
   LeaveType,
   NewLeaveRequestInput,
+  NewManualRegistryEntryInput,
 } from '@/types/leave';
 import {
   calculateLeaveDays,
@@ -15,179 +18,140 @@ import {
   toLocalISODate,
 } from '@/utils/fiscalYear';
 
-// TODO: เปลี่ยน mock เป็น call Supabase เมื่อ schema ลงตัว
-const _mockStore: { requests: LeaveRequest[] } = {
-  requests: [
-    {
-      id: 'mock-1',
-      user_id: 'me',
-      leave_type: 'sick_leave',
-      start_date: '2026-01-15',
-      end_date: '2026-01-16',
-      days_count: 2,
-      reason: 'ไข้หวัด มีใบรับรองแพทย์',
-      status: 'approved',
-      fiscal_year: 2569,
-      fiscal_half: 1,
-      current_signer_order: 2,
-      signatures: [
-        {
-          order: 1,
-          signer_user_id: 'hr-head',
-          signer_name: 'นายสมชาย ใจดี',
-          signer_role: 'hr_head',
-          status: 'approved',
-          signed_at: '2026-01-13T09:00:00Z',
-          comment: 'อนุมัติตามขั้นตอน',
-        },
-        {
-          order: 2,
-          signer_user_id: 'director',
-          signer_name: 'นางสาวสุดา ปกครอง',
-          signer_role: 'director',
-          status: 'approved',
-          signed_at: '2026-01-13T14:30:00Z',
-        },
-      ],
-      form_data: {
-        contact_phone: '081-234-5678',
-        attachments: ['ใบรับรองแพทย์_2026-01-15.pdf'],
-      },
-      created_at: '2026-01-12T08:00:00Z',
-      updated_at: '2026-01-13T14:30:00Z',
-      user_name: 'นายทดสอบ ระบบ',
-      user_position: 'ครู',
-    },
-    {
-      id: 'mock-2',
-      user_id: 'me',
-      leave_type: 'personal_leave',
-      start_date: '2026-03-10',
-      end_date: '2026-03-10',
-      days_count: 1,
-      reason: 'ธุระส่วนตัวเร่งด่วน',
-      status: 'in_progress',
-      fiscal_year: 2569,
-      fiscal_half: 1,
-      current_signer_order: 2,
-      signatures: [
-        {
-          order: 1,
-          signer_user_id: 'hr-head',
-          signer_name: 'นายสมชาย ใจดี',
-          signer_role: 'hr_head',
-          status: 'approved',
-          signed_at: '2026-03-08T10:00:00Z',
-        },
-      ],
-      created_at: '2026-03-07T15:00:00Z',
-      updated_at: '2026-03-08T10:00:00Z',
-      user_name: 'นายทดสอบ ระบบ',
-      user_position: 'ครู',
-    },
-    {
-      id: 'mock-3',
-      user_id: 'me',
-      leave_type: 'personal_leave',
-      start_date: '2026-05-20',
-      end_date: '2026-05-22',
-      days_count: 3,
-      reason: 'ไปงานบวชญาติ',
-      status: 'pending',
-      fiscal_year: 2569,
-      fiscal_half: 2,
-      current_signer_order: 1,
-      signatures: [],
-      created_at: '2026-05-12T08:00:00Z',
-      updated_at: '2026-05-12T08:00:00Z',
-      user_name: 'นายทดสอบ ระบบ',
-      user_position: 'ครู',
-    },
-    {
-      id: 'mock-4',
-      user_id: 'teacher-a',
-      leave_type: 'sick_leave',
-      start_date: '2026-05-14',
-      end_date: '2026-05-14',
-      days_count: 1,
-      reason: 'ปวดหัว',
-      status: 'approved',
-      fiscal_year: 2569,
-      fiscal_half: 2,
-      current_signer_order: 2,
-      signatures: [],
-      created_at: '2026-05-13T07:00:00Z',
-      updated_at: '2026-05-13T15:00:00Z',
-      user_name: 'นางสาวมาลี สวัสดี',
-      user_position: 'ครู คศ.1',
-    },
-    {
-      id: 'mock-5',
-      user_id: 'teacher-b',
-      leave_type: 'annual_leave',
-      start_date: '2026-05-12',
-      end_date: '2026-05-15',
-      days_count: 4,
-      reason: 'พาครอบครัวไปทะเล',
-      status: 'approved',
-      fiscal_year: 2569,
-      fiscal_half: 2,
-      current_signer_order: 2,
-      signatures: [],
-      created_at: '2026-05-05T08:00:00Z',
-      updated_at: '2026-05-08T10:00:00Z',
-      user_name: 'นายอนันต์ ใจเย็น',
-      user_position: 'ครู คศ.2',
-    },
-    {
-      id: 'mock-6',
-      user_id: 'teacher-c',
-      leave_type: 'personal_leave',
-      start_date: '2026-05-14',
-      end_date: '2026-05-14',
-      days_count: 1,
-      reason: 'ไปทำธุระที่ธนาคาร',
-      status: 'pending',
-      fiscal_year: 2569,
-      fiscal_half: 2,
-      current_signer_order: 1,
-      signatures: [],
-      created_at: '2026-05-13T09:00:00Z',
-      updated_at: '2026-05-13T09:00:00Z',
-      user_name: 'นางสุดา พิทักษ์',
-      user_position: 'ครูพี่เลี้ยง',
-    },
-    {
-      id: 'mock-7',
-      user_id: 'teacher-d',
-      leave_type: 'sick_leave',
-      start_date: '2026-04-25',
-      end_date: '2026-04-27',
-      days_count: 3,
-      reason: 'ผ่าตัดเล็ก',
-      status: 'rejected',
-      fiscal_year: 2569,
-      fiscal_half: 2,
-      current_signer_order: 1,
-      signatures: [
-        {
-          order: 1,
-          signer_user_id: 'hr-head',
-          signer_name: 'นายสมชาย ใจดี',
-          signer_role: 'hr_head',
-          status: 'rejected',
-          signed_at: '2026-04-21T13:00:00Z',
-          comment: 'เอกสารแพทย์ไม่ครบ',
-        },
-      ],
-      rejection_reason: 'เอกสารแพทย์ไม่ครบ',
-      created_at: '2026-04-20T08:00:00Z',
-      updated_at: '2026-04-21T13:00:00Z',
-      user_name: 'นายสมชาย รักงาน',
-      user_position: 'ครู คศ.3',
-    },
-  ],
+// supabase/types.ts still reflects the old single-step leave_requests schema.
+// Regenerate after the v2 migration applies. Until then, route new-table calls
+// through this loosely-typed handle.
+type SupabaseAny = {
+  from: (table: string) => any;
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
 };
+const sb = supabase as unknown as SupabaseAny;
+
+type DbSignature = {
+  id: string;
+  leave_request_id: string;
+  signer_order: LeaveSignerOrder;
+  signer_user_id: string;
+  signer_name: string;
+  signer_role: 'hr_head' | 'director';
+  status: 'approved' | 'rejected';
+  signed_at: string;
+  signature_url: string | null;
+  comment: string | null;
+  hr_decision: HrDecision | null;
+};
+
+type DbLeaveRequest = {
+  id: string;
+  user_id: string;
+  doc_number: string | null;
+  doc_number_at: string | null;
+  entry_source: 'system' | 'manual';
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  days_count: number;
+  reason: string;
+  status: LeaveStatus;
+  fiscal_year: number;
+  fiscal_half: 1 | 2;
+  current_signer_order: LeaveSignerOrder;
+  form_data: Record<string, unknown> | null;
+  rejection_reason: string | null;
+  user_name: string | null;
+  user_position: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function mapDbSignature(row: DbSignature): LeaveSignature {
+  return {
+    order: row.signer_order,
+    signer_user_id: row.signer_user_id,
+    signer_name: row.signer_name,
+    signer_role: row.signer_role,
+    status: row.status,
+    signed_at: row.signed_at,
+    signature_url: row.signature_url,
+    comment: row.comment,
+    hr_decision: row.hr_decision,
+  };
+}
+
+function mapDbRequest(row: DbLeaveRequest, sigs: DbSignature[] = []): LeaveRequest {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    doc_number: row.doc_number,
+    doc_number_at: row.doc_number_at,
+    entry_source: row.entry_source,
+    leave_type: row.leave_type,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    days_count: row.days_count,
+    reason: row.reason,
+    status: row.status,
+    fiscal_year: row.fiscal_year,
+    fiscal_half: row.fiscal_half,
+    current_signer_order: row.current_signer_order,
+    signatures: sigs.map(mapDbSignature),
+    form_data: row.form_data as LeaveRequest['form_data'],
+    rejection_reason: row.rejection_reason,
+    user_name: row.user_name ?? undefined,
+    user_position: row.user_position ?? undefined,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+async function fetchSignaturesFor(
+  requestIds: string[],
+): Promise<Map<string, DbSignature[]>> {
+  const map = new Map<string, DbSignature[]>();
+  if (requestIds.length === 0) return map;
+  const { data, error } = await sb
+    .from('leave_signatures')
+    .select('*')
+    .in('leave_request_id', requestIds)
+    .order('signer_order', { ascending: true });
+  if (error) throw new Error(error.message ?? 'fetchSignaturesFor failed');
+  for (const sig of (data as DbSignature[] | null) ?? []) {
+    const arr = map.get(sig.leave_request_id) ?? [];
+    arr.push(sig);
+    map.set(sig.leave_request_id, arr);
+  }
+  return map;
+}
+
+async function getCurrentAuthUserId(): Promise<string> {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error('ยังไม่ได้เข้าสู่ระบบ');
+  return data.user.id;
+}
+
+async function hydrate(rows: DbLeaveRequest[]): Promise<LeaveRequest[]> {
+  if (rows.length === 0) return [];
+  const sigs = await fetchSignaturesFor(rows.map((r) => r.id));
+  return rows.map((r) => mapDbRequest(r, sigs.get(r.id) ?? []));
+}
+
+export async function getLeavesInRange(
+  startDate: string,
+  endDate: string,
+): Promise<LeaveRequest[]> {
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*')
+    .in('status', ['approved', 'in_progress'])
+    .gte('end_date', startDate)
+    .lte('start_date', endDate)
+    .order('start_date', { ascending: true });
+  if (error) throw new Error(error.message ?? 'getLeavesInRange failed');
+  return hydrate((data as DbLeaveRequest[]) ?? []);
+}
 
 export interface LeaveOverviewStats {
   fiscalYear: number;
@@ -202,30 +166,22 @@ export interface LeaveOverviewStats {
   currentlyOnLeave: LeaveRequest[];
 }
 
-export async function getLeavesInRange(
-  startDate: string,
-  endDate: string,
-): Promise<LeaveRequest[]> {
-  return _mockStore.requests.filter(
-    (r) =>
-      (r.status === 'approved' || r.status === 'in_progress') &&
-      r.start_date <= endDate &&
-      r.end_date >= startDate,
-  );
-}
-
 export async function getOverviewStats(): Promise<LeaveOverviewStats> {
   const period = getFiscalPeriod();
-  const inPeriod = _mockStore.requests.filter(
-    (r) => r.fiscal_year === period.year && r.fiscal_half === period.half,
-  );
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*')
+    .eq('fiscal_year', period.year)
+    .eq('fiscal_half', period.half);
+  if (error) throw new Error(error.message ?? 'getOverviewStats failed');
+  const requests = await hydrate((data as DbLeaveRequest[]) ?? []);
   const today = toLocalISODate(new Date());
-  const currentlyOnLeave = inPeriod.filter(
+  const currentlyOnLeave = requests.filter(
     (r) => r.status === 'approved' && r.start_date <= today && r.end_date >= today,
   );
 
   const byTypeMap = new Map<LeaveType, { count: number; days: number }>();
-  for (const r of inPeriod.filter((r) => r.status === 'approved')) {
+  for (const r of requests.filter((r) => r.status === 'approved')) {
     const cur = byTypeMap.get(r.leave_type) ?? { count: 0, days: 0 };
     cur.count += 1;
     cur.days += r.days_count;
@@ -235,17 +191,17 @@ export async function getOverviewStats(): Promise<LeaveOverviewStats> {
   return {
     fiscalYear: period.year,
     fiscalHalf: period.half,
-    totalRequests: inPeriod.length,
-    pending: inPeriod.filter(
+    totalRequests: requests.length,
+    pending: requests.filter(
       (r) => r.status === 'pending' || r.status === 'in_progress',
     ).length,
-    approved: inPeriod.filter((r) => r.status === 'approved').length,
-    rejected: inPeriod.filter((r) => r.status === 'rejected').length,
+    approved: requests.filter((r) => r.status === 'approved').length,
+    rejected: requests.filter((r) => r.status === 'rejected').length,
     onLeaveToday: currentlyOnLeave.length,
     byType: Array.from(byTypeMap.entries())
       .map(([leave_type, v]) => ({ leave_type, ...v }))
       .sort((a, b) => b.days - a.days),
-    recent: [...inPeriod]
+    recent: [...requests]
       .sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
@@ -261,15 +217,23 @@ export async function getMyBalance(
 ): Promise<LeaveBalance[]> {
   const period = getFiscalPeriod();
   const year = fiscalYear ?? period.year;
+  const authId = await getCurrentAuthUserId();
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('leave_type, days_count, status')
+    .eq('user_id', authId)
+    .eq('fiscal_year', year);
+  if (error) throw new Error(error.message ?? 'getMyBalance failed');
+  const rows =
+    (data as Array<Pick<DbLeaveRequest, 'leave_type' | 'days_count' | 'status'>>) ??
+    [];
 
   return LEAVE_TYPE_ORDER.map((leaveType) => {
-    const rows = _mockStore.requests.filter(
-      (r) => r.leave_type === leaveType && r.fiscal_year === year,
-    );
-    const used = rows
+    const filtered = rows.filter((r) => r.leave_type === leaveType);
+    const used = filtered
       .filter((r) => r.status === 'approved')
       .reduce((sum, r) => sum + r.days_count, 0);
-    const pending = rows
+    const pending = filtered
       .filter((r) => r.status === 'pending' || r.status === 'in_progress')
       .reduce((sum, r) => sum + r.days_count, 0);
     return {
@@ -283,40 +247,78 @@ export async function getMyBalance(
 }
 
 export async function getMyRequests(_userId: string): Promise<LeaveRequest[]> {
-  return [..._mockStore.requests].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  const authId = await getCurrentAuthUserId();
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*')
+    .eq('user_id', authId)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message ?? 'getMyRequests failed');
+  return hydrate((data as DbLeaveRequest[]) ?? []);
 }
 
 export async function createLeaveRequest(
-  userId: string,
+  _userId: string,
   userName: string,
   userPosition: string,
   input: NewLeaveRequestInput,
 ): Promise<LeaveRequest> {
+  const authId = await getCurrentAuthUserId();
   const days = calculateLeaveDays(input.start_date, input.end_date);
   const period = getFiscalPeriod(new Date(input.start_date));
-  const req: LeaveRequest = {
-    id: `mock-${Date.now()}`,
-    user_id: userId,
-    leave_type: input.leave_type,
-    start_date: input.start_date,
-    end_date: input.end_date,
-    days_count: days,
-    reason: input.reason,
-    status: 'pending',
-    fiscal_year: period.year,
-    fiscal_half: period.half,
-    current_signer_order: 1,
-    signatures: [],
-    form_data: input.form_data ?? null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    user_name: userName,
-    user_position: userPosition,
-  };
-  _mockStore.requests.unshift(req);
-  return req;
+  const { data, error } = await sb
+    .from('leave_requests')
+    .insert({
+      user_id: authId,
+      entry_source: 'system',
+      leave_type: input.leave_type,
+      start_date: input.start_date,
+      end_date: input.end_date,
+      days_count: days,
+      reason: input.reason,
+      status: 'pending',
+      fiscal_year: period.year,
+      fiscal_half: period.half,
+      current_signer_order: 1,
+      form_data: input.form_data ?? null,
+      user_name: userName,
+      user_position: userPosition,
+    })
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message ?? 'createLeaveRequest failed');
+  return mapDbRequest(data as DbLeaveRequest, []);
+}
+
+// HR head registers paper-backlog leave (entry_source='manual')
+export async function createManualLeaveEntry(
+  input: NewManualRegistryEntryInput,
+): Promise<LeaveRequest> {
+  const authId = await getCurrentAuthUserId();
+  const days = calculateLeaveDays(input.start_date, input.end_date);
+  const period = getFiscalPeriod(new Date(input.start_date));
+  const { data, error } = await sb
+    .from('leave_requests')
+    .insert({
+      user_id: authId, // logged by HR head against their own auth; UI can extend to choose target user later
+      entry_source: 'manual',
+      leave_type: input.leave_type,
+      start_date: input.start_date,
+      end_date: input.end_date,
+      days_count: days,
+      reason: input.reason,
+      status: 'pending',
+      fiscal_year: period.year,
+      fiscal_half: period.half,
+      current_signer_order: 1,
+      form_data: input.remarks ? { notes: input.remarks } : null,
+      user_name: input.user_name,
+      user_position: input.user_position,
+    })
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message ?? 'createManualLeaveEntry failed');
+  return mapDbRequest(data as DbLeaveRequest, []);
 }
 
 export interface ApproverContext {
@@ -332,36 +334,32 @@ export async function getPendingApprovals(
   const targetOrder = approver.role === 'hr_head' ? 1 : 2;
   const targetStatus: LeaveStatus[] =
     approver.role === 'hr_head' ? ['pending'] : ['in_progress'];
-  return _mockStore.requests
-    .filter(
-      (r) =>
-        r.current_signer_order === targetOrder &&
-        targetStatus.includes(r.status),
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-    );
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*')
+    .eq('current_signer_order', targetOrder)
+    .in('status', targetStatus)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message ?? 'getPendingApprovals failed');
+  return hydrate((data as DbLeaveRequest[]) ?? []);
 }
 
-// admin ที่มีทั้ง 2 role: ดึงใบลาที่อยู่ใน step ที่ตัวเองอนุมัติได้ทั้งหมด
 export async function getPendingApprovalsByRoles(
   roles: ('hr_head' | 'director')[],
 ): Promise<LeaveRequest[]> {
-  const acceptOrders = new Set<number>(
-    roles.map((r) => (r === 'hr_head' ? 1 : 2)),
-  );
-  const acceptStatus = new Set<LeaveStatus>();
-  if (roles.includes('hr_head')) acceptStatus.add('pending');
-  if (roles.includes('director')) acceptStatus.add('in_progress');
-  return _mockStore.requests
-    .filter(
-      (r) => acceptOrders.has(r.current_signer_order) && acceptStatus.has(r.status),
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-    );
+  const orders = new Set<number>(roles.map((r) => (r === 'hr_head' ? 1 : 2)));
+  const statuses = new Set<LeaveStatus>();
+  if (roles.includes('hr_head')) statuses.add('pending');
+  if (roles.includes('director')) statuses.add('in_progress');
+  if (orders.size === 0 || statuses.size === 0) return [];
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*')
+    .in('current_signer_order', Array.from(orders))
+    .in('status', Array.from(statuses))
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message ?? 'getPendingApprovalsByRoles failed');
+  return hydrate((data as DbLeaveRequest[]) ?? []);
 }
 
 export async function approveLeave(
@@ -369,29 +367,17 @@ export async function approveLeave(
   approver: ApproverContext,
   options?: { comment?: string; hrDecision?: HrDecision },
 ): Promise<LeaveRequest> {
-  const req = _mockStore.requests.find((r) => r.id === requestId);
-  if (!req) throw new Error('ไม่พบใบลา');
-  const order: 1 | 2 = approver.role === 'hr_head' ? 1 : 2;
-  const sig: LeaveSignature = {
-    order,
-    signer_user_id: approver.user_id,
-    signer_name: approver.user_name,
-    signer_role: approver.role,
-    status: 'approved',
-    signed_at: new Date().toISOString(),
-    signature_url: approver.signature_url,
-    comment: options?.comment ?? null,
-    hr_decision: approver.role === 'hr_head' ? (options?.hrDecision ?? null) : null,
-  };
-  req.signatures = [...req.signatures.filter((s) => s.order !== order), sig];
-  if (order === 1) {
-    req.current_signer_order = 2;
-    req.status = 'in_progress';
-  } else {
-    req.status = 'approved';
-  }
-  req.updated_at = new Date().toISOString();
-  return req;
+  const { data, error } = await sb.rpc('approve_leave_request', {
+    p_leave_id: requestId,
+    p_signer_name: approver.user_name,
+    p_signer_role: approver.role,
+    p_comment: options?.comment ?? null,
+    p_hr_decision: options?.hrDecision ?? null,
+    p_signature_url: approver.signature_url ?? null,
+  });
+  if (error) throw new Error(error.message ?? 'approveLeave failed');
+  const sigsMap = await fetchSignaturesFor([requestId]);
+  return mapDbRequest(data as DbLeaveRequest, sigsMap.get(requestId) ?? []);
 }
 
 export async function rejectLeave(
@@ -399,27 +385,77 @@ export async function rejectLeave(
   approver: ApproverContext,
   reason: string,
 ): Promise<LeaveRequest> {
-  const req = _mockStore.requests.find((r) => r.id === requestId);
-  if (!req) throw new Error('ไม่พบใบลา');
-  const order: 1 | 2 = approver.role === 'hr_head' ? 1 : 2;
-  const sig: LeaveSignature = {
-    order,
-    signer_user_id: approver.user_id,
-    signer_name: approver.user_name,
-    signer_role: approver.role,
-    status: 'rejected',
-    signed_at: new Date().toISOString(),
-    signature_url: approver.signature_url,
-    comment: reason,
-  };
-  req.signatures = [...req.signatures.filter((s) => s.order !== order), sig];
-  req.status = 'rejected';
-  req.rejection_reason = reason;
-  req.updated_at = new Date().toISOString();
-  return req;
+  const { data, error } = await sb.rpc('reject_leave_request', {
+    p_leave_id: requestId,
+    p_signer_name: approver.user_name,
+    p_signer_role: approver.role,
+    p_reason: reason,
+    p_signature_url: approver.signature_url ?? null,
+  });
+  if (error) throw new Error(error.message ?? 'rejectLeave failed');
+  const sigsMap = await fetchSignaturesFor([requestId]);
+  return mapDbRequest(data as DbLeaveRequest, sigsMap.get(requestId) ?? []);
 }
 
 export async function generateLeavePdf(req: LeaveRequest): Promise<void> {
-  // TODO: ใช้ pdf-lib ลง template จริง — ปัจจุบันแค่ placeholder
+  // TODO: ใช้ pdf-lib ลง template ใบลาบุคลากร ศกศ.6 ลพบุรี — ปัจจุบันยังเป็น placeholder
   console.log('[mock] generateLeavePdf', req);
+}
+
+// Pure-logic gate: can the caller sign right now given the request's current
+// step and their allowed roles? Used by approval row UI + tests.
+export function canSignNow(
+  req: { current_signer_order: number },
+  allowedRoles: Array<'hr_head' | 'director'>,
+): boolean {
+  if (allowedRoles.length === 0) return false;
+  if (req.current_signer_order === 1) return allowedRoles.includes('hr_head');
+  if (req.current_signer_order === 2) return allowedRoles.includes('director');
+  return false;
+}
+
+// Returns the doc_number that will be assigned to the next leave that gets
+// HR-head-approved. Used for previewing in the manual-entry form.
+export async function getNextDocNumber(): Promise<string> {
+  const { data, error } = await sb.rpc('peek_leave_doc_number', {});
+  if (error) throw new Error(error.message ?? 'getNextDocNumber failed');
+  return (data as string) ?? '00001';
+}
+
+// HR head registers a paper-backlog leave entry (status=approved + doc_number).
+export async function addManualRegistryEntry(
+  input: import('@/types/leave').NewManualRegistryEntryInput,
+): Promise<LeaveRequest> {
+  const days = calculateLeaveDays(input.start_date, input.end_date);
+  const period = getFiscalPeriod(new Date(input.start_date));
+  const { data, error } = await sb.rpc('register_manual_leave_entry', {
+    p_user_name: input.user_name,
+    p_user_position: input.user_position,
+    p_leave_type: input.leave_type,
+    p_start_date: input.start_date,
+    p_end_date: input.end_date,
+    p_days_count: days,
+    p_fiscal_year: period.year,
+    p_fiscal_half: period.half,
+    p_reason: input.reason,
+    p_remarks: input.remarks ?? null,
+  });
+  if (error) throw new Error(error.message ?? 'addManualRegistryEntry failed');
+  const sigsMap = await fetchSignaturesFor([(data as DbLeaveRequest).id]);
+  return mapDbRequest(
+    data as DbLeaveRequest,
+    sigsMap.get((data as DbLeaveRequest).id) ?? [],
+  );
+}
+
+// Lists every leave that has a doc_number assigned (i.e. HR-head approved or
+// manually registered), most recent number first.
+export async function getLeaveRegistry(): Promise<LeaveRequest[]> {
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*')
+    .not('doc_number', 'is', null)
+    .order('doc_number', { ascending: false });
+  if (error) throw new Error(error.message ?? 'getLeaveRegistry failed');
+  return hydrate((data as DbLeaveRequest[]) ?? []);
 }

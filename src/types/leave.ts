@@ -196,6 +196,8 @@ export interface LeaveRequest {
   id: string;
   user_id: string;
   doc_number?: string | null;
+  doc_number_at?: string | null; // ตอน หน.บุคคล ลงนามแล้ว → ระบบรันเลข
+  entry_source?: 'system' | 'manual'; // manual = หน.บุคคลกรอกลงทะเบียนเอง (เคสกระดาษย้อนหลัง)
   leave_type: LeaveType;
   start_date: string;
   end_date: string;
@@ -212,6 +214,16 @@ export interface LeaveRequest {
   updated_at: string;
   user_name?: string;
   user_position?: string;
+}
+
+export interface NewManualRegistryEntryInput {
+  user_name: string;
+  user_position: string;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  reason: string;
+  remarks?: string;
 }
 
 export interface LeaveBalance {

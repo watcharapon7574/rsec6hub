@@ -78,6 +78,7 @@ import {
   ExternalLink,
   Eye,
   PenLine,
+  BookOpen,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -96,6 +97,7 @@ import {
   LeaveRequest,
   LeaveStepState,
   LeaveType,
+  NewManualRegistryEntryInput,
 } from '@/types/leave';
 import {
   calculateLeaveDays,
@@ -104,10 +106,13 @@ import {
   toLocalISODate,
 } from '@/utils/fiscalYear';
 import {
+  addManualRegistryEntry,
   approveLeave,
   ApproverContext,
+  canSignNow,
   createLeaveRequest,
   generateLeavePdf,
+  getLeaveRegistry,
   getLeavesInRange,
   getMyBalance,
   getMyRequests,
@@ -1921,28 +1926,26 @@ const ApprovalTab: React.FC<{
                         </TableCell>
                         <TableCell className="text-right">
                           {(() => {
-                            const needed: 'hr_head' | 'director' =
-                              r.current_signer_order === 1 ? 'hr_head' : 'director';
-                            const canSignNow = allowedRoles.includes(needed);
+                            const enabled = canSignNow(r, allowedRoles);
                             const waitLabel =
-                              needed === 'hr_head' ? 'หน.บุคคล' : 'ผอ.';
+                              r.current_signer_order === 1 ? 'หน.บุคคล' : 'ผอ.';
                             return (
                               <Button
                                 size="sm"
-                                disabled={!canSignNow}
+                                disabled={!enabled}
                                 title={
-                                  canSignNow
+                                  enabled
                                     ? undefined
                                     : `ยังไม่ถึงคิว — รอ ${waitLabel} ลงนามก่อน`
                                 }
                                 className={
-                                  canSignNow
+                                  enabled
                                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md font-semibold ring-2 ring-emerald-200 dark:ring-emerald-900'
                                     : 'bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed'
                                 }
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (canSignNow) setDetailReq(r);
+                                  if (enabled) setDetailReq(r);
                                 }}
                               >
                                 <PenLine className="h-3.5 w-3.5 mr-1" />
@@ -1972,8 +1975,315 @@ const ApprovalTab: React.FC<{
   );
 };
 
+// ───────────────── Tab 4: ทะเบียนใบลา (หน.บุคคล / admin) ─────────────────
+const LeaveRegistryTab: React.FC = () => {
+  const { toast } = useToast();
+  const [list, setList] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const today = toLocalISODate(new Date());
+  const emptyForm: NewManualRegistryEntryInput = {
+    user_name: '',
+    user_position: '',
+    leave_type: 'sick_leave',
+    start_date: today,
+    end_date: today,
+    reason: '',
+    remarks: '',
+  };
+  const [form, setForm] = useState<NewManualRegistryEntryInput>(emptyForm);
+
+  const refresh = async () => {
+    setLoading(true);
+    setList(await getLeaveRegistry());
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const handleSubmit = async () => {
+    if (
+      !form.user_name.trim() ||
+      !form.user_position.trim() ||
+      !form.start_date ||
+      !form.end_date ||
+      !form.reason.trim()
+    ) {
+      toast({
+        title: 'กรอกข้อมูลไม่ครบ',
+        description: 'ชื่อ, ตำแหน่ง, วันที่, และเหตุผล จำเป็นต้องกรอก',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (form.start_date > form.end_date) {
+      toast({ title: 'ช่วงวันที่ไม่ถูกต้อง', variant: 'destructive' });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const created = await addManualRegistryEntry(form);
+      toast({
+        title: 'เพิ่มทะเบียนแล้ว',
+        description: `เลขที่ ${created.doc_number}`,
+      });
+      setForm(emptyForm);
+      setOpen(false);
+      await refresh();
+    } catch (e) {
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-muted-foreground" />
+              ทะเบียนใบลา
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              เลขทะเบียนออกอัตโนมัติเมื่อ หน.บุคคล ลงนาม (4 หลัก รันต่อเนื่อง)
+            </p>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-1">
+                <Plus className="h-4 w-4" />
+                เพิ่มแมนนวล
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>เพิ่มทะเบียนใบลา (แมนนวล)</DialogTitle>
+                <DialogDescription>
+                  สำหรับใบลาที่ยื่นเป็นกระดาษย้อนหลัง — ระบบจะออกเลขทะเบียนต่อจากเลขล่าสุดให้
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>ชื่อ-สกุล</Label>
+                    <Input
+                      value={form.user_name}
+                      onChange={(e) =>
+                        setForm({ ...form, user_name: e.target.value })
+                      }
+                      placeholder="นาย/นาง/น.ส. ชื่อ สกุล"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>ตำแหน่ง</Label>
+                    <Input
+                      value={form.user_position}
+                      onChange={(e) =>
+                        setForm({ ...form, user_position: e.target.value })
+                      }
+                      placeholder="เช่น ครู"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>ประเภทลา</Label>
+                  <Select
+                    value={form.leave_type}
+                    onValueChange={(v) =>
+                      setForm({ ...form, leave_type: v as LeaveType })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEAVE_TYPE_ORDER.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {LEAVE_TYPE_LABELS[t]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>วันที่เริ่ม</Label>
+                    <Input
+                      type="date"
+                      value={form.start_date}
+                      onChange={(e) =>
+                        setForm({ ...form, start_date: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>วันที่สิ้นสุด</Label>
+                    <Input
+                      type="date"
+                      value={form.end_date}
+                      onChange={(e) =>
+                        setForm({ ...form, end_date: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>เหตุผล</Label>
+                  <Textarea
+                    rows={2}
+                    value={form.reason}
+                    onChange={(e) =>
+                      setForm({ ...form, reason: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>หมายเหตุ (ถ้ามี)</Label>
+                  <Input
+                    value={form.remarks ?? ''}
+                    onChange={(e) =>
+                      setForm({ ...form, remarks: e.target.value })
+                    }
+                    placeholder="เช่น ยื่นกระดาษเมื่อ ..."
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setForm(emptyForm);
+                      setOpen(false);
+                    }}
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? 'กำลังบันทึก...' : 'บันทึก'}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-40" />
+          ) : list.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>ยังไม่มีรายการในทะเบียน</p>
+              <p className="text-sm">
+                เลขทะเบียนจะออกอัตโนมัติเมื่อ หน.บุคคล ลงนามใบลา
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-0">เลขที่</TableHead>
+                    <TableHead className="w-0">วันที่ออกเลข</TableHead>
+                    <TableHead>ชื่อ-ตำแหน่ง</TableHead>
+                    <TableHead className="w-0">ประเภท</TableHead>
+                    <TableHead className="w-0">ช่วงวันลา</TableHead>
+                    <TableHead className="text-right w-0">วัน</TableHead>
+                    <TableHead className="w-0">สถานะ</TableHead>
+                    <TableHead className="w-0">ที่มา</TableHead>
+                    <TableHead>หมายเหตุ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.map((r) => {
+                    const dStart = new Date(r.start_date).toLocaleDateString(
+                      'th-TH',
+                      { day: 'numeric', month: 'short', year: '2-digit' },
+                    );
+                    const dEnd = new Date(r.end_date).toLocaleDateString(
+                      'th-TH',
+                      { day: 'numeric', month: 'short', year: '2-digit' },
+                    );
+                    const dateRange =
+                      r.start_date === r.end_date
+                        ? dStart
+                        : `${dStart} – ${dEnd}`;
+                    const issuedAt = r.doc_number_at
+                      ? new Date(r.doc_number_at).toLocaleDateString('th-TH', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: '2-digit',
+                        })
+                      : '-';
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-mono font-semibold text-base whitespace-nowrap">
+                          {r.doc_number}
+                        </TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">
+                          {issuedAt}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="text-sm font-medium leading-tight">
+                            {r.user_name}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground leading-tight">
+                            {r.user_position}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">
+                          {LEAVE_TYPE_LABELS[r.leave_type]}
+                        </TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">
+                          {dateRange}
+                        </TableCell>
+                        <TableCell className="text-right text-sm tabular-nums">
+                          {r.days_count}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={`${LEAVE_STATUS_COLORS[r.status]} text-[11px] px-1.5 py-0`}
+                          >
+                            {LEAVE_STATUS_LABELS[r.status]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {r.entry_source === 'manual' ? (
+                            <Badge variant="outline" className="text-[11px]">
+                              แมนนวล
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              ระบบ
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[260px] truncate">
+                          {r.form_data?.notes ?? r.reason}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 // ───────────────── Page ─────────────────
-// ───────────────── Admin Tabs (overview + attendance + leave + approve) ─────────────────
+// ───────────────── Admin Tabs (overview + attendance + leave + approve + registry) ─────────────────
 const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string; position?: string } }> = ({
   profile,
   rawProfile,
@@ -2057,6 +2367,12 @@ const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string
                   </span>
                 )}
               </TabsTrigger>
+              {canHrHead && (
+                <TabsTrigger value="registry" className={adminTriggerClass}>
+                  <BookOpen className="h-4 w-4" />
+                  ทะเบียน
+                </TabsTrigger>
+              )}
             </TabsList>
           </div>
         </div>
@@ -2071,6 +2387,11 @@ const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string
       <TabsContent value="leave">
         <LeaveTab profile={profile} />
       </TabsContent>
+      {canHrHead && (
+        <TabsContent value="registry">
+          <LeaveRegistryTab />
+        </TabsContent>
+      )}
       <TabsContent value="approve">
         <ApprovalTab profile={profile} onListChange={refreshCount} />
       </TabsContent>

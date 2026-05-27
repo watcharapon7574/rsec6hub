@@ -169,13 +169,26 @@ type LeaveRow = {
   reason: string;
 };
 
-function formatDailyRollcall(rows: LeaveRow[], todayISO: string): string {
+type RollcallVariant = 'morning' | 'evening';
+function rollcallTitle(variant: RollcallVariant): { emoji: string; label: string } {
+  // morning (08:30): ประกาศล่วงหน้า ใครจะลาวันนี้
+  // evening (16:30): สรุปท้ายวัน รวมที่เพิ่งยื่นกะทันหัน (ลาป่วยฯ)
+  if (variant === 'evening') return { emoji: '📋', label: 'สรุปการลาวันนี้' };
+  return { emoji: '🗓', label: 'ผู้ลาวันนี้' };
+}
+
+function formatDailyRollcall(
+  rows: LeaveRow[],
+  todayISO: string,
+  variant: RollcallVariant = 'morning',
+): string {
   const today = parseISODate(todayISO);
   const dateLine = formatThaiDate(today, true);
+  const t = rollcallTitle(variant);
   if (rows.length === 0) {
-    return `🗓 <b>ผู้ลาวันนี้</b> · ${dateLine}\n\nวันนี้ไม่มีผู้ลา`;
+    return `${t.emoji} <b>${t.label}</b> · ${dateLine}\n\nวันนี้ไม่มีผู้ลา`;
   }
-  const header = `🗓 <b>ผู้ลาวันนี้</b> · ${dateLine} · ${rows.length} คน`;
+  const header = `${t.emoji} <b>${t.label}</b> · ${dateLine} · ${rows.length} คน`;
   const body = rows
     .map((r, i) => {
       const d = leaveDisplay(r.leave_type);
@@ -302,7 +315,7 @@ async function fetchOneLeave(id: string): Promise<LeaveRow | null> {
 
 // ─── Handler ─────────────────────────────────────────────────────────────
 type Payload =
-  | { type: 'daily_rollcall'; date?: string }
+  | { type: 'daily_rollcall'; date?: string; variant?: RollcallVariant }
   | { type: 'sick_immediate'; request_id: string };
 
 Deno.serve(async (req: Request) => {
@@ -322,9 +335,10 @@ Deno.serve(async (req: Request) => {
 
     if (payload.type === 'daily_rollcall') {
       const todayISO = payload.date ?? todayISOBangkok();
+      const variant: RollcallVariant = payload.variant ?? 'morning';
       const rows = await fetchTodayLeaves(todayISO);
-      messageText = formatDailyRollcall(rows, todayISO);
-      summary = { ...summary, date: todayISO, count: rows.length };
+      messageText = formatDailyRollcall(rows, todayISO, variant);
+      summary = { ...summary, date: todayISO, variant, count: rows.length };
     } else if (payload.type === 'sick_immediate') {
       if (!payload.request_id) throw new Error('request_id required');
       const row = await fetchOneLeave(payload.request_id);

@@ -81,6 +81,8 @@ import {
   BookOpen,
   Megaphone,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -1591,13 +1593,33 @@ const OverviewTab: React.FC = () => {
   );
 };
 
+// 4 ประเภทหลักตามใบลาบุคลากร ศกศ.6 ลพบุรี — โชว์เด่นในหน้าโควต้า
+const MAIN_LEAVE_TYPES: LeaveType[] = [
+  'sick_leave',
+  'personal_leave',
+  'annual_leave',
+  'maternity_leave',
+];
+
 const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
   const navigate = useNavigate();
   const [balance, setBalance] = useState<LeaveBalance[]>([]);
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailReq, setDetailReq] = useState<LeaveRequest | null>(null);
+  const [showOtherQuotas, setShowOtherQuotas] = useState(false);
   const period = useMemo(() => getFiscalPeriod(), []);
+
+  const mainBalance = useMemo(
+    () => MAIN_LEAVE_TYPES.map((t) => balance.find((b) => b.leave_type === t)).filter(
+      (b): b is LeaveBalance => !!b,
+    ),
+    [balance],
+  );
+  const otherBalance = useMemo(
+    () => balance.filter((b) => !MAIN_LEAVE_TYPES.includes(b.leave_type)),
+    [balance],
+  );
 
   useEffect(() => {
     let alive = true;
@@ -1640,62 +1662,115 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
         </div>
       </div>
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-xl" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {balance.map((b) => {
-            const theme = LEAVE_TYPE_THEME[b.leave_type];
-            const Icon = theme.icon;
-            const remain = b.quota_days - b.used_days - b.pending_days;
-            const pct =
-              b.quota_days > 0 ? (b.used_days / b.quota_days) * 100 : 0;
-            const danger = remain <= 0;
-            return (
-              <Card
-                key={b.leave_type}
-                className={`flex flex-col w-full ${
-                  danger ? 'border-red-300' : ''
-                }`}
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {mainBalance.map((b) => {
+              const theme = LEAVE_TYPE_THEME[b.leave_type];
+              const Icon = theme.icon;
+              const remain = b.quota_days - b.used_days - b.pending_days;
+              const pct =
+                b.quota_days > 0 ? (b.used_days / b.quota_days) * 100 : 0;
+              const danger = remain <= 0;
+              return (
+                <Card
+                  key={b.leave_type}
+                  className={`flex flex-col w-full ${
+                    danger ? 'border-red-300' : ''
+                  }`}
+                >
+                  <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className={`p-2 rounded-lg ${theme.pill}`}>
+                          <Icon className={`h-4 w-4 ${theme.text}`} />
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-3xl sm:text-4xl font-bold ${theme.text}`}>
+                            {b.used_days}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            / {b.quota_days}
+                          </span>
+                        </div>
+                      </div>
+                      <h3 className="font-semibold text-foreground text-sm line-clamp-1">
+                        {LEAVE_TYPE_LABELS[b.leave_type]}
+                      </h3>
+                      <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full ${danger ? 'bg-red-500' : 'bg-blue-500'}`}
+                          style={{ width: `${Math.min(100, pct)}%` }}
+                        />
+                      </div>
+                      {b.pending_days > 0 && (
+                        <p className="mt-1.5 text-[11px] text-yellow-600 dark:text-yellow-400">
+                          รออนุมัติ {b.pending_days} วัน
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {otherBalance.length > 0 && (
+            <div className="mt-2">
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 ml-1"
+                onClick={() => setShowOtherQuotas((v) => !v)}
               >
-                <CardContent className="pt-4 pb-3 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className={`p-2 rounded-lg ${theme.pill}`}>
-                        <Icon className={`h-4 w-4 ${theme.text}`} />
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-3xl sm:text-4xl font-bold ${theme.text}`}>
-                          {b.used_days}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          / {b.quota_days}
-                        </span>
-                      </div>
-                    </div>
-                    <h3 className="font-semibold text-foreground text-sm line-clamp-1">
-                      {LEAVE_TYPE_LABELS[b.leave_type]}
-                    </h3>
-                    <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                {showOtherQuotas ? (
+                  <ChevronUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                )}
+                {showOtherQuotas ? 'ซ่อน' : 'ดู'}ประเภทอื่น ({otherBalance.length})
+              </button>
+              {showOtherQuotas && (
+                <div className="mt-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                  {otherBalance.map((b) => {
+                    const theme = LEAVE_TYPE_THEME[b.leave_type];
+                    const Icon = theme.icon;
+                    const remain = b.quota_days - b.used_days - b.pending_days;
+                    const danger = remain <= 0;
+                    return (
                       <div
-                        className={`h-full ${danger ? 'bg-red-500' : 'bg-blue-500'}`}
-                        style={{ width: `${Math.min(100, pct)}%` }}
-                      />
-                    </div>
-                    {b.pending_days > 0 && (
-                      <p className="mt-1.5 text-[11px] text-yellow-600 dark:text-yellow-400">
-                        รออนุมัติ {b.pending_days} วัน
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                        key={b.leave_type}
+                        className={`rounded-lg border bg-card px-2.5 py-2 flex items-center gap-2 ${
+                          danger ? 'border-red-300' : 'border-border'
+                        }`}
+                        title={`เหลือ ${remain} วัน${b.pending_days > 0 ? ` (รออนุมัติ ${b.pending_days})` : ''}`}
+                      >
+                        <div className={`p-1.5 rounded-md ${theme.pill} flex-shrink-0`}>
+                          <Icon className={`h-3.5 w-3.5 ${theme.text}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-medium text-foreground truncate">
+                            {LEAVE_TYPE_LABELS[b.leave_type]}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            <span className={`font-semibold ${theme.text}`}>
+                              {b.used_days}
+                            </span>
+                            /{b.quota_days}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <Card>

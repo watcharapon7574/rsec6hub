@@ -66,27 +66,9 @@ const ApproveDocumentPage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [memoId]);
 
-  // Lazy annotation: ขีดเขียนเก็บแค่ PNG overlays ใน memo_annotation_layers
-  // ไม่แตะ pdf_draft_path จนกว่าจะกดอนุมัติ → ไม่ต้อง revert PDF เมื่อออกจากหน้า
-  // แค่ลบ annotation layers ของ user นี้เมื่อออกโดยไม่ได้อนุมัติ
-  useEffect(() => {
-    const currentMemoId = memoId;
-    const userId = signOnBehalfUserId || profile?.user_id;
-    return () => {
-      if (!approvedRef.current && currentMemoId && userId) {
-        supabase.from('memo_annotation_layers')
-          .delete()
-          .eq('memo_id', currentMemoId)
-          .eq('user_id', userId)
-          .then(() => {
-          });
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memoId]);
-
-  // Restore hasCompletedAnnotation on page load (กรณี refresh) — effect ที่ใช้ effectiveSignerUserId
-  // อยู่ด้านล่างหลังจาก memo/signerListProgress โหลดแล้ว
+  // Annotation persistence: PNG overlays อยู่ใน memo_annotation_layers จนกว่าจะกดอนุมัติ
+  // (cleanup เกิดในปุ่ม "อนุมัติ" บรรทัด ~1016) หรือผู้ใช้ขีดเขียนทับใหม่ (บรรทัด ~1459)
+  // ไม่ลบตอนออกจากหน้า เพราะ ผอ. มักขีดเสร็จ → ไปดูที่อื่น → กลับมาอนุมัติ
 
   // โหลด profile ของคนที่ admin ลงนามแทน
   useEffect(() => {

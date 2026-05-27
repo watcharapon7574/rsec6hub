@@ -79,6 +79,8 @@ import {
   Eye,
   PenLine,
   BookOpen,
+  Megaphone,
+  Loader2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -1982,6 +1984,34 @@ const LeaveRegistryTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [announcing, setAnnouncing] = useState(false);
+
+  const handleAnnounceToday = async () => {
+    setAnnouncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'leave-telegram-notify',
+        { body: { type: 'daily_rollcall' } },
+      );
+      if (error) throw error;
+      const count = (data as { summary?: { count?: number } })?.summary?.count ?? 0;
+      toast({
+        title: 'ส่งประกาศแล้ว',
+        description:
+          count > 0
+            ? `แจ้งผู้ลาวันนี้ ${count} คน เข้ากลุ่ม Telegram`
+            : 'วันนี้ไม่มีผู้ลา — ส่งข้อความว่างเข้ากลุ่ม',
+      });
+    } catch (e) {
+      toast({
+        title: 'ส่งประกาศไม่สำเร็จ',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
+    } finally {
+      setAnnouncing(false);
+    }
+  };
 
   const today = toLocalISODate(new Date());
   const emptyForm: NewManualRegistryEntryInput = {
@@ -2058,13 +2088,29 @@ const LeaveRegistryTab: React.FC = () => {
               เลขทะเบียนออกอัตโนมัติเมื่อ หน.บุคคล ลงนาม (4 หลัก รันต่อเนื่อง)
             </p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1">
-                <Plus className="h-4 w-4" />
-                เพิ่มแมนนวล
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              disabled={announcing}
+              onClick={handleAnnounceToday}
+              title="ส่งรายชื่อผู้ลาวันนี้เข้ากลุ่ม Telegram"
+            >
+              {announcing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Megaphone className="h-4 w-4" />
+              )}
+              ส่งประกาศวันนี้
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1">
+                  <Plus className="h-4 w-4" />
+                  เพิ่มแมนนวล
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>เพิ่มทะเบียนใบลา (แมนนวล)</DialogTitle>
@@ -2173,7 +2219,8 @@ const LeaveRegistryTab: React.FC = () => {
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (

@@ -18,17 +18,7 @@ import {
   toLocalISODate,
 } from '@/utils/fiscalYear';
 
-// supabase/types.ts still reflects the old single-step leave_requests schema.
-// Regenerate after the v2 migration applies. Until then, route new-table calls
-// through this loosely-typed handle.
-type SupabaseAny = {
-  from: (table: string) => any;
-  rpc: (
-    fn: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ data: unknown; error: { message: string } | null }>;
-};
-const sb = supabase as unknown as SupabaseAny;
+const sb = supabase;
 
 type DbSignature = {
   id: string;
@@ -287,7 +277,24 @@ export async function createLeaveRequest(
     .select('*')
     .single();
   if (error) throw new Error(error.message ?? 'createLeaveRequest failed');
-  return mapDbRequest(data as DbLeaveRequest, []);
+  const created = mapDbRequest(data as DbLeaveRequest, []);
+
+  // ลาป่วยที่ start_date <= วันนี้ → ประกาศกลุ่ม Telegram ทันที (best-effort,
+  // ไม่ block: ถ้า notify ล้มเหลว ใบลายังถูกสร้างสำเร็จ)
+  if (
+    created.leave_type === 'sick_leave' &&
+    created.start_date <= toLocalISODate(new Date())
+  ) {
+    void supabase.functions
+      .invoke('leave-telegram-notify', {
+        body: { type: 'sick_immediate', request_id: created.id },
+      })
+      .catch((err) =>
+        console.warn('[leave] sick-immediate notify failed:', err),
+      );
+  }
+
+  return created;
 }
 
 // HR head registers paper-backlog leave (entry_source='manual')

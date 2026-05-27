@@ -1,5 +1,5 @@
 
-import { Profile, isAdmin, isExecutive, isClerk, isTeacher, getPositionDisplayName } from '@/types/database';
+import { Profile, isAdmin, isExecutive, isTeacher, getPositionDisplayName } from '@/types/database';
 
 export interface UserPermissions {
   isAdmin: boolean;
@@ -42,7 +42,8 @@ export const getPermissions = (profile: Profile | null): UserPermissions => {
     isManagement: isExecutive(profile.position),
     isTeacher: isTeacher(profile.position),
     isEmployee: ['government_employee'].includes(profile.position),
-    isClerk: isClerk(profile.position),
+    // ธุรการ คือ role ที่มอบหมายได้ ไม่ผูกกับ position — ใช้ flag is_clerk ที่ตั้งใน DB
+    isClerk: profile.is_clerk === true,
     position: profile.position,
     displayName: getPositionDisplayName(profile.position)
   };

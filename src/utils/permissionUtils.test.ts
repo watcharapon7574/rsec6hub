@@ -56,11 +56,28 @@ describe('getPermissions', () => {
     expect(perms.isClerk).toBe(false);
   });
 
-  it('clerk_teacher → clerk เท่านั้น', () => {
+  // ธุรการ คือ role assignment (is_clerk flag) ไม่ใช่ตำแหน่ง — ดังนั้น
+  // position='clerk_teacher' โดยไม่ตั้ง is_clerk จะไม่ถือเป็นธุรการ
+  it('clerk_teacher แต่ไม่ตั้ง is_clerk → ไม่ใช่ธุรการ', () => {
     const perms = getPermissions(makeProfile({ position: 'clerk_teacher' }));
+    expect(perms.isClerk).toBe(false);
+  });
+
+  it('clerk_teacher + is_clerk=true → ธุรการ', () => {
+    const perms = getPermissions(
+      makeProfile({ position: 'clerk_teacher', is_clerk: true }),
+    );
     expect(perms.isClerk).toBe(true);
     expect(perms.isTeacher).toBe(false);
     expect(perms.isManagement).toBe(false);
+  });
+
+  it('government_teacher + is_clerk=true → เป็นทั้งครูและธุรการ', () => {
+    const perms = getPermissions(
+      makeProfile({ position: 'government_teacher', is_clerk: true }),
+    );
+    expect(perms.isClerk).toBe(true);
+    expect(perms.isTeacher).toBe(true);
   });
 
   it('government_employee → employee เท่านั้น', () => {

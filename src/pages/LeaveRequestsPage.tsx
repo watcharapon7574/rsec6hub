@@ -91,6 +91,7 @@ import {
   HR_DECISION_LABELS,
   HR_DECISION_ORDER,
   HrDecision,
+  inferLeaveGender,
   isAttachmentRequired,
   LEAVE_STATUS_COLORS,
   LEAVE_STATUS_LABELS,
@@ -98,6 +99,7 @@ import {
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_ORDER,
   LeaveBalance,
+  LeaveGender,
   LeaveRequest,
   LeaveStepState,
   LeaveType,
@@ -1111,6 +1113,7 @@ type LeaveProfile = {
   prefix?: string | null;
   first_name: string;
   last_name: string;
+  gender?: string | null;
   position?: string | null;
   job_position?: string | null;
   org_structure_role?: string | null;
@@ -1594,12 +1597,11 @@ const OverviewTab: React.FC = () => {
 };
 
 // 4 ประเภทหลักตามใบลาบุคลากร ศกศ.6 ลพบุรี — โชว์เด่นในหน้าโควต้า
-const MAIN_LEAVE_TYPES: LeaveType[] = [
-  'sick_leave',
-  'personal_leave',
-  'annual_leave',
-  'maternity_leave',
-];
+// ตัวที่ 4 สลับ maternity↔paternity ตามเพศของผู้ใช้
+function getMainLeaveTypes(gender: LeaveGender): LeaveType[] {
+  const parental: LeaveType = gender === 'male' ? 'paternity_leave' : 'maternity_leave';
+  return ['sick_leave', 'personal_leave', 'annual_leave', parental];
+}
 
 const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
   const navigate = useNavigate();
@@ -1610,15 +1612,21 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
   const [showOtherQuotas, setShowOtherQuotas] = useState(false);
   const period = useMemo(() => getFiscalPeriod(), []);
 
+  const gender = useMemo(
+    () => inferLeaveGender({ prefix: profile.prefix, gender: profile.gender }),
+    [profile],
+  );
+  const mainTypes = useMemo(() => getMainLeaveTypes(gender), [gender]);
+
   const mainBalance = useMemo(
-    () => MAIN_LEAVE_TYPES.map((t) => balance.find((b) => b.leave_type === t)).filter(
+    () => mainTypes.map((t) => balance.find((b) => b.leave_type === t)).filter(
       (b): b is LeaveBalance => !!b,
     ),
-    [balance],
+    [balance, mainTypes],
   );
   const otherBalance = useMemo(
-    () => balance.filter((b) => !MAIN_LEAVE_TYPES.includes(b.leave_type)),
-    [balance],
+    () => balance.filter((b) => !mainTypes.includes(b.leave_type)),
+    [balance, mainTypes],
   );
 
   useEffect(() => {

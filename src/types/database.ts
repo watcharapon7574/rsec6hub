@@ -25,6 +25,7 @@ export interface Profile {
   nickname?: string;
   email?: string;
   phone?: string;
+  gender?: string; // ชาย / หญิง — ใช้ filter ลาคลอด/ลาช่วยภรรยา
   birth_date?: string;
   address?: string;
   postal_code?: string;

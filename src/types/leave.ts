@@ -15,7 +15,7 @@ export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
   personal_leave: 'ลากิจส่วนตัว',
   annual_leave: 'ลาพักผ่อน',
   maternity_leave: 'ลาคลอดบุตร',
-  paternity_leave: 'ลาไปช่วยภริยาดูแลบุตร',
+  paternity_leave: 'ลาไปช่วยภรรยาดูแลบุตร',
   ordination_leave: 'ลาอุปสมบท / ไปประกอบพิธีฮัจย์',
   military_leave: 'ลาเข้ารับการตรวจเลือก/เตรียมพล',
   study_leave: 'ลาไปศึกษา ฝึกอบรม ดูงาน',
@@ -35,6 +35,36 @@ export const LEAVE_TYPE_ORDER: LeaveType[] = [
   'spouse_follow_leave',
   'rehabilitation_leave',
 ];
+
+// เพศทางชีวภาพที่ส่งผลต่อสิทธิ์ลา — ใช้คำนำหน้าเป็น signal เพราะระบบ
+// ยังไม่ได้ขอ gender จากผู้ใช้โดยตรง (และ profile.gender ในบาง record ยัง NULL)
+export type LeaveGender = 'male' | 'female' | null;
+
+export function inferLeaveGender(opts: {
+  prefix?: string | null;
+  gender?: string | null;
+}): LeaveGender {
+  const g = (opts.gender ?? '').trim().toLowerCase();
+  if (g === 'ชาย' || g === 'm' || g === 'male') return 'male';
+  if (g === 'หญิง' || g === 'f' || g === 'female') return 'female';
+
+  const p = (opts.prefix ?? '').trim();
+  if (p === 'นาย' || p === 'Mr.' || p === 'Mr') return 'male';
+  if (p === 'นาง' || p === 'นางสาว' || p === 'Mrs.' || p === 'Ms.' || p === 'Miss') {
+    return 'female';
+  }
+  return null;
+}
+
+// male → ตัด maternity_leave ออก; female → ตัด paternity_leave ออก
+// null (เพศไม่ชัด) → คงไว้ทั้งสองเพื่อไม่ block ผู้ใช้
+export function leaveTypesForGender(gender: LeaveGender): LeaveType[] {
+  return LEAVE_TYPE_ORDER.filter((t) => {
+    if (gender === 'male' && t === 'maternity_leave') return false;
+    if (gender === 'female' && t === 'paternity_leave') return false;
+    return true;
+  });
+}
 
 // เพดานวันลาสูงสุดต่อปีงบประมาณ ตามระเบียบสำนักนายกฯ ว่าด้วยการลาของข้าราชการ พ.ศ. 2555
 // ใช้เป็นทั้งโควต้าใน UI และ cap ตอน validate — ค่าเป็นรายปี (รวม 2 ครึ่งปีงบประมาณ)

@@ -30,13 +30,14 @@ import {
   DELEGATION_AREA_LABELS,
   DELEGATION_AREA_ORDER,
   DelegationArea,
+  inferLeaveGender,
   isAttachmentRequired,
   LEAVE_TYPE_ATTACHMENTS,
   LEAVE_TYPE_LABELS,
-  LEAVE_TYPE_ORDER,
   LEAVE_TYPE_REGULATION,
   LeaveBalance,
   LeaveType,
+  leaveTypesForGender,
 } from '@/types/leave';
 import { calculateLeaveDays, toLocalISODate } from '@/utils/fiscalYear';
 import { createLeaveRequest, getMyBalance } from '@/services/leaveService';
@@ -112,6 +113,12 @@ const NewLeaveRequestPage: React.FC = () => {
   const regulation = formData.leave_type
     ? LEAVE_TYPE_REGULATION[formData.leave_type as LeaveType]
     : null;
+
+  const gender = inferLeaveGender({
+    prefix: profile?.prefix,
+    gender: profile?.gender,
+  });
+  const allowedLeaveTypes = leaveTypesForGender(gender);
 
   if (!profile) {
     return (
@@ -267,7 +274,7 @@ const NewLeaveRequestPage: React.FC = () => {
                     <SelectValue placeholder="เลือกประเภทการลา" />
                   </SelectTrigger>
                   <SelectContent>
-                    {LEAVE_TYPE_ORDER.map((t) => (
+                    {allowedLeaveTypes.map((t) => (
                       <SelectItem key={t} value={t}>
                         {LEAVE_TYPE_LABELS[t]}
                       </SelectItem>

@@ -1115,7 +1115,7 @@ type LeaveProfile = {
   first_name: string;
   last_name: string;
   gender?: string | null;
-  position?: string | null;
+  position?: Position | null;
   job_position?: string | null;
   org_structure_role?: string | null;
   signature_url?: string | null;
@@ -1658,7 +1658,7 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
   };
 
   const isOfficial = profile.position
-    ? isGovernmentOfficial(profile.position as Position)
+    ? isGovernmentOfficial(profile.position)
     : false;
 
   return (

@@ -107,6 +107,7 @@ const NewLeaveRequestPage: React.FC = () => {
   const isOfficial = profile?.position
     ? isGovernmentOfficial(profile.position as Position)
     : false;
+  // ^ cast คงไว้ เพราะ useEmployeeAuth.profile.position เป็น string (ยังไม่ strict)
   const remaining = selectedBalance
     ? selectedBalance.quota_days -
       selectedBalance.used_days -

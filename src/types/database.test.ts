@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isAdmin,
   isExecutive,
+  isGovernmentOfficial,
   isTeacher,
   getPositionDisplayName,
   type Profile,
@@ -52,6 +53,33 @@ describe('isExecutive', () => {
   nonExecutives.forEach((pos) => {
     it(`${pos} → ไม่ใช่ executive`, () => {
       expect(isExecutive(pos)).toBe(false);
+    });
+  });
+});
+
+describe('isGovernmentOfficial', () => {
+  const officials: Position[] = [
+    'director',
+    'deputy_director',
+    'assistant_director',
+    'government_teacher',
+  ];
+  const nonOfficials: Position[] = [
+    'government_employee',
+    'contract_teacher',
+    'clerk_teacher',
+    'disability_aide',
+  ];
+
+  officials.forEach((p) => {
+    it(`${p} → ข้าราชการ`, () => {
+      expect(isGovernmentOfficial(p)).toBe(true);
+    });
+  });
+
+  nonOfficials.forEach((p) => {
+    it(`${p} → ไม่ใช่ข้าราชการ`, () => {
+      expect(isGovernmentOfficial(p)).toBe(false);
     });
   });
 });

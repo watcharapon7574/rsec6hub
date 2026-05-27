@@ -46,6 +46,7 @@ const NewLeaveRequestPage: React.FC = () => {
   const { profile } = useEmployeeAuth();
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
+  const today = new Date().toISOString().slice(0, 10);
   const [formData, setFormData] = useState<{
     leave_type: LeaveType | '';
     start_date: string;
@@ -55,8 +56,8 @@ const NewLeaveRequestPage: React.FC = () => {
     attachment_name: string;
   }>({
     leave_type: '',
-    start_date: '',
-    end_date: '',
+    start_date: today,
+    end_date: today,
     reason: '',
     contact_phone: '',
     attachment_name: '',
@@ -77,6 +78,11 @@ const NewLeaveRequestPage: React.FC = () => {
     getMyBalance(profile.id).then((b) => {
       if (alive) setBalance(b);
     });
+    if (profile.phone) {
+      setFormData((d) =>
+        d.contact_phone ? d : { ...d, contact_phone: profile.phone ?? '' },
+      );
+    }
     return () => {
       alive = false;
     };

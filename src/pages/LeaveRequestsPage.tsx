@@ -128,6 +128,7 @@ import {
   rejectLeave,
 } from '@/services/leaveService';
 import { getPermissions } from '@/utils/permissionUtils';
+import { isGovernmentOfficial, type Position } from '@/types/database';
 
 type TeacherAttendance = {
   id: string;
@@ -1118,7 +1119,6 @@ type LeaveProfile = {
   job_position?: string | null;
   org_structure_role?: string | null;
   signature_url?: string | null;
-  is_government_official?: boolean | null;
 };
 
 // ───────────────── Leave Calendar (เดือน) ─────────────────
@@ -1657,7 +1657,9 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
     setRequests(r);
   };
 
-  const isOfficial = profile.is_government_official === true;
+  const isOfficial = profile.position
+    ? isGovernmentOfficial(profile.position as Position)
+    : false;
 
   return (
     <div className="space-y-4">

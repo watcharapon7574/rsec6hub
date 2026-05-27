@@ -42,6 +42,7 @@ import {
 import { calculateLeaveDays, toLocalISODate } from '@/utils/fiscalYear';
 import { createLeaveRequest, getMyBalance } from '@/services/leaveService';
 import { supabase } from '@/integrations/supabase/client';
+import { isGovernmentOfficial, type Position } from '@/types/database';
 
 const NewLeaveRequestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -103,7 +104,9 @@ const NewLeaveRequestPage: React.FC = () => {
         : undefined,
     [balance, formData.leave_type],
   );
-  const isOfficial = profile?.is_government_official === true;
+  const isOfficial = profile?.position
+    ? isGovernmentOfficial(profile.position as Position)
+    : false;
   const remaining = selectedBalance
     ? selectedBalance.quota_days -
       selectedBalance.used_days -

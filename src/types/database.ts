@@ -26,7 +26,6 @@ export interface Profile {
   email?: string;
   phone?: string;
   gender?: string; // ชาย / หญิง — ใช้ filter ลาคลอด/ลาช่วยภรรยา
-  is_government_official?: boolean; // ใช้ gate ระบบโควต้าลา (ข้าราชการเท่านั้น)
   is_clerk?: boolean; // ธุรการ role assignment — ใครก็เป็นได้ที่ถูกมอบหมาย
   birth_date?: string;
   address?: string;
@@ -78,6 +77,17 @@ export const isAdmin = (profile: Profile): boolean => {
 
 export const isExecutive = (position: Position): boolean => {
   return ['director', 'deputy_director', 'assistant_director'].includes(position);
+};
+
+// ข้าราชการตามตำแหน่ง ก.พ. — ใช้ gate ระบบโควต้าลา
+// (positions นอกรายการนี้คือพนักงานราชการ/ลูกจ้าง — ไม่อยู่ในระบบโควต้า)
+export const isGovernmentOfficial = (position: Position): boolean => {
+  return [
+    'director',
+    'deputy_director',
+    'assistant_director',
+    'government_teacher',
+  ].includes(position);
 };
 
 // "ธุรการ" คือ role assignment ไม่ใช่ position — ใช้ profile.is_clerk แทน

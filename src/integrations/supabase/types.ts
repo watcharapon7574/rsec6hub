@@ -1913,7 +1913,7 @@ export type Database = {
           first_name: string
           id: string
           is_admin: boolean | null
-          is_government_official: boolean
+          is_clerk: boolean
           job_position: string | null
           last_name: string
           marital_status: string | null
@@ -1958,7 +1958,7 @@ export type Database = {
           first_name: string
           id?: string
           is_admin?: boolean | null
-          is_government_official?: boolean
+          is_clerk?: boolean
           job_position?: string | null
           last_name: string
           marital_status?: string | null
@@ -2003,7 +2003,7 @@ export type Database = {
           first_name?: string
           id?: string
           is_admin?: boolean | null
-          is_government_official?: boolean
+          is_clerk?: boolean
           job_position?: string | null
           last_name?: string
           marital_status?: string | null

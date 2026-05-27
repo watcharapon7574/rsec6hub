@@ -26,6 +26,7 @@ export interface Profile {
   email?: string;
   phone?: string;
   gender?: string; // ชาย / หญิง — ใช้ filter ลาคลอด/ลาช่วยภรรยา
+  is_government_official?: boolean; // ใช้ gate ระบบโควต้าลา (ข้าราชการเท่านั้น)
   birth_date?: string;
   address?: string;
   postal_code?: string;

@@ -103,13 +103,17 @@ const NewLeaveRequestPage: React.FC = () => {
         : undefined,
     [balance, formData.leave_type],
   );
+  const isOfficial =
+    (profile as { is_government_official?: boolean } | null)?.is_government_official ===
+    true;
   const remaining = selectedBalance
     ? selectedBalance.quota_days -
       selectedBalance.used_days -
       selectedBalance.pending_days
     : null;
+  // ไม่บังคับโควต้าสำหรับคนที่ไม่ใช่ข้าราชการ
   const overQuota =
-    remaining !== null && days > 0 && days > remaining;
+    isOfficial && remaining !== null && days > 0 && days > remaining;
   const regulation = formData.leave_type
     ? LEAVE_TYPE_REGULATION[formData.leave_type as LeaveType]
     : null;
@@ -297,7 +301,7 @@ const NewLeaveRequestPage: React.FC = () => {
                       • {regulation.extendable}
                     </p>
                   )}
-                  {selectedBalance && (
+                  {selectedBalance && isOfficial && (
                     <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-blue-200/60 dark:border-blue-800/60">
                       <span className="text-[11px] text-blue-900/80 dark:text-blue-100/80">
                         ใช้ไป {selectedBalance.used_days}
@@ -314,6 +318,13 @@ const NewLeaveRequestPage: React.FC = () => {
                       >
                         เหลือ {remaining} วัน
                       </span>
+                    </div>
+                  )}
+                  {selectedBalance && !isOfficial && (
+                    <div className="pt-1.5 mt-1 border-t border-blue-200/60 dark:border-blue-800/60 text-[11px] text-blue-900/80 dark:text-blue-100/80">
+                      ปีงบประมาณนี้: ลาแล้ว {selectedBalance.used_count} ครั้ง
+                      {selectedBalance.pending_count > 0 &&
+                        ` (รออนุมัติ ${selectedBalance.pending_count})`}
                     </div>
                   )}
                 </div>

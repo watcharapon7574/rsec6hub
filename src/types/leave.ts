@@ -272,6 +272,9 @@ export interface LeaveBalance {
   quota_days: number;
   used_days: number;
   pending_days: number;
+  // จำนวนครั้งที่ลา (ไม่ใช่จำนวนวัน) — non-officials โชว์ตัวนี้แทน quota
+  used_count: number;
+  pending_count: number;
 }
 
 export interface NewLeaveRequestInput {

@@ -1913,6 +1913,7 @@ export type Database = {
           first_name: string
           id: string
           is_admin: boolean | null
+          is_government_official: boolean
           job_position: string | null
           last_name: string
           marital_status: string | null
@@ -1957,6 +1958,7 @@ export type Database = {
           first_name: string
           id?: string
           is_admin?: boolean | null
+          is_government_official?: boolean
           job_position?: string | null
           last_name: string
           marital_status?: string | null
@@ -2001,6 +2003,7 @@ export type Database = {
           first_name?: string
           id?: string
           is_admin?: boolean | null
+          is_government_official?: boolean
           job_position?: string | null
           last_name?: string
           marital_status?: string | null
@@ -2946,6 +2949,7 @@ export type Database = {
         }
         Returns: string
       }
+      cron_auth_token: { Args: never; Returns: string }
       data_std_admin_add: {
         Args: { p_editor_id: string; p_payload: Json; p_phone_last4: string }
         Returns: {

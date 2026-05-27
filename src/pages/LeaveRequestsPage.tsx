@@ -1118,6 +1118,7 @@ type LeaveProfile = {
   job_position?: string | null;
   org_structure_role?: string | null;
   signature_url?: string | null;
+  is_government_official?: boolean | null;
 };
 
 // ───────────────── Leave Calendar (เดือน) ─────────────────
@@ -1656,16 +1657,19 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
     setRequests(r);
   };
 
+  const isOfficial = profile.is_government_official === true;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            โควต้าการลา
+            {isOfficial ? 'โควต้าการลา' : 'สถิติการลา'}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {formatFiscalYear(period.year)}
+            {!isOfficial && ' · ไม่ใช่ข้าราชการ — ไม่มีระบบโควต้า'}
           </p>
         </div>
       </div>
@@ -1684,7 +1688,7 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
               const remain = b.quota_days - b.used_days - b.pending_days;
               const pct =
                 b.quota_days > 0 ? (b.used_days / b.quota_days) * 100 : 0;
-              const danger = remain <= 0;
+              const danger = isOfficial && remain <= 0;
               return (
                 <Card
                   key={b.leave_type}
@@ -1699,26 +1703,44 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
                           <Icon className={`h-4 w-4 ${theme.text}`} />
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className={`text-3xl sm:text-4xl font-bold ${theme.text}`}>
-                            {b.used_days}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            / {b.quota_days}
-                          </span>
+                          {isOfficial ? (
+                            <>
+                              <span className={`text-3xl sm:text-4xl font-bold ${theme.text}`}>
+                                {b.used_days}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                / {b.quota_days}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className={`text-3xl sm:text-4xl font-bold ${theme.text}`}>
+                                {b.used_count}
+                              </span>
+                              <span className="text-sm text-muted-foreground">ครั้ง</span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <h3 className="font-semibold text-foreground text-sm line-clamp-1">
                         {LEAVE_TYPE_LABELS[b.leave_type]}
                       </h3>
-                      <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full ${danger ? 'bg-red-500' : 'bg-blue-500'}`}
-                          style={{ width: `${Math.min(100, pct)}%` }}
-                        />
-                      </div>
-                      {b.pending_days > 0 && (
+                      {isOfficial && (
+                        <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full ${danger ? 'bg-red-500' : 'bg-blue-500'}`}
+                            style={{ width: `${Math.min(100, pct)}%` }}
+                          />
+                        </div>
+                      )}
+                      {isOfficial && b.pending_days > 0 && (
                         <p className="mt-1.5 text-[11px] text-yellow-600 dark:text-yellow-400">
                           รออนุมัติ {b.pending_days} วัน
+                        </p>
+                      )}
+                      {!isOfficial && b.pending_count > 0 && (
+                        <p className="mt-1.5 text-[11px] text-yellow-600 dark:text-yellow-400">
+                          รออนุมัติ {b.pending_count} ครั้ง
                         </p>
                       )}
                     </div>
@@ -1748,14 +1770,18 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
                     const theme = LEAVE_TYPE_THEME[b.leave_type];
                     const Icon = theme.icon;
                     const remain = b.quota_days - b.used_days - b.pending_days;
-                    const danger = remain <= 0;
+                    const danger = isOfficial && remain <= 0;
                     return (
                       <div
                         key={b.leave_type}
                         className={`rounded-lg border bg-card px-2.5 py-2 flex items-center gap-2 ${
                           danger ? 'border-red-300' : 'border-border'
                         }`}
-                        title={`เหลือ ${remain} วัน${b.pending_days > 0 ? ` (รออนุมัติ ${b.pending_days})` : ''}`}
+                        title={
+                          isOfficial
+                            ? `เหลือ ${remain} วัน${b.pending_days > 0 ? ` (รออนุมัติ ${b.pending_days})` : ''}`
+                            : `ลาแล้ว ${b.used_count} ครั้ง${b.pending_count > 0 ? ` (รออนุมัติ ${b.pending_count})` : ''}`
+                        }
                       >
                         <div className={`p-1.5 rounded-md ${theme.pill} flex-shrink-0`}>
                           <Icon className={`h-3.5 w-3.5 ${theme.text}`} />
@@ -1765,10 +1791,21 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
                             {LEAVE_TYPE_LABELS[b.leave_type]}
                           </p>
                           <p className="text-[10px] text-muted-foreground">
-                            <span className={`font-semibold ${theme.text}`}>
-                              {b.used_days}
-                            </span>
-                            /{b.quota_days}
+                            {isOfficial ? (
+                              <>
+                                <span className={`font-semibold ${theme.text}`}>
+                                  {b.used_days}
+                                </span>
+                                /{b.quota_days}
+                              </>
+                            ) : (
+                              <>
+                                <span className={`font-semibold ${theme.text}`}>
+                                  {b.used_count}
+                                </span>{' '}
+                                ครั้ง
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>

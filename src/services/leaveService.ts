@@ -219,18 +219,18 @@ export async function getMyBalance(
 
   return LEAVE_TYPE_ORDER.map((leaveType) => {
     const filtered = rows.filter((r) => r.leave_type === leaveType);
-    const used = filtered
-      .filter((r) => r.status === 'approved')
-      .reduce((sum, r) => sum + r.days_count, 0);
-    const pending = filtered
-      .filter((r) => r.status === 'pending' || r.status === 'in_progress')
-      .reduce((sum, r) => sum + r.days_count, 0);
+    const approved = filtered.filter((r) => r.status === 'approved');
+    const pending = filtered.filter(
+      (r) => r.status === 'pending' || r.status === 'in_progress',
+    );
     return {
       leave_type: leaveType,
       fiscal_year: year,
       quota_days: LEAVE_TYPE_QUOTAS_PER_YEAR[leaveType],
-      used_days: used,
-      pending_days: pending,
+      used_days: approved.reduce((s, r) => s + r.days_count, 0),
+      pending_days: pending.reduce((s, r) => s + r.days_count, 0),
+      used_count: approved.length,
+      pending_count: pending.length,
     };
   });
 }

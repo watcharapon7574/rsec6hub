@@ -49,6 +49,7 @@ interface SignaturePosition {
   y: number;
   page: number;
   comment?: string;
+  imageOnly?: boolean;
 }
 
 const ManageReportMemoPage: React.FC = () => {
@@ -703,7 +704,9 @@ const ManageReportMemoPage: React.FC = () => {
       x,
       y,
       page: page + 1,
-      comment: comment
+      comment: comment,
+      // หมุดแรก = ใส่ชื่อ+ตำแหน่ง, หมุดถัดมา = ลายเซ็นเท่านั้น
+      imageOnly: signer.role === 'parallel_signer' ? true : existingPositionsCount > 0,
     };
 
     setSignaturePositions(prev => [...prev, newPosition]);
@@ -736,6 +739,16 @@ const ManageReportMemoPage: React.FC = () => {
         x: Math.max(0, Math.min(595, pos.x + dx)),
         y: Math.max(0, Math.min(842, pos.y + dy)),
       };
+    }));
+  };
+
+  // ติ๊ก/เอาติ๊กออก "ลายเซ็นเท่านั้น" ต่อหมุด
+  // parallel_signer ถูกบังคับเป็น image-only เสมอ — ห้ามเปลี่ยน
+  const handlePositionToggleImageOnly = (index: number, imageOnly: boolean) => {
+    setSignaturePositions(prev => prev.map((pos, i) => {
+      if (i !== index) return pos;
+      if (pos.signer?.role === 'parallel_signer') return pos;
+      return { ...pos, imageOnly };
     }));
   };
 
@@ -1054,17 +1067,22 @@ const ManageReportMemoPage: React.FC = () => {
             formData.append('pdf', pdfBlob, 'document.pdf');
             formData.append('sig1', sigBlob, 'signature.png');
 
-            // จุดแรก: มีชื่อ+ตำแหน่ง / จุดที่ 2+: ลายเซ็น PNG อย่างเดียว
+            // ใช้ pos.imageOnly ต่อหมุด: true = แค่ลายเซ็น, false = ใส่ชื่อ+ตำแหน่งด้วย
+            // Fallback to legacy positionIndex > 1 สำหรับเอกสารเก่าที่ปักก่อน feature นี้ deploy
             const imageOnlyLines = [{ type: "image", file_key: "sig1" }];
-            const signaturesPayload = signerPositions.map((pos, index) => ({
-              page: pos.page - 1,
-              x: Math.round(pos.x),
-              y: Math.round(pos.y),
-              rotation: (pos as any).rotation || 0,
-              width: 120,
-              height: 60,
-              lines: index === 0 ? lines : imageOnlyLines
-            }));
+            const signaturesPayload = signerPositions.map((pos) => {
+              const legacyImageOnly = ((pos.signer as any)?.positionIndex ?? 1) > 1;
+              const useImageOnly = pos.imageOnly ?? legacyImageOnly;
+              return {
+                page: pos.page - 1,
+                x: Math.round(pos.x),
+                y: Math.round(pos.y),
+                rotation: (pos as any).rotation || 0,
+                width: 120,
+                height: 60,
+                lines: useImageOnly ? imageOnlyLines : lines
+              };
+            });
             formData.append('signatures', JSON.stringify(signaturesPayload));
 
             // Call signature API
@@ -1429,6 +1447,7 @@ const ManageReportMemoPage: React.FC = () => {
             onPositionClick={handlePositionClick}
             onPositionRemove={handlePositionRemove}
             onPositionMove={handlePositionMove}
+            onPositionToggleImageOnly={handlePositionToggleImageOnly}
             onPrevious={() => setCurrentStep(1)}
             onNext={handleNext}
             isStepComplete={isStepComplete(2)}

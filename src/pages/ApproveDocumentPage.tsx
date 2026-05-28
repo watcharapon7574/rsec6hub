@@ -901,17 +901,23 @@ const ApproveDocumentPage: React.FC = () => {
           }
 
           // สร้าง signatures payload สำหรับ Edge Function
-          // จุดแรก: มี comment + ชื่อ + ตำแหน่ง / จุดที่ 2+: ลายเซ็น PNG อย่างเดียว
+          // ใช้ pos.imageOnly ต่อหมุด: true = แค่ลายเซ็น, false = ใส่ comment+ชื่อ+ตำแหน่งด้วย
+          // (parallel_signer ถูก override linesWithComment เป็น image only ด้านบนแล้ว)
+          // Fallback to legacy positionIndex > 1 สำหรับเอกสารเก่าที่ปักก่อน feature นี้ deploy
           const imageOnlyLines = [{ type: "image", file_key: "sig1" }];
-          const signaturesPayload = userSignaturePositions.map((pos, index) => ({
-            page: pos.page - 1,
-            x: Math.round(pos.x),
-            y: Math.round(pos.y),
-            rotation: (pos as any).rotation || 0,
-            width: 120,
-            height: 60,
-            lines: index === 0 ? linesWithComment : imageOnlyLines
-          }));
+          const signaturesPayload = userSignaturePositions.map((pos) => {
+            const legacyImageOnly = ((pos.signer as any)?.positionIndex ?? 1) > 1;
+            const useImageOnly = (pos as any).imageOnly ?? legacyImageOnly;
+            return {
+              page: pos.page - 1,
+              x: Math.round(pos.x),
+              y: Math.round(pos.y),
+              rotation: (pos as any).rotation || 0,
+              width: 120,
+              height: 60,
+              lines: useImageOnly ? imageOnlyLines : linesWithComment
+            };
+          });
 
           // คำนวณ next signer order และ status (รองรับ parallel group)
           const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;

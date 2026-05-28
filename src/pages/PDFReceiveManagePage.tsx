@@ -395,6 +395,7 @@ const PDFReceiveManagePage: React.FC = () => {
     const existingPositionsCount = signaturePositions.filter(
       pos => pos.signer.order === signer.order
     ).length;
+    const isParallelSigner = signer?.role === 'parallel_signer';
 
     const newPosition = {
       signer: {
@@ -404,7 +405,9 @@ const PDFReceiveManagePage: React.FC = () => {
       x,
       y,
       page: page + 1,
-      comment: comment
+      comment: comment,
+      // หมุดแรก = ใส่ชื่อ+ตำแหน่ง, หมุดถัดมา = ลายเซ็นเท่านั้น
+      imageOnly: isParallelSigner ? true : existingPositionsCount > 0,
     };
 
     setSignaturePositions([...signaturePositions, newPosition]);
@@ -424,6 +427,16 @@ const PDFReceiveManagePage: React.FC = () => {
     if (removedSignerIndex !== -1) {
       setSelectedSignerIndex(removedSignerIndex);
     }
+  };
+
+  // ติ๊ก/เอาติ๊กออก "ลายเซ็นเท่านั้น" ต่อหมุด
+  // parallel_signer ถูกบังคับเป็น image-only เสมอ — ห้ามเปลี่ยน
+  const handlePositionToggleImageOnly = (index: number, imageOnly: boolean) => {
+    setSignaturePositions(prev => prev.map((pos, i) => {
+      if (i !== index) return pos;
+      if (pos.signer?.role === 'parallel_signer') return pos;
+      return { ...pos, imageOnly };
+    }));
   };
 
   if (!docReceive) {
@@ -566,6 +579,7 @@ const PDFReceiveManagePage: React.FC = () => {
               onSelectedSignerIndexChange={setSelectedSignerIndex}
               onPositionClick={handlePositionClick}
               onPositionRemove={handlePositionRemove}
+              onPositionToggleImageOnly={handlePositionToggleImageOnly}
               onPrevious={handlePrevious}
               onNext={handleNext}
               isStepComplete={isStepComplete(2)}

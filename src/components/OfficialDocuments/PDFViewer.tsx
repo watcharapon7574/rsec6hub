@@ -100,6 +100,9 @@ interface SignaturePosition {
   page: number;
   comment?: string;
   rotation?: number; // 0, 90, 180, 270 — หมุนลายเซ็น
+  // true = แสดง/ฝังเฉพาะลายเซ็น (ไม่มีชื่อ/ตำแหน่ง), false = แสดงชื่อ+ตำแหน่งใต้ลายเซ็น
+  // parallel_signer ถูกบังคับเป็น true เสมอ
+  imageOnly?: boolean;
 }
 
 interface PDFViewerProps {
@@ -109,6 +112,7 @@ interface PDFViewerProps {
   onPositionRemove?: (index: number) => void; // เพิ่มฟังก์ชันลบตำแหน่ง
   onPositionRotate?: (index: number) => void; // หมุนลายเซ็น 90°
   onPositionMove?: (index: number, dx: number, dy: number) => void; // เลื่อน +dx/+dy ใน PDF points
+  onPositionToggleImageOnly?: (index: number, imageOnly: boolean) => void; // ติ๊ก "ลายเซ็นเท่านั้น"
   signaturePositions?: SignaturePosition[];
   signers?: any[]; // เพิ่ม signers prop เพื่อแสดงข้อมูลที่ถูกต้อง
   memo?: any; // เพิ่ม memo prop เพื่อใช้ updated_at
@@ -126,6 +130,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   onPositionRemove,
   onPositionRotate,
   onPositionMove,
+  onPositionToggleImageOnly,
   signaturePositions = [],
   signers = [],
   memo,
@@ -898,10 +903,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 const pdfToPixelScale = pageRect.width / standardPageWidth;
 
                 // API box คงที่ 120pt × 60pt ทุกตำแหน่ง (ดู DocumentManagePage.tsx:1220-1221)
-                // ตำแหน่งที่ 1 แสดงเต็มการ์ด (ลายเซ็น+ชื่อ+ตำแหน่ง), ตำแหน่ง 2+ แสดงแค่ลายเซ็น
+                // imageOnly = true → แสดง/ฝังเฉพาะลายเซ็น, false → แสดงชื่อ+ตำแหน่งด้วย
+                // parallel_signer ถูกบังคับเป็น image-only เสมอ (ไม่มี checkbox)
                 const API_PIN_WIDTH_PT = 120;
                 const API_PIN_HEIGHT_PT = 60;
-                const isImageOnly = ((pos.signer as any).positionIndex > 1 || pos.signer.role === 'parallel_signer') && pos.signer.role !== 'clerk';
+                const isParallel = pos.signer.role === 'parallel_signer';
+                // Fallback to legacy positionIndex-based gate when imageOnly ยังไม่ถูก set
+                // (เอกสารเก่าใน DB ที่ปักก่อน feature นี้ deploy)
+                const legacyImageOnly = ((pos.signer as any).positionIndex ?? 1) > 1;
+                const isImageOnly = isParallel ? true : (pos.imageOnly ?? legacyImageOnly);
 
                 const minPinSizePx = 30; // กันไม่ให้เล็กเกินไปตอน zoom out
                 const pinWidth = Math.max(minPinSizePx, API_PIN_WIDTH_PT * pdfToPixelScale);
@@ -1050,6 +1060,34 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       </button>
                     )}
 
+                    {/* ติ๊ก "ลายเซ็นเท่านั้น" — ซ่อนไว้สำหรับ parallel_signer (ถูกบังคับ image-only) */}
+                    {onPositionToggleImageOnly && !isParallel && (
+                      <button
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          const idx = signaturePositions.indexOf(pos);
+                          if (idx !== -1) {
+                            onPositionToggleImageOnly(idx, !isImageOnly);
+                          }
+                        }}
+                        className={`absolute w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-md border-2 border-white transition-all hover:scale-110 ${isImageOnly ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+                        style={{
+                          bottom: '0px',
+                          right: '0px',
+                          transform: 'translate(50%, 50%)',
+                          zIndex: 10001,
+                          fontSize: '13px',
+                          lineHeight: 1,
+                          cursor: 'pointer',
+                          touchAction: 'manipulation'
+                        }}
+                        title={isImageOnly ? '☑ ลายเซ็นเท่านั้น — คลิกเพื่อใส่ชื่อ+ตำแหน่ง' : '☐ ใส่ชื่อ+ตำแหน่ง — คลิกเพื่อเป็นลายเซ็นเท่านั้น'}
+                      >
+                        {isImageOnly ? '☑' : '☐'}
+                      </button>
+                    )}
+
                     {/* ปุ่มลูกศรเลื่อนตำแหน่ง ±5pt ใน PDF coords (shift+click = ±20pt) */}
                     {onPositionMove && (() => {
                       const NUDGE = 5;
@@ -1152,8 +1190,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             ธุรการ
                           </div>
                         </>
-                      ) : (pos.signer.role === 'parallel_signer' || (pos.signer as any).positionIndex > 1) ? (
-                        /* parallel_signer ทุกจุด + ตำแหน่งที่ 2+ ของคนอื่น - แสดงเฉพาะลายเซ็น PNG */
+                      ) : isImageOnly ? (
+                        /* ลายเซ็นเท่านั้น (ติ๊กแล้ว) หรือ parallel_signer - แสดงเฉพาะลายเซ็น PNG */
                         <>
                           {pos.signer.signature_url ? (
                             <div className="flex justify-center items-center" style={{ padding: '4px 0' }}>
@@ -1173,7 +1211,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                             </div>
                           ) : (
                             <div className="font-semibold truncate leading-tight text-blue-600" style={{ fontSize: '12px' }}>
-                              {pos.signer.role === 'parallel_signer' ? pos.signer.name : `ลายเซ็น (${(pos.signer as any).positionIndex})`}
+                              {isParallel ? pos.signer.name : `ลายเซ็น (${(pos.signer as any).positionIndex ?? ''})`}
                             </div>
                           )}
                         </>
@@ -1213,8 +1251,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                         textShadow: '0 1px 2px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,0.8)',
                       }}
                     >
-                      {/* ชื่อ/ตำแหน่ง — เฉพาะ pin ตำแหน่งแรก ไม่ใช่ clerk/parallel */}
-                      {!isClerk && pos.signer.role !== 'parallel_signer' && (pos.signer as any).positionIndex === 1 && (
+                      {/* ชื่อ/ตำแหน่ง — แสดงเมื่อไม่ติ๊ก "ลายเซ็นเท่านั้น" (clerk/parallel ไม่แสดง) */}
+                      {!isClerk && !isParallel && !isImageOnly && (
                         <>
                           <div className="font-semibold text-gray-800" style={{ fontSize: '11px' }}>{pos.signer.name}</div>
                           <div className="text-gray-600" style={{ fontSize: '10px' }}>

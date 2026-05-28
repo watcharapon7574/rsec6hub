@@ -846,7 +846,7 @@ const MemoList: React.FC<MemoListProps> = ({
                         {(reportMemoIds.has(memo.id) || memo.is_assigned) && <span className="text-xs font-medium">ดูรายงาน</span>}
                       </Button>
                       {/* ปุ่มมอบหมายงาน/ดูรายชื่อ - แสดงเฉพาะธุรการ และไม่ใช่ report memo */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && !reportMemoIds.has(memo.id) && (
+                      {(profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && !reportMemoIds.has(memo.id) && (
                         <>
                           {!memo.is_assigned ? (
                             <div className="relative">
@@ -887,7 +887,7 @@ const MemoList: React.FC<MemoListProps> = ({
                         </>
                       )}
                       {/* ปุ่มลบ - เฉพาะ report memo */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && reportMemoIds.has(memo.id) && (
+                      {(profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && reportMemoIds.has(memo.id) && (
                         <Button variant="outline" size="sm" className="h-7 px-2 flex items-center border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
                           onClick={() => {
                             // TODO: Implement delete functionality
@@ -944,7 +944,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       )}
 
                       {/* จัดการเอกสาร/จัดการรายงาน button - only for clerk_teacher and not yet proposed */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
+                      {(profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && (
                         <div className="relative">
                           {(() => {
                             const isReportMemo = reportMemoIds.has(memo.id);
@@ -989,7 +989,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       )}
 
                       {/* จัดการรายงาน button - แสดงเมื่อมี report memo ที่ status = draft */}
-                      {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && draftReportMemos[memo.id] && (
+                      {(profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && draftReportMemos[memo.id] && (
                         <div className="relative">
                           <Button
                             variant="outline"
@@ -1157,7 +1157,7 @@ const MemoList: React.FC<MemoListProps> = ({
           </div>
 
           <DialogFooter className="flex-shrink-0 border-t pt-4 flex-col sm:flex-row gap-2">
-            {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && selectedMemoForAssignees && (
+            {(profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && selectedMemoForAssignees && (
               <Button
                 variant="outline"
                 onClick={() => {

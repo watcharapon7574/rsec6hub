@@ -87,7 +87,7 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
   };
 
   const getClerkProfiles = (): Profile[] => {
-    return profiles.filter(profile => profile.position === 'clerk_teacher');
+    return profiles.filter(profile => profile.is_clerk === true);
   };
 
   const updateProfile = async (id: string, updates: Partial<Profile>) => {

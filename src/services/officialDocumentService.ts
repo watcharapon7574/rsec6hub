@@ -15,8 +15,8 @@ export const officialDocumentService = {
       .select('*')
       .order('created_at', { ascending: false });
 
-    // กรณีที่ 2: ธุรการเห็นทุกเอกสาร
-    if (['government_employee', 'clerk_teacher'].includes(userProfile.position)) {
+    // กรณีที่ 2: ธุรการ (is_clerk flag) หรือ government_employee เห็นทุกเอกสาร
+    if (userProfile.is_clerk === true || userProfile.position === 'government_employee') {
       // ธุรการเห็นทุกเอกสาร - ไม่เพิ่มเงื่อนไขเพิ่มเติม
     } else if (['director', 'deputy_director', 'assistant_director'].includes(userProfile.position)) {
       // กรณีที่ 3: ผู้บริหารเห็นเอกสารที่ส่งถึงตามลำดับการอนุมัติ

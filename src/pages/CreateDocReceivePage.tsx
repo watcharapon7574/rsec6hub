@@ -148,7 +148,7 @@ const CreateDocReceivePage = () => {
 
   // Redirect ถ้าไม่ใช่ธุรการหรือ admin
   useEffect(() => {
-    if (profile && !permissions.isAdmin && permissions.position !== 'clerk_teacher') {
+    if (profile && !permissions.isAdmin && !permissions.isClerk) {
       toast({
         title: "ไม่มีสิทธิ์เข้าถึง",
         description: "เฉพาะธุรการหรือผู้ดูแลระบบเท่านั้นที่สามารถใช้ระบบหนังสือรับได้",
@@ -157,10 +157,10 @@ const CreateDocReceivePage = () => {
       navigate('/documents');
       return;
     }
-  }, [profile, permissions.isAdmin, permissions.position, navigate, toast]);
+  }, [profile, permissions.isAdmin, permissions.isClerk, navigate, toast]);
 
   // แสดง loading ขณะตรวจสอบสิทธิ์
-  if (!profile || (!permissions.isAdmin && permissions.position !== 'clerk_teacher')) {
+  if (!profile || (!permissions.isAdmin && !permissions.isClerk)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="p-8 rounded-lg animate-pulse">

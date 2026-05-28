@@ -70,7 +70,7 @@ const EditDocReceivePage = () => {
 
   // Redirect ถ้าไม่ใช่ธุรการ
   useEffect(() => {
-    if (profile && permissions.position !== 'clerk_teacher') {
+    if (profile && !permissions.isClerk) {
       toast({
         title: "ไม่มีสิทธิ์เข้าถึง",
         description: "เฉพาะธุรการเท่านั้นที่สามารถแก้ไขหนังสือรับได้",
@@ -79,7 +79,7 @@ const EditDocReceivePage = () => {
       navigate('/documents');
       return;
     }
-  }, [profile, permissions.position, navigate, toast]);
+  }, [profile, permissions.isClerk, navigate, toast]);
 
   const handleInputChange = (field: keyof DocReceiveFormData, value: string) => {
     setFormData(prev => ({

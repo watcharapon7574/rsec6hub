@@ -594,7 +594,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
       <CardHeader className="bg-purple-600 py-3 px-4 rounded-t-lg">
         <CardTitle className="flex items-center gap-2 text-base text-white">
           <FileText className="h-4 w-4 text-purple-100" />
-          {permissions.position === "clerk_teacher" ?
+          {permissions.isClerk ?
             "เอกสารภายในสถานศึกษา" :
             isSecretary && secretaryDepartment ?
               `เอกสาร${secretaryDepartment}` :
@@ -615,7 +615,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
             <RotateCcw className="h-4 w-4" />
           </Button>
         </CardTitle>
-        {permissions.position === "clerk_teacher" && (
+        {permissions.isClerk && (
           <div className="text-sm text-purple-100 font-normal mt-1">
             จัดการเอกสารภายในสถานศึกษา ตรวจสอบความถูกต้อง กำหนดเลขที่ และจัดเส้นทางการอนุมัติ
           </div>
@@ -1085,7 +1085,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                         </Button>
                       )}
                       {/* ปุ่มมอบหมายงาน - แสดงเฉพาะธุรการ และไม่ใช่ report memo */}
-                      {!isSecretary && (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && !reportMemoIds.has(memo.id) && (
+                      {!isSecretary && (profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && !reportMemoIds.has(memo.id) && (
                         <>
                           {!memo.is_assigned ? (
                             <div className="relative">
@@ -1171,7 +1171,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                           )}
                         </div>
                       )}
-                      {!isSecretary && (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
+                      {!isSecretary && (profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && (
                         <div className="relative">
                           {(() => {
                             const isReportMemo = reportMemoIds.has(memo.id);
@@ -1218,7 +1218,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     </>
                   )}
                   {/* Delete button - แสดงเฉพาะธุรการเท่านั้น (ไม่แสดงสำหรับเลขาฝ่าย) */}
-                  {!isSecretary && (profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && (
+                  {!isSecretary && (profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1255,7 +1255,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 </div>
               ) : (
                 // แสดงข้อความที่แตกต่างกันตามบทบาท
-                permissions.position === "clerk_teacher" ? (
+                permissions.isClerk ? (
                   <div className="text-sm">
                     <p>ยังไม่มีเอกสารในสถานศึกษา</p>
                     <span className="text-xs text-muted-foreground">รอเอกสารจากครูและบุคลากรเพื่อทำการจัดการ</span>
@@ -1499,7 +1499,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </div>
 
           <DialogFooter className="flex-shrink-0 border-t pt-4 flex-col sm:flex-row gap-2">
-            {(profile?.is_admin || profile?.position === 'clerk_teacher' || profile?.position === 'director') && selectedMemoForAssignees && (
+            {(profile?.is_admin || profile?.is_clerk || profile?.position === 'director') && selectedMemoForAssignees && (
               <Button
                 variant="outline"
                 onClick={() => {

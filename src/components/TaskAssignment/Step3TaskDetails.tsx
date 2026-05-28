@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ClipboardList, Users, FileText, Calendar, Clock, MapPin, MessageSquare } from 'lucide-react';
+import { ClipboardList, Users, FileText, Calendar, Clock, MapPin, MessageSquare, BookOpen } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -7,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import LocationCombobox from './LocationCombobox';
+import PDFViewer from '@/components/OfficialDocuments/PDFViewer';
 
 // Generate time options with 5-minute intervals
 const generateTimeOptions = () => {
@@ -54,6 +56,10 @@ interface Step3TaskDetailsProps {
   // Who - Selected users from Step2
   selectedUsers: Profile[];
 
+  // Document - for read-document modal
+  documentSubject: string;
+  documentPdfUrl: string | null;
+
   // What - Task description
   taskDescription: string;
   onTaskDescriptionChange: (desc: string) => void;
@@ -79,6 +85,8 @@ interface Step3TaskDetailsProps {
 
 const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
   selectedUsers,
+  documentSubject,
+  documentPdfUrl,
   taskDescription,
   onTaskDescriptionChange,
   eventDate,
@@ -97,6 +105,8 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
   // State for controlling time picker popovers
   const [timePopoverOpen, setTimePopoverOpen] = useState(false);
   const [endTimePopoverOpen, setEndTimePopoverOpen] = useState(false);
+  // State for read-document modal
+  const [readDocOpen, setReadDocOpen] = useState(false);
 
   // Format date for display
   const formatDisplayDate = (date: Date | null) => {
@@ -116,6 +126,17 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6 space-y-5">
+        {/* Read Document - quick refresher modal */}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setReadDocOpen(true)}
+          className="w-full justify-center gap-2 border-pink-300 dark:border-pink-700 bg-pink-50/60 dark:bg-pink-950/40 hover:bg-pink-100 dark:hover:bg-pink-900 text-pink-700 dark:text-pink-200 font-medium"
+        >
+          <BookOpen className="h-4 w-4" />
+          อ่านเอกสารอีกครั้ง
+        </Button>
+
         {/* Who - Selected Users */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-sm font-medium">
@@ -329,6 +350,42 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
           ข้อมูลนี้จะถูกส่งไปยังผู้รับมอบหมายทุกคน
         </p>
       </CardContent>
+
+      {/* Read Document Modal */}
+      <Dialog open={readDocOpen} onOpenChange={setReadDocOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 flex flex-col gap-0">
+          <div className="px-6 pt-6 pb-3 border-b border-border">
+            <DialogTitle className="flex items-center gap-2 text-pink-900 dark:text-pink-100">
+              <BookOpen className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+              อ่านเอกสาร
+            </DialogTitle>
+            <DialogDescription className="mt-1 line-clamp-2">
+              {documentSubject || 'เอกสาร'}
+            </DialogDescription>
+          </div>
+          <div className="flex-1 min-h-0 p-4 overflow-hidden">
+            {documentPdfUrl ? (
+              <div className="h-full border-2 border-pink-200 dark:border-pink-800 rounded-lg overflow-hidden shadow-inner">
+                <PDFViewer
+                  fileUrl={documentPdfUrl}
+                  fileName={documentSubject || 'เอกสาร'}
+                  editMode={false}
+                  showSignatureMode={false}
+                  showZoomControls={true}
+                  showFullscreenButton={true}
+                />
+              </div>
+            ) : (
+              <div className="h-full border-2 border-pink-200 dark:border-pink-800 rounded-lg flex items-center justify-center bg-pink-50 dark:bg-pink-950">
+                <div className="text-center text-pink-600 dark:text-pink-400">
+                  <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="font-medium">ไม่มีไฟล์ PDF</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

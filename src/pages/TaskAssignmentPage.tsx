@@ -375,6 +375,8 @@ const TaskAssignmentPage = () => {
           {currentStep === 3 && (
             <Step3TaskDetails
               selectedUsers={selectedUsers}
+              documentSubject={document.subject}
+              documentPdfUrl={document.pdf_url}
               taskDescription={taskDescription}
               onTaskDescriptionChange={setTaskDescription}
               eventDate={eventDate}

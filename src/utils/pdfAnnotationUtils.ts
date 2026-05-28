@@ -89,49 +89,66 @@ export async function loadPdfFromUrl(url: string): Promise<ArrayBuffer> {
 }
 
 /**
- * Export annotated PDF as image-only (flatten every page to JPEG).
- * Prevents O(N) bloat where each signer's PNG overlay accumulates on top of
- * previous embeds — flattening discards prior image resources every round so
- * size stays O(1) per page regardless of how many signers have annotated.
- * Trade-off: text in annotated pages becomes raster (not searchable).
+ * Export annotated PDF:
+ * - Pages WITH overlay → flatten to JPEG (drops accumulated PNG embeds, O(1) size)
+ * - Pages WITHOUT overlay → copyPages (keep vector, searchable text intact)
+ *
+ * Solves the O(N) bloat from stacked PNG overlays across signers without
+ * sacrificing text on pages no one drew on.
  */
 export async function exportAnnotatedPdf(
   originalPdfBytes: ArrayBuffer,
   pageCanvasImages: Map<number, string> // pageNumber -> dataURL (PNG)
 ): Promise<Blob> {
   const RENDER_SCALE = 2.0; // ≈ 144 DPI — readable for govt forms, small enough on mobile
+  const MAX_CANVAS_DIM = 4000; // iOS Safari starts to fail above ~4096 px
   const JPEG_QUALITY = 0.85;
 
-  // pdf-lib for original page dimensions; pdf.js for rendering pages to canvas.
-  // Pass a copy to pdf.js because it may mutate/transfer the buffer.
   const sourcePdf = await PDFDocument.load(originalPdfBytes);
   const sourcePages = sourcePdf.getPages();
+  const newPdf = await PDFDocument.create();
+
+  // Skip pdf.js entirely when nothing to flatten — just copy everything
+  if (pageCanvasImages.size === 0) {
+    const indices = sourcePages.map((_, i) => i);
+    const copied = await newPdf.copyPages(sourcePdf, indices);
+    copied.forEach(p => newPdf.addPage(p));
+    const bytes = await newPdf.save();
+    return new Blob([bytes], { type: 'application/pdf' });
+  }
+
+  // Pass a copy to pdf.js because it may mutate/transfer the buffer
   const pdfJsDoc = await pdfjsLib.getDocument({
     data: new Uint8Array(originalPdfBytes.slice(0)),
   }).promise;
 
-  const newPdf = await PDFDocument.create();
-
   try {
     for (let i = 0; i < pdfJsDoc.numPages; i++) {
       const pageNum = i + 1;
+      const overlayDataUrl = pageCanvasImages.get(pageNum);
+
+      if (!overlayDataUrl) {
+        // No overlay → keep page as-is (vector preserved, text searchable)
+        const [copied] = await newPdf.copyPages(sourcePdf, [i]);
+        newPdf.addPage(copied);
+        continue;
+      }
+
       const { width: ptW, height: ptH } = sourcePages[i].getSize();
+      const effectiveScale = Math.min(RENDER_SCALE, MAX_CANVAS_DIM / Math.max(ptW, ptH));
 
       const canvas = document.createElement('canvas');
-      await renderPdfPageToCanvas(pdfJsDoc, pageNum, canvas, RENDER_SCALE);
+      await renderPdfPageToCanvas(pdfJsDoc, pageNum, canvas, effectiveScale);
 
-      const overlayDataUrl = pageCanvasImages.get(pageNum);
-      if (overlayDataUrl) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-            const im = new Image();
-            im.onload = () => resolve(im);
-            im.onerror = () => reject(new Error('Failed to decode annotation overlay'));
-            im.src = overlayDataUrl;
-          });
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const im = new Image();
+          im.onload = () => resolve(im);
+          im.onerror = () => reject(new Error('Failed to decode annotation overlay'));
+          im.src = overlayDataUrl;
+        });
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       }
 
       const jpegBlob = await new Promise<Blob>((resolve, reject) => {
@@ -147,7 +164,6 @@ export async function exportAnnotatedPdf(
       const newPage = newPdf.addPage([ptW, ptH]);
       newPage.drawImage(jpegImage, { x: 0, y: 0, width: ptW, height: ptH });
 
-      // Release canvas eagerly — long docs would otherwise hold every page in RAM
       canvas.width = 0;
       canvas.height = 0;
     }

@@ -36,6 +36,9 @@ interface PDFAnnotationEditorProps {
   onClose: () => void;
   onSave: (annotatedPdfBlob: Blob, pageImages?: Map<number, string>) => void;
   isSaving?: boolean;
+  // false = ส่ง pdfBytes ดิบใน blob (เร็ว) สำหรับ caller ที่ใช้ pageImages อย่างเดียว
+  // เช่น ApproveDocumentPage ที่ flatten ตอนกดอนุมัติเอง
+  flattenOnSave?: boolean;
 }
 
 const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
@@ -44,6 +47,7 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
   onClose,
   onSave,
   isSaving = false,
+  flattenOnSave = true,
 }) => {
   // PDF state
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
@@ -460,7 +464,7 @@ const PDFAnnotationEditor: React.FC<PDFAnnotationEditorProps> = ({
       tempFc.dispose();
     }
 
-    if (pageImages.size === 0) {
+    if (pageImages.size === 0 || !flattenOnSave) {
       onSave(new Blob([pdfBytes], { type: 'application/pdf' }), pageImages);
       return;
     }

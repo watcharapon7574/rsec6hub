@@ -1423,6 +1423,7 @@ const ApproveDocumentPage: React.FC = () => {
           pdfUrl={freshPdfUrlForAnnotation || extractPdfUrl(memo.pdf_draft_path) || memo.pdf_draft_path}
           isOpen={showAnnotationEditor}
           onClose={() => setShowAnnotationEditor(false)}
+          flattenOnSave={false}
           onSave={async (_annotatedPdfBlob: Blob, pageImages?: Map<number, string>) => {
             setShowAnnotationEditor(false);
             setShowLoadingModal(true);

@@ -369,6 +369,8 @@ const TaskAssignmentPage = () => {
               selectionInfo={selectionInfo}
               onSelectionInfoChange={setSelectionInfo}
               lockedUsers={lockedUsers}
+              documentSubject={document.subject}
+              documentPdfUrl={document.pdf_url}
             />
           )}
 

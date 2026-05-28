@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import UserSearchInput from './UserSearchInput';
 import CreateGroupModal from './CreateGroupModal';
 import SavedGroupsList from './SavedGroupsList';
+import ReadDocumentButton from './ReadDocumentButton';
 import { userGroupService, UserGroup, GroupType } from '@/services/userGroupService';
 
 interface Profile {
@@ -38,6 +39,9 @@ interface Step2SelectUsersProps {
   onSelectionInfoChange?: (info: SelectionInfo) => void;
   /** Map of user_id -> status label; locked users cannot be removed (edit mode) */
   lockedUsers?: Record<string, string>;
+  /** Document info for the read-document modal */
+  documentSubject: string;
+  documentPdfUrl: string | null;
 }
 
 const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
@@ -45,7 +49,9 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
   onUsersChange,
   selectionInfo,
   onSelectionInfoChange,
-  lockedUsers = {}
+  lockedUsers = {},
+  documentSubject,
+  documentPdfUrl
 }) => {
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [savedGroups, setSavedGroups] = useState<UserGroup[]>([]);
@@ -303,6 +309,12 @@ const Step2SelectUsers: React.FC<Step2SelectUsersProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6 overflow-visible space-y-4">
+        {/* Read Document - quick refresher modal */}
+        <ReadDocumentButton
+          documentSubject={documentSubject}
+          documentPdfUrl={documentPdfUrl}
+        />
+
         {/* Saved Groups */}
         <SavedGroupsList
           groups={savedGroups}

@@ -360,11 +360,14 @@ const CreateDocReceivePage = () => {
       receiveNumFormData.append('payload', JSON.stringify(payload));
 
       // Call Railway receive_num API with queue + retry logic
+      // 60s timeout per attempt — without it a hung Railway connection leaves
+      // the upload modal stuck forever with no error.
       const stampedPdfBlob = await railwayPDFQueue.enqueueWithRetry(
         async () => {
           const stampRes = await railwayFetch('/receive_num', {
             method: 'POST',
-            body: receiveNumFormData
+            body: receiveNumFormData,
+            signal: AbortSignal.timeout(60000),
           });
 
           if (!stampRes.ok) {

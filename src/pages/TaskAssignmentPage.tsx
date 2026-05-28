@@ -375,25 +375,32 @@ const TaskAssignmentPage = () => {
           )}
 
           {currentStep === 3 && (
-            <Step3TaskDetails
-              selectedUsers={selectedUsers}
-              documentSubject={document.subject}
-              documentPdfUrl={document.pdf_url}
-              taskDescription={taskDescription}
-              onTaskDescriptionChange={setTaskDescription}
-              eventDate={eventDate}
-              onEventDateChange={setEventDate}
-              eventEndDate={eventEndDate}
-              onEventEndDateChange={setEventEndDate}
-              eventTime={eventTime}
-              onEventTimeChange={setEventTime}
-              eventEndTime={eventEndTime}
-              onEventEndTimeChange={setEventEndTime}
-              location={location}
-              onLocationChange={setLocation}
-              note={note}
-              onNoteChange={setNote}
-            />
+            <div className="space-y-6">
+              <Step1DocumentPreview
+                subject={document.subject}
+                docNumber={document.doc_number}
+                authorName={document.author_name}
+                pdfUrl={document.pdf_url}
+                directorComment={directorComment}
+              />
+              <Step3TaskDetails
+                selectedUsers={selectedUsers}
+                taskDescription={taskDescription}
+                onTaskDescriptionChange={setTaskDescription}
+                eventDate={eventDate}
+                onEventDateChange={setEventDate}
+                eventEndDate={eventEndDate}
+                onEventEndDateChange={setEventEndDate}
+                eventTime={eventTime}
+                onEventTimeChange={setEventTime}
+                eventEndTime={eventEndTime}
+                onEventEndTimeChange={setEventEndTime}
+                location={location}
+                onLocationChange={setLocation}
+                note={note}
+                onNoteChange={setNote}
+              />
+            </div>
           )}
 
           {currentStep === 4 && (

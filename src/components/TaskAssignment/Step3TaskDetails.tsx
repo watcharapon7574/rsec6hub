@@ -10,7 +10,6 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 import LocationCombobox from './LocationCombobox';
-import ReadDocumentButton from './ReadDocumentButton';
 
 // Generate time options with 5-minute intervals
 const generateTimeOptions = () => {
@@ -55,10 +54,6 @@ interface Step3TaskDetailsProps {
   // Who - Selected users from Step2
   selectedUsers: Profile[];
 
-  // Document - for read-document modal
-  documentSubject: string;
-  documentPdfUrl: string | null;
-
   // What - Task description
   taskDescription: string;
   onTaskDescriptionChange: (desc: string) => void;
@@ -84,8 +79,6 @@ interface Step3TaskDetailsProps {
 
 const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
   selectedUsers,
-  documentSubject,
-  documentPdfUrl,
   taskDescription,
   onTaskDescriptionChange,
   eventDate,
@@ -123,12 +116,6 @@ const Step3TaskDetails: React.FC<Step3TaskDetailsProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6 space-y-5">
-        {/* Read Document - quick refresher modal */}
-        <ReadDocumentButton
-          documentSubject={documentSubject}
-          documentPdfUrl={documentPdfUrl}
-        />
-
         {/* Who - Selected Users */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-sm font-medium">

@@ -89,41 +89,73 @@ export async function loadPdfFromUrl(url: string): Promise<ArrayBuffer> {
 }
 
 /**
- * Export annotated PDF:
- * For each page that has annotations, render the Fabric canvas as PNG
- * and embed it onto the PDF page using pdf-lib
+ * Export annotated PDF as image-only (flatten every page to JPEG).
+ * Prevents O(N) bloat where each signer's PNG overlay accumulates on top of
+ * previous embeds — flattening discards prior image resources every round so
+ * size stays O(1) per page regardless of how many signers have annotated.
+ * Trade-off: text in annotated pages becomes raster (not searchable).
  */
 export async function exportAnnotatedPdf(
   originalPdfBytes: ArrayBuffer,
   pageCanvasImages: Map<number, string> // pageNumber -> dataURL (PNG)
 ): Promise<Blob> {
-  const pdfDoc = await PDFDocument.load(originalPdfBytes);
-  const pages = pdfDoc.getPages();
+  const RENDER_SCALE = 2.0; // ≈ 144 DPI — readable for govt forms, small enough on mobile
+  const JPEG_QUALITY = 0.85;
 
-  for (const [pageNumber, dataUrl] of pageCanvasImages) {
-    const pageIndex = pageNumber - 1; // pages are 1-indexed
-    if (pageIndex < 0 || pageIndex >= pages.length) continue;
+  // pdf-lib for original page dimensions; pdf.js for rendering pages to canvas.
+  // Pass a copy to pdf.js because it may mutate/transfer the buffer.
+  const sourcePdf = await PDFDocument.load(originalPdfBytes);
+  const sourcePages = sourcePdf.getPages();
+  const pdfJsDoc = await pdfjsLib.getDocument({
+    data: new Uint8Array(originalPdfBytes.slice(0)),
+  }).promise;
 
-    const page = pages[pageIndex];
-    const { width, height } = page.getSize();
+  const newPdf = await PDFDocument.create();
 
-    // Convert data URL to bytes, then compress to keep annotated PDF size bounded
-    const base64 = dataUrl.split(',')[1];
-    const rawBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-    const pngBytes = await compressPngBytes(rawBytes);
+  try {
+    for (let i = 0; i < pdfJsDoc.numPages; i++) {
+      const pageNum = i + 1;
+      const { width: ptW, height: ptH } = sourcePages[i].getSize();
 
-    const pngImage = await pdfDoc.embedPng(pngBytes);
+      const canvas = document.createElement('canvas');
+      await renderPdfPageToCanvas(pdfJsDoc, pageNum, canvas, RENDER_SCALE);
 
-    // Draw annotation overlay on top of existing content
-    page.drawImage(pngImage, {
-      x: 0,
-      y: 0,
-      width,
-      height,
-    });
+      const overlayDataUrl = pageCanvasImages.get(pageNum);
+      if (overlayDataUrl) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const im = new Image();
+            im.onload = () => resolve(im);
+            im.onerror = () => reject(new Error('Failed to decode annotation overlay'));
+            im.src = overlayDataUrl;
+          });
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      const jpegBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          b => (b ? resolve(b) : reject(new Error('canvas.toBlob returned null'))),
+          'image/jpeg',
+          JPEG_QUALITY
+        );
+      });
+      const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer());
+
+      const jpegImage = await newPdf.embedJpg(jpegBytes);
+      const newPage = newPdf.addPage([ptW, ptH]);
+      newPage.drawImage(jpegImage, { x: 0, y: 0, width: ptW, height: ptH });
+
+      // Release canvas eagerly — long docs would otherwise hold every page in RAM
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+  } finally {
+    await pdfJsDoc.destroy();
   }
 
-  const resultBytes = await pdfDoc.save();
+  const resultBytes = await newPdf.save();
   return new Blob([resultBytes], { type: 'application/pdf' });
 }
 

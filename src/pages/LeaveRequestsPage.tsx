@@ -1839,10 +1839,14 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
             {mainBalance.map((b) => {
               const theme = LEAVE_TYPE_THEME[b.leave_type];
               const Icon = theme.icon;
+              // ลาป่วย: 60 = เพดาน "ได้รับเงินเดือน" /ปี (ขยายได้ถึง 120) ไม่ใช่เพดานการลา
+              const isSickLeave = b.leave_type === 'sick_leave';
               const remain = b.quota_days - b.used_days - b.pending_days;
               const pct =
                 b.quota_days > 0 ? (b.used_days / b.quota_days) * 100 : 0;
-              const danger = isOfficial && remain <= 0;
+              const danger = isOfficial && !isSickLeave && remain <= 0;
+              const sickOverPaid =
+                isOfficial && isSickLeave && b.used_days > 60;
               return (
                 <Card
                   key={b.leave_type}
@@ -1879,13 +1883,29 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
                       <h3 className="font-semibold text-foreground text-sm line-clamp-1">
                         {LEAVE_TYPE_LABELS[b.leave_type]}
                       </h3>
+                      {isOfficial && isSickLeave && (
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          เพดานเงินเดือน 60 วันทำการ/ปี (ลาได้เท่าที่ป่วยจริง)
+                        </p>
+                      )}
                       {isOfficial && (
                         <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
                           <div
-                            className={`h-full ${danger ? 'bg-red-500' : 'bg-blue-500'}`}
+                            className={`h-full ${
+                              danger
+                                ? 'bg-red-500'
+                                : sickOverPaid
+                                  ? 'bg-amber-500'
+                                  : 'bg-blue-500'
+                            }`}
                             style={{ width: `${Math.min(100, pct)}%` }}
                           />
                         </div>
+                      )}
+                      {sickOverPaid && (
+                        <p className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-400">
+                          เกิน 60 วันทำการที่ได้รับเงินเดือน (ขยายได้ถึง 120)
+                        </p>
                       )}
                       {isOfficial && b.pending_days > 0 && (
                         <p className="mt-1.5 text-[11px] text-yellow-600 dark:text-yellow-400">
@@ -2079,9 +2099,13 @@ const QuotaTypeCard: React.FC<{ b: LeaveBalance; isOfficial: boolean }> = ({
 }) => {
   const theme = LEAVE_TYPE_THEME[b.leave_type];
   const Icon = theme.icon;
+  // ลาป่วย: 60 = เพดาน "ได้รับเงินเดือน" /ปี (ขยายได้ถึง 120) ไม่ใช่เพดานการลา
+  // → ไม่ใช่ความผิด ถ้าเกิน, ไม่เด้งแดง — ใช้โทนเหลืองเตือนแทน
+  const isSickLeave = b.leave_type === 'sick_leave';
   const remain = b.quota_days - b.used_days - b.pending_days;
   const pct = b.quota_days > 0 ? (b.used_days / b.quota_days) * 100 : 0;
-  const danger = isOfficial && remain <= 0;
+  const danger = isOfficial && !isSickLeave && remain <= 0;
+  const sickOverPaid = isOfficial && isSickLeave && b.used_days > 60;
   return (
     <div
       className={`rounded-lg border bg-card px-3 py-2.5 ${
@@ -2109,13 +2133,29 @@ const QuotaTypeCard: React.FC<{ b: LeaveBalance; isOfficial: boolean }> = ({
       <p className="text-xs font-medium text-foreground line-clamp-1">
         {LEAVE_TYPE_LABELS[b.leave_type]}
       </p>
+      {isOfficial && isSickLeave && (
+        <p className="text-[10px] text-muted-foreground leading-tight">
+          เพดานเงินเดือน 60 วันทำการ/ปี (ลาได้เท่าที่ป่วยจริง)
+        </p>
+      )}
       {isOfficial && (
         <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
           <div
-            className={`h-full ${danger ? 'bg-red-500' : 'bg-blue-500'}`}
+            className={`h-full ${
+              danger
+                ? 'bg-red-500'
+                : sickOverPaid
+                  ? 'bg-amber-500'
+                  : 'bg-blue-500'
+            }`}
             style={{ width: `${Math.min(100, pct)}%` }}
           />
         </div>
+      )}
+      {sickOverPaid && (
+        <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-400">
+          เกิน 60 วันทำการที่ได้รับเงินเดือน (ขยายได้ถึง 120)
+        </p>
       )}
       {isOfficial && b.pending_days > 0 && (
         <p className="mt-1 text-[10px] text-yellow-600 dark:text-yellow-400">

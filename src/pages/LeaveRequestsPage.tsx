@@ -886,11 +886,11 @@ export const LeaveDetailDialog: React.FC<{
               </div>
             )}
 
-          {attachmentCfg.required !== 'never' && (
+          {(attachmentCfg.required !== 'never' || attachments.length > 0) && (
             <div>
               <div className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
                 <Paperclip className="h-3 w-3" />
-                เอกสารแนบ ({attachmentCfg.label})
+                เอกสารแนบ{attachmentCfg.label ? ` (${attachmentCfg.label})` : ''}
               </div>
               {attachments.length === 0 ? (
                 <div className="rounded-lg border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
@@ -926,7 +926,10 @@ export const LeaveDetailDialog: React.FC<{
                             });
                             return;
                           }
-                          window.open(data.signedUrl, '_blank', 'noopener');
+                          // ใน Telegram Mini App ต้องใช้ openLink (window.open ถูกบล็อก/ไม่เปิด)
+                          const tg = (window as { Telegram?: { WebApp?: { openLink?: (u: string) => void } } }).Telegram?.WebApp;
+                          if (tg?.openLink) tg.openLink(data.signedUrl);
+                          else window.open(data.signedUrl, '_blank', 'noopener');
                         }}
                         className="w-full flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
                       >

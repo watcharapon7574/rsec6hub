@@ -7,6 +7,7 @@ import {
   LeaveRequest,
   LeaveSignature,
   LeaveSignerOrder,
+  LeaveSignerRole,
   LeaveStatus,
   LeaveType,
   NewLeaveRequestInput,
@@ -26,7 +27,7 @@ type DbSignature = {
   signer_order: LeaveSignerOrder;
   signer_user_id: string;
   signer_name: string;
-  signer_role: 'hr_head' | 'director';
+  signer_role: LeaveSignerRole;
   status: 'approved' | 'rejected';
   signed_at: string;
   signature_url: string | null;
@@ -333,42 +334,55 @@ export async function createManualLeaveEntry(
 export interface ApproverContext {
   user_id: string;
   user_name: string;
-  role: 'hr_head' | 'director';
+  role: LeaveSignerRole;
   signature_url?: string | null;
 }
+
+// order 1 = hr_head (pending), 2 = deputy_director (in_progress), 3 = director (in_progress)
+const ROLE_TO_ORDER: Record<LeaveSignerRole, LeaveSignerOrder> = {
+  hr_head: 1,
+  deputy_director: 2,
+  director: 3,
+};
+const ROLE_TO_STATUS: Record<LeaveSignerRole, LeaveStatus> = {
+  hr_head: 'pending',
+  deputy_director: 'in_progress',
+  director: 'in_progress',
+};
 
 export async function getPendingApprovals(
   approver: ApproverContext,
 ): Promise<LeaveRequest[]> {
-  const targetOrder = approver.role === 'hr_head' ? 1 : 2;
-  const targetStatus: LeaveStatus[] =
-    approver.role === 'hr_head' ? ['pending'] : ['in_progress'];
+  const targetOrder = ROLE_TO_ORDER[approver.role];
+  const targetStatus = ROLE_TO_STATUS[approver.role];
   const { data, error } = await sb
     .from('leave_requests')
     .select('*')
     .eq('current_signer_order', targetOrder)
-    .in('status', targetStatus)
+    .eq('status', targetStatus)
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message ?? 'getPendingApprovals failed');
   return hydrate((data as DbLeaveRequest[]) ?? []);
 }
 
 export async function getPendingApprovalsByRoles(
-  roles: ('hr_head' | 'director')[],
+  roles: LeaveSignerRole[],
 ): Promise<LeaveRequest[]> {
-  const orders = new Set<number>(roles.map((r) => (r === 'hr_head' ? 1 : 2)));
-  const statuses = new Set<LeaveStatus>();
-  if (roles.includes('hr_head')) statuses.add('pending');
-  if (roles.includes('director')) statuses.add('in_progress');
-  if (orders.size === 0 || statuses.size === 0) return [];
+  if (roles.length === 0) return [];
+  const orders = Array.from(new Set(roles.map((r) => ROLE_TO_ORDER[r])));
+  const statuses = Array.from(new Set(roles.map((r) => ROLE_TO_STATUS[r])));
   const { data, error } = await sb
     .from('leave_requests')
     .select('*')
-    .in('current_signer_order', Array.from(orders))
-    .in('status', Array.from(statuses))
+    .in('current_signer_order', orders)
+    .in('status', statuses)
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message ?? 'getPendingApprovalsByRoles failed');
-  return hydrate((data as DbLeaveRequest[]) ?? []);
+  // กรอง row ที่ order/status ไม่ตรง role ที่ caller ถือจริงๆ
+  // (เช่น hr_head ไม่ควรเห็น order=2/in_progress ที่ deputy ถืออยู่)
+  const allowed = new Set(roles.map((r) => `${ROLE_TO_ORDER[r]}|${ROLE_TO_STATUS[r]}`));
+  const rows = await hydrate((data as DbLeaveRequest[]) ?? []);
+  return rows.filter((r) => allowed.has(`${r.current_signer_order}|${r.status}`));
 }
 
 export async function approveLeave(
@@ -415,11 +429,12 @@ export async function generateLeavePdf(req: LeaveRequest): Promise<void> {
 // step and their allowed roles? Used by approval row UI + tests.
 export function canSignNow(
   req: { current_signer_order: number },
-  allowedRoles: Array<'hr_head' | 'director'>,
+  allowedRoles: LeaveSignerRole[],
 ): boolean {
   if (allowedRoles.length === 0) return false;
   if (req.current_signer_order === 1) return allowedRoles.includes('hr_head');
-  if (req.current_signer_order === 2) return allowedRoles.includes('director');
+  if (req.current_signer_order === 2) return allowedRoles.includes('deputy_director');
+  if (req.current_signer_order === 3) return allowedRoles.includes('director');
   return false;
 }
 

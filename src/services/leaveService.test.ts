@@ -9,46 +9,63 @@ import {
 } from './leaveService';
 
 describe('canSignNow', () => {
-  // order 1 = หน.บุคคล's turn (status: pending)
-  // order 2 = ผอ.'s turn (status: in_progress)
+  // order 1 = หน.บุคคล (status: pending)
+  // order 2 = รอง ผอ. (status: in_progress)
+  // order 3 = ผอ. (status: in_progress)
 
   describe('ผอ. only', () => {
-    it('order=1 (รอ หน.บุคคล) → false : ผอ.ยังไม่ถึงคิว', () => {
+    it('order=1 → false : รอ หน.บุคคล', () => {
       expect(canSignNow({ current_signer_order: 1 }, ['director'])).toBe(false);
     });
+    it('order=2 → false : รอ รอง', () => {
+      expect(canSignNow({ current_signer_order: 2 }, ['director'])).toBe(false);
+    });
+    it('order=3 → true : ถึงคิว ผอ.', () => {
+      expect(canSignNow({ current_signer_order: 3 }, ['director'])).toBe(true);
+    });
+  });
 
-    it('order=2 (รอ ผอ.) → true : ผอ.ถึงคิวแล้ว', () => {
-      expect(canSignNow({ current_signer_order: 2 }, ['director'])).toBe(true);
+  describe('รอง ผอ. only', () => {
+    it('order=2 → true : ถึงคิวรอง', () => {
+      expect(canSignNow({ current_signer_order: 2 }, ['deputy_director'])).toBe(true);
+    });
+    it('order=1 → false', () => {
+      expect(canSignNow({ current_signer_order: 1 }, ['deputy_director'])).toBe(false);
+    });
+    it('order=3 → false', () => {
+      expect(canSignNow({ current_signer_order: 3 }, ['deputy_director'])).toBe(false);
     });
   });
 
   describe('หน.บุคคล only', () => {
-    it('order=1 (รอ หน.บุคคล) → true', () => {
+    it('order=1 → true', () => {
       expect(canSignNow({ current_signer_order: 1 }, ['hr_head'])).toBe(true);
     });
-
-    it('order=2 (รอ ผอ.) → false : หน.บุคคล เซ็นไปแล้ว ไม่ใช่คิวตัวเอง', () => {
+    it('order=2 → false : รอ รอง', () => {
       expect(canSignNow({ current_signer_order: 2 }, ['hr_head'])).toBe(false);
+    });
+    it('order=3 → false : รอ ผอ.', () => {
+      expect(canSignNow({ current_signer_order: 3 }, ['hr_head'])).toBe(false);
     });
   });
 
-  describe('admin ที่มีทั้ง 2 role', () => {
-    it('order=1 → true : กดแทน หน.บุคคล ได้', () => {
-      expect(
-        canSignNow({ current_signer_order: 1 }, ['hr_head', 'director']),
-      ).toBe(true);
+  describe('admin ครบ 3 role', () => {
+    const all = ['hr_head', 'deputy_director', 'director'] as const;
+    it('order=1 → true', () => {
+      expect(canSignNow({ current_signer_order: 1 }, [...all])).toBe(true);
     });
-
-    it('order=2 → true : กดแทน ผอ. ได้', () => {
-      expect(
-        canSignNow({ current_signer_order: 2 }, ['hr_head', 'director']),
-      ).toBe(true);
+    it('order=2 → true', () => {
+      expect(canSignNow({ current_signer_order: 2 }, [...all])).toBe(true);
+    });
+    it('order=3 → true', () => {
+      expect(canSignNow({ current_signer_order: 3 }, [...all])).toBe(true);
     });
   });
 
   it('ไม่มี role → false', () => {
     expect(canSignNow({ current_signer_order: 1 }, [])).toBe(false);
     expect(canSignNow({ current_signer_order: 2 }, [])).toBe(false);
+    expect(canSignNow({ current_signer_order: 3 }, [])).toBe(false);
   });
 });
 

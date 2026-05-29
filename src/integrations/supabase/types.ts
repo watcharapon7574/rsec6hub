@@ -3663,7 +3663,7 @@ export type Database = {
         | "OTHER"
       leave_entry_source: "system" | "manual"
       leave_hr_decision: "acknowledge" | "consider" | "recommend_approve"
-      leave_signer_role: "hr_head" | "director"
+      leave_signer_role: "hr_head" | "deputy_director" | "director"
       leave_status:
         | "draft"
         | "pending"
@@ -3834,7 +3834,7 @@ export const Constants = {
       ],
       leave_entry_source: ["system", "manual"],
       leave_hr_decision: ["acknowledge", "consider", "recommend_approve"],
-      leave_signer_role: ["hr_head", "director"],
+      leave_signer_role: ["hr_head", "deputy_director", "director"],
       leave_status: ["draft", "pending", "in_progress", "approved", "rejected"],
       leave_type: [
         "sick_leave",

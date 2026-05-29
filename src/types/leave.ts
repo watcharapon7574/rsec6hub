@@ -156,7 +156,9 @@ export const LEAVE_STATUS_COLORS: Record<LeaveStatus, string> = {
   rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
-export type LeaveSignerOrder = 1 | 2;
+// 1 = หน.บุคคล, 2 = รอง, 3 = ผอ., 4 = อนุมัติเสร็จสิ้น (sentinel หลัง ผอ.เซ็น)
+export type LeaveSignerOrder = 1 | 2 | 3 | 4;
+export type LeaveSignerRole = 'hr_head' | 'deputy_director' | 'director';
 
 // ความเห็นของ หน.บุคคล ตามใบลา (3 ตัวเลือก) — ทุกตัวส่งต่อให้ ผอ. ตัดสินใจ
 export type HrDecision = 'acknowledge' | 'consider' | 'recommend_approve';
@@ -177,7 +179,7 @@ export interface LeaveSignature {
   order: LeaveSignerOrder;
   signer_user_id: string;
   signer_name: string;
-  signer_role: 'hr_head' | 'director';
+  signer_role: LeaveSignerRole;
   status: 'approved' | 'rejected';
   signed_at: string;
   signature_url?: string | null;
@@ -342,22 +344,29 @@ export type LeaveStepState = 'done' | 'current' | 'pending' | 'rejected';
 
 export interface LeaveSteps {
   step1: LeaveStepState; // หน.บุคคล
-  step2: LeaveStepState; // ผอ.
-  step3: LeaveStepState; // อนุมัติเสร็จสิ้น
+  step2: LeaveStepState; // รอง ผอ.
+  step3: LeaveStepState; // ผอ.
+  step4: LeaveStepState; // อนุมัติเสร็จสิ้น
 }
 
 export function getLeaveSteps(
-  req: Pick<LeaveRequest, 'status' | 'signatures'>,
+  req: Pick<LeaveRequest, 'status' | 'current_signer_order' | 'signatures'>,
 ): LeaveSteps {
-  const sig1 = req.signatures.find((s) => s.order === 1);
-  const sig2 = req.signatures.find((s) => s.order === 2);
+  // key ตาม signer_role ไม่ใช่ order — ใบลาเก่า (ก่อนย้ายเป็น 3 ขั้น)
+  // ผอ.เซ็นที่ order=2 ถ้า map ด้วย order จะไปโผล่ที่ช่อง "รอง" ผิด
+  const sig1 = req.signatures.find((s) => s.signer_role === 'hr_head');
+  const sig2 = req.signatures.find((s) => s.signer_role === 'deputy_director');
+  const sig3 = req.signatures.find((s) => s.signer_role === 'director');
+
+  // step "current" → ใบลายังเปิดอยู่ และ current_signer_order ชี้ที่ขั้นนั้น
+  const isOpen = req.status === 'pending' || req.status === 'in_progress';
 
   const step1: LeaveStepState =
     sig1?.status === 'rejected'
       ? 'rejected'
       : sig1?.status === 'approved'
         ? 'done'
-        : req.status === 'pending'
+        : isOpen && req.current_signer_order === 1
           ? 'current'
           : 'pending';
 
@@ -366,14 +375,23 @@ export function getLeaveSteps(
       ? 'rejected'
       : sig2?.status === 'approved'
         ? 'done'
-        : req.status === 'in_progress'
+        : isOpen && req.current_signer_order === 2
           ? 'current'
           : 'pending';
 
-  // step3 (อนุมัติเสร็จสิ้น) — done เฉพาะตอน approved เท่านั้น
-  // ถ้าถูกปฏิเสธ X จะแสดงที่ step ของคนที่กดปฏิเสธจริง ไม่ใช่ที่ขั้นสุดท้าย
   const step3: LeaveStepState =
+    sig3?.status === 'rejected'
+      ? 'rejected'
+      : sig3?.status === 'approved'
+        ? 'done'
+        : isOpen && req.current_signer_order === 3
+          ? 'current'
+          : 'pending';
+
+  // step4 (อนุมัติเสร็จสิ้น) — done เฉพาะตอน approved เท่านั้น
+  // ถ้าถูกปฏิเสธ X จะแสดงที่ step ของคนที่กดปฏิเสธจริง ไม่ใช่ที่ขั้นสุดท้าย
+  const step4: LeaveStepState =
     req.status === 'approved' ? 'done' : 'pending';
 
-  return { step1, step2, step3 };
+  return { step1, step2, step3, step4 };
 }

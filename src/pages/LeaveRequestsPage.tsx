@@ -101,6 +101,7 @@ import {
   LeaveBalance,
   LeaveGender,
   LeaveRequest,
+  LeaveSignerRole,
   LeaveStepState,
   LeaveType,
   NewManualRegistryEntryInput,
@@ -669,8 +670,9 @@ const LeaveProgress: React.FC<{
   const items: Array<{ state: LeaveStepState; label: string }> = [
     { state: 'done', label: 'ส่งคำขอ' },
     { state: steps.step1, label: 'หน.บุคคล' },
-    { state: steps.step2, label: 'ผอ.' },
-    { state: steps.step3, label: 'อนุมัติ' },
+    { state: steps.step2, label: 'รอง' },
+    { state: steps.step3, label: 'ผอ.' },
+    { state: steps.step4, label: 'อนุมัติ' },
   ];
 
   return (
@@ -963,7 +965,11 @@ const LeaveDetailDialog: React.FC<{
                           )}
                           <span className="font-medium">{sig.signer_name}</span>
                           <span className="text-xs text-muted-foreground">
-                            ({sig.signer_role === 'hr_head' ? 'หน.บุคคล' : 'ผอ.'})
+                            ({sig.signer_role === 'hr_head'
+                              ? 'หน.บุคคล'
+                              : sig.signer_role === 'deputy_director'
+                                ? 'รอง ผอ.'
+                                : 'ผอ.'})
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -1920,14 +1926,17 @@ const ApprovalTab: React.FC<{
 }> = ({ profile, onListChange }) => {
   const perms = getPermissions(profile as never);
   const canDirector = profile.position === 'director' || perms.isAdmin;
+  const canDeputyDirector =
+    profile.position === 'deputy_director' || perms.isAdmin;
   const canHrHead =
     perms.isAdmin || /บุคคล/.test(profile.org_structure_role ?? '');
-  const allowedRoles = useMemo<Array<'hr_head' | 'director'>>(() => {
-    const r: Array<'hr_head' | 'director'> = [];
+  const allowedRoles = useMemo<LeaveSignerRole[]>(() => {
+    const r: LeaveSignerRole[] = [];
     if (canHrHead) r.push('hr_head');
+    if (canDeputyDirector) r.push('deputy_director');
     if (canDirector) r.push('director');
     return r;
-  }, [canHrHead, canDirector]);
+  }, [canHrHead, canDeputyDirector, canDirector]);
 
   const [list, setList] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1935,11 +1944,15 @@ const ApprovalTab: React.FC<{
 
   const userName = `${profile.prefix ?? ''}${profile.first_name} ${profile.last_name}`.trim();
 
-  // เลือก role อัตโนมัติตาม step ของใบลา → admin กดแทนทั้ง หน.บุคคล และ ผอ. ได้
+  // เลือก role อัตโนมัติตาม step ของใบลา → admin กดแทนได้ทุก role
   const detailApprover = useMemo<ApproverContext | null>(() => {
     if (!detailReq) return null;
-    const needed: 'hr_head' | 'director' =
-      detailReq.current_signer_order === 1 ? 'hr_head' : 'director';
+    const needed: LeaveSignerRole =
+      detailReq.current_signer_order === 1
+        ? 'hr_head'
+        : detailReq.current_signer_order === 2
+          ? 'deputy_director'
+          : 'director';
     if (!allowedRoles.includes(needed)) return null;
     return {
       user_id: profile.id,
@@ -2541,14 +2554,17 @@ const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string
 }) => {
   const perms = getPermissions(profile as never);
   const canDirector = profile.position === 'director' || perms.isAdmin;
+  const canDeputyDirector =
+    profile.position === 'deputy_director' || perms.isAdmin;
   const canHrHead =
     perms.isAdmin || /บุคคล/.test(profile.org_structure_role ?? '');
-  const allowedRoles = useMemo<Array<'hr_head' | 'director'>>(() => {
-    const r: Array<'hr_head' | 'director'> = [];
+  const allowedRoles = useMemo<LeaveSignerRole[]>(() => {
+    const r: LeaveSignerRole[] = [];
     if (canHrHead) r.push('hr_head');
+    if (canDeputyDirector) r.push('deputy_director');
     if (canDirector) r.push('director');
     return r;
-  }, [canHrHead, canDirector]);
+  }, [canHrHead, canDeputyDirector, canDirector]);
   const allowedKey = allowedRoles.join(',');
 
   const [pendingCount, setPendingCount] = useState(0);
@@ -2692,6 +2708,7 @@ const LeaveRequestsPage: React.FC = () => {
           const canApprove =
             perms.isAdmin ||
             profile.position === 'director' ||
+            profile.position === 'deputy_director' ||
             /บุคคล/.test(
               (profile as { org_structure_role?: string | null }).org_structure_role ?? '',
             );

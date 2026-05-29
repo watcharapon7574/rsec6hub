@@ -124,17 +124,25 @@ Deno.serve(async (req: Request) => {
     const admin = getAdmin();
 
     // map telegram_chat_id (= chat id ส่วนตัว = user id) → profile
-    const { data: profile, error: profErr } = await withAbort(
+    // หมายเหตุ: 1 Telegram อาจผูกหลาย profile (เช่น dev มีทั้ง teacher + admin,
+    // หรือเบอร์ admin ที่ใช้ร่วมกัน) → ห้าม maybeSingle (จะ throw "multiple rows")
+    // เลือก profile ที่ "เซ็นได้" ก่อน: admin → ผอ./รอง → หน.บุคคล → ตัวแรกที่มี user_id
+    const { data: profiles, error: profErr } = await withAbort(
       (signal) =>
         admin
           .from('profiles')
-          .select('id, user_id, employee_id, first_name, last_name')
+          .select('id, user_id, employee_id, first_name, last_name, position, org_structure_role, is_admin')
           .eq('telegram_chat_id', tgId)
-          .maybeSingle()
           .abortSignal(signal),
       'profile-by-telegram',
     );
     if (profErr) throw new Error(`profile lookup: ${profErr.message}`);
+    const candidates = (profiles ?? []).filter((p: any) => p.user_id);
+    const profile =
+      candidates.find((p: any) => p.is_admin === true) ??
+      candidates.find((p: any) => p.position === 'director' || p.position === 'deputy_director') ??
+      candidates.find((p: any) => /บุคคล/.test(p.org_structure_role ?? '')) ??
+      candidates[0];
     if (!profile?.user_id) {
       return new Response(
         JSON.stringify({ error: 'ไม่พบบัญชีที่ผูกกับ Telegram นี้ — กรุณาเข้าสู่ระบบ FastDoc ด้วยเบอร์โทรก่อน' }),

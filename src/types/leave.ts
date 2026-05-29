@@ -148,6 +148,18 @@ export const LEAVE_STATUS_LABELS: Record<LeaveStatus, string> = {
   rejected: 'ไม่อนุมัติ',
 };
 
+// ป้ายสถานะที่แยกตามขั้นจริง — in_progress ครอบทั้ง order 2 (รอง ผอ.) และ
+// order 3 (ผอ.) ดังนั้นต้องดู current_signer_order ด้วย ไม่งั้นจะขึ้น "รอ ผอ."
+// ทั้งที่จริงยังรอ "รอง ผอ." อยู่
+export function getLeaveStatusLabel(
+  req: Pick<LeaveRequest, 'status' | 'current_signer_order'>,
+): string {
+  if (req.status === 'in_progress') {
+    return req.current_signer_order === 2 ? 'รอ รอง ผอ.' : 'รอ ผอ.';
+  }
+  return LEAVE_STATUS_LABELS[req.status];
+}
+
 export const LEAVE_STATUS_COLORS: Record<LeaveStatus, string> = {
   draft: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',

@@ -93,8 +93,8 @@ import {
   HrDecision,
   inferLeaveGender,
   isAttachmentRequired,
+  getLeaveStatusLabel,
   LEAVE_STATUS_COLORS,
-  LEAVE_STATUS_LABELS,
   LEAVE_TYPE_ATTACHMENTS,
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_ORDER,
@@ -804,7 +804,7 @@ export const LeaveDetailDialog: React.FC<{
               </div>
               <div className="mt-1.5">
                 <Badge className={LEAVE_STATUS_COLORS[request.status]}>
-                  {LEAVE_STATUS_LABELS[request.status]}
+                  {getLeaveStatusLabel(request)}
                 </Badge>
               </div>
             </div>
@@ -1613,7 +1613,7 @@ const OverviewTab: React.FC = () => {
                     <TableCell>{r.days_count} วัน</TableCell>
                     <TableCell>
                       <Badge className={LEAVE_STATUS_COLORS[r.status]}>
-                        {LEAVE_STATUS_LABELS[r.status]}
+                        {getLeaveStatusLabel(r)}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -1925,7 +1925,7 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
                           <Badge
                             className={`${LEAVE_STATUS_COLORS[r.status]} text-[11px] px-1.5 py-0`}
                           >
-                            {LEAVE_STATUS_LABELS[r.status]}
+                            {getLeaveStatusLabel(r)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-left">
@@ -2090,7 +2090,7 @@ const ApprovalTab: React.FC<{
                             <Badge
                               className={`${LEAVE_STATUS_COLORS[r.status]} text-[11px] px-1.5 py-0`}
                             >
-                              {LEAVE_STATUS_LABELS[r.status]}
+                              {getLeaveStatusLabel(r)}
                             </Badge>
                             {hasAttachment && (
                               <span
@@ -2546,7 +2546,7 @@ const LeaveRegistryTab: React.FC = () => {
                           <Badge
                             className={`${LEAVE_STATUS_COLORS[r.status]} text-[11px] px-1.5 py-0`}
                           >
-                            {LEAVE_STATUS_LABELS[r.status]}
+                            {getLeaveStatusLabel(r)}
                           </Badge>
                         </TableCell>
                         <TableCell>

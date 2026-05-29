@@ -732,12 +732,14 @@ const LeaveDetailDialog: React.FC<{
   const { toast } = useToast();
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [hrDecision, setHrDecision] = useState<HrDecision | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!request) {
       setRejecting(false);
       setRejectReason('');
+      setHrDecision(null);
     }
   }, [request]);
 
@@ -1026,32 +1028,59 @@ const LeaveDetailDialog: React.FC<{
             <>
               {!rejecting ? (
                 approver.role === 'hr_head' ? (
-                  <div className="space-y-2 pt-2 border-t">
-                    <div className="text-xs text-muted-foreground">
-                      ความเห็น หน.บุคคล (เลือก 1)
+                  <div className="space-y-3 pt-3 border-t">
+                    <div className="text-sm font-semibold">
+                      ความเห็น หน.บุคคล{' '}
+                      <span className="text-muted-foreground font-normal">
+                        (เลือก 1)
+                      </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {HR_DECISION_ORDER.map((d) => (
-                        <Button
-                          key={d}
-                          variant="outline"
-                          className="justify-start"
-                          onClick={() => handleApprove(d)}
-                          disabled={busy}
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-1 text-green-600" />
-                          {HR_DECISION_LABELS[d]}
-                        </Button>
-                      ))}
+                    <div className="grid grid-cols-1 gap-2">
+                      {HR_DECISION_ORDER.map((d) => {
+                        const selected = hrDecision === d;
+                        return (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => setHrDecision(d)}
+                            disabled={busy}
+                            aria-pressed={selected}
+                            className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left text-sm font-medium transition-colors disabled:opacity-50 ${
+                              selected
+                                ? 'border-green-600 bg-green-50 text-green-800 dark:bg-green-950/40 dark:text-green-200'
+                                : 'border-border hover:border-green-400 hover:bg-green-50/40 dark:hover:bg-green-950/20'
+                            }`}
+                          >
+                            <span
+                              className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 ${
+                                selected
+                                  ? 'border-green-600 bg-green-600'
+                                  : 'border-muted-foreground/40'
+                              }`}
+                            >
+                              {selected && (
+                                <CheckCircle2 className="h-4 w-4 text-white" />
+                              )}
+                            </span>
+                            {HR_DECISION_LABELS[d]}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="flex justify-end pt-1">
+                    <div className="flex justify-end gap-2 pt-1">
                       <Button
                         variant="destructive"
-                        size="sm"
                         onClick={() => setRejecting(true)}
                         disabled={busy}
                       >
                         <XCircle className="h-4 w-4 mr-1" /> ปฏิเสธ
+                      </Button>
+                      <Button
+                        onClick={() => handleApprove(hrDecision!)}
+                        disabled={busy || !hrDecision}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        {busy ? 'กำลังบันทึก...' : 'อนุมัติ'}
                       </Button>
                     </div>
                   </div>

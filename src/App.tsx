@@ -40,6 +40,7 @@ import AdminProfileManagementPage from "@/pages/AdminProfileManagementPage";
 import AdminOtpManagementPage from "@/pages/AdminOtpManagementPage";
 import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import TelegramAssigneesPage from "@/pages/TelegramAssigneesPage";
+import TelegramLeaveSignPage from "@/pages/TelegramLeaveSignPage";
 import OcrUploadPage from "@/pages/OcrUploadPage";
 import OcrSearchPage from "@/pages/OcrSearchPage";
 import OcrSearchEmbedPage from "@/pages/OcrSearchEmbedPage";
@@ -116,7 +117,7 @@ const AppContent = () => {
   const location = useLocation();
 
   // Check if current path is a public route (no auth required)
-  const isPublicRoute = location.pathname.startsWith('/telegram-assignees') || location.pathname.startsWith('/embed/') || location.pathname === '/auth';
+  const isPublicRoute = location.pathname.startsWith('/telegram-assignees') || location.pathname.startsWith('/tg/') || location.pathname.startsWith('/embed/') || location.pathname === '/auth';
 
   // For public routes, don't wait for auth loading - render immediately
   if (loading && !isPublicRoute) {
@@ -151,6 +152,9 @@ const AppContent = () => {
           path="/telegram-assignees"
           element={<TelegramAssigneesPage />}
         />
+        {/* Telegram Mini App — ลงนามใบลา (เปิดจาก DM ของบอทเมื่อถึงคิว) */}
+        <Route path="/tg/leave/:id" element={<TelegramLeaveSignPage />} />
+        <Route path="/tg/leave" element={<TelegramLeaveSignPage />} />
       <Route path="/dashboard" element={
         <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
           <Dashboard />

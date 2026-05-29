@@ -247,6 +247,22 @@ export async function getMyRequests(): Promise<LeaveRequest[]> {
   return hydrate((data as DbLeaveRequest[]) ?? []);
 }
 
+// ดึงใบลาเดี่ยวตาม id (ใช้โดย Telegram Mini App หน้าลงนาม)
+export async function getLeaveRequestById(
+  id: string,
+): Promise<LeaveRequest | null> {
+  const { data, error } = await sb
+    .from('leave_requests')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw new Error(error.message ?? 'getLeaveRequestById failed');
+  if (!data) return null;
+  const row = data as DbLeaveRequest;
+  const sigsMap = await fetchSignaturesFor([row.id]);
+  return mapDbRequest(row, sigsMap.get(row.id) ?? []);
+}
+
 export async function createLeaveRequest(
   userName: string,
   userPosition: string,

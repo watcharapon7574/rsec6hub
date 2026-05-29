@@ -722,7 +722,8 @@ const LeaveProgress: React.FC<{
 };
 
 // ───────────────── Leave Detail Dialog ─────────────────
-const LeaveDetailDialog: React.FC<{
+// export ไว้ให้ Telegram Mini App (TelegramLeaveSignPage) reuse modal เดียวกัน
+export const LeaveDetailDialog: React.FC<{
   request: LeaveRequest | null;
   onClose: () => void;
   approver?: ApproverContext | null;

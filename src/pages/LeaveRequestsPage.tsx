@@ -127,8 +127,10 @@ import {
   getMyRequests,
   getOverviewStats,
   getPendingApprovalsByRoles,
+  getRequesterLeaveTypeStats,
   LeaveOverviewStats,
   rejectLeave,
+  RequesterLeaveTypeStats,
 } from '@/services/leaveService';
 import { getPermissions } from '@/utils/permissionUtils';
 import { isGovernmentOfficial, type Position } from '@/types/database';
@@ -735,13 +737,37 @@ export const LeaveDetailDialog: React.FC<{
   const [rejectReason, setRejectReason] = useState('');
   const [hrDecision, setHrDecision] = useState<HrDecision | null>(null);
   const [busy, setBusy] = useState(false);
+  const [reqStats, setReqStats] = useState<RequesterLeaveTypeStats | null>(null);
 
   useEffect(() => {
     if (!request) {
       setRejecting(false);
       setRejectReason('');
       setHrDecision(null);
+      setReqStats(null);
     }
+  }, [request]);
+
+  // โหลดสถิติการลา "ประเภทที่กำลังขอ" ของผู้ขอ (ปีงบเดียวกัน ไม่รวมใบนี้)
+  useEffect(() => {
+    if (!request) return;
+    let alive = true;
+    setReqStats(null);
+    getRequesterLeaveTypeStats(
+      request.user_id,
+      request.leave_type,
+      request.fiscal_year,
+      request.id,
+    )
+      .then((s) => {
+        if (alive) setReqStats(s);
+      })
+      .catch(() => {
+        /* สถิติโหลดไม่ได้ก็ไม่เป็นไร — ไม่ใช่ข้อมูลหลักของหน้าอนุมัติ */
+      });
+    return () => {
+      alive = false;
+    };
   }, [request]);
 
   if (!request) return null;
@@ -853,6 +879,59 @@ export const LeaveDetailDialog: React.FC<{
               </div>
             )}
           </div>
+
+          {reqStats && (
+            <div className={`rounded-xl border ${theme.pill} p-3`}>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
+                <TrendingUp className="h-3.5 w-3.5" />
+                ประวัติการลา{LEAVE_TYPE_LABELS[request.leave_type]} ปีงบ{' '}
+                {formatBuddhistYear(request.fiscal_year)} (ไม่รวมใบนี้)
+              </div>
+              <div className="text-sm">
+                <span className="font-bold text-base">
+                  อนุมัติแล้ว {reqStats.approved_count} ครั้ง
+                </span>
+                <span className="text-muted-foreground">
+                  {' '}
+                  · รวม {reqStats.approved_days} วัน
+                  {reqStats.is_official && (
+                    <>
+                      {' '}
+                      (เหลือ{' '}
+                      {Math.max(
+                        0,
+                        reqStats.quota_days -
+                          reqStats.approved_days -
+                          reqStats.pending_days,
+                      )}{' '}
+                      / {reqStats.quota_days} วัน)
+                    </>
+                  )}
+                </span>
+                {reqStats.pending_count > 0 && (
+                  <div className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                    + มีใบรออนุมัติอีก {reqStats.pending_count} ครั้ง (
+                    {reqStats.pending_days} วัน)
+                  </div>
+                )}
+                {reqStats.is_official && (
+                  <div className="text-xs text-foreground/70 mt-0.5">
+                    ถ้าอนุมัติใบนี้ ({request.days_count} วัน) จะเหลือ{' '}
+                    <span className="font-semibold">
+                      {Math.max(
+                        0,
+                        reqStats.quota_days -
+                          reqStats.approved_days -
+                          reqStats.pending_days -
+                          request.days_count,
+                      )}
+                    </span>{' '}
+                    / {reqStats.quota_days} วัน
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div>
             <div className="text-xs text-muted-foreground mb-1">

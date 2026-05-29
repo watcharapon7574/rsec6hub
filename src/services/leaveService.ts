@@ -18,6 +18,7 @@ import {
   getFiscalPeriod,
   toLocalISODate,
 } from '@/utils/fiscalYear';
+import { isGovernmentOfficial, type Position } from '@/types/database';
 
 const sb = supabase;
 
@@ -234,6 +235,65 @@ export async function getMyBalance(
       pending_count: pending.length,
     };
   });
+}
+
+// สถิติการลา "ประเภทที่กำลังขอ" ของผู้ขอลาคนหนึ่ง ในปีงบเดียวกัน — ใช้โดยหน้าผู้ลงนาม
+// (signer roles มี RLS read_all_leave อยู่แล้ว จึง query ใบลาของผู้ขอได้)
+// ไม่รวมใบปัจจุบัน (excludeRequestId) เพื่อให้เป็น "ประวัติที่ผ่านมา" ล้วน ๆ
+export interface RequesterLeaveTypeStats {
+  leave_type: LeaveType;
+  fiscal_year: number;
+  is_official: boolean;
+  quota_days: number;
+  approved_count: number;
+  approved_days: number;
+  pending_count: number;
+  pending_days: number;
+}
+
+export async function getRequesterLeaveTypeStats(
+  userId: string,
+  leaveType: LeaveType,
+  fiscalYear: number,
+  excludeRequestId?: string,
+): Promise<RequesterLeaveTypeStats> {
+  const [reqRes, profRes] = await Promise.all([
+    sb
+      .from('leave_requests')
+      .select('id, days_count, status')
+      .eq('user_id', userId)
+      .eq('leave_type', leaveType)
+      .eq('fiscal_year', fiscalYear),
+    sb.from('profiles').select('position').eq('user_id', userId).maybeSingle(),
+  ]);
+  if (reqRes.error)
+    throw new Error(reqRes.error.message ?? 'getRequesterLeaveTypeStats failed');
+
+  const rows = (
+    (reqRes.data as Array<
+      Pick<DbLeaveRequest, 'id' | 'days_count' | 'status'>
+    >) ?? []
+  ).filter((r) => r.id !== excludeRequestId);
+  const approved = rows.filter((r) => r.status === 'approved');
+  const pending = rows.filter(
+    (r) => r.status === 'pending' || r.status === 'in_progress',
+  );
+
+  // profile อ่านไม่ได้ก็ถือว่าไม่ใช่ข้าราชการ (ไม่โชว์โควต้าวัน) — ไม่ทำให้ทั้งฟังก์ชันพัง
+  const position = (profRes.data as { position?: string } | null)?.position;
+
+  return {
+    leave_type: leaveType,
+    fiscal_year: fiscalYear,
+    is_official: position
+      ? isGovernmentOfficial(position as Position)
+      : false,
+    quota_days: LEAVE_TYPE_QUOTAS_PER_YEAR[leaveType],
+    approved_count: approved.length,
+    approved_days: approved.reduce((s, r) => s + r.days_count, 0),
+    pending_count: pending.length,
+    pending_days: pending.reduce((s, r) => s + r.days_count, 0),
+  };
 }
 
 export async function getMyRequests(): Promise<LeaveRequest[]> {

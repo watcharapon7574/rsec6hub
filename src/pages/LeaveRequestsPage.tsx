@@ -1866,8 +1866,9 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
                               <span className={`text-3xl sm:text-4xl font-bold ${theme.text}`}>
                                 {b.used_days}
                               </span>
+                              {/* ลาป่วยไม่มีเพดานการลา — โชว์เฉพาะจำนวนวันที่ลาไปแล้ว ไม่ใส่ /60 */}
                               <span className="text-sm text-muted-foreground">
-                                / {b.quota_days}
+                                {isSickLeave ? 'วัน' : `/ ${b.quota_days}`}
                               </span>
                             </>
                           ) : (
@@ -2120,7 +2121,10 @@ const QuotaTypeCard: React.FC<{ b: LeaveBalance; isOfficial: boolean }> = ({
           {isOfficial ? (
             <>
               <span className={`text-xl font-bold ${theme.text}`}>{b.used_days}</span>
-              <span className="text-xs text-muted-foreground">/ {b.quota_days}</span>
+              {/* ลาป่วยไม่มีเพดานการลา — โชว์เฉพาะจำนวนวันที่ลาไปแล้ว ไม่ใส่ /60 */}
+              <span className="text-xs text-muted-foreground">
+                {isSickLeave ? 'วัน' : `/ ${b.quota_days}`}
+              </span>
             </>
           ) : (
             <>

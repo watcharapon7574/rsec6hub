@@ -67,14 +67,6 @@ function formatDateRange(startISO: string, endISO: string): string {
   return `${formatThaiDate(s)} – ${formatThaiDate(e)}`;
 }
 
-function dayNumberOf(startISO: string, todayISO: string): number {
-  // วันที่ปัจจุบันเป็นวันที่กี่ของช่วงลา (1-indexed)
-  const s = parseISODate(startISO);
-  const t = parseISODate(todayISO);
-  const diff = Math.round((t.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
-  return Math.max(1, diff + 1);
-}
-
 // ─── Leave-type display ───────────────────────────────────────────────────
 const LEAVE_TYPE_DISPLAY: Record<string, { emoji: string; label: string }> = {
   sick_leave:           { emoji: '🤒', label: 'ลาป่วย' },
@@ -192,10 +184,10 @@ function formatDailyRollcall(
   const body = rows
     .map((r, i) => {
       const d = leaveDisplay(r.leave_type);
-      const dayN = dayNumberOf(r.start_date, todayISO);
       const name = escapeHtml(r.user_name ?? '-');
       const pos = escapeHtml(r.user_position ?? '-');
-      return `${i + 1}. <b>${name}</b> — ${pos}\n   ${d.emoji} ${d.label} · วันที่ ${dayN}/${r.days_count}`;
+      const dateRange = formatDateRange(r.start_date, r.end_date);
+      return `${i + 1}. <b>${name}</b> — ${pos}\n   ${d.emoji} ${d.label} · วันที่ ${dateRange}`;
     })
     .join('\n\n');
   return `${header}\n\n${body}`;

@@ -113,6 +113,55 @@ async function sendTelegram(chatId: string, text: string, replyMarkup?: unknown)
   throw lastErr;
 }
 
+// แก้ข้อความ DM เดิม (ลบปุ่ม web_app + เปลี่ยนข้อความเป็น "ลงนามแล้ว")
+// best-effort: ถ้า fail (ข้อความถูกลบ/หา message ไม่เจอ) แค่ log ไม่ throw
+async function editTelegramText(chatId: string, messageId: number, text: string): Promise<void> {
+  const url = `https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // ไม่ส่ง reply_markup → ปุ่ม inline ถูกลบออก
+      body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+      signal: controller.signal,
+    });
+    if (!res.ok) console.warn(`editMessageText ${res.status}: ${await res.text()}`);
+  } catch (err) {
+    console.warn(`editMessageText failed: ${(err as Error)?.message ?? err}`);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// ลบปุ่มของ DM ขั้นที่เพิ่งทำรายการ (เซ็น/ปฏิเสธ) — อ่าน message_id ที่เก็บไว้
+async function clearSignerButton(
+  sb: ReturnType<typeof getSupabase>,
+  leave: any,
+  prevOrder: number,
+  kind: 'signed' | 'rejected',
+): Promise<void> {
+  const { data: msg } = await sb
+    .from('leave_sign_messages')
+    .select('chat_id, message_id')
+    .eq('leave_id', leave.id)
+    .eq('signer_order', prevOrder)
+    .maybeSingle();
+  if (!msg) return;
+  const d = leaveDisplay(leave.leave_type);
+  const range = formatDateRange(leave.start_date, leave.end_date);
+  const who = escapeHtml(leave.user_name ?? '-');
+  const head = kind === 'rejected'
+    ? '❌ <b>ท่านปฏิเสธใบลานี้แล้ว</b>'
+    : '✅ <b>ท่านลงนามใบลานี้แล้ว</b>';
+  await editTelegramText(
+    String(msg.chat_id),
+    Number(msg.message_id),
+    `${head}\n\n<b>${who}</b>\n${d.emoji} ${d.label} · ${range} (${leave.days_count} วัน)`,
+  );
+}
+
 function getSupabase() {
   return createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -129,7 +178,11 @@ function authorize(req: Request): void {
   throw new Error('Unauthorized — bad cron token');
 }
 
-type Payload = { leave_id: string; event: 'advanced' | 'approved' | 'rejected' };
+type Payload = {
+  leave_id: string;
+  event: 'advanced' | 'approved' | 'rejected';
+  prev_order?: number | null; // ขั้นที่เพิ่งเซ็น/ปฏิเสธ → ไปลบปุ่มของ DM ขั้นนั้น
+};
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -154,6 +207,11 @@ Deno.serve(async (req: Request) => {
 
     // ─── advanced: DM ผู้ลงนามหลักของขั้นปัจจุบัน ───
     if (payload.event === 'advanced') {
+      // ขั้นก่อนหน้าเพิ่งเซ็น → ลบปุ่มของ DM ขั้นนั้น
+      if (payload.prev_order) {
+        await clearSignerButton(sb, leave, payload.prev_order, 'signed');
+      }
+
       if (leave.status !== 'pending' && leave.status !== 'in_progress') {
         return ok({ skipped: 'not open', status: leave.status });
       }
@@ -178,13 +236,27 @@ Deno.serve(async (req: Request) => {
           { text: '📝 เปิดใบลา / ลงนาม', web_app: { url: `${MINIAPP_URL}/tg/leave/${leave.id}` } },
         ]],
       };
-      const tg = await sendTelegram(String(signer.telegram_chat_id), text, replyMarkup);
-      return ok({ event: 'advanced', stage: stage.role, signerUserId, telegram: tg });
+      const tg = await sendTelegram(String(signer.telegram_chat_id), text, replyMarkup) as
+        { result?: { message_id?: number } };
+      // เก็บ message_id ไว้ลบปุ่มทีหลังเมื่อผู้ลงนามขั้นนี้เซ็นเสร็จ
+      const messageId = tg?.result?.message_id;
+      if (messageId) {
+        await sb.from('leave_sign_messages').upsert({
+          leave_id: leave.id,
+          signer_order: leave.current_signer_order,
+          chat_id: String(signer.telegram_chat_id),
+          message_id: messageId,
+        });
+      }
+      return ok({ event: 'advanced', stage: stage.role, signerUserId, message_id: messageId ?? null });
     }
 
-    // ─── approved / rejected: แจ้ง 🔔 ในแอปให้เจ้าของใบลา ───
+    // ─── approved / rejected: ลบปุ่มของผู้ลงนามขั้นสุดท้าย + แจ้ง 🔔 เจ้าของใบลา ───
     if (payload.event === 'approved' || payload.event === 'rejected') {
       const isApproved = payload.event === 'approved';
+      if (payload.prev_order) {
+        await clearSignerButton(sb, leave, payload.prev_order, isApproved ? 'signed' : 'rejected');
+      }
       const message = isApproved
         ? `ใบ${d.label} ${range} (${leave.days_count} วัน) ของคุณได้รับการอนุมัติแล้ว`
         : `ใบ${d.label} ${range} (${leave.days_count} วัน) ของคุณไม่ได้รับการอนุมัติ` +

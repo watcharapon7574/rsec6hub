@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Notification {
   id: string;
@@ -17,47 +18,55 @@ interface Notification {
   actionUrl?: string;
 }
 
+// map row จาก leave_notifications → รูปแบบที่ UI ใช้
+function mapLeaveNotification(row: {
+  id: string;
+  type: string;
+  message: string;
+  is_read: boolean | null;
+  created_at: string;
+}): Notification {
+  const approved = row.type === 'leave_approved';
+  return {
+    id: row.id,
+    title: approved ? 'ใบลาได้รับการอนุมัติ' : 'ใบลาไม่ได้รับการอนุมัติ',
+    message: row.message,
+    type: 'approval',
+    priority: approved ? 'medium' : 'high',
+    read: row.is_read ?? false,
+    timestamp: new Date(row.created_at),
+    actionUrl: '/attendance',
+  };
+}
+
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      title: 'เอกสารรออนุมัติ',
-      message: 'บันทึกข้อความ เรื่อง การประชุมประจำเดือน รออนุมัติจากผู้อำนวยการ',
-      type: 'approval',
-      priority: 'high',
-      read: false,
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 min ago
-      actionUrl: '/approve-document/1'
-    },
-    {
-      id: '2',
-      title: 'เอกสารใหม่เข้าระบบ',
-      message: 'มีเอกสารใหม่ถูกส่งเข้าระบบโดย นายสมศักดิ์ ใจดี',
-      type: 'document',
-      priority: 'medium',
-      read: false,
-      timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
-      actionUrl: '/documents'
-    },
-    {
-      id: '3',
-      title: 'เอกสารได้รับการอนุมัติ',
-      message: 'บันทึกข้อความ เรื่อง การขอวัสดุอุปกรณ์ได้รับการอนุมัติแล้ว',
-      type: 'approval',
-      priority: 'low',
-      read: true,
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    },
-    {
-      id: '4',
-      title: 'แจ้งเตือนระบบ',
-      message: 'ระบบจะมีการปรับปรุงในวันที่ 25 มกราคม 2568 เวลา 02:00-04:00 น.',
-      type: 'system',
-      priority: 'medium',
-      read: false,
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
-    }
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // โหลด notification ใบลาจริงของผู้ใช้ (RLS จำกัดเฉพาะของตัวเองอยู่แล้ว)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth?.user?.id;
+      if (!uid) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('leave_notifications')
+        .select('id, type, message, is_read, created_at')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (cancelled) return;
+      if (!error && data) setNotifications(data.map(mapLeaveNotification));
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [activeTab, setActiveTab] = useState('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
@@ -100,34 +109,26 @@ const NotificationsPage = () => {
     return `${Math.floor(diffInSeconds / 86400)} วันที่แล้ว`;
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
+  const markAsRead = async (id: string) => {
+    setNotifications(prev =>
+      prev.map(notif => (notif.id === id ? { ...notif, read: true } : notif))
     );
-    toast({
-      title: "อ่านแล้ว",
-      description: "ทำเครื่องหมายการแจ้งเตือนว่าอ่านแล้ว",
-    });
+    await supabase.from('leave_notifications').update({ is_read: true }).eq('id', id);
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
-    toast({
-      title: "อ่านทั้งหมดแล้ว",
-      description: "ทำเครื่องหมายการแจ้งเตือนทั้งหมดว่าอ่านแล้ว",
-    });
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    if (unreadIds.length > 0) {
+      await supabase.from('leave_notifications').update({ is_read: true }).in('id', unreadIds);
+    }
+    toast({ title: 'อ่านทั้งหมดแล้ว' });
   };
 
-  const deleteNotification = (id: string) => {
+  const deleteNotification = async (id: string) => {
     setNotifications(prev => prev.filter(notif => notif.id !== id));
-    toast({
-      title: "ลบแล้ว",
-      description: "ลบการแจ้งเตือนแล้ว",
-    });
+    await supabase.from('leave_notifications').delete().eq('id', id);
+    toast({ title: 'ลบแล้ว' });
   };
 
   const filteredNotifications = notifications.filter(notif => {
@@ -237,7 +238,12 @@ const NotificationsPage = () => {
 
               <TabsContent value={activeTab} className="mt-0">
                 <div className="space-y-4">
-                  {filteredNotifications.length === 0 ? (
+                  {loading ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Bell className="h-12 w-12 mx-auto mb-4 opacity-50 animate-pulse" />
+                      <p className="text-sm">กำลังโหลด...</p>
+                    </div>
+                  ) : filteredNotifications.length === 0 ? (
                     <div className="text-center py-12">
                       <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-muted-foreground mb-2">

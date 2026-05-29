@@ -152,9 +152,11 @@ async function clearSignerButton(
   const d = leaveDisplay(leave.leave_type);
   const range = formatDateRange(leave.start_date, leave.end_date);
   const who = escapeHtml(leave.user_name ?? '-');
+  // ข้อความเป็นกลาง: ผู้เซ็นจริงอาจไม่ใช่ผู้ลงนามหลักที่ DM ไป (RPC ให้ผู้ถือ role คนใดก็ได้เซ็น)
+  const stageLabel = ORDER_ROLE[prevOrder]?.label ?? `ขั้น ${prevOrder}`;
   const head = kind === 'rejected'
-    ? '❌ <b>ท่านปฏิเสธใบลานี้แล้ว</b>'
-    : '✅ <b>ท่านลงนามใบลานี้แล้ว</b>';
+    ? `❌ <b>ใบลานี้ถูกปฏิเสธในขั้น${stageLabel}</b>`
+    : `✅ <b>ใบลานี้ผ่านการลงนามขั้น${stageLabel}แล้ว</b>`;
   await editTelegramText(
     String(msg.chat_id),
     Number(msg.message_id),
@@ -236,8 +238,21 @@ Deno.serve(async (req: Request) => {
           { text: '📝 เปิดใบลา / ลงนาม', web_app: { url: `${MINIAPP_URL}/tg/leave/${leave.id}` } },
         ]],
       };
-      const tg = await sendTelegram(String(signer.telegram_chat_id), text, replyMarkup) as
-        { result?: { message_id?: number } };
+      // ส่ง DM ไม่สำเร็จ (เช่นยังไม่ /start บอท → chat not found) ไม่ใช่ error ของทั้ง request:
+      // การ advance + ลบปุ่มขั้นก่อนสำเร็จไปแล้ว → คืน 200 skipped กัน net log รก/สื่อผิด
+      let tg: { result?: { message_id?: number } };
+      try {
+        tg = await sendTelegram(String(signer.telegram_chat_id), text, replyMarkup) as
+          { result?: { message_id?: number } };
+      } catch (sendErr) {
+        return ok({
+          event: 'advanced',
+          stage: stage.role,
+          signerUserId,
+          skipped: 'signer unreachable',
+          error: (sendErr as Error)?.message ?? String(sendErr),
+        });
+      }
       // เก็บ message_id ไว้ลบปุ่มทีหลังเมื่อผู้ลงนามขั้นนี้เซ็นเสร็จ
       const messageId = tg?.result?.message_id;
       if (messageId) {

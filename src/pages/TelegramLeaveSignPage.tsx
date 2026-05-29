@@ -41,10 +41,8 @@ function waitForTelegram(timeoutMs = 3000): Promise<any | null> {
   });
 }
 
-function closeMiniApp(delay = 0) {
-  const tg = (window as any).Telegram?.WebApp;
-  if (delay > 0) setTimeout(() => tg?.close?.(), delay);
-  else tg?.close?.();
+function closeMiniApp() {
+  (window as any).Telegram?.WebApp?.close?.();
 }
 
 const TelegramLeaveSignPage: React.FC = () => {
@@ -160,7 +158,6 @@ const TelegramLeaveSignPage: React.FC = () => {
           request={request}
           approver={approver}
           canApprove={canApprove}
-          onChanged={() => closeMiniApp(900)}
           onClose={() => closeMiniApp()}
         />
       </div>

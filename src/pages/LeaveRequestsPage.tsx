@@ -83,6 +83,8 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  BarChart3,
+  Search,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -121,6 +123,7 @@ import {
   canSignNow,
   createLeaveRequest,
   generateLeavePdf,
+  getAllUsersLeaveSummary,
   getLeaveRegistry,
   getLeavesInRange,
   getMyBalance,
@@ -131,9 +134,14 @@ import {
   LeaveOverviewStats,
   rejectLeave,
   RequesterLeaveTypeStats,
+  UserLeaveSummary,
 } from '@/services/leaveService';
 import { getPermissions } from '@/utils/permissionUtils';
-import { isGovernmentOfficial, type Position } from '@/types/database';
+import {
+  getPositionDisplayName,
+  isGovernmentOfficial,
+  type Position,
+} from '@/types/database';
 
 type TeacherAttendance = {
   id: string;
@@ -775,6 +783,9 @@ export const LeaveDetailDialog: React.FC<{
   const theme = LEAVE_TYPE_THEME[request.leave_type];
   const Icon = theme.icon;
   const attachmentCfg = LEAVE_TYPE_ATTACHMENTS[request.leave_type];
+  // ลาป่วย: 60 วันคือเพดาน "การได้รับเงินเดือน" ต่อปี (ขยายได้ถึง 120) ไม่ใช่เพดานการลา
+  // — ลาได้เท่าที่ป่วยจริง จึงโชว์ "จำนวนที่ลาไปแล้ว" ไม่ใช่ "เหลือ"
+  const isSickLeave = request.leave_type === 'sick_leave';
 
   const handleApprove = async (hrDecision?: HrDecision) => {
     if (!approver) return;
@@ -894,7 +905,7 @@ export const LeaveDetailDialog: React.FC<{
                 <span className="text-muted-foreground">
                   {' '}
                   · รวม {reqStats.approved_days} วัน
-                  {reqStats.is_official && (
+                  {reqStats.is_official && !isSickLeave && (
                     <>
                       {' '}
                       (เหลือ{' '}
@@ -914,7 +925,24 @@ export const LeaveDetailDialog: React.FC<{
                     {reqStats.pending_days} วัน)
                   </div>
                 )}
-                {reqStats.is_official && (
+
+                {/* ลาป่วย (ข้าราชการ): โชว์จำนวนที่ลาไปแล้วเทียบเพดานเงินเดือน 60 วันทำการ/ปี */}
+                {reqStats.is_official && isSickLeave && (
+                  reqStats.approved_days > 60 ? (
+                    <div className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                      ⚠ ลาป่วยแล้ว {reqStats.approved_days} วัน — เกิน 60 วันทำการ
+                      ที่ได้รับเงินเดือน/ปี (ขยายได้ถึง 120 วัน)
+                    </div>
+                  ) : (
+                    <div className="text-xs text-foreground/70 mt-0.5">
+                      ได้รับเงินเดือนระหว่างลาป่วยแล้ว {reqStats.approved_days} /
+                      60 วันทำการ (ปีงบนี้)
+                    </div>
+                  )
+                )}
+
+                {/* ผลถ้าอนุมัติใบนี้ */}
+                {reqStats.is_official && !isSickLeave && (
                   <div className="text-xs text-foreground/70 mt-0.5">
                     ถ้าอนุมัติใบนี้ ({request.days_count} วัน) จะเหลือ{' '}
                     <span className="font-semibold">
@@ -927,6 +955,18 @@ export const LeaveDetailDialog: React.FC<{
                       )}
                     </span>{' '}
                     / {reqStats.quota_days} วัน
+                  </div>
+                )}
+                {reqStats.is_official && isSickLeave && (
+                  <div className="text-xs text-foreground/70 mt-0.5">
+                    ถ้าอนุมัติใบนี้ ({request.days_count} วัน) จะลาป่วยรวมเป็น{' '}
+                    <span className="font-semibold">
+                      {reqStats.approved_days + request.days_count}
+                    </span>{' '}
+                    วัน
+                    {reqStats.approved_days + request.days_count > 60
+                      ? ' (เกิน 60 วันทำการที่ได้รับเงินเดือน)'
+                      : ' / 60 วันทำการ'}
                   </div>
                 )}
               </div>
@@ -2031,6 +2071,282 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
   );
 };
 
+// ───────────────── Quota viewer (ทุกคน / รายคน) — ใช้ในหน้าอนุมัติลา ─────────────────
+// การ์ดโควต้าต่อประเภท (ข้าราชการ = วัน/โควต้า, ไม่ใช่ข้าราชการ = จำนวนครั้ง)
+const QuotaTypeCard: React.FC<{ b: LeaveBalance; isOfficial: boolean }> = ({
+  b,
+  isOfficial,
+}) => {
+  const theme = LEAVE_TYPE_THEME[b.leave_type];
+  const Icon = theme.icon;
+  const remain = b.quota_days - b.used_days - b.pending_days;
+  const pct = b.quota_days > 0 ? (b.used_days / b.quota_days) * 100 : 0;
+  const danger = isOfficial && remain <= 0;
+  return (
+    <div
+      className={`rounded-lg border bg-card px-3 py-2.5 ${
+        danger ? 'border-red-300' : 'border-border'
+      }`}
+    >
+      <div className="flex items-center justify-between mb-1.5">
+        <div className={`p-1.5 rounded-md ${theme.pill}`}>
+          <Icon className={`h-3.5 w-3.5 ${theme.text}`} />
+        </div>
+        <div className="flex items-baseline gap-1">
+          {isOfficial ? (
+            <>
+              <span className={`text-xl font-bold ${theme.text}`}>{b.used_days}</span>
+              <span className="text-xs text-muted-foreground">/ {b.quota_days}</span>
+            </>
+          ) : (
+            <>
+              <span className={`text-xl font-bold ${theme.text}`}>{b.used_count}</span>
+              <span className="text-xs text-muted-foreground">ครั้ง</span>
+            </>
+          )}
+        </div>
+      </div>
+      <p className="text-xs font-medium text-foreground line-clamp-1">
+        {LEAVE_TYPE_LABELS[b.leave_type]}
+      </p>
+      {isOfficial && (
+        <div className="mt-1.5 h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full ${danger ? 'bg-red-500' : 'bg-blue-500'}`}
+            style={{ width: `${Math.min(100, pct)}%` }}
+          />
+        </div>
+      )}
+      {isOfficial && b.pending_days > 0 && (
+        <p className="mt-1 text-[10px] text-yellow-600 dark:text-yellow-400">
+          รออนุมัติ {b.pending_days} วัน
+        </p>
+      )}
+      {!isOfficial && b.pending_count > 0 && (
+        <p className="mt-1 text-[10px] text-yellow-600 dark:text-yellow-400">
+          รออนุมัติ {b.pending_count} ครั้ง
+        </p>
+      )}
+    </div>
+  );
+};
+
+// มุมมองรายคน — การ์ดโควต้าทุกประเภท (แยก main / อื่น ๆ เหมือนหน้าโควต้าของฉัน)
+const QuotaPersonDetail: React.FC<{ user: UserLeaveSummary }> = ({ user }) => {
+  const gender = inferLeaveGender({ prefix: user.prefix });
+  const mainTypes = useMemo(() => getMainLeaveTypes(gender), [gender]);
+  const mainBalance = mainTypes
+    .map((t) => user.balances.find((b) => b.leave_type === t))
+    .filter((b): b is LeaveBalance => !!b);
+  const otherBalance = user.balances.filter((b) => !mainTypes.includes(b.leave_type));
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {mainBalance.map((b) => (
+          <QuotaTypeCard key={b.leave_type} b={b} isOfficial={user.is_official} />
+        ))}
+      </div>
+      {otherBalance.length > 0 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-1.5 mt-1">ประเภทอื่น ๆ</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {otherBalance.map((b) => (
+              <QuotaTypeCard key={b.leave_type} b={b} isOfficial={user.is_official} />
+            ))}
+          </div>
+        </div>
+      )}
+      {!user.is_official && (
+        <p className="text-[11px] text-muted-foreground">
+          * ไม่ใช่ข้าราชการ — แสดงเป็นจำนวนครั้งที่ลา ไม่มีระบบโควต้าวัน
+        </p>
+      )}
+    </div>
+  );
+};
+
+// ตำแหน่งสำหรับแสดงผล — job_position (ไทย) ก่อน, ไม่งั้น map enum เป็นไทย, สุดท้าย '—'
+const quotaPositionLabel = (u: UserLeaveSummary): string =>
+  u.job_position ||
+  (u.position ? getPositionDisplayName(u.position as Position) : '') ||
+  '—';
+
+const LeaveQuotaDialog: React.FC<{ open: boolean; onClose: () => void }> = ({
+  open,
+  onClose,
+}) => {
+  const { toast } = useToast();
+  const period = useMemo(() => getFiscalPeriod(), []);
+  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<UserLeaveSummary[]>([]);
+  const [search, setSearch] = useState('');
+  const [showAll, setShowAll] = useState(false);
+  const [selected, setSelected] = useState<UserLeaveSummary | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      // reset ตอนปิด เพื่อเริ่มที่หน้า list เสมอเมื่อเปิดใหม่
+      setSelected(null);
+      setSearch('');
+      setShowAll(false);
+      return;
+    }
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await getAllUsersLeaveSummary();
+        if (alive) setUsers(data);
+      } catch (e) {
+        if (alive) {
+          toast({
+            title: 'โหลดโควต้าการลาไม่สำเร็จ',
+            description: e instanceof Error ? e.message : String(e),
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [open, toast]);
+
+  const withLeave = useMemo(
+    () => users.filter((u) => u.total_used_days > 0 || u.total_pending_days > 0),
+    [users],
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    // ค้นหา → ค้นทุกคน; ไม่ค้นหา → ตาม toggle (ค่าเริ่มต้นเฉพาะผู้ที่มีการลา)
+    const base = q ? users : showAll ? users : withLeave;
+    if (!q) return base;
+    return base.filter(
+      (u) =>
+        u.name.toLowerCase().includes(q) ||
+        (u.job_position ?? '').toLowerCase().includes(q) ||
+        (u.position ?? '').toLowerCase().includes(q),
+    );
+  }, [users, withLeave, search, showAll]);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            {selected ? selected.name : 'โควต้าการลา'}
+          </DialogTitle>
+          <DialogDescription>
+            {selected
+              ? `${quotaPositionLabel(selected)} · ${formatFiscalYear(period.year)}`
+              : `เลือกดูรายคน หรือเลื่อนดูทั้งหมด · ${formatFiscalYear(period.year)}`}
+          </DialogDescription>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 rounded-lg" />
+            ))}
+          </div>
+        ) : selected ? (
+          <div className="space-y-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1 -ml-2 text-muted-foreground"
+              onClick={() => setSelected(null)}
+            >
+              <ChevronLeft className="h-4 w-4" /> กลับไปรายชื่อ
+            </Button>
+            <QuotaPersonDetail user={selected} />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ค้นหาชื่อ / ตำแหน่ง"
+                className="pl-8"
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {search.trim()
+                  ? `พบ ${filtered.length} คน`
+                  : `มีการลา ${withLeave.length} คน`}
+              </span>
+              {!search.trim() && (
+                <button
+                  type="button"
+                  className="hover:text-foreground underline-offset-2 hover:underline"
+                  onClick={() => setShowAll((v) => !v)}
+                >
+                  {showAll ? 'แสดงเฉพาะผู้ที่มีการลา' : `แสดงทั้งหมด (${users.length} คน)`}
+                </button>
+              )}
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">ไม่พบรายชื่อ</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {filtered.map((u) => (
+                  <button
+                    key={u.user_id}
+                    type="button"
+                    onClick={() => setSelected(u)}
+                    className="w-full flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {u.name}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {quotaPositionLabel(u)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold tabular-nums text-foreground">
+                          {u.is_official
+                            ? `${u.total_used_days} วัน`
+                            : `${u.total_used_count} ครั้ง`}
+                        </p>
+                        {(u.is_official
+                          ? u.total_pending_days
+                          : u.total_pending_count) > 0 && (
+                          <p className="text-[10px] text-yellow-600 dark:text-yellow-400">
+                            รอ{' '}
+                            {u.is_official
+                              ? `${u.total_pending_days} วัน`
+                              : `${u.total_pending_count} ครั้ง`}
+                          </p>
+                        )}
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // ───────────────── Tab 3: อนุมัติลา (หน.บุคคล / ผอ) ─────────────────
 const ApprovalTab: React.FC<{
   profile: LeaveProfile;
@@ -2053,6 +2369,7 @@ const ApprovalTab: React.FC<{
   const [list, setList] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailReq, setDetailReq] = useState<LeaveRequest | null>(null);
+  const [quotaOpen, setQuotaOpen] = useState(false);
 
   const userName = `${profile.prefix ?? ''}${profile.first_name} ${profile.last_name}`.trim();
 
@@ -2093,11 +2410,21 @@ const ApprovalTab: React.FC<{
             <ShieldCheck className="h-5 w-5 text-muted-foreground" />
             ใบลารอลงนาม
           </CardTitle>
-          {allowedRoles.length > 1 && (
-            <span className="text-xs text-muted-foreground">
-              ลงนามแทน หน.บุคคล &amp; ผอ.
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {allowedRoles.length > 1 && (
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                ลงนามแทน หน.บุคคล &amp; ผอ.
+              </span>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setQuotaOpen(true)}
+            >
+              <BarChart3 className="h-4 w-4" /> ดูโควต้าการลา
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -2235,6 +2562,8 @@ const ApprovalTab: React.FC<{
         canApprove={!!detailApprover}
         onChanged={refresh}
       />
+
+      <LeaveQuotaDialog open={quotaOpen} onClose={() => setQuotaOpen(false)} />
     </div>
   );
 };

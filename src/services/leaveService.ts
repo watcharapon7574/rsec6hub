@@ -296,6 +296,102 @@ export async function getRequesterLeaveTypeStats(
   };
 }
 
+// สรุปโควต้า/สถิติการลาของ "ทุกคน" ในปีงบประมาณเดียว — ใช้โดยหน้าอนุมัติลา
+// (ผู้ลงนามมี RLS hr_head/director_read_all_leave อยู่แล้ว และ profiles อ่านได้ public)
+// คำนวณ balance ต่อคนต่อประเภทด้วย logic เดียวกับ getMyBalance
+export interface UserLeaveSummary {
+  user_id: string;
+  name: string;
+  prefix: string | null;
+  position: string | null;
+  job_position: string | null;
+  is_official: boolean;
+  balances: LeaveBalance[];
+  total_used_days: number;
+  total_pending_days: number;
+  total_used_count: number;
+  total_pending_count: number;
+}
+
+export async function getAllUsersLeaveSummary(
+  fiscalYear?: number,
+): Promise<UserLeaveSummary[]> {
+  const period = getFiscalPeriod();
+  const year = fiscalYear ?? period.year;
+
+  type ProfRow = {
+    user_id: string;
+    prefix: string | null;
+    first_name: string;
+    last_name: string;
+    position: string | null;
+    job_position: string | null;
+  };
+  type ReqRow = Pick<DbLeaveRequest, 'user_id' | 'leave_type' | 'days_count' | 'status'>;
+
+  const [profRes, reqRes] = await Promise.all([
+    sb
+      .from('profiles')
+      .select('user_id, prefix, first_name, last_name, position, job_position')
+      .not('user_id', 'is', null),
+    sb
+      .from('leave_requests')
+      .select('user_id, leave_type, days_count, status')
+      .eq('fiscal_year', year),
+  ]);
+  if (profRes.error)
+    throw new Error(profRes.error.message ?? 'getAllUsersLeaveSummary: profiles failed');
+  if (reqRes.error)
+    throw new Error(reqRes.error.message ?? 'getAllUsersLeaveSummary: requests failed');
+
+  const byUser = new Map<string, ReqRow[]>();
+  for (const r of ((reqRes.data as ReqRow[]) ?? [])) {
+    const arr = byUser.get(r.user_id) ?? [];
+    arr.push(r);
+    byUser.set(r.user_id, arr);
+  }
+
+  const summaries: UserLeaveSummary[] = ((profRes.data as ProfRow[]) ?? []).map((p) => {
+    const rows = byUser.get(p.user_id) ?? [];
+    const balances: LeaveBalance[] = LEAVE_TYPE_ORDER.map((leaveType) => {
+      const filtered = rows.filter((r) => r.leave_type === leaveType);
+      const approved = filtered.filter((r) => r.status === 'approved');
+      const pending = filtered.filter(
+        (r) => r.status === 'pending' || r.status === 'in_progress',
+      );
+      return {
+        leave_type: leaveType,
+        fiscal_year: year,
+        quota_days: LEAVE_TYPE_QUOTAS_PER_YEAR[leaveType],
+        used_days: approved.reduce((s, r) => s + r.days_count, 0),
+        pending_days: pending.reduce((s, r) => s + r.days_count, 0),
+        used_count: approved.length,
+        pending_count: pending.length,
+      };
+    });
+    return {
+      user_id: p.user_id,
+      name: `${p.prefix ?? ''}${p.first_name} ${p.last_name}`.trim(),
+      prefix: p.prefix,
+      position: p.position,
+      job_position: p.job_position,
+      is_official: p.position ? isGovernmentOfficial(p.position as Position) : false,
+      balances,
+      total_used_days: balances.reduce((s, b) => s + b.used_days, 0),
+      total_pending_days: balances.reduce((s, b) => s + b.pending_days, 0),
+      total_used_count: balances.reduce((s, b) => s + b.used_count, 0),
+      total_pending_count: balances.reduce((s, b) => s + b.pending_count, 0),
+    };
+  });
+
+  // คนที่ใช้วันลามากสุดก่อน แล้วเรียงตามชื่อ
+  summaries.sort(
+    (a, b) =>
+      b.total_used_days - a.total_used_days || a.name.localeCompare(b.name, 'th'),
+  );
+  return summaries;
+}
+
 export async function getMyRequests(): Promise<LeaveRequest[]> {
   const authId = await getCurrentAuthUserId();
   const { data, error } = await sb

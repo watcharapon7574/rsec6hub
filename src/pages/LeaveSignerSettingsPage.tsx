@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   Loader2,
   UserCheck,
+  FileSignature,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,10 +30,17 @@ import {
   type LeaveSignerConfig,
   type SignerCandidate,
 } from '@/services/leaveService';
+import {
+  getMemoSignerConfig,
+  setMemoSignerDirector,
+  setMemoSignerList,
+  type MemoSignerConfig,
+  type MemoSignerListRole,
+} from '@/services/memoSignerService';
 import type { LeaveSignerRole } from '@/types/leave';
 
 // ───────────────── registry ของฟีเจอร์ที่ตั้งค่าบทบาทได้ ─────────────────
-type FeatureKey = 'leave';
+type FeatureKey = 'leave' | 'memo';
 
 interface RoleFeature {
   key: FeatureKey;
@@ -46,6 +55,12 @@ const FEATURES: RoleFeature[] = [
     title: 'ผู้ลงนามการลา',
     description: 'กำหนดผู้ลงนามแต่ละขั้น: หน.บุคคล → รอง ผอ. → ผอ.',
     icon: UserCheck,
+  },
+  {
+    key: 'memo',
+    title: 'ผู้ลงนามหนังสือ/บันทึกข้อความ',
+    description: 'กำหนดหัวหน้าฝ่าย (หลายคน) / รอง ผอ. (หลายคน) / ผอ. (คนเดียว)',
+    icon: FileSignature,
   },
 ];
 
@@ -174,10 +189,198 @@ const LeaveSignerPanel: React.FC = () => {
   );
 };
 
+// ───────────────── panel: ตั้งค่าผู้ลงนาม memo ─────────────────
+// ตัวเลือกหลายคน: chips ที่เลือก + dropdown เพิ่มทีละคน
+const MultiSignerPicker: React.FC<{
+  label: string;
+  hint: string;
+  selected: string[];
+  candidates: SignerCandidate[];
+  busy: boolean;
+  onChange: (ids: string[]) => void;
+}> = ({ label, hint, selected, candidates, busy, onChange }) => {
+  const byId = useMemo(() => {
+    const m = new Map<string, SignerCandidate>();
+    for (const c of candidates) m.set(c.user_id, c);
+    return m;
+  }, [candidates]);
+  const available = candidates.filter((c) => !selected.includes(c.user_id));
+
+  return (
+    <Card>
+      <CardContent className="pt-5">
+        <p className="text-sm font-semibold text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground mb-2.5">{hint}</p>
+
+        {selected.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic mb-2">— ยังไม่ได้เลือก —</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 mb-2.5">
+            {selected.map((uid) => (
+              <span
+                key={uid}
+                className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 pl-2.5 pr-1 py-1 text-xs"
+              >
+                {byId.get(uid)?.name ?? uid}
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onChange(selected.filter((x) => x !== uid))}
+                  className="rounded-full hover:bg-blue-200/60 dark:hover:bg-blue-800/60 p-0.5 disabled:opacity-50"
+                  aria-label="เอาออก"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <Select
+          value=""
+          onValueChange={(v) => onChange([...selected, v])}
+          disabled={busy || available.length === 0}
+        >
+          <SelectTrigger>
+            <SelectValue
+              placeholder={available.length === 0 ? 'เลือกครบทุกคนแล้ว' : '+ เพิ่มรายชื่อ'}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {available.map((c) => (
+              <SelectItem key={c.user_id} value={c.user_id}>
+                {candidateLabel(c)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </CardContent>
+    </Card>
+  );
+};
+
+const MemoSignerPanel: React.FC = () => {
+  const { toast } = useToast();
+  const [candidates, setCandidates] = useState<SignerCandidate[]>([]);
+  const [config, setConfig] = useState<MemoSignerConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [cands, cfg] = await Promise.all([
+          getSignerCandidates(),
+          getMemoSignerConfig(),
+        ]);
+        setCandidates(cands);
+        setConfig(cfg);
+      } catch (e) {
+        toast({
+          title: 'โหลดข้อมูลไม่สำเร็จ',
+          description: e instanceof Error ? e.message : undefined,
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [toast]);
+
+  const saveList = async (role: MemoSignerListRole, ids: string[]) => {
+    const prev = config;
+    setConfig((c) => (c ? { ...c, [role]: ids } : c)); // optimistic
+    setBusy(true);
+    try {
+      await setMemoSignerList(role, ids);
+    } catch (e) {
+      setConfig(prev); // rollback
+      toast({
+        title: 'บันทึกไม่สำเร็จ',
+        description: e instanceof Error ? e.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveDirector = async (uid: string) => {
+    const prev = config;
+    setConfig((c) => (c ? { ...c, director: uid } : c));
+    setBusy(true);
+    try {
+      await setMemoSignerDirector(uid);
+    } catch (e) {
+      setConfig(prev);
+      toast({
+        title: 'บันทึกไม่สำเร็จ',
+        description: e instanceof Error ? e.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading || !config) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <MultiSignerPicker
+        label="หัวหน้าฝ่าย"
+        hint="เลือกได้หลายคน ตามจำนวนฝ่ายที่มี"
+        selected={config.dept_heads}
+        candidates={candidates}
+        busy={busy}
+        onChange={(ids) => saveList('dept_heads', ids)}
+      />
+      <MultiSignerPicker
+        label="รอง ผอ."
+        hint="เลือกได้มากกว่า 1 คน"
+        selected={config.deputies}
+        candidates={candidates}
+        busy={busy}
+        onChange={(ids) => saveList('deputies', ids)}
+      />
+      <Card>
+        <CardContent className="pt-5">
+          <p className="text-sm font-semibold text-foreground">ผอ.</p>
+          <p className="text-xs text-muted-foreground mb-2.5">เลือกได้คนเดียวเท่านั้น</p>
+          <Select
+            value={config.director ?? ''}
+            onValueChange={saveDirector}
+            disabled={busy}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="— ยังไม่ได้เลือก —" />
+            </SelectTrigger>
+            <SelectContent>
+              {candidates.map((c) => (
+                <SelectItem key={c.user_id} value={c.user_id}>
+                  {candidateLabel(c)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 const renderPanel = (key: FeatureKey): React.ReactNode => {
   switch (key) {
     case 'leave':
       return <LeaveSignerPanel />;
+    case 'memo':
+      return <MemoSignerPanel />;
     default:
       return null;
   }

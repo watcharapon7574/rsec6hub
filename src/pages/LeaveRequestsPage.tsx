@@ -732,6 +732,9 @@ const LeaveProgress: React.FC<{
 };
 
 // ───────────────── Leave Detail Dialog ─────────────────
+// ข้อความความเห็นสำเร็จรูปของรอง ผอ. (ตัวเลือกที่ 1)
+const DEPUTY_PRESET_COMMENT = 'จึงเรียนมาเพื่อโปรดพิจารณาอนุญาต';
+
 // export ไว้ให้ Telegram Mini App (TelegramLeaveSignPage) reuse modal เดียวกัน
 export const LeaveDetailDialog: React.FC<{
   request: LeaveRequest | null;
@@ -744,6 +747,9 @@ export const LeaveDetailDialog: React.FC<{
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [hrDecision, setHrDecision] = useState<HrDecision | null>(null);
+  // ความเห็นรอง ผอ. ก่อนอนุมัติ: 'preset' = ใช้ข้อความสำเร็จรูป, 'custom' = พิมพ์เอง
+  const [deputyMode, setDeputyMode] = useState<'preset' | 'custom' | null>(null);
+  const [deputyComment, setDeputyComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [reqStats, setReqStats] = useState<RequesterLeaveTypeStats | null>(null);
 
@@ -752,6 +758,8 @@ export const LeaveDetailDialog: React.FC<{
       setRejecting(false);
       setRejectReason('');
       setHrDecision(null);
+      setDeputyMode(null);
+      setDeputyComment('');
       setReqStats(null);
     }
   }, [request]);
@@ -787,17 +795,23 @@ export const LeaveDetailDialog: React.FC<{
   // — ลาได้เท่าที่ป่วยจริง จึงโชว์ "จำนวนที่ลาไปแล้ว" ไม่ใช่ "เหลือ"
   const isSickLeave = request.leave_type === 'sick_leave';
 
-  const handleApprove = async (hrDecision?: HrDecision) => {
+  const handleApprove = async (opts?: {
+    hrDecision?: HrDecision;
+    comment?: string;
+  }) => {
     if (!approver) return;
     setBusy(true);
     try {
-      await approveLeave(request.id, approver, { hrDecision });
+      await approveLeave(request.id, approver, {
+        hrDecision: opts?.hrDecision,
+        comment: opts?.comment,
+      });
       toast({
         title: 'อนุมัติแล้ว',
         description:
-          approver.role === 'hr_head' && hrDecision
-            ? HR_DECISION_LABELS[hrDecision]
-            : undefined,
+          approver.role === 'hr_head' && opts?.hrDecision
+            ? HR_DECISION_LABELS[opts.hrDecision]
+            : opts?.comment || undefined,
       });
       onChanged?.();
       onClose();
@@ -1199,8 +1213,106 @@ export const LeaveDetailDialog: React.FC<{
                         <XCircle className="h-4 w-4 mr-1" /> ปฏิเสธ
                       </Button>
                       <Button
-                        onClick={() => handleApprove(hrDecision!)}
+                        onClick={() => handleApprove({ hrDecision: hrDecision! })}
                         disabled={busy || !hrDecision}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        {busy ? 'กำลังบันทึก...' : 'อนุมัติ'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : approver.role === 'deputy_director' ? (
+                  <div className="space-y-3 pt-3 border-t">
+                    <div className="text-sm font-semibold">
+                      ความเห็น รอง ผอ.{' '}
+                      <span className="text-muted-foreground font-normal">
+                        (เลือก 1)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {/* ตัวเลือก 1: ข้อความสำเร็จรูป */}
+                      <button
+                        type="button"
+                        onClick={() => setDeputyMode('preset')}
+                        disabled={busy}
+                        aria-pressed={deputyMode === 'preset'}
+                        className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left text-sm font-medium transition-colors disabled:opacity-50 ${
+                          deputyMode === 'preset'
+                            ? 'border-green-600 bg-green-50 text-green-800 dark:bg-green-950/40 dark:text-green-200'
+                            : 'border-border hover:border-green-400 hover:bg-green-50/40 dark:hover:bg-green-950/20'
+                        }`}
+                      >
+                        <span
+                          className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 ${
+                            deputyMode === 'preset'
+                              ? 'border-green-600 bg-green-600'
+                              : 'border-muted-foreground/40'
+                          }`}
+                        >
+                          {deputyMode === 'preset' && (
+                            <CheckCircle2 className="h-4 w-4 text-white" />
+                          )}
+                        </span>
+                        {DEPUTY_PRESET_COMMENT}
+                      </button>
+                      {/* ตัวเลือก 2: พิมพ์ความเห็นเอง */}
+                      <button
+                        type="button"
+                        onClick={() => setDeputyMode('custom')}
+                        disabled={busy}
+                        aria-pressed={deputyMode === 'custom'}
+                        className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left text-sm font-medium transition-colors disabled:opacity-50 ${
+                          deputyMode === 'custom'
+                            ? 'border-green-600 bg-green-50 text-green-800 dark:bg-green-950/40 dark:text-green-200'
+                            : 'border-border hover:border-green-400 hover:bg-green-50/40 dark:hover:bg-green-950/20'
+                        }`}
+                      >
+                        <span
+                          className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 ${
+                            deputyMode === 'custom'
+                              ? 'border-green-600 bg-green-600'
+                              : 'border-muted-foreground/40'
+                          }`}
+                        >
+                          {deputyMode === 'custom' && (
+                            <CheckCircle2 className="h-4 w-4 text-white" />
+                          )}
+                        </span>
+                        พิมพ์ความเห็นเอง
+                      </button>
+                      {deputyMode === 'custom' && (
+                        <Textarea
+                          rows={2}
+                          value={deputyComment}
+                          onChange={(e) => setDeputyComment(e.target.value)}
+                          placeholder="พิมพ์ความเห็นของรอง ผอ. ..."
+                          disabled={busy}
+                          autoFocus
+                        />
+                      )}
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <Button
+                        variant="destructive"
+                        onClick={() => setRejecting(true)}
+                        disabled={busy}
+                      >
+                        <XCircle className="h-4 w-4 mr-1" /> ปฏิเสธ
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          handleApprove({
+                            comment:
+                              deputyMode === 'preset'
+                                ? DEPUTY_PRESET_COMMENT
+                                : deputyComment.trim(),
+                          })
+                        }
+                        disabled={
+                          busy ||
+                          !deputyMode ||
+                          (deputyMode === 'custom' && !deputyComment.trim())
+                        }
                       >
                         <CheckCircle2 className="h-4 w-4 mr-1" />
                         {busy ? 'กำลังบันทึก...' : 'อนุมัติ'}

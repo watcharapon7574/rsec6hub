@@ -38,10 +38,10 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
       icon: Users,
       items: [
         {
-          label: showAllProfiles ? 'โปรไฟล์ของฉัน' : 'จัดการทุกโปรไฟล์',
+          label: 'ตั้งค่าบทบาท',
           icon: Shield,
-          action: onToggleAllProfiles,
-          description: showAllProfiles ? 'กลับไปดูเฉพาะโปรไฟล์ของฉัน' : 'ดูและจัดการโปรไฟล์ครูทั้งหมด',
+          path: '/admin/roles',
+          description: 'เลือกผู้ลงนามการลา: หน.บุคคล / รอง ผอ. / ผอ.',
         },
         {
           label: 'จัดการโปรไฟล์ครู',

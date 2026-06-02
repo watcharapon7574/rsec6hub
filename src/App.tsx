@@ -38,6 +38,7 @@ import TestRequestQueuePage from "@/pages/TestRequestQueuePage";
 import QueueRealtimePage from "@/pages/QueueRealtimePage";
 import AdminProfileManagementPage from "@/pages/AdminProfileManagementPage";
 import AdminOtpManagementPage from "@/pages/AdminOtpManagementPage";
+import LeaveSignerSettingsPage from "@/pages/LeaveSignerSettingsPage";
 import RailwayManagementPage from "@/pages/RailwayManagementPage";
 import TelegramAssigneesPage from "@/pages/TelegramAssigneesPage";
 import TelegramLeaveSignPage from "@/pages/TelegramLeaveSignPage";
@@ -300,6 +301,11 @@ const AppContent = () => {
       <Route path="/admin/otp-management" element={
         <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
           <AdminOtpManagementPage />
+        </ProtectedRouteWithAuth>
+      } />
+      <Route path="/admin/roles" element={
+        <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
+          <LeaveSignerSettingsPage />
         </ProtectedRouteWithAuth>
       } />
       <Route path="/admin/chats" element={

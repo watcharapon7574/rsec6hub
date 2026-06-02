@@ -610,6 +610,118 @@ export function canSignNow(
   return false;
 }
 
+// ───────────────── ตั้งค่าผู้ลงนาม (admin เลือก hr/รอง/ผอ.) ─────────────────
+// เก็บใน app_settings: key → user_id ของผู้ลงนาม. edge function แจ้งเตือนใช้ key เดียวกันนี้
+// และ DB is_leave_* ก็อ้างอิง key เหล่านี้ (ดู migration leave_signer_authz_include_designated)
+const SIGNER_SETTING_KEY: Record<LeaveSignerRole, string> = {
+  hr_head: 'leave_signer_hr_head',
+  deputy_director: 'leave_signer_deputy_director',
+  director: 'leave_signer_director',
+};
+
+export interface LeaveSignerConfig {
+  hr_head: string | null;
+  deputy_director: string | null;
+  director: string | null;
+}
+
+export async function getLeaveSignerConfig(): Promise<LeaveSignerConfig> {
+  const { data, error } = await sb
+    .from('app_settings')
+    .select('key, value')
+    .in('key', Object.values(SIGNER_SETTING_KEY));
+  if (error) throw new Error(error.message ?? 'getLeaveSignerConfig failed');
+  const map = new Map<string, string>();
+  for (const row of (data as Array<{ key: string; value: string | null }> | null) ?? []) {
+    if (row.value) map.set(row.key, row.value);
+  }
+  return {
+    hr_head: map.get(SIGNER_SETTING_KEY.hr_head) ?? null,
+    deputy_director: map.get(SIGNER_SETTING_KEY.deputy_director) ?? null,
+    director: map.get(SIGNER_SETTING_KEY.director) ?? null,
+  };
+}
+
+export async function setLeaveSignerConfig(
+  role: LeaveSignerRole,
+  userId: string,
+): Promise<void> {
+  const { error } = await sb
+    .from('app_settings')
+    .upsert(
+      { key: SIGNER_SETTING_KEY[role], value: userId },
+      { onConflict: 'key' },
+    );
+  if (error) throw new Error(error.message ?? 'setLeaveSignerConfig failed');
+}
+
+export interface SignerCandidate {
+  user_id: string;
+  name: string;
+  position: string | null;
+  org_structure_role: string | null;
+}
+
+// รายชื่อ profile ที่เลือกเป็นผู้ลงนามได้ (หน้าตั้งค่าบทบาท)
+export async function getSignerCandidates(): Promise<SignerCandidate[]> {
+  const { data, error } = await sb
+    .from('profiles')
+    .select('user_id, prefix, first_name, last_name, position, org_structure_role')
+    .not('user_id', 'is', null)
+    .order('first_name', { ascending: true });
+  if (error) throw new Error(error.message ?? 'getSignerCandidates failed');
+  type Row = {
+    user_id: string;
+    prefix: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    position: string | null;
+    org_structure_role: string | null;
+  };
+  return ((data as Row[]) ?? []).map((p) => ({
+    user_id: p.user_id,
+    name: `${p.prefix ?? ''}${p.first_name ?? ''} ${p.last_name ?? ''}`.trim(),
+    position: p.position,
+    org_structure_role: p.org_structure_role,
+  }));
+}
+
+// roles ที่ user คนนี้เซ็นได้ — เงื่อนไขเดิม (admin / position / org_structure_role)
+// OR เป็นผู้ที่ถูกตั้งไว้ใน config (เทียบด้วย profiles.user_id = auth id)
+// ต้องตรงกับตรรกะใน DB is_leave_* เป๊ะ
+export function computeAllowedSignerRoles(
+  profile: {
+    user_id?: string | null;
+    position?: string | null;
+    org_structure_role?: string | null;
+    is_admin?: boolean | null;
+  },
+  config: LeaveSignerConfig | null,
+): LeaveSignerRole[] {
+  const isAdm = profile.is_admin === true;
+  const uid = profile.user_id ?? null;
+  const roles: LeaveSignerRole[] = [];
+  if (
+    isAdm ||
+    /บุคคล/.test(profile.org_structure_role ?? '') ||
+    (!!config?.hr_head && uid === config.hr_head)
+  )
+    roles.push('hr_head');
+  if (
+    isAdm ||
+    profile.position === 'deputy_director' ||
+    (!!config?.deputy_director && uid === config.deputy_director)
+  )
+    roles.push('deputy_director');
+  if (
+    isAdm ||
+    profile.position === 'director' ||
+    (!!config?.director && uid === config.director)
+  )
+    roles.push('director');
+  return roles;
+}
+
 // Returns the doc_number that will be assigned to the next leave that gets
 // HR-head-approved. Used for previewing in the manual-entry form.
 export async function getNextDocNumber(): Promise<string> {

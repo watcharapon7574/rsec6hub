@@ -6,8 +6,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { getLeaveRequestById } from '@/services/leaveService';
-import type { ApproverContext } from '@/services/leaveService';
+import {
+  computeAllowedSignerRoles,
+  getLeaveRequestById,
+  getLeaveSignerConfig,
+} from '@/services/leaveService';
+import type { ApproverContext, LeaveSignerConfig } from '@/services/leaveService';
 import type { LeaveRequest, LeaveSignerRole } from '@/types/leave';
 import { LeaveDetailDialog } from './LeaveRequestsPage';
 
@@ -51,6 +55,7 @@ const TelegramLeaveSignPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [request, setRequest] = useState<LeaveRequest | null>(null);
   const [profile, setProfile] = useState<SignerProfile | null>(null);
+  const [signerConfig, setSignerConfig] = useState<LeaveSignerConfig | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,11 +97,15 @@ const TelegramLeaveSignPage: React.FC = () => {
           .maybeSingle();
         if (profErr || !prof) throw new Error('PROFILE');
 
-        const leave = await getLeaveRequestById(leaveId);
+        const [leave, cfg] = await Promise.all([
+          getLeaveRequestById(leaveId),
+          getLeaveSignerConfig().catch(() => null),
+        ]);
         if (!leave) throw new Error('NOTFOUND');
 
         if (cancelled) return;
         setProfile(prof as SignerProfile);
+        setSignerConfig(cfg);
         setRequest(leave);
         setPhase('ready');
       } catch (e) {
@@ -120,16 +129,11 @@ const TelegramLeaveSignPage: React.FC = () => {
     };
   }, [routeId]);
 
-  // สิทธิ์ลงนามตาม role (mirror ApprovalTab ใน LeaveRequestsPage)
-  const allowedRoles = useMemo<LeaveSignerRole[]>(() => {
-    if (!profile) return [];
-    const isAdm = profile.is_admin === true;
-    const r: LeaveSignerRole[] = [];
-    if (isAdm || /บุคคล/.test(profile.org_structure_role ?? '')) r.push('hr_head');
-    if (isAdm || profile.position === 'deputy_director') r.push('deputy_director');
-    if (isAdm || profile.position === 'director') r.push('director');
-    return r;
-  }, [profile]);
+  // สิทธิ์ลงนามตาม role (ใช้ helper เดียวกับหน้าเว็บ — รวมผู้ที่ admin ตั้งใน config)
+  const allowedRoles = useMemo<LeaveSignerRole[]>(
+    () => (profile ? computeAllowedSignerRoles(profile, signerConfig) : []),
+    [profile, signerConfig],
+  );
 
   const approver = useMemo<ApproverContext | null>(() => {
     if (!request || !profile) return null;

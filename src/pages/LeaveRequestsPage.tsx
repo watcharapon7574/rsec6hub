@@ -121,7 +121,10 @@ import {
   approveLeave,
   ApproverContext,
   canSignNow,
+  computeAllowedSignerRoles,
   createLeaveRequest,
+  getLeaveSignerConfig,
+  LeaveSignerConfig,
   generateLeavePdf,
   getAllUsersLeaveSummary,
   getLeaveRegistry,
@@ -136,7 +139,6 @@ import {
   RequesterLeaveTypeStats,
   UserLeaveSummary,
 } from '@/services/leaveService';
-import { getPermissions } from '@/utils/permissionUtils';
 import {
   getPositionDisplayName,
   isGovernmentOfficial,
@@ -1375,6 +1377,8 @@ export const LeaveDetailDialog: React.FC<{
 
 type LeaveProfile = {
   id: string;
+  user_id?: string | null;
+  is_admin?: boolean | null;
   prefix?: string | null;
   first_name: string;
   last_name: string;
@@ -2506,21 +2510,13 @@ const LeaveQuotaDialog: React.FC<{ open: boolean; onClose: () => void }> = ({
 // ───────────────── Tab 3: อนุมัติลา (หน.บุคคล / ผอ) ─────────────────
 const ApprovalTab: React.FC<{
   profile: LeaveProfile;
+  signerConfig: LeaveSignerConfig | null;
   onListChange?: () => void;
-}> = ({ profile, onListChange }) => {
-  const perms = getPermissions(profile as never);
-  const canDirector = profile.position === 'director' || perms.isAdmin;
-  const canDeputyDirector =
-    profile.position === 'deputy_director' || perms.isAdmin;
-  const canHrHead =
-    perms.isAdmin || /บุคคล/.test(profile.org_structure_role ?? '');
-  const allowedRoles = useMemo<LeaveSignerRole[]>(() => {
-    const r: LeaveSignerRole[] = [];
-    if (canHrHead) r.push('hr_head');
-    if (canDeputyDirector) r.push('deputy_director');
-    if (canDirector) r.push('director');
-    return r;
-  }, [canHrHead, canDeputyDirector, canDirector]);
+}> = ({ profile, signerConfig, onListChange }) => {
+  const allowedRoles = useMemo<LeaveSignerRole[]>(
+    () => computeAllowedSignerRoles(profile, signerConfig),
+    [profile, signerConfig],
+  );
 
   const [list, setList] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -3145,23 +3141,18 @@ const LeaveRegistryTab: React.FC = () => {
 
 // ───────────────── Page ─────────────────
 // ───────────────── Admin Tabs (overview + attendance + leave + approve + registry) ─────────────────
-const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string; position?: string } }> = ({
-  profile,
-  rawProfile,
-}) => {
-  const perms = getPermissions(profile as never);
-  const canDirector = profile.position === 'director' || perms.isAdmin;
-  const canDeputyDirector =
-    profile.position === 'deputy_director' || perms.isAdmin;
-  const canHrHead =
-    perms.isAdmin || /บุคคล/.test(profile.org_structure_role ?? '');
-  const allowedRoles = useMemo<LeaveSignerRole[]>(() => {
-    const r: LeaveSignerRole[] = [];
-    if (canHrHead) r.push('hr_head');
-    if (canDeputyDirector) r.push('deputy_director');
-    if (canDirector) r.push('director');
-    return r;
-  }, [canHrHead, canDeputyDirector, canDirector]);
+const LeaveAdminTabs: React.FC<{
+  profile: LeaveProfile;
+  rawProfile: { id: string; position?: string };
+  signerConfig: LeaveSignerConfig | null;
+}> = ({ profile, rawProfile, signerConfig }) => {
+  const allowedRoles = useMemo<LeaveSignerRole[]>(
+    () => computeAllowedSignerRoles(profile, signerConfig),
+    [profile, signerConfig],
+  );
+  // แท็บ "ทะเบียน" = หน.บุคคล / admin / ผอ. (คงสิทธิ์เดิมไว้ ไม่ผูกกับ signer config)
+  const canSeeRegistry =
+    allowedRoles.includes('hr_head') || profile.position === 'director';
   const allowedKey = allowedRoles.join(',');
 
   const [pendingCount, setPendingCount] = useState(0);
@@ -3231,7 +3222,7 @@ const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string
                   </span>
                 )}
               </TabsTrigger>
-              {canHrHead && (
+              {canSeeRegistry && (
                 <TabsTrigger value="registry" className={adminTriggerClass}>
                   <BookOpen className="h-4 w-4" />
                   ทะเบียน
@@ -3251,13 +3242,17 @@ const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string
       <TabsContent value="leave">
         <LeaveTab profile={profile} />
       </TabsContent>
-      {canHrHead && (
+      {canSeeRegistry && (
         <TabsContent value="registry">
           <LeaveRegistryTab />
         </TabsContent>
       )}
       <TabsContent value="approve">
-        <ApprovalTab profile={profile} onListChange={refreshCount} />
+        <ApprovalTab
+          profile={profile}
+          signerConfig={signerConfig}
+          onListChange={refreshCount}
+        />
       </TabsContent>
     </Tabs>
   );
@@ -3265,6 +3260,13 @@ const LeaveAdminTabs: React.FC<{ profile: LeaveProfile; rawProfile: { id: string
 
 const LeaveRequestsPage: React.FC = () => {
   const { profile } = useEmployeeAuth();
+  // ผู้ลงนามที่ admin ตั้งไว้ (app_settings) — ใช้กำหนดว่าใครเห็นแท็บอนุมัติ
+  const [signerConfig, setSignerConfig] = useState<LeaveSignerConfig | null>(null);
+  useEffect(() => {
+    getLeaveSignerConfig()
+      .then(setSignerConfig)
+      .catch(() => setSignerConfig(null));
+  }, []);
 
   if (!profile) {
     return (
@@ -3301,14 +3303,11 @@ const LeaveRequestsPage: React.FC = () => {
         </Card>
 
         {(() => {
-          const perms = getPermissions(profile as never);
           const canApprove =
-            perms.isAdmin ||
-            profile.position === 'director' ||
-            profile.position === 'deputy_director' ||
-            /บุคคล/.test(
-              (profile as { org_structure_role?: string | null }).org_structure_role ?? '',
-            );
+            computeAllowedSignerRoles(
+              profile as unknown as Parameters<typeof computeAllowedSignerRoles>[0],
+              signerConfig,
+            ).length > 0;
 
           if (!canApprove) {
             return <LeaveTab profile={profile as unknown as LeaveProfile} />;
@@ -3318,6 +3317,7 @@ const LeaveRequestsPage: React.FC = () => {
             <LeaveAdminTabs
               profile={profile as unknown as LeaveProfile}
               rawProfile={profile}
+              signerConfig={signerConfig}
             />
           );
         })()}

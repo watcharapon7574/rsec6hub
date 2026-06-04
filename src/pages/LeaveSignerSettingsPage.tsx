@@ -32,10 +32,10 @@ import {
 } from '@/services/leaveService';
 import {
   getMemoSignerConfig,
+  setMemoSignerDeptHeads,
+  setMemoSignerDeputies,
   setMemoSignerDirector,
-  setMemoSignerList,
   type MemoSignerConfig,
-  type MemoSignerListRole,
 } from '@/services/memoSignerService';
 import type { LeaveSignerRole } from '@/types/leave';
 
@@ -259,6 +259,10 @@ const MultiSignerPicker: React.FC<{
   );
 };
 
+// ฝ่าย = org_structure_role ที่ขึ้นต้น/มีคำว่า "หัวหน้าฝ่าย" (ไม่มีตาราง departments แยก)
+const HEAD_ROLE_RE = /หัวหน้าฝ่าย/;
+const deptLabel = (role: string) => role.replace(/หัวหน้า/g, '').trim() || role;
+
 const MemoSignerPanel: React.FC = () => {
   const { toast } = useToast();
   const [candidates, setCandidates] = useState<SignerCandidate[]>([]);
@@ -287,30 +291,39 @@ const MemoSignerPanel: React.FC = () => {
     })();
   }, [toast]);
 
-  const saveList = async (role: MemoSignerListRole, ids: string[]) => {
-    const prev = config;
-    setConfig((c) => (c ? { ...c, [role]: ids } : c)); // optimistic
-    setBusy(true);
-    try {
-      await setMemoSignerList(role, ids);
-    } catch (e) {
-      setConfig(prev); // rollback
-      toast({
-        title: 'บันทึกไม่สำเร็จ',
-        description: e instanceof Error ? e.message : undefined,
-        variant: 'destructive',
-      });
-    } finally {
-      setBusy(false);
+  // ฝ่ายในระบบ + หัวหน้าเริ่มต้น (คนแรกที่ org_structure_role ตรงฝ่าย)
+  const departments = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const c of candidates) {
+      const role = c.org_structure_role ?? '';
+      if (HEAD_ROLE_RE.test(role) && !seen.has(role)) seen.set(role, c.user_id);
     }
-  };
+    return Array.from(seen.entries())
+      .map(([role, defaultUid]) => ({ role, defaultUid }))
+      .sort((a, b) => a.role.localeCompare(b.role, 'th'));
+  }, [candidates]);
 
-  const saveDirector = async (uid: string) => {
+  // effective = ค่าเริ่มต้นต่อฝ่าย แล้ว override ด้วย config (เฉพาะฝ่ายที่ยังมีจริง)
+  const effectiveHeads = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const d of departments) m[d.role] = d.defaultUid;
+    if (config) {
+      for (const [role, uid] of Object.entries(config.dept_heads)) {
+        if (role in m) m[role] = uid;
+      }
+    }
+    return m;
+  }, [departments, config]);
+
+  const withSave = async (
+    optimistic: (c: MemoSignerConfig) => MemoSignerConfig,
+    persist: () => Promise<void>,
+  ) => {
     const prev = config;
-    setConfig((c) => (c ? { ...c, director: uid } : c));
+    setConfig((c) => (c ? optimistic(c) : c));
     setBusy(true);
     try {
-      await setMemoSignerDirector(uid);
+      await persist();
     } catch (e) {
       setConfig(prev);
       toast({
@@ -323,6 +336,13 @@ const MemoSignerPanel: React.FC = () => {
     }
   };
 
+  const saveDeptHeads = (next: Record<string, string>) =>
+    withSave((c) => ({ ...c, dept_heads: next }), () => setMemoSignerDeptHeads(next));
+  const saveDeputies = (ids: string[]) =>
+    withSave((c) => ({ ...c, deputies: ids }), () => setMemoSignerDeputies(ids));
+  const saveDirector = (uid: string) =>
+    withSave((c) => ({ ...c, director: uid }), () => setMemoSignerDirector(uid));
+
   if (loading || !config) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -333,22 +353,58 @@ const MemoSignerPanel: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <MultiSignerPicker
-        label="หัวหน้าฝ่าย"
-        hint="เลือกได้หลายคน ตามจำนวนฝ่ายที่มี"
-        selected={config.dept_heads}
-        candidates={candidates}
-        busy={busy}
-        onChange={(ids) => saveList('dept_heads', ids)}
-      />
+      <Card>
+        <CardContent className="pt-5">
+          <p className="text-sm font-semibold text-foreground">หัวหน้าฝ่าย</p>
+          <p className="text-xs text-muted-foreground mb-3">
+            1 คนต่อฝ่าย ({departments.length} ฝ่าย) — ค่าเริ่มต้นคือคนที่ตำแหน่งตรงกับฝ่าย
+            เปลี่ยนได้
+          </p>
+          {departments.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">
+              ไม่พบฝ่ายในระบบ (อิงจาก org_structure_role ที่มีคำว่า "หัวหน้าฝ่าย")
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {departments.map((d) => (
+                <div key={d.role}>
+                  <p className="text-xs font-medium text-foreground mb-1">
+                    {deptLabel(d.role)}
+                  </p>
+                  <Select
+                    value={effectiveHeads[d.role] ?? ''}
+                    onValueChange={(v) =>
+                      saveDeptHeads({ ...effectiveHeads, [d.role]: v })
+                    }
+                    disabled={busy}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="— เลือก —" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {candidates.map((c) => (
+                        <SelectItem key={c.user_id} value={c.user_id}>
+                          {candidateLabel(c)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <MultiSignerPicker
         label="รอง ผอ."
         hint="เลือกได้มากกว่า 1 คน"
         selected={config.deputies}
         candidates={candidates}
         busy={busy}
-        onChange={(ids) => saveList('deputies', ids)}
+        onChange={saveDeputies}
       />
+
       <Card>
         <CardContent className="pt-5">
           <p className="text-sm font-semibold text-foreground">ผอ.</p>

@@ -11,10 +11,10 @@ const KEY = {
   director: 'memo_signer_director',
 } as const;
 
-export type MemoSignerListRole = 'dept_heads' | 'deputies';
-
 export interface MemoSignerConfig {
-  dept_heads: string[]; // หัวหน้าฝ่าย (ตามจำนวนฝ่าย)
+  // หัวหน้าฝ่าย: map ฝ่าย (อิง org_structure_role ของหัวหน้า) → user_id ที่ override ไว้
+  // ฝ่ายที่ไม่มีใน map ให้ใช้ค่าเริ่มต้น = คนที่ org_structure_role ตรงกับฝ่าย (คำนวณฝั่ง UI)
+  dept_heads: Record<string, string>;
   deputies: string[]; // รอง ผอ. (หลายคนได้)
   director: string | null; // ผอ. (คนเดียว)
 }
@@ -29,6 +29,21 @@ function parseList(value: string | null | undefined): string[] {
   }
 }
 
+function parseMap(value: string | null | undefined): Record<string, string> {
+  if (!value) return {};
+  try {
+    const obj = JSON.parse(value);
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if (typeof v === 'string') out[k] = v;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export async function getMemoSignerConfig(): Promise<MemoSignerConfig> {
   const { data, error } = await sb
     .from('app_settings')
@@ -40,7 +55,7 @@ export async function getMemoSignerConfig(): Promise<MemoSignerConfig> {
     if (row.value != null) map.set(row.key, row.value);
   }
   return {
-    dept_heads: parseList(map.get(KEY.dept_heads)),
+    dept_heads: parseMap(map.get(KEY.dept_heads)),
     deputies: parseList(map.get(KEY.deputies)),
     director: map.get(KEY.director) || null,
   };
@@ -53,11 +68,15 @@ async function upsertSetting(key: string, value: string): Promise<void> {
   if (error) throw new Error(error.message ?? 'setMemoSigner failed');
 }
 
-export async function setMemoSignerList(
-  role: MemoSignerListRole,
-  userIds: string[],
+// หัวหน้าฝ่าย: เก็บเป็น map ฝ่าย→user_id ที่ผู้ดูแลกำหนด (effective ทั้งหมด)
+export async function setMemoSignerDeptHeads(
+  byDept: Record<string, string>,
 ): Promise<void> {
-  await upsertSetting(KEY[role], JSON.stringify(userIds));
+  await upsertSetting(KEY.dept_heads, JSON.stringify(byDept));
+}
+
+export async function setMemoSignerDeputies(userIds: string[]): Promise<void> {
+  await upsertSetting(KEY.deputies, JSON.stringify(userIds));
 }
 
 export async function setMemoSignerDirector(userId: string): Promise<void> {

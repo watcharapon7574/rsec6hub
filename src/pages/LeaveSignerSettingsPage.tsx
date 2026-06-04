@@ -336,6 +336,17 @@ const MemoSignerPanel: React.FC = () => {
     }
   };
 
+  // รอง ผอ. / ผอ. เลือกเฉพาะคนที่ตำแหน่งตรง (org_structure_role เชื่อไม่ได้ — directors
+  // บางคน org เขียน "รองผู้อำนวยการ", รองบางคน org ว่าง จึง filter ด้วย position)
+  const deputyCandidates = useMemo(
+    () => candidates.filter((c) => c.position === 'deputy_director'),
+    [candidates],
+  );
+  const directorCandidates = useMemo(
+    () => candidates.filter((c) => c.position === 'director'),
+    [candidates],
+  );
+
   const saveDeptHeads = (next: Record<string, string>) =>
     withSave((c) => ({ ...c, dept_heads: next }), () => setMemoSignerDeptHeads(next));
   const saveDeputies = (ids: string[]) =>
@@ -398,9 +409,9 @@ const MemoSignerPanel: React.FC = () => {
 
       <MultiSignerPicker
         label="รอง ผอ."
-        hint="เลือกได้มากกว่า 1 คน"
+        hint="เลือกได้มากกว่า 1 คน (เฉพาะผู้มีตำแหน่งรอง ผอ.)"
         selected={config.deputies}
-        candidates={candidates}
+        candidates={deputyCandidates}
         busy={busy}
         onChange={saveDeputies}
       />
@@ -408,7 +419,9 @@ const MemoSignerPanel: React.FC = () => {
       <Card>
         <CardContent className="pt-5">
           <p className="text-sm font-semibold text-foreground">ผอ.</p>
-          <p className="text-xs text-muted-foreground mb-2.5">เลือกได้คนเดียวเท่านั้น</p>
+          <p className="text-xs text-muted-foreground mb-2.5">
+            เลือกได้คนเดียวเท่านั้น (เฉพาะผู้มีตำแหน่ง ผอ.)
+          </p>
           <Select
             value={config.director ?? ''}
             onValueChange={saveDirector}
@@ -418,7 +431,7 @@ const MemoSignerPanel: React.FC = () => {
               <SelectValue placeholder="— ยังไม่ได้เลือก —" />
             </SelectTrigger>
             <SelectContent>
-              {candidates.map((c) => (
+              {directorCandidates.map((c) => (
                 <SelectItem key={c.user_id} value={c.user_id}>
                   {candidateLabel(c)}
                 </SelectItem>

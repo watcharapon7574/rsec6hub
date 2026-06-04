@@ -11,6 +11,8 @@ import {
   UserCheck,
   FileSignature,
   X,
+  Save,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +23,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import {
@@ -79,12 +92,66 @@ const LEAVE_ROLE_META: Array<{
 const candidateLabel = (c: SignerCandidate): string =>
   c.org_structure_role ? `${c.name} · ${c.org_structure_role}` : c.name;
 
+// แถบบันทึก + ยืนยัน — ใช้ร่วมทุก panel เพื่อ UX ที่ต้องกดบันทึกเอง (ไม่ auto-save)
+const SaveBar: React.FC<{
+  dirty: boolean;
+  busy: boolean;
+  onReset: () => void;
+  onConfirm: () => void;
+}> = ({ dirty, busy, onReset, onConfirm }) => (
+  <div className="sticky bottom-0 -mx-4 px-4 py-3 mt-2 bg-background/95 backdrop-blur border-t">
+    <div className="flex items-center gap-2">
+      <div className="flex-1 text-xs">
+        {dirty ? (
+          <span className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="h-3.5 w-3.5" /> มีการเปลี่ยนแปลงที่ยังไม่บันทึก
+          </span>
+        ) : (
+          <span className="text-muted-foreground">บันทึกแล้ว — ไม่มีการเปลี่ยนแปลง</span>
+        )}
+      </div>
+      <Button variant="outline" size="sm" disabled={!dirty || busy} onClick={onReset}>
+        ยกเลิก
+      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button size="sm" disabled={!dirty || busy}>
+            {busy ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4 mr-1" />
+            )}
+            บันทึก
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              ยืนยันบันทึกการตั้งค่าผู้ลงนาม?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              การตั้งค่านี้กำหนดว่า "ใคร" เป็นผู้ลงนาม/อนุมัติในระบบ และมีผลทันทีหลังบันทึก
+              โปรดตรวจสอบรายชื่อให้ถูกต้องก่อนยืนยัน
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={onConfirm}>ยืนยันบันทึก</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  </div>
+);
+
 const LeaveSignerPanel: React.FC = () => {
   const { toast } = useToast();
   const [candidates, setCandidates] = useState<SignerCandidate[]>([]);
-  const [config, setConfig] = useState<LeaveSignerConfig | null>(null);
+  const [saved, setSaved] = useState<LeaveSignerConfig | null>(null);
+  const [draft, setDraft] = useState<LeaveSignerConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const [savingRole, setSavingRole] = useState<LeaveSignerRole | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -94,7 +161,8 @@ const LeaveSignerPanel: React.FC = () => {
           getLeaveSignerConfig(),
         ]);
         setCandidates(cands);
-        setConfig(cfg);
+        setSaved(cfg);
+        setDraft(cfg);
       } catch (e) {
         toast({
           title: 'โหลดข้อมูลไม่สำเร็จ',
@@ -107,26 +175,21 @@ const LeaveSignerPanel: React.FC = () => {
     })();
   }, [toast]);
 
-  const nameByUserId = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const c of candidates) m.set(c.user_id, c.name);
-    return m;
-  }, [candidates]);
+  const dirty =
+    !!saved && !!draft && JSON.stringify(saved) !== JSON.stringify(draft);
 
-  const handleChange = async (role: LeaveSignerRole, userId: string) => {
-    setSavingRole(role);
+  const handleSave = async () => {
+    if (!saved || !draft) return;
+    setBusy(true);
     try {
-      await setLeaveSignerConfig(role, userId);
-      setConfig((prev) => ({
-        hr_head: prev?.hr_head ?? null,
-        deputy_director: prev?.deputy_director ?? null,
-        director: prev?.director ?? null,
-        [role]: userId,
-      }));
-      toast({
-        title: 'บันทึกแล้ว',
-        description: `${LEAVE_ROLE_META.find((r) => r.role === role)?.label}: ${nameByUserId.get(userId) ?? ''}`,
-      });
+      const roles: LeaveSignerRole[] = ['hr_head', 'deputy_director', 'director'];
+      for (const role of roles) {
+        if (draft[role] && draft[role] !== saved[role]) {
+          await setLeaveSignerConfig(role, draft[role] as string);
+        }
+      }
+      setSaved(draft);
+      toast({ title: 'บันทึกการตั้งค่าผู้ลงนามการลาแล้ว' });
     } catch (e) {
       toast({
         title: 'บันทึกไม่สำเร็จ',
@@ -134,11 +197,11 @@ const LeaveSignerPanel: React.FC = () => {
         variant: 'destructive',
       });
     } finally {
-      setSavingRole(null);
+      setBusy(false);
     }
   };
 
-  if (loading) {
+  if (loading || !draft) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -148,43 +211,45 @@ const LeaveSignerPanel: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {LEAVE_ROLE_META.map((meta) => {
-        const current = config?.[meta.role] ?? '';
-        return (
-          <Card key={meta.role}>
-            <CardContent className="pt-5">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                  {meta.order}
-                </span>
-                <span className="text-sm font-semibold text-foreground">
-                  {meta.label}
-                </span>
-                {savingRole === meta.role && (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mb-2.5">{meta.hint}</p>
-              <Select
-                value={current}
-                onValueChange={(v) => handleChange(meta.role, v)}
-                disabled={savingRole !== null}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="— ยังไม่ได้เลือก —" />
-                </SelectTrigger>
-                <SelectContent>
-                  {candidates.map((c) => (
-                    <SelectItem key={c.user_id} value={c.user_id}>
-                      {candidateLabel(c)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-        );
-      })}
+      {LEAVE_ROLE_META.map((meta) => (
+        <Card key={meta.role}>
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                {meta.order}
+              </span>
+              <span className="text-sm font-semibold text-foreground">
+                {meta.label}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2.5">{meta.hint}</p>
+            <Select
+              value={draft[meta.role] ?? ''}
+              onValueChange={(v) =>
+                setDraft((d) => (d ? { ...d, [meta.role]: v } : d))
+              }
+              disabled={busy}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="— ยังไม่ได้เลือก —" />
+              </SelectTrigger>
+              <SelectContent>
+                {candidates.map((c) => (
+                  <SelectItem key={c.user_id} value={c.user_id}>
+                    {candidateLabel(c)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      ))}
+      <SaveBar
+        dirty={dirty}
+        busy={busy}
+        onReset={() => setDraft(saved)}
+        onConfirm={handleSave}
+      />
     </div>
   );
 };
@@ -266,7 +331,8 @@ const deptLabel = (role: string) => role.replace(/หัวหน้า/g, '').t
 const MemoSignerPanel: React.FC = () => {
   const { toast } = useToast();
   const [candidates, setCandidates] = useState<SignerCandidate[]>([]);
-  const [config, setConfig] = useState<MemoSignerConfig | null>(null);
+  const [saved, setSaved] = useState<MemoSignerConfig | null>(null);
+  const [draft, setDraft] = useState<MemoSignerConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
@@ -278,7 +344,8 @@ const MemoSignerPanel: React.FC = () => {
           getMemoSignerConfig(),
         ]);
         setCandidates(cands);
-        setConfig(cfg);
+        setSaved(cfg);
+        setDraft(cfg);
       } catch (e) {
         toast({
           title: 'โหลดข้อมูลไม่สำเร็จ',
@@ -303,38 +370,17 @@ const MemoSignerPanel: React.FC = () => {
       .sort((a, b) => a.role.localeCompare(b.role, 'th'));
   }, [candidates]);
 
-  // effective = ค่าเริ่มต้นต่อฝ่าย แล้ว override ด้วย config (เฉพาะฝ่ายที่ยังมีจริง)
+  // effective = ค่าเริ่มต้นต่อฝ่าย แล้ว override ด้วย draft (เฉพาะฝ่ายที่ยังมีจริง)
   const effectiveHeads = useMemo(() => {
     const m: Record<string, string> = {};
     for (const d of departments) m[d.role] = d.defaultUid;
-    if (config) {
-      for (const [role, uid] of Object.entries(config.dept_heads)) {
+    if (draft) {
+      for (const [role, uid] of Object.entries(draft.dept_heads)) {
         if (role in m) m[role] = uid;
       }
     }
     return m;
-  }, [departments, config]);
-
-  const withSave = async (
-    optimistic: (c: MemoSignerConfig) => MemoSignerConfig,
-    persist: () => Promise<void>,
-  ) => {
-    const prev = config;
-    setConfig((c) => (c ? optimistic(c) : c));
-    setBusy(true);
-    try {
-      await persist();
-    } catch (e) {
-      setConfig(prev);
-      toast({
-        title: 'บันทึกไม่สำเร็จ',
-        description: e instanceof Error ? e.message : undefined,
-        variant: 'destructive',
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
+  }, [departments, draft]);
 
   // รอง ผอ. / ผอ. เลือกเฉพาะคนที่ตำแหน่งตรง (org_structure_role เชื่อไม่ได้ — directors
   // บางคน org เขียน "รองผู้อำนวยการ", รองบางคน org ว่าง จึง filter ด้วย position)
@@ -347,14 +393,33 @@ const MemoSignerPanel: React.FC = () => {
     [candidates],
   );
 
-  const saveDeptHeads = (next: Record<string, string>) =>
-    withSave((c) => ({ ...c, dept_heads: next }), () => setMemoSignerDeptHeads(next));
-  const saveDeputies = (ids: string[]) =>
-    withSave((c) => ({ ...c, deputies: ids }), () => setMemoSignerDeputies(ids));
-  const saveDirector = (uid: string) =>
-    withSave((c) => ({ ...c, director: uid }), () => setMemoSignerDirector(uid));
+  const dirty =
+    !!saved && !!draft && JSON.stringify(saved) !== JSON.stringify(draft);
 
-  if (loading || !config) {
+  const handleSave = async () => {
+    if (!saved || !draft) return;
+    setBusy(true);
+    try {
+      if (JSON.stringify(draft.dept_heads) !== JSON.stringify(saved.dept_heads))
+        await setMemoSignerDeptHeads(draft.dept_heads);
+      if (JSON.stringify(draft.deputies) !== JSON.stringify(saved.deputies))
+        await setMemoSignerDeputies(draft.deputies);
+      if (draft.director && draft.director !== saved.director)
+        await setMemoSignerDirector(draft.director);
+      setSaved(draft);
+      toast({ title: 'บันทึกการตั้งค่าผู้ลงนามหนังสือแล้ว' });
+    } catch (e) {
+      toast({
+        title: 'บันทึกไม่สำเร็จ',
+        description: e instanceof Error ? e.message : undefined,
+        variant: 'destructive',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading || !draft) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -385,7 +450,9 @@ const MemoSignerPanel: React.FC = () => {
                   <Select
                     value={effectiveHeads[d.role] ?? ''}
                     onValueChange={(v) =>
-                      saveDeptHeads({ ...effectiveHeads, [d.role]: v })
+                      setDraft((c) =>
+                        c ? { ...c, dept_heads: { ...effectiveHeads, [d.role]: v } } : c,
+                      )
                     }
                     disabled={busy}
                   >
@@ -410,10 +477,10 @@ const MemoSignerPanel: React.FC = () => {
       <MultiSignerPicker
         label="รอง ผอ."
         hint="เลือกได้มากกว่า 1 คน (เฉพาะผู้มีตำแหน่งรอง ผอ.)"
-        selected={config.deputies}
+        selected={draft.deputies}
         candidates={deputyCandidates}
         busy={busy}
-        onChange={saveDeputies}
+        onChange={(ids) => setDraft((c) => (c ? { ...c, deputies: ids } : c))}
       />
 
       <Card>
@@ -423,8 +490,8 @@ const MemoSignerPanel: React.FC = () => {
             เลือกได้คนเดียวเท่านั้น (เฉพาะผู้มีตำแหน่ง ผอ.)
           </p>
           <Select
-            value={config.director ?? ''}
-            onValueChange={saveDirector}
+            value={draft.director ?? ''}
+            onValueChange={(v) => setDraft((c) => (c ? { ...c, director: v } : c))}
             disabled={busy}
           >
             <SelectTrigger>
@@ -440,6 +507,13 @@ const MemoSignerPanel: React.FC = () => {
           </Select>
         </CardContent>
       </Card>
+
+      <SaveBar
+        dirty={dirty}
+        busy={busy}
+        onReset={() => setDraft(saved)}
+        onConfirm={handleSave}
+      />
     </div>
   );
 };

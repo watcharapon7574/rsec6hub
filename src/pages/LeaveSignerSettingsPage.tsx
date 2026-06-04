@@ -84,13 +84,46 @@ const LEAVE_ROLE_META: Array<{
   order: string;
   hint: string;
 }> = [
-  { role: 'hr_head', label: 'หน.บุคคล', order: 'ขั้นที่ 1', hint: 'ผู้ลงนามคนแรก — ออกเลขหนังสือ' },
-  { role: 'deputy_director', label: 'รอง ผอ.', order: 'ขั้นที่ 2', hint: 'ลงนามต่อจาก หน.บุคคล' },
-  { role: 'director', label: 'ผอ.', order: 'ขั้นที่ 3', hint: 'ผู้ลงนามคนสุดท้าย — อนุมัติ' },
+  {
+    role: 'hr_head',
+    label: 'หน.บุคคล',
+    order: 'ขั้นที่ 1',
+    hint: 'ผู้ลงนามคนแรก — ออกเลขหนังสือ (เฉพาะฝ่ายบุคคล)',
+  },
+  {
+    role: 'deputy_director',
+    label: 'รอง ผอ.',
+    order: 'ขั้นที่ 2',
+    hint: 'ลงนามต่อจาก หน.บุคคล (เฉพาะผู้มีตำแหน่งรอง ผอ.)',
+  },
+  {
+    role: 'director',
+    label: 'ผอ.',
+    order: 'ขั้นที่ 3',
+    hint: 'ผู้ลงนามคนสุดท้าย — อนุมัติ (เฉพาะผู้มีตำแหน่ง ผอ.)',
+  },
 ];
 
 const candidateLabel = (c: SignerCandidate): string =>
   c.org_structure_role ? `${c.name} · ${c.org_structure_role}` : c.name;
+
+// ตัวเลือกผู้ลงนามการลาต่อบทบาท — ตรงกับเงื่อนไขใน DB is_leave_*
+// (หน.บุคคล = org_structure_role มี "บุคคล", รอง/ผอ = ตาม position)
+const leaveCandidatesForRole = (
+  role: LeaveSignerRole,
+  all: SignerCandidate[],
+): SignerCandidate[] => {
+  switch (role) {
+    case 'hr_head':
+      return all.filter((c) => /บุคคล/.test(c.org_structure_role ?? ''));
+    case 'deputy_director':
+      return all.filter((c) => c.position === 'deputy_director');
+    case 'director':
+      return all.filter((c) => c.position === 'director');
+    default:
+      return all;
+  }
+};
 
 // แถบบันทึก + ยืนยัน — ใช้ร่วมทุก panel เพื่อ UX ที่ต้องกดบันทึกเอง (ไม่ auto-save)
 const SaveBar: React.FC<{
@@ -234,7 +267,7 @@ const LeaveSignerPanel: React.FC = () => {
                 <SelectValue placeholder="— ยังไม่ได้เลือก —" />
               </SelectTrigger>
               <SelectContent>
-                {candidates.map((c) => (
+                {leaveCandidatesForRole(meta.role, candidates).map((c) => (
                   <SelectItem key={c.user_id} value={c.user_id}>
                     {candidateLabel(c)}
                   </SelectItem>

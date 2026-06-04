@@ -686,14 +686,11 @@ export async function getSignerCandidates(): Promise<SignerCandidate[]> {
   }));
 }
 
-// roles ที่ user คนนี้เซ็นได้ — เงื่อนไขเดิม (admin / position / org_structure_role)
-// OR เป็นผู้ที่ถูกตั้งไว้ใน config (เทียบด้วย profiles.user_id = auth id)
-// ต้องตรงกับตรรกะใน DB is_leave_* เป๊ะ
+// roles ที่ user คนนี้เซ็นได้ — exclusive: เฉพาะคนที่ถูกเลือกใน config หรือ admin เท่านั้น
+// (ไม่ดู position/org_structure_role แล้ว) — ต้องตรงกับตรรกะใน DB is_leave_* เป๊ะ
 export function computeAllowedSignerRoles(
   profile: {
     user_id?: string | null;
-    position?: string | null;
-    org_structure_role?: string | null;
     is_admin?: boolean | null;
   },
   config: LeaveSignerConfig | null,
@@ -701,23 +698,11 @@ export function computeAllowedSignerRoles(
   const isAdm = profile.is_admin === true;
   const uid = profile.user_id ?? null;
   const roles: LeaveSignerRole[] = [];
-  if (
-    isAdm ||
-    /บุคคล/.test(profile.org_structure_role ?? '') ||
-    (!!config?.hr_head && uid === config.hr_head)
-  )
+  if (isAdm || (!!config?.hr_head && uid === config.hr_head))
     roles.push('hr_head');
-  if (
-    isAdm ||
-    profile.position === 'deputy_director' ||
-    (!!config?.deputy_director && uid === config.deputy_director)
-  )
+  if (isAdm || (!!config?.deputy_director && uid === config.deputy_director))
     roles.push('deputy_director');
-  if (
-    isAdm ||
-    profile.position === 'director' ||
-    (!!config?.director && uid === config.director)
-  )
+  if (isAdm || (!!config?.director && uid === config.director))
     roles.push('director');
   return roles;
 }

@@ -258,11 +258,12 @@ const ManageReportMemoPage: React.FC = () => {
     try {
       let maxNumber = 0;
 
-      // 1. ดึงจาก memos ที่ลงเลขแล้ว
+      // 1. ดึงจาก memos ที่ลงเลขแล้ว (ไม่นับที่ถูกลบ — กัน max เลขเพี้ยนหลังลบ)
       const { data, error } = await supabase
         .from('memos')
         .select('doc_number, doc_number_status')
         .not('doc_number_status', 'is', null)
+        .is('doc_del', null)
         .order('created_at', { ascending: false })
         .limit(50);
 

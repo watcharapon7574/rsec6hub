@@ -57,10 +57,13 @@ const CreateDocReceivePage = () => {
         const shortYear = (new Date().getFullYear() + 543).toString().slice(-2); // e.g. "69"
 
         // Get max doc_number for current year (format: 0001/69)
+        // NOTE: exclude soft-deleted rows (doc_del IS NULL) — otherwise deleted
+        // docs keep inflating the suggested running number even after deletion.
         const { data: existingDocs, error: fetchError } = await (supabase as any)
           .from('doc_receive')
           .select('doc_number')
           .ilike('doc_number', `%/${shortYear}`)
+          .is('doc_del', null)
           .order('created_at', { ascending: false });
 
         if (fetchError) {

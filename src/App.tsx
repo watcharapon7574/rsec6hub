@@ -4,8 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Particles } from "@/components/ui/particles";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useLayoutEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useLayoutEffect } from "react";
 import { useEmployeeAuth, EmployeeAuthProvider } from "@/hooks/useEmployeeAuth";
 import { useMaintenanceStatus } from "@/hooks/useMaintenanceStatus";
 import MaintenanceScreen from "@/components/Maintenance/MaintenanceScreen";
@@ -120,13 +120,13 @@ const ProtectedRouteWithAuth = ({ children, isAuthenticated }: { children: React
 const AppContent = () => {
   const { isAuthenticated, loading, profile, signOut } = useEmployeeAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const { config: maintenanceConfig, isActive: maintenanceActive } = useMaintenanceStatus();
-  const [adminBypass, setAdminBypass] = useState(false);
 
   // Check if current path is a public route (no auth required)
   const isPublicRoute = location.pathname.startsWith('/telegram-assignees') || location.pathname.startsWith('/tg/') || location.pathname.startsWith('/embed/') || location.pathname === '/auth';
 
-  // โหมดปิดปรับปรุง — ล็อกทุกคนยกเว้นแอดมิน; flow ภายนอก (Telegram mini app / embed) ไม่บล็อก
+  // โหมดปิดปรับปรุง — ล็อกทุกคนยกเว้นแอดมิน/ผู้ทดสอบ
   const userIsAdmin = profile ? isAdmin(profile) : false;
   // ผู้ทดสอบที่ถูกเลือกไว้ → เข้า login และใช้งานได้ระหว่างปิดปรับปรุง (เหมือนแอดมิน)
   const isTestUser = !!profile && (maintenanceConfig?.testUserIds ?? []).includes(profile.user_id);
@@ -135,20 +135,26 @@ const AppContent = () => {
     location.pathname.startsWith('/telegram-assignees') ||
     location.pathname.startsWith('/tg/') ||
     location.pathname.startsWith('/embed/');
+  // ยกเว้นหน้า /auth จาก gate — ให้ไปกรอกเบอร์/OTP ได้ที่ Route /auth (ตำแหน่งคงที่ ไม่ remount
+  // ระหว่างที่ maintenance poll/loading เปลี่ยนค่า ซึ่งเคยทำให้ step รีเซ็ต)
+  const onAuthPath = location.pathname === '/auth';
   // login แล้วแต่ profile ยังไม่โหลด → ยังไม่ตัดสิน (กันเด้งแอดมิน/ผู้ทดสอบออก/ติดค้างหน้า maintenance
   // เพราะ userExempt อิง profile ที่โหลด async หลัง isAuthenticated)
   const profilePending = isAuthenticated && !profile;
-  if (maintenanceActive && !userExempt && !isExternalFlow && !loading && !profilePending) {
-    // แอดมินกดเข้าสู่ระบบ → เปิดเฉพาะหน้า login (ไม่เปิดทั้งแอป) เพื่อให้ล็อกอินมาปิดโหมดได้
-    if (adminBypass && !isAuthenticated) {
-      return <AuthPage />;
-    }
+  if (
+    maintenanceActive &&
+    !userExempt &&
+    !isExternalFlow &&
+    !onAuthPath &&
+    !loading &&
+    !profilePending
+  ) {
     return (
       <MaintenanceScreen
         reopenAt={maintenanceConfig?.reopenAt ?? null}
         message={maintenanceConfig?.message ?? 'ระบบกำลังปิดปรับปรุงชั่วคราว ขออภัยในความไม่สะดวก'}
         isAuthenticated={isAuthenticated}
-        onAdminLogin={() => setAdminBypass(true)}
+        onAdminLogin={() => navigate('/auth')}
         onSignOut={signOut}
       />
     );

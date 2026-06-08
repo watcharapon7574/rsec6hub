@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Shield,
   Banknote,
+  ServerOff,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -67,6 +68,12 @@ const AdminSettingsButton: React.FC<AdminSettingsButtonProps> = ({
       label: 'ระบบและเซิร์ฟเวอร์',
       icon: Power,
       items: [
+        {
+          label: 'ปิดปรับปรุงระบบ',
+          icon: ServerOff,
+          path: '/admin/maintenance',
+          description: 'ปิดการเข้าสู่ระบบชั่วคราว + ตั้งเวลานับถอยหลังเปิดอีกครั้ง',
+        },
         {
           label: 'จัดการ Railway Services',
           icon: Power,

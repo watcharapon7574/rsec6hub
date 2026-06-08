@@ -5,8 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Particles } from "@/components/ui/particles";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useEmployeeAuth, EmployeeAuthProvider } from "@/hooks/useEmployeeAuth";
+import { useMaintenanceStatus } from "@/hooks/useMaintenanceStatus";
+import MaintenanceScreen from "@/components/Maintenance/MaintenanceScreen";
+import { isAdmin } from "@/types/database";
 import TopBar from "@/components/Layout/TopBar";
 import FloatingNavbar from "@/components/Layout/FloatingNavbar";
 import PullToRefresh from "@/components/PWA/PullToRefresh";
@@ -48,6 +51,7 @@ import OcrSearchEmbedPage from "@/pages/OcrSearchEmbedPage";
 import PayslipPage from "@/pages/PayslipPage";
 import RegisterInternalPage from "@/pages/RegisterInternalPage";
 import RegisterExternalPage from "@/pages/RegisterExternalPage";
+import MaintenanceSettingsPage from "@/pages/MaintenanceSettingsPage";
 import InstallPrompt from "@/components/PWA/InstallPrompt";
 import DarkModeToggle from "@/components/Layout/DarkModeToggle";
 import APIMaintenanceBanner from "@/components/Layout/APIMaintenanceBanner";
@@ -114,11 +118,38 @@ const ProtectedRouteWithAuth = ({ children, isAuthenticated }: { children: React
 };
 
 const AppContent = () => {
-  const { isAuthenticated, loading } = useEmployeeAuth();
+  const { isAuthenticated, loading, profile, signOut } = useEmployeeAuth();
   const location = useLocation();
+  const { config: maintenanceConfig, isActive: maintenanceActive } = useMaintenanceStatus();
+  const [adminBypass, setAdminBypass] = useState(false);
 
   // Check if current path is a public route (no auth required)
   const isPublicRoute = location.pathname.startsWith('/telegram-assignees') || location.pathname.startsWith('/tg/') || location.pathname.startsWith('/embed/') || location.pathname === '/auth';
+
+  // โหมดปิดปรับปรุง — ล็อกทุกคนยกเว้นแอดมิน; flow ภายนอก (Telegram mini app / embed) ไม่บล็อก
+  const userIsAdmin = profile ? isAdmin(profile) : false;
+  const isExternalFlow =
+    location.pathname.startsWith('/telegram-assignees') ||
+    location.pathname.startsWith('/tg/') ||
+    location.pathname.startsWith('/embed/');
+  // login แล้วแต่ profile ยังไม่โหลด → ยังไม่ตัดสิน (กันเด้งแอดมินออก/ติดค้างหน้า maintenance
+  // เพราะ userIsAdmin อิง profile ที่โหลด async หลัง isAuthenticated)
+  const profilePending = isAuthenticated && !profile;
+  if (maintenanceActive && !userIsAdmin && !isExternalFlow && !loading && !profilePending) {
+    // แอดมินกดเข้าสู่ระบบ → เปิดเฉพาะหน้า login (ไม่เปิดทั้งแอป) เพื่อให้ล็อกอินมาปิดโหมดได้
+    if (adminBypass && !isAuthenticated) {
+      return <AuthPage />;
+    }
+    return (
+      <MaintenanceScreen
+        reopenAt={maintenanceConfig?.reopenAt ?? null}
+        message={maintenanceConfig?.message ?? 'ระบบกำลังปิดปรับปรุงชั่วคราว ขออภัยในความไม่สะดวก'}
+        isAuthenticated={isAuthenticated}
+        onAdminLogin={() => setAdminBypass(true)}
+        onSignOut={signOut}
+      />
+    );
+  }
 
   // For public routes, don't wait for auth loading - render immediately
   if (loading && !isPublicRoute) {
@@ -306,6 +337,11 @@ const AppContent = () => {
       <Route path="/admin/roles" element={
         <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
           <LeaveSignerSettingsPage />
+        </ProtectedRouteWithAuth>
+      } />
+      <Route path="/admin/maintenance" element={
+        <ProtectedRouteWithAuth isAuthenticated={isAuthenticated}>
+          <MaintenanceSettingsPage />
         </ProtectedRouteWithAuth>
       } />
       <Route path="/admin/chats" element={

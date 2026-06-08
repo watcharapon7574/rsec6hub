@@ -712,7 +712,7 @@ const LeaveProgress: React.FC<{
   const items: Array<{ state: LeaveStepState; label: string; name?: string }> = [
     { state: 'done', label: 'ส่งคำขอ' },
     { state: steps.step1, label: 'หน.บุคคล', name: nameForRole('hr_head') },
-    { state: steps.step2, label: 'รอง', name: nameForRole('deputy_director') },
+    { state: steps.step2, label: 'รอง ผอ.', name: nameForRole('deputy_director') },
     { state: steps.step3, label: 'ผอ.', name: nameForRole('director') },
     { state: steps.step4, label: 'อนุมัติ' },
   ];
@@ -722,6 +722,11 @@ const LeaveProgress: React.FC<{
       {items.map((item, i) => (
         <React.Fragment key={i}>
           <div className="flex flex-col items-center gap-1">
+            {showLabels && (
+              <span className="text-[9px] text-muted-foreground opacity-80 whitespace-nowrap leading-tight">
+                {item.name || ' '}
+              </span>
+            )}
             <div
               className={`${
                 showLabels ? 'w-7 h-7' : 'w-5 h-5'
@@ -745,19 +750,14 @@ const LeaveProgress: React.FC<{
               )}
             </div>
             {showLabels && (
-              <span className="text-[10px] text-muted-foreground whitespace-nowrap flex flex-col items-center leading-tight">
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap leading-tight">
                 {item.label}
-                {item.name && (
-                  <span className="text-[9px] opacity-80">{item.name}</span>
-                )}
               </span>
             )}
           </div>
           {i < items.length - 1 && (
             <div
-              className={`h-0.5 flex-1 min-w-[12px] ${
-                showLabels ? '-mt-4' : ''
-              } ${STEP_CONNECTOR_CLASS[item.state]}`}
+              className={`h-0.5 flex-1 min-w-[12px] ${STEP_CONNECTOR_CLASS[item.state]}`}
             />
           )}
         </React.Fragment>

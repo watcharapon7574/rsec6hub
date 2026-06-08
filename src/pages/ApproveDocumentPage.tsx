@@ -30,7 +30,7 @@ import { extractPdfUrl } from '@/utils/fileUpload';
 import Accordion from '@/components/OfficialDocuments/Accordion';
 import { RejectionCard } from '@/components/OfficialDocuments/RejectionCard';
 import PDFAnnotationEditor from '@/components/OfficialDocuments/PDFAnnotationEditor';
-import { calculateNextSignerOrder, calculateNextSignerOrderWithParallel, isInParallelGroup, isCurrentSignerWithParallel } from '@/services/approvalWorkflowService';
+import { calculateNextSignerOrder, isInParallelGroup, isCurrentSignerWithParallel } from '@/services/approvalWorkflowService';
 import { ParallelSignerConfig } from '@/types/memo';
 
 const ApproveDocumentPage: React.FC = () => {
@@ -815,30 +815,18 @@ const ApproveDocumentPage: React.FC = () => {
           if (userSignaturePositions.length === 0 && isParallelOrder) {
             console.log('📝 Parallel signer ไม่มีตำแหน่งลายเซ็น - skip Railway API, update DB อย่างเดียว');
             try {
-              const currentOrderForParallel = signerOrder;
               const effectiveUserIdForParallel = signOnBehalfUserId || profile?.user_id || '';
-              const parallelResult = calculateNextSignerOrderWithParallel(
-                currentOrderForParallel, signaturePositions, signingPosition, parallelConfig, effectiveUserIdForParallel
-              );
-
-              const updateData: any = {
-                status: parallelResult.newStatus,
-                current_signer_order: parallelResult.nextSignerOrder,
-                updated_at: new Date().toISOString(),
-              };
-              if ('parallelUpdate' in parallelResult && parallelResult.parallelUpdate && parallelConfig) {
-                updateData.parallel_signers = {
-                  ...parallelConfig,
-                  completed_user_ids: parallelResult.parallelUpdate.completed_user_ids,
-                };
-              }
-
-              const tableName = isDocReceive ? 'doc_receive' : 'memos';
-              const { error: updateErr } = await (supabase as any)
-                .from(tableName)
-                .update(updateData)
-                .eq('id', memoId);
-              if (updateErr) throw updateErr;
+              // ขั้นถัดไปถ้า parallel group ครบ — deterministic จากโครงสร้างผู้ลงนาม (ไม่ขึ้นกับ completed_user_ids)
+              const nextStep = calculateNextSignerOrder(signerOrder, signaturePositions, signingPosition);
+              // บันทึกแบบ atomic: append completed_user_ids + เลื่อน order ถ้าครบ ผ่าน RPC
+              // (SECURITY DEFINER → ไม่พึ่ง RLS, FOR UPDATE → กัน lost-update race ตอนเซ็นพร้อมกัน)
+              const { error: rpcErr } = await supabase.rpc('record_parallel_signer_completion', {
+                p_memo_id: memoId,
+                p_user_id: effectiveUserIdForParallel,
+                p_next_order_if_complete: nextStep.nextSignerOrder,
+                p_next_status: nextStep.newStatus,
+              });
+              if (rpcErr) throw rpcErr;
 
               setShowLoadingModal(false);
               approvedRef.current = true;
@@ -919,13 +907,17 @@ const ApproveDocumentPage: React.FC = () => {
             };
           });
 
-          // คำนวณ next signer order และ status (รองรับ parallel group)
+          // คำนวณ next signer order และ status
           const currentOrder = currentUserSigner?.order || currentUserSignature?.signer?.order || memo.current_signer_order || 1;
           // parallelConfig ใช้จากที่ประกาศไว้ด้านบน (บรรทัด 533)
           const effectiveUserId = signOnBehalfUserId || profile?.user_id || '';
-          const approvalResult = calculateNextSignerOrderWithParallel(
-            currentOrder, signaturePositions, signingPosition, parallelConfig, effectiveUserId
-          );
+          // next step ถ้า "ขั้นนี้" จบ — deterministic จากโครงสร้างผู้ลงนาม (ไม่ขึ้นกับ completed_user_ids)
+          const nextStep = calculateNextSignerOrder(currentOrder, signaturePositions, signingPosition);
+          // parallel signer: ห้าม edge function เลื่อน order — RPC จะ append + ตัดสินใจครบ/เลื่อน order
+          // แบบ atomic หลัง stamp PDF เสร็จ (กัน lost-update race ตอนเซ็นพร้อมกัน)
+          const isParallelStamp = !!(parallelConfig && currentOrder === (parallelConfig as any).order);
+          const edgeNewStatus = isParallelStamp ? 'pending_sign' : nextStep.newStatus;
+          const edgeNextOrder = isParallelStamp ? currentOrder : nextStep.nextSignerOrder;
 
           // คำนวณ file paths
           // ตัด query string (?t=...) ออกจาก URL ก่อนคำนวณ path
@@ -964,14 +956,8 @@ const ApproveDocumentPage: React.FC = () => {
                 newFilePath,
                 documentId: memoId,
                 tableName: isDocReceive ? 'doc_receive' : 'memos',
-                newStatus: approvalResult.newStatus,
-                nextSignerOrder: approvalResult.nextSignerOrder,
-                ...('parallelUpdate' in approvalResult && approvalResult.parallelUpdate && parallelConfig && {
-                  parallelSignersUpdate: {
-                    ...parallelConfig,
-                    completed_user_ids: approvalResult.parallelUpdate.completed_user_ids,
-                  }
-                }),
+                newStatus: edgeNewStatus,
+                nextSignerOrder: edgeNextOrder,
               }),
             }
           );
@@ -987,14 +973,16 @@ const ApproveDocumentPage: React.FC = () => {
             throw new Error(edgeResult.error || edgeResult.msg || 'ไม่สามารถเซ็นเอกสารได้');
           }
 
-          // อัปเดต parallel_signers.completed_user_ids หลัง edge function สำเร็จ
-          if ('parallelUpdate' in approvalResult && approvalResult.parallelUpdate && parallelConfig) {
-            await supabase.from('memos').update({
-              parallel_signers: {
-                ...parallelConfig,
-                completed_user_ids: approvalResult.parallelUpdate.completed_user_ids,
-              }
-            } as any).eq('id', memoId);
+          // บันทึกการลงนามของ parallel signer แบบ atomic (append + เลื่อน order ถ้าครบ) ผ่าน RPC
+          // SECURITY DEFINER → ไม่พึ่ง RLS, FOR UPDATE → กัน lost-update race; ล้มเหลว = throw (ไม่เงียบ)
+          if (isParallelStamp) {
+            const { error: rpcErr } = await supabase.rpc('record_parallel_signer_completion', {
+              p_memo_id: memoId,
+              p_user_id: effectiveUserId,
+              p_next_order_if_complete: nextStep.nextSignerOrder,
+              p_next_status: nextStep.newStatus,
+            });
+            if (rpcErr) throw new Error('บันทึกสถานะผู้ลงนามไม่สำเร็จ: ' + rpcErr.message);
           }
 
           setShowLoadingModal(false);

@@ -1164,7 +1164,15 @@ export const LeaveDetailDialog: React.FC<{
                     onChange={(e) => {
                       const f = e.target.files?.[0];
                       e.target.value = '';
-                      if (f) void handleAttach(f);
+                      if (!f) return;
+                      if (f.size > 10 * 1024 * 1024) {
+                        toast({
+                          title: 'ไฟล์ใหญ่เกิน 10MB',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+                      void handleAttach(f);
                     }}
                   />
                   <Button

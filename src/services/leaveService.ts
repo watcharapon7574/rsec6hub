@@ -472,6 +472,35 @@ export async function createLeaveRequest(
   return created;
 }
 
+// เจ้าของใบลาแนบเอกสารเพิ่มหลังยื่น (เช่น ลาป่วยแล้วตามใบรับรองแพทย์มาทีหลัง)
+// — upload ไฟล์เข้า bucket {auth.uid}/{folder}/{file} แล้วผูก metadata ผ่าน RPC
+//   (RPC เป็น SECURITY DEFINER เช็คความเป็นเจ้าของ + กันใบที่ถูกปฏิเสธ)
+export async function addLeaveAttachment(
+  leaveId: string,
+  file: File,
+): Promise<LeaveRequest> {
+  const authId = await getCurrentAuthUserId();
+  const folderId = crypto.randomUUID();
+  const safeName = file.name.replace(/[^\w.-]/g, '_');
+  const path = `${authId}/${folderId}/${safeName}`;
+  const { error: upErr } = await supabase.storage
+    .from('leave-attachments')
+    .upload(path, file, {
+      contentType: file.type || 'application/octet-stream',
+      upsert: false,
+    });
+  if (upErr) throw new Error(`อัปโหลดไฟล์ไม่สำเร็จ: ${upErr.message}`);
+
+  const { data, error } = await sb.rpc('add_leave_attachment', {
+    p_leave_id: leaveId,
+    p_path: path,
+    p_name: file.name,
+  });
+  if (error) throw new Error(error.message ?? 'addLeaveAttachment failed');
+  const sigsMap = await fetchSignaturesFor([leaveId]);
+  return mapDbRequest(data as DbLeaveRequest, sigsMap.get(leaveId) ?? []);
+}
+
 // HR head registers paper-backlog leave (entry_source='manual')
 export async function createManualLeaveEntry(
   input: NewManualRegistryEntryInput,

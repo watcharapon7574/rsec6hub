@@ -2897,6 +2897,37 @@ export type Database = {
         Args: { p_memo_id: string; p_user_id: string }
         Returns: boolean
       }
+      add_leave_attachment: {
+        Args: { p_leave_id: string; p_name: string; p_path: string }
+        Returns: {
+          created_at: string
+          current_signer_order: number
+          days_count: number
+          doc_number: string | null
+          doc_number_at: string | null
+          end_date: string
+          entry_source: Database["public"]["Enums"]["leave_entry_source"]
+          fiscal_half: number
+          fiscal_year: number
+          form_data: Json | null
+          id: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          reason: string
+          rejection_reason: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["leave_status"]
+          updated_at: string
+          user_id: string
+          user_name: string | null
+          user_position: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "leave_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       approve_leave_request: {
         Args: {
           p_comment?: string

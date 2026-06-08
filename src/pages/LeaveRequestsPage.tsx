@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -107,6 +108,7 @@ import {
   LEAVE_TYPE_ATTACHMENTS,
   LEAVE_TYPE_LABELS,
   LEAVE_TYPE_ORDER,
+  LeaveAttachment,
   LeaveBalance,
   LeaveGender,
   LeaveRequest,
@@ -124,6 +126,7 @@ import {
   toLocalISODate,
 } from '@/utils/fiscalYear';
 import {
+  addLeaveAttachment,
   addManualRegistryEntry,
   approveLeave,
   ApproverContext,
@@ -776,8 +779,10 @@ export const LeaveDetailDialog: React.FC<{
   onClose: () => void;
   approver?: ApproverContext | null;
   canApprove?: boolean;
+  // เจ้าของใบลาเปิดดูใบตัวเอง → แนบเอกสารเพิ่มได้ (เช่น ตามใบรับรองแพทย์มาทีหลัง)
+  canAttach?: boolean;
   onChanged?: () => void;
-}> = ({ request, onClose, approver, canApprove, onChanged }) => {
+}> = ({ request, onClose, approver, canApprove, canAttach, onChanged }) => {
   const { toast } = useToast();
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -787,6 +792,10 @@ export const LeaveDetailDialog: React.FC<{
   const [deputyComment, setDeputyComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [reqStats, setReqStats] = useState<RequesterLeaveTypeStats | null>(null);
+  // ไฟล์ที่เพิ่งแนบในรอบนี้ — โชว์ทันทีโดยไม่ต้องรอ parent refetch+reopen
+  const [justAttached, setJustAttached] = useState<LeaveAttachment[]>([]);
+  const [attaching, setAttaching] = useState(false);
+  const attachInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!request) {
@@ -797,6 +806,7 @@ export const LeaveDetailDialog: React.FC<{
       setDeputyComment('');
       setReqStats(null);
     }
+    setJustAttached([]);
   }, [request]);
 
   // โหลดสถิติการลา "ประเภทที่กำลังขอ" ของผู้ขอ (ปีงบเดียวกัน ไม่รวมใบนี้)
@@ -871,7 +881,40 @@ export const LeaveDetailDialog: React.FC<{
     }
   };
 
-  const attachments = request.form_data?.attachments ?? [];
+  const attachments = [
+    ...(request.form_data?.attachments ?? []),
+    ...justAttached,
+  ];
+
+  // เจ้าของแนบเอกสารเพิ่มได้ตราบใบยังไม่ถูกปฏิเสธ (pending / in_progress / approved)
+  const showAttachButton = !!canAttach && request.status !== 'rejected';
+
+  const handleAttach = async (file: File) => {
+    setAttaching(true);
+    try {
+      const updated = await addLeaveAttachment(request.id, file);
+      const next = updated.form_data?.attachments ?? [];
+      // เอาเฉพาะรายการที่ยังไม่อยู่ใน request เดิม มาโชว์เป็น justAttached
+      const existing = new Set(
+        (request.form_data?.attachments ?? []).map((a) =>
+          typeof a === 'string' ? a : a.path,
+        ),
+      );
+      setJustAttached(
+        next.filter((a) => (typeof a === 'string' ? !existing.has(a) : !existing.has(a.path))),
+      );
+      toast({ title: 'แนบเอกสารแล้ว', description: file.name });
+      onChanged?.();
+    } catch (err) {
+      toast({
+        title: 'แนบเอกสารไม่สำเร็จ',
+        description: err instanceof Error ? err.message : 'ไม่ทราบสาเหตุ',
+        variant: 'destructive',
+      });
+    } finally {
+      setAttaching(false);
+    }
+  };
 
   return (
     <Dialog open={!!request} onOpenChange={(o) => !o && onClose()}>
@@ -1054,7 +1097,9 @@ export const LeaveDetailDialog: React.FC<{
               </div>
             )}
 
-          {(attachmentCfg.required !== 'never' || attachments.length > 0) && (
+          {(attachmentCfg.required !== 'never' ||
+            attachments.length > 0 ||
+            showAttachButton) && (
             <div>
               <div className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
                 <Paperclip className="h-3 w-3" />
@@ -1108,6 +1153,39 @@ export const LeaveDetailDialog: React.FC<{
                     );
                   })}
                 </div>
+              )}
+              {showAttachButton && (
+                <>
+                  <input
+                    ref={attachInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/heic,application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = '';
+                      if (f) void handleAttach(f);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={attaching}
+                    onClick={() => attachInputRef.current?.click()}
+                    className="mt-2 w-full"
+                  >
+                    {attaching ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    {attachments.length > 0 ? 'แนบเอกสารเพิ่ม' : 'แนบเอกสาร'}
+                  </Button>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    รองรับ รูปภาพ หรือ PDF (สูงสุด 10MB) — แนบเพิ่มได้ทั้งก่อนและหลังอนุมัติ
+                  </p>
+                </>
               )}
             </div>
           )}
@@ -2236,6 +2314,8 @@ const LeaveTab: React.FC<{ profile: LeaveProfile }> = ({ profile }) => {
       <LeaveDetailDialog
         request={detailReq}
         onClose={() => setDetailReq(null)}
+        canAttach
+        onChanged={refresh}
       />
     </div>
   );
@@ -3088,6 +3168,7 @@ const LeaveRegistryTab: React.FC = () => {
                     <TableHead className="w-0">ช่วงวันลา</TableHead>
                     <TableHead className="text-right w-0">วัน</TableHead>
                     <TableHead className="w-0">สถานะ</TableHead>
+                    <TableHead className="w-0">เอกสาร</TableHead>
                     <TableHead className="w-0">ที่มา</TableHead>
                     <TableHead>หมายเหตุ</TableHead>
                   </TableRow>
@@ -3144,6 +3225,34 @@ const LeaveRegistryTab: React.FC = () => {
                           >
                             {getLeaveStatusLabel(r)}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {(() => {
+                            const count = (r.form_data?.attachments ?? []).length;
+                            const needsDoc =
+                              LEAVE_TYPE_ATTACHMENTS[r.leave_type].required !==
+                              'never';
+                            if (count > 0) {
+                              return (
+                                <Badge className="bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300 text-[11px] px-1.5 py-0 gap-1">
+                                  <Paperclip className="h-3 w-3" />
+                                  แนบแล้ว{count > 1 ? ` (${count})` : ''}
+                                </Badge>
+                              );
+                            }
+                            if (needsDoc) {
+                              return (
+                                <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 text-[11px] px-1.5 py-0">
+                                  ยังไม่แนบ
+                                </Badge>
+                              );
+                            }
+                            return (
+                              <span className="text-xs text-muted-foreground">
+                                —
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell>
                           {r.entry_source === 'manual' ? (

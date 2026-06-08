@@ -13,19 +13,28 @@ import {
   Clock,
   Users,
   X,
+  ChevronsUpDown,
+  Check,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { getSignerCandidates, type SignerCandidate } from '@/services/leaveService';
 import {
   AlertDialog,
@@ -87,6 +96,7 @@ const MaintenancePanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -299,30 +309,57 @@ const MaintenancePanel: React.FC = () => {
             </div>
           )}
 
-          <Select
-            value=""
-            onValueChange={(v) =>
-              setDraft((d) =>
-                d && !d.testUserIds.includes(v)
-                  ? { ...d, testUserIds: [...d.testUserIds, v] }
-                  : d,
-              )
-            }
-            disabled={busy}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="+ เพิ่มผู้ทดสอบ" />
-            </SelectTrigger>
-            <SelectContent>
-              {candidates
-                .filter((c) => !draft.testUserIds.includes(c.user_id))
-                .map((c) => (
-                  <SelectItem key={c.user_id} value={c.user_id}>
-                    {c.org_structure_role ? `${c.name} · ${c.org_structure_role}` : c.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={pickerOpen}
+                disabled={busy}
+                className="w-full justify-between font-normal text-muted-foreground"
+              >
+                + เพิ่มผู้ทดสอบ (พิมพ์ค้นหาชื่อได้)
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-[--radix-popover-trigger-width] p-0 bg-card"
+              align="start"
+            >
+              <Command>
+                <CommandInput placeholder="พิมพ์ชื่อเพื่อค้นหา..." />
+                <CommandList>
+                  <CommandEmpty>ไม่พบรายชื่อ</CommandEmpty>
+                  <CommandGroup>
+                    {candidates
+                      .filter((c) => !draft.testUserIds.includes(c.user_id))
+                      .map((c) => {
+                        const label = c.org_structure_role
+                          ? `${c.name} · ${c.org_structure_role}`
+                          : c.name;
+                        return (
+                          <CommandItem
+                            key={c.user_id}
+                            value={label}
+                            onSelect={() => {
+                              setDraft((d) =>
+                                d && !d.testUserIds.includes(c.user_id)
+                                  ? { ...d, testUserIds: [...d.testUserIds, c.user_id] }
+                                  : d,
+                              );
+                              setPickerOpen(false);
+                            }}
+                          >
+                            <Check className="mr-2 h-4 w-4 opacity-0" />
+                            {label}
+                          </CommandItem>
+                        );
+                      })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </CardContent>
       </Card>
 

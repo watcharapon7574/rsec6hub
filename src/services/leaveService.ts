@@ -686,6 +686,26 @@ export async function getSignerCandidates(): Promise<SignerCandidate[]> {
   }));
 }
 
+// map user_id -> "ชื่อ นามสกุล" (ไม่มีคำนำหน้า) — ใช้แสดงชื่อผู้ลงนามใน stepper สถานะการลา
+export async function getSignerNameMap(): Promise<Record<string, string>> {
+  const { data, error } = await sb
+    .from('profiles')
+    .select('user_id, first_name, last_name')
+    .not('user_id', 'is', null);
+  if (error) throw new Error(error.message ?? 'getSignerNameMap failed');
+  type Row = {
+    user_id: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
+  const map: Record<string, string> = {};
+  for (const p of (data as Row[]) ?? []) {
+    const name = `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim();
+    if (name) map[p.user_id] = name;
+  }
+  return map;
+}
+
 // roles ที่ user คนนี้เซ็นได้ — exclusive: เฉพาะคนที่ถูกเลือกใน config หรือ admin เท่านั้น
 // (ไม่ดู position/org_structure_role แล้ว) — ต้องตรงกับตรรกะใน DB is_leave_* เป๊ะ
 export function computeAllowedSignerRoles(

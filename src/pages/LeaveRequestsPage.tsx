@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEmployeeAuth } from '@/hooks/useEmployeeAuth';
 import { Button } from '@/components/ui/button';
@@ -124,6 +131,7 @@ import {
   computeAllowedSignerRoles,
   createLeaveRequest,
   getLeaveSignerConfig,
+  getSignerNameMap,
   LeaveSignerConfig,
   generateLeavePdf,
   getAllUsersLeaveSummary,
@@ -674,16 +682,38 @@ const STEP_CONNECTOR_CLASS: Record<LeaveStepState, string> = {
   rejected: 'bg-red-500',
 };
 
+// ชื่อผู้ลงนาม (ไม่มีคำนำหน้า) ที่ใช้แสดงใต้แต่ละขั้นของ stepper สถานะการลา
+// config = ผู้ลงนามที่ admin ตั้งไว้, nameByUserId = map user_id -> "ชื่อ นามสกุล"
+interface LeaveSignerNames {
+  config: LeaveSignerConfig | null;
+  nameByUserId: Record<string, string>;
+}
+const LeaveSignerNamesContext = createContext<LeaveSignerNames>({
+  config: null,
+  nameByUserId: {},
+});
+
 const LeaveProgress: React.FC<{
   req: LeaveRequest;
   showLabels?: boolean;
 }> = ({ req, showLabels = true }) => {
   const steps = getLeaveSteps(req);
-  const items: Array<{ state: LeaveStepState; label: string }> = [
+  const { config, nameByUserId } = useContext(LeaveSignerNamesContext);
+
+  // ชื่อของขั้นนั้น: ถ้าเซ็นแล้วใช้ผู้ที่เซ็นจริง ไม่งั้นใช้ผู้ที่ถูกตั้งไว้ใน config
+  const nameForRole = (role: LeaveSignerRole): string | undefined => {
+    const signed = req.signatures.find(
+      (s) => s.signer_role === role,
+    )?.signer_user_id;
+    const uid = signed ?? config?.[role] ?? undefined;
+    return uid ? nameByUserId[uid] : undefined;
+  };
+
+  const items: Array<{ state: LeaveStepState; label: string; name?: string }> = [
     { state: 'done', label: 'ส่งคำขอ' },
-    { state: steps.step1, label: 'หน.บุคคล' },
-    { state: steps.step2, label: 'รอง' },
-    { state: steps.step3, label: 'ผอ.' },
+    { state: steps.step1, label: 'หน.บุคคล', name: nameForRole('hr_head') },
+    { state: steps.step2, label: 'รอง', name: nameForRole('deputy_director') },
+    { state: steps.step3, label: 'ผอ.', name: nameForRole('director') },
     { state: steps.step4, label: 'อนุมัติ' },
   ];
 
@@ -715,8 +745,11 @@ const LeaveProgress: React.FC<{
               )}
             </div>
             {showLabels && (
-              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap flex flex-col items-center leading-tight">
                 {item.label}
+                {item.name && (
+                  <span className="text-[9px] opacity-80">{item.name}</span>
+                )}
               </span>
             )}
           </div>
@@ -3262,10 +3295,15 @@ const LeaveRequestsPage: React.FC = () => {
   const { profile } = useEmployeeAuth();
   // ผู้ลงนามที่ admin ตั้งไว้ (app_settings) — ใช้กำหนดว่าใครเห็นแท็บอนุมัติ
   const [signerConfig, setSignerConfig] = useState<LeaveSignerConfig | null>(null);
+  // map user_id -> "ชื่อ นามสกุล" สำหรับแสดงชื่อผู้ลงนามใต้ stepper
+  const [signerNameMap, setSignerNameMap] = useState<Record<string, string>>({});
   useEffect(() => {
     getLeaveSignerConfig()
       .then(setSignerConfig)
       .catch(() => setSignerConfig(null));
+    getSignerNameMap()
+      .then(setSignerNameMap)
+      .catch(() => setSignerNameMap({}));
   }, []);
 
   if (!profile) {
@@ -3277,9 +3315,12 @@ const LeaveRequestsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <Card className="mb-6">
+    <LeaveSignerNamesContext.Provider
+      value={{ config: signerConfig, nameByUserId: signerNameMap }}
+    >
+      <div className="min-h-screen bg-background pb-24">
+        <div className="container mx-auto px-4 py-6 max-w-7xl">
+          <Card className="mb-6">
           <CardContent className="bg-blue-600 rounded-t-lg pt-6">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-white/15">
@@ -3321,8 +3362,9 @@ const LeaveRequestsPage: React.FC = () => {
             />
           );
         })()}
+        </div>
       </div>
-    </div>
+    </LeaveSignerNamesContext.Provider>
   );
 };
 

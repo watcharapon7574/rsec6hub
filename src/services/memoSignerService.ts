@@ -106,6 +106,15 @@ export function resolveMemoSignerPools<T extends MemoSignerProfileLike>(
     config && config.deputies.length > 0 ? new Set(config.deputies) : null;
   const directorId = config?.director || null;
 
+  // ผอ. ที่ตั้งไว้ — ถ้า resolve ไม่เจอ profile (เช่นถูกลบ) fallback เป็นคนเดิม กันหนังสือใหม่ขาด ผอ.
+  const configuredDirector = directorId
+    ? profiles.filter((p) => p.user_id === directorId)
+    : [];
+  const directors =
+    configuredDirector.length > 0
+      ? configuredDirector
+      : profiles.filter((p) => p.user_id === FALLBACK_DIRECTOR_USER_ID);
+
   return {
     assistantDirectors: headIds
       ? profiles.filter((p) => headIds.has(p.user_id))
@@ -113,8 +122,6 @@ export function resolveMemoSignerPools<T extends MemoSignerProfileLike>(
     deputyDirectors: deputyIds
       ? profiles.filter((p) => deputyIds.has(p.user_id))
       : profiles.filter((p) => p.position === 'deputy_director'),
-    directors: directorId
-      ? profiles.filter((p) => p.user_id === directorId)
-      : profiles.filter((p) => p.user_id === FALLBACK_DIRECTOR_USER_ID),
+    directors,
   };
 }

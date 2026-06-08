@@ -335,7 +335,8 @@ const DocumentManagePage: React.FC = () => {
         setAnnotationRequiredUserIds(config.annotation_required_for || []);
       }
     }
-  }, [memo, profiles]);
+    // memoSignerConfig: re-run เมื่อ config โหลดเสร็จ เพื่อจัดประเภทผู้ลงนามที่ admin เลือกให้ถูก
+  }, [memo, profiles, memoSignerConfig]);
 
   // Get profiles by org_structure_role (ใช้ org_structure_role แทน position เพื่อรองรับการเปลี่ยนคนรับผิดชอบ)
   // ผู้ลงนามมาจากค่าที่ admin ตั้งใน "ตั้งค่าบทบาท" (ถ้าว่าง → logic เดิม)

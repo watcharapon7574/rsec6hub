@@ -744,7 +744,6 @@ class TaskAssignmentService {
       // For position-based (team leader): always 'in_progress' to allow team management
       // For others: Reporter = 'in_progress', Non-reporter = 'completed'
       const isThisPersonReporter = reporterIds.includes(assignment.assigned_to);
-      const isPositionBased = assignment.assignment_source === 'position';
 
       // Team leader always stays in_progress to manage team (regardless of assignment source)
       // Even if not a reporter, they need to be able to edit reporter assignment
@@ -768,8 +767,8 @@ class TaskAssignmentService {
         throw new Error(updateError.message);
       }
 
-      // If position-based and team members provided, add them
-      if (assignment.assignment_source === 'position' && options.teamMembers) {
+      // If the leader provided team members, add them (any assignment source)
+      if (options.teamMembers) {
         for (const member of options.teamMembers) {
           await this.addTeamMember(
             assignmentId,
@@ -821,10 +820,9 @@ class TaskAssignmentService {
         throw new Error('ไม่พบงานมอบหมายหลัก');
       }
 
-      // Check if this is a position-based assignment
-      if (parent.assignment_source !== 'position') {
-        throw new Error('ไม่สามารถเพิ่มทีมได้ (งานนี้ไม่ได้มอบหมายผ่านหน้าที่)');
-      }
+      // Any team leader (name/group/position assignment) can add sub-team members.
+      // Leader-only access is enforced by the "Team leaders can add team members" RLS
+      // policy (is_team_leader_for_document); the duplicate check below prevents repeats.
 
       // Check for duplicate: skip if user already has an active assignment for this document
       const docColumn = parent.document_type === 'memo' ? 'memo_id' : 'doc_receive_id';

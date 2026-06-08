@@ -94,7 +94,7 @@ export default function MaintenanceScreen({
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors"
             >
               <ShieldCheck className="h-3.5 w-3.5" />
-              เข้าสู่ระบบสำหรับผู้ดูแลระบบ
+              เข้าสู่ระบบสำหรับผู้ดูแล / ผู้ทดสอบ
             </button>
           )}
         </div>

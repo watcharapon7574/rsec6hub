@@ -6,6 +6,7 @@ export const MAINTENANCE_KEYS = {
   enabled: 'maintenance_enabled',
   reopenAt: 'maintenance_reopen_at',
   message: 'maintenance_message',
+  testUserIds: 'maintenance_test_user_ids',
 } as const;
 
 export const DEFAULT_MAINTENANCE_MESSAGE =
@@ -15,7 +16,19 @@ export interface MaintenanceConfig {
   enabled: boolean;
   reopenAt: Date | null; // เวลาที่ระบบจะกลับมาเปิดอัตโนมัติ (null = ไม่มีกำหนด)
   message: string;
+  testUserIds: string[]; // user_id ที่ยกเว้นให้เข้าใช้งานได้ระหว่างปิดปรับปรุง (สำหรับทดสอบ)
 }
+
+// parse JSON array แบบปลอดภัย (เหมือน memoSignerService) — ค่าเสีย/ว่าง → []
+const parseIdList = (raw: string | undefined): string[] => {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+};
 
 export async function getMaintenanceConfig(): Promise<MaintenanceConfig> {
   const { data, error } = await supabase
@@ -36,6 +49,7 @@ export async function getMaintenanceConfig(): Promise<MaintenanceConfig> {
     enabled: (map.get(MAINTENANCE_KEYS.enabled) ?? 'false') === 'true',
     reopenAt: reopenAt && !Number.isNaN(reopenAt.getTime()) ? reopenAt : null,
     message: map.get(MAINTENANCE_KEYS.message) || DEFAULT_MAINTENANCE_MESSAGE,
+    testUserIds: parseIdList(map.get(MAINTENANCE_KEYS.testUserIds)),
   };
 }
 
@@ -44,6 +58,7 @@ export async function setMaintenanceConfig(cfg: MaintenanceConfig): Promise<void
     { key: MAINTENANCE_KEYS.enabled, value: cfg.enabled ? 'true' : 'false' },
     { key: MAINTENANCE_KEYS.reopenAt, value: cfg.reopenAt ? cfg.reopenAt.toISOString() : '' },
     { key: MAINTENANCE_KEYS.message, value: cfg.message ?? '' },
+    { key: MAINTENANCE_KEYS.testUserIds, value: JSON.stringify(cfg.testUserIds ?? []) },
   ];
   const { error } = await supabase
     .from('app_settings')

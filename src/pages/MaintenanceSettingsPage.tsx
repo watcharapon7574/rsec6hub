@@ -11,12 +11,22 @@ import {
   AlertTriangle,
   ServerOff,
   Clock,
+  Users,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { getSignerCandidates, type SignerCandidate } from '@/services/leaveService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,6 +83,7 @@ const MaintenancePanel: React.FC = () => {
   const { toast } = useToast();
   const [saved, setSaved] = useState<MaintenanceConfig | null>(null);
   const [draft, setDraft] = useState<MaintenanceConfig | null>(null);
+  const [candidates, setCandidates] = useState<SignerCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -85,9 +96,13 @@ const MaintenancePanel: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const cfg = await getMaintenanceConfig();
+        const [cfg, cands] = await Promise.all([
+          getMaintenanceConfig(),
+          getSignerCandidates(),
+        ]);
         setSaved(cfg);
         setDraft(cfg);
+        setCandidates(cands);
       } catch (e) {
         toast({
           title: 'โหลดข้อมูลไม่สำเร็จ',
@@ -105,9 +120,16 @@ const MaintenancePanel: React.FC = () => {
     return (
       saved.enabled !== draft.enabled ||
       saved.message !== draft.message ||
-      (saved.reopenAt?.getTime() ?? null) !== (draft.reopenAt?.getTime() ?? null)
+      (saved.reopenAt?.getTime() ?? null) !== (draft.reopenAt?.getTime() ?? null) ||
+      JSON.stringify(saved.testUserIds) !== JSON.stringify(draft.testUserIds)
     );
   }, [saved, draft]);
+
+  const candidateById = useMemo(() => {
+    const m = new Map<string, SignerCandidate>();
+    for (const c of candidates) m.set(c.user_id, c);
+    return m;
+  }, [candidates]);
 
   const setPreset = (mins: number) =>
     setDraft((d) => (d ? { ...d, reopenAt: new Date(Date.now() + mins * 60_000) } : d));
@@ -234,6 +256,73 @@ const MaintenancePanel: React.FC = () => {
             disabled={busy}
             rows={3}
           />
+        </CardContent>
+      </Card>
+
+      {/* ผู้ทดสอบ — ยกเว้นให้เข้าใช้งานได้ระหว่างปิดปรับปรุง */}
+      <Card>
+        <CardContent className="pt-5">
+          <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <Users className="h-4 w-4" />
+            ผู้ทดสอบ (เข้าใช้งานได้ระหว่างปิดปรับปรุง)
+          </p>
+          <p className="text-xs text-muted-foreground mt-1 mb-2.5">
+            เลือกได้หลายคน — คนเหล่านี้จะ login และใช้งานระบบได้ตามปกติแม้เปิดโหมดปิดปรับปรุง
+            (แอดมินยกเว้นให้อยู่แล้วโดยอัตโนมัติ ไม่ต้องเพิ่ม)
+          </p>
+
+          {draft.testUserIds.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic mb-2">— ยังไม่ได้เลือก —</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 mb-2.5">
+              {draft.testUserIds.map((uid) => (
+                <span
+                  key={uid}
+                  className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 pl-2.5 pr-1 py-1 text-xs"
+                >
+                  {candidateById.get(uid)?.name ?? uid}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      setDraft((d) =>
+                        d ? { ...d, testUserIds: d.testUserIds.filter((x) => x !== uid) } : d,
+                      )
+                    }
+                    className="rounded-full hover:bg-blue-200/60 dark:hover:bg-blue-800/60 p-0.5 disabled:opacity-50"
+                    aria-label="เอาออก"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <Select
+            value=""
+            onValueChange={(v) =>
+              setDraft((d) =>
+                d && !d.testUserIds.includes(v)
+                  ? { ...d, testUserIds: [...d.testUserIds, v] }
+                  : d,
+              )
+            }
+            disabled={busy}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="+ เพิ่มผู้ทดสอบ" />
+            </SelectTrigger>
+            <SelectContent>
+              {candidates
+                .filter((c) => !draft.testUserIds.includes(c.user_id))
+                .map((c) => (
+                  <SelectItem key={c.user_id} value={c.user_id}>
+                    {c.org_structure_role ? `${c.name} · ${c.org_structure_role}` : c.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 

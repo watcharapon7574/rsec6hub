@@ -128,14 +128,17 @@ const AppContent = () => {
 
   // โหมดปิดปรับปรุง — ล็อกทุกคนยกเว้นแอดมิน; flow ภายนอก (Telegram mini app / embed) ไม่บล็อก
   const userIsAdmin = profile ? isAdmin(profile) : false;
+  // ผู้ทดสอบที่ถูกเลือกไว้ → เข้า login และใช้งานได้ระหว่างปิดปรับปรุง (เหมือนแอดมิน)
+  const isTestUser = !!profile && (maintenanceConfig?.testUserIds ?? []).includes(profile.user_id);
+  const userExempt = userIsAdmin || isTestUser;
   const isExternalFlow =
     location.pathname.startsWith('/telegram-assignees') ||
     location.pathname.startsWith('/tg/') ||
     location.pathname.startsWith('/embed/');
-  // login แล้วแต่ profile ยังไม่โหลด → ยังไม่ตัดสิน (กันเด้งแอดมินออก/ติดค้างหน้า maintenance
-  // เพราะ userIsAdmin อิง profile ที่โหลด async หลัง isAuthenticated)
+  // login แล้วแต่ profile ยังไม่โหลด → ยังไม่ตัดสิน (กันเด้งแอดมิน/ผู้ทดสอบออก/ติดค้างหน้า maintenance
+  // เพราะ userExempt อิง profile ที่โหลด async หลัง isAuthenticated)
   const profilePending = isAuthenticated && !profile;
-  if (maintenanceActive && !userIsAdmin && !isExternalFlow && !loading && !profilePending) {
+  if (maintenanceActive && !userExempt && !isExternalFlow && !loading && !profilePending) {
     // แอดมินกดเข้าสู่ระบบ → เปิดเฉพาะหน้า login (ไม่เปิดทั้งแอป) เพื่อให้ล็อกอินมาปิดโหมดได้
     if (adminBypass && !isAuthenticated) {
       return <AuthPage />;

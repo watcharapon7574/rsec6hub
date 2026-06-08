@@ -19,6 +19,8 @@ import { railwayFetch } from '@/utils/railwayFetch';
 import Step1DocReceive, { DepartmentOption, trimDepartmentPrefix } from '@/components/DocumentManage/Step1DocReceive';
 import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
 import Step4Review from '@/components/DocumentManage/Step4Review';
+import { useMemoSignerConfig } from '@/hooks/useMemoSignerConfig';
+import { resolveMemoSignerPools } from '@/services/memoSignerService';
 
 const PDFDocumentManagePage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
@@ -26,6 +28,7 @@ const PDFDocumentManagePage: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
   const { profiles } = useProfiles();
+  const memoSignerConfig = useMemoSignerConfig();
   const { updateMemoStatus } = useAllMemos();
 
   // State
@@ -97,10 +100,10 @@ const PDFDocumentManagePage: React.FC = () => {
   }, [fetchDocReceive]);
 
   // Get profiles by position
+  // หัวหน้าฝ่าย (assistant) ที่นี่ใช้สร้างตัวกรองประเภทหนังสือ ไม่ใช่ผู้ลงนาม — คงเดิม
   const assistantDirectors = profiles.filter(p => p.position === 'assistant_director');
-  const deputyDirectors = profiles.filter(p => p.position === 'deputy_director');
-  // ผอ. ต้องเป็น user_id นี้เท่านั้น
-  const directors = profiles.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
+  // รอง/ผอ. (ผู้ลงนาม) มาจาก config "ตั้งค่าบทบาท" (ถ้าว่าง → logic เดิม)
+  const { deputyDirectors, directors } = resolveMemoSignerPools(profiles, memoSignerConfig);
 
   // สร้าง departmentOptions จาก assistantDirectors
   const departmentOptions: DepartmentOption[] = React.useMemo(() => {
@@ -167,8 +170,8 @@ const PDFDocumentManagePage: React.FC = () => {
       }
     }
 
-    // 3. ผู้อำนวยการ (เสมอ) - user_id: 28ef1822-628a-4dfd-b7ea-2defa97d755b
-    const director = directors.find(d => d.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') || directors[0];
+    // 3. ผู้อำนวยการ (เสมอ) — มาจาก config, fallback เป็นคนเดิม
+    const director = directors[0];
     if (director) {
       const fullName = `${director.prefix || ''}${director.first_name} ${director.last_name}`.trim();
       list.push({

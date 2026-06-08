@@ -26,12 +26,19 @@ import Step1DocumentNumber from '@/components/DocumentManage/Step1DocumentNumber
 import Step2SelectSigners from '@/components/DocumentManage/Step2SelectSigners';
 import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
 import Step4Review from '@/components/DocumentManage/Step4Review';
+import { useMemoSignerConfig } from '@/hooks/useMemoSignerConfig';
+import { resolveMemoSignerPools } from '@/services/memoSignerService';
 
 const DocumentManagePage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profiles } = useProfiles();
+  const memoSignerConfig = useMemoSignerConfig();
+  // id ที่ admin ตั้งไว้ — ใช้จัดประเภทตอน reload draft ที่บันทึกไว้
+  const cfgHeadIds = new Set(Object.values(memoSignerConfig?.dept_heads ?? {}));
+  const cfgDeputyIds = new Set(memoSignerConfig?.deputies ?? []);
+  const cfgDirectorId = memoSignerConfig?.director ?? null;
   const { getMemoById, updateMemoStatus, updateMemoSigners, refetch } = useAllMemos();
 
   // State
@@ -306,15 +313,19 @@ const DocumentManagePage: React.FC = () => {
 
           // Admin roles ต้องอยู่ใน dropdown เสมอ — ไม่ว่า dropdown ปัจจุบันจะเลือกไว้แล้วหรือไม่
           // ก็ห้าม fallthrough ไปกอง parallel (เดิม else-if ทำให้ deputy หล่นลง parallel ถ้า selectedDeputy มีค่า)
-          if (p.position === 'deputy_director') {
+          if (p.position === 'deputy_director' || cfgDeputyIds.has(signer.user_id)) {
             if (!selectedDeputy) setSelectedDeputy(signer.user_id);
             continue;
           }
-          if (p.position === 'assistant_director' || p.org_structure_role?.includes('หัวหน้าฝ่าย')) {
+          if (
+            p.position === 'assistant_director' ||
+            p.org_structure_role?.includes('หัวหน้าฝ่าย') ||
+            cfgHeadIds.has(signer.user_id)
+          ) {
             if (!selectedAssistant) setSelectedAssistant(signer.user_id);
             continue;
           }
-          if (p.position === 'director') continue;
+          if (p.position === 'director' || signer.user_id === cfgDirectorId) continue;
           nonAdminSigners.push(signer);
         }
 
@@ -327,10 +338,11 @@ const DocumentManagePage: React.FC = () => {
   }, [memo, profiles]);
 
   // Get profiles by org_structure_role (ใช้ org_structure_role แทน position เพื่อรองรับการเปลี่ยนคนรับผิดชอบ)
-  const assistantDirectors = profiles.filter(p => p.org_structure_role?.includes('หัวหน้าฝ่าย'));
-  const deputyDirectors = profiles.filter(p => p.position === 'deputy_director');
-  // ผอ. ต้องเป็น user_id นี้เท่านั้น
-  const directors = profiles.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
+  // ผู้ลงนามมาจากค่าที่ admin ตั้งใน "ตั้งค่าบทบาท" (ถ้าว่าง → logic เดิม)
+  const { assistantDirectors, deputyDirectors, directors } = resolveMemoSignerPools(
+    profiles,
+    memoSignerConfig,
+  );
   const authorProfile = memo ? profiles.find(p => p.user_id === memo.user_id) : null;
 
   // Auto-select assistant_director based on selected group
@@ -432,8 +444,8 @@ const DocumentManagePage: React.FC = () => {
       }
     }
 
-    // 4. ผู้อำนวยการ (เสมอ) - user_id: 28ef1822-628a-4dfd-b7ea-2defa97d755b
-    const director = directors.find(d => d.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') || directors[0];
+    // 4. ผู้อำนวยการ (เสมอ) — มาจาก config (resolveMemoSignerPools), fallback เป็นคนเดิม
+    const director = directors[0];
     if (director) {
       const fullName = `${director.prefix || ''}${director.first_name} ${director.last_name}`.trim();
       list.push({

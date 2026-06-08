@@ -16,6 +16,8 @@ import { railwayFetch } from '@/utils/railwayFetch';
 import Step1DocReceive, { DepartmentOption } from '@/components/DocumentManage/Step1DocReceive';
 import Step3SignaturePositions from '@/components/DocumentManage/Step3SignaturePositions';
 import Step4Review from '@/components/DocumentManage/Step4Review';
+import { useMemoSignerConfig } from '@/hooks/useMemoSignerConfig';
+import { resolveMemoSignerPools } from '@/services/memoSignerService';
 
 const PDFReceiveManagePage: React.FC = () => {
   const { memoId } = useParams<{ memoId: string }>();
@@ -23,6 +25,7 @@ const PDFReceiveManagePage: React.FC = () => {
   const { toast } = useToast();
   const { profiles } = useProfiles();
   const { profile } = useEmployeeAuth();
+  const memoSignerConfig = useMemoSignerConfig();
 
   // State
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
@@ -98,10 +101,8 @@ const PDFReceiveManagePage: React.FC = () => {
     fetchDocReceive();
   }, [fetchDepartments, fetchDocReceive]);
 
-  // Get profiles by position
-  const deputyDirectors = profiles.filter(p => p.position === 'deputy_director');
-  // ผอ. ต้องเป็น user_id นี้เท่านั้น
-  const directors = profiles.filter(p => p.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
+  // รอง/ผอ. (ผู้ลงนาม) มาจาก config "ตั้งค่าบทบาท" (ถ้าว่าง → logic เดิม)
+  const { deputyDirectors, directors } = resolveMemoSignerPools(profiles, memoSignerConfig);
 
   // Get clerk profile (current user)
   const clerkProfile = profile;
@@ -154,15 +155,9 @@ const PDFReceiveManagePage: React.FC = () => {
       }
     }
 
-    // 3. ผู้อำนวยการ (เสมอ) - user_id: 28ef1822-628a-4dfd-b7ea-2defa97d755b
+    // 3. ผู้อำนวยการ (เสมอ) — มาจาก config, fallback เป็นคนเดิม
     if (directors.length > 0) {
-      let director = directors.find(d =>
-        d.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b'
-      );
-
-      if (!director) {
-        director = directors[0];
-      }
+      const director = directors[0];
 
       const fullName = `${director.prefix || ''}${director.first_name} ${director.last_name}`.trim();
       list.push({

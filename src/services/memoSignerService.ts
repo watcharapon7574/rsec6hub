@@ -82,3 +82,39 @@ export async function setMemoSignerDeputies(userIds: string[]): Promise<void> {
 export async function setMemoSignerDirector(userId: string): Promise<void> {
   await upsertSetting(KEY.director, userId);
 }
+
+// ผอ. เดิม (ใช้เป็น fallback เมื่อ config ยังไม่ตั้งค่า — รักษาพฤติกรรมเดิมไว้)
+export const FALLBACK_DIRECTOR_USER_ID = '28ef1822-628a-4dfd-b7ea-2defa97d755b';
+
+export interface MemoSignerProfileLike {
+  user_id: string;
+  position?: string | null;
+  org_structure_role?: string | null;
+}
+
+// แปลง config → รายชื่อ profile ที่เลือกได้ต่อบทบาท (ใช้ร่วมทุกหน้าที่ธุรการเลือกผู้ลงนาม)
+// ถ้า config ของบทบาทใดว่าง → fallback เป็น logic เดิม (ของเก่าไม่พัง)
+export function resolveMemoSignerPools<T extends MemoSignerProfileLike>(
+  profiles: T[],
+  config: MemoSignerConfig | null,
+): { assistantDirectors: T[]; deputyDirectors: T[]; directors: T[] } {
+  const headIds =
+    config && Object.keys(config.dept_heads).length > 0
+      ? new Set(Object.values(config.dept_heads))
+      : null;
+  const deputyIds =
+    config && config.deputies.length > 0 ? new Set(config.deputies) : null;
+  const directorId = config?.director || null;
+
+  return {
+    assistantDirectors: headIds
+      ? profiles.filter((p) => headIds.has(p.user_id))
+      : profiles.filter((p) => p.org_structure_role?.includes('หัวหน้าฝ่าย')),
+    deputyDirectors: deputyIds
+      ? profiles.filter((p) => deputyIds.has(p.user_id))
+      : profiles.filter((p) => p.position === 'deputy_director'),
+    directors: directorId
+      ? profiles.filter((p) => p.user_id === directorId)
+      : profiles.filter((p) => p.user_id === FALLBACK_DIRECTOR_USER_ID),
+  };
+}

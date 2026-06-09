@@ -764,9 +764,6 @@ const MemoList: React.FC<MemoListProps> = ({
                                     : (memo.current_signer_order === signer.order ? 'text-amber-700 dark:text-amber-300' : 'text-amber-400 dark:text-amber-600')
                                 }`}>
                                   {(() => {
-                                    if (signer.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b') {
-                                      return 'ผู้อำนวยการ';
-                                    }
                                     switch (signer.role) {
                                       case 'assistant_director':
                                         return signer.org_structure_role || 'หัวหน้าฝ่าย';

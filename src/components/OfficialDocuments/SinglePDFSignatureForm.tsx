@@ -251,9 +251,9 @@ const SinglePDFSignatureForm: React.FC = () => {
       
       let errorMessage = "ไม่สามารถสร้างเอกสารลงนามได้";
       
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        errorMessage = "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่";
-      } else if (error instanceof Error) {
+      // railwayFetch แปลง network failure เป็นข้อความพร้อมแสดง (Error ธรรมดา) ให้แล้ว
+      // จึงไม่ดัก TypeError 'Failed to fetch' เองอีก — มันไม่โยน TypeError ออกมาแล้ว
+      if (error instanceof Error) {
         errorMessage = `เกิดข้อผิดพลาด: ${error.message}`;
       }
       

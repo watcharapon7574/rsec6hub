@@ -111,13 +111,21 @@ describe('railwayFetch — failover behavior', () => {
     expect(mockFetch.mock.calls[0][0]).toContain(PDF_API_HOSTS[1]);
   });
 
-  it('throws when all hosts fail', async () => {
+  it('throws a user-friendly error when all hosts fail, preserving the raw cause', async () => {
+    const primaryErr = new Error('primary down');
+    const backupErr = new Error('backup down');
     const mockFetch = vi
       .fn()
-      .mockRejectedValueOnce(new Error('primary down'))
-      .mockRejectedValueOnce(new Error('backup down'));
+      .mockRejectedValueOnce(primaryErr)
+      .mockRejectedValueOnce(backupErr);
     global.fetch = mockFetch as any;
 
-    await expect(railwayFetch('/pdf')).rejects.toThrow(/backup down|primary down/);
+    const err = (await railwayFetch('/pdf').catch((e) => e)) as Error & { cause?: unknown };
+
+    // Toast-friendly Thai message instead of the opaque raw "Failed to fetch"...
+    expect(err.message).toMatch(/ไม่ตอบสนองชั่วคราว/);
+    // ...with the raw error still reachable via `cause` for debugging.
+    expect(err.cause).toBe(backupErr);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 });

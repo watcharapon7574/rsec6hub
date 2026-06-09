@@ -2,6 +2,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 // PDF API hosts in priority order. Override via VITE_PDF_API_HOSTS (comma-separated).
 // First entry is primary (Railway), subsequent entries are backups (Fly.io, ...).
+//
+// NOTE (2026-06-09): the Fly.io backup is currently SUSPENDED — the fly.io trial
+// ended and the app can't run VMs until a card is added, so it answers with a
+// connection error. The failover machinery below still works; it just no-ops
+// against a dead host today (one wasted ~0.2s fetch when the primary blips).
+// Kept in the list so failover is ready the moment any backup is revived — to
+// actually disable failover, drop this entry (and update railwayFetch.test.ts).
 const DEFAULT_PDF_API_HOSTS = [
   'https://pdf-memo-docx-production-25de.up.railway.app',
   'https://pdf-memo-docx-backup.fly.dev',
@@ -93,5 +100,14 @@ export async function railwayFetch(endpoint: string, init: RequestInit = {}): Pr
     }
   }
 
-  throw lastError ?? new Error('All PDF API hosts failed');
+  // Every host failed (network error or 5xx). lastError is usually a bare
+  // `TypeError: Failed to fetch` — opaque to end users and useless in a toast.
+  // Keep the raw cause for the console/debugging, but surface a user-actionable
+  // Thai message so callers that toast `error.message` show something sensible.
+  console.warn('[railwayFetch] all PDF API hosts failed:', lastError);
+  const friendly = new Error(
+    'เซิร์ฟเวอร์ประมวลผลเอกสารไม่ตอบสนองชั่วคราว กรุณาลองใหม่อีกครั้งในอีกสักครู่',
+  );
+  (friendly as Error & { cause?: unknown }).cause = lastError;
+  throw friendly;
 }

@@ -83,8 +83,8 @@ export async function setMemoSignerDirector(userId: string): Promise<void> {
   await upsertSetting(KEY.director, userId);
 }
 
-// ผอ. เดิม (ใช้เป็น fallback เมื่อ config ยังไม่ตั้งค่า — รักษาพฤติกรรมเดิมไว้)
-export const FALLBACK_DIRECTOR_USER_ID = '28ef1822-628a-4dfd-b7ea-2defa97d755b';
+// ผอ. ปัจจุบัน (โอภาส ศรีสันต์) — ใช้เป็น fallback เมื่อ config ยังไม่ตั้งค่า
+export const FALLBACK_DIRECTOR_USER_ID = 'b2b4fa21-98f5-41ce-ae6d-6c5b3912be2e';
 
 export interface MemoSignerProfileLike {
   user_id: string;

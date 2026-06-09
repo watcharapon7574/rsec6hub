@@ -73,11 +73,6 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
     );
   };
 
-  const getDirectorProfiles = (): Profile[] => {
-    // ผอ. ต้องเป็น user_id นี้เท่านั้น
-    return profiles.filter(profile => profile.user_id === '28ef1822-628a-4dfd-b7ea-2defa97d755b');
-  };
-
   const getDeputyDirectorProfiles = (): Profile[] => {
     return profiles.filter(profile => profile.position === 'deputy_director');
   };
@@ -124,7 +119,6 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
     getProfileByEmployeeId,
     getProfilesByPosition,
     getExecutiveProfiles,
-    getDirectorProfiles,
     getDeputyDirectorProfiles,
     getAssistantDirectorProfiles,
     getClerkProfiles,

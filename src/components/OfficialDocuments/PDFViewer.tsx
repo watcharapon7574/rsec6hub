@@ -256,26 +256,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     };
   }, [isFullscreen]);
 
-  // ฟังก์ชันแปลงวันที่เป็นรูปแบบไทย
-  const formatThaiDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const thaiMonths = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-    ];
-    const thaiNumerals = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
-    
-    const day = date.getDate();
-    const month = thaiMonths[date.getMonth()];
-    const year = date.getFullYear() + 543; // แปลงเป็น พ.ศ.
-    
-    // แปลงตัวเลขเป็นตัวเลขไทย
-    const thaiDay = day.toString().split('').map(digit => thaiNumerals[parseInt(digit)]).join('');
-    const thaiYear = year.toString().split('').map(digit => thaiNumerals[parseInt(digit)]).join('');
-    
-    return `${thaiDay} ${month} ${thaiYear}`;
-  };
-  
   // สร้าง toolbar ที่มีแค่ปุ่มเปลี่ยนหน้า
   const transform: (slot: ToolbarSlot) => ToolbarSlot = (slot: ToolbarSlot) => ({
     ...slot,
@@ -1254,18 +1234,20 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                       {/* ชื่อ/ตำแหน่ง — แสดงเมื่อไม่ติ๊ก "ลายเซ็นเท่านั้น" (clerk/parallel ไม่แสดง) */}
                       {!isClerk && !isParallel && !isImageOnly && (
                         <>
-                          <div className="font-semibold text-gray-800" style={{ fontSize: '11px' }}>{pos.signer.name}</div>
+                          <div className="font-semibold text-gray-800" style={{ fontSize: '11px' }}>
+                            {(pos.signer.role === 'deputy_director' || pos.signer.role === 'director')
+                              ? `(${pos.signer.name})`
+                              : pos.signer.name}
+                          </div>
                           <div className="text-gray-600" style={{ fontSize: '10px' }}>
                             {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.job_position || pos.signer.position || ''}`}
                             {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
-                            {pos.signer.role === 'deputy_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
-                            {pos.signer.role === 'director' && `${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
+                            {pos.signer.role === 'deputy_director' && `${pos.signer.org_structure_role || ''}`}
+                            {pos.signer.role === 'director' && `${pos.signer.org_structure_role || ''}`}
                           </div>
-                          {(pos.signer.role === 'assistant_director' || pos.signer.role === 'deputy_director' || pos.signer.role === 'director') && (
+                          {pos.signer.role === 'assistant_director' && (
                             <div className="text-gray-500" style={{ fontSize: '10px' }}>
-                              {pos.signer.role === 'assistant_director' && `ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'หัวหน้าฝ่าย'}`}
-                              {pos.signer.role === 'deputy_director' && (memo?.updated_at ? formatThaiDate(memo.updated_at) : '')}
-                              {pos.signer.role === 'director' && `เขตการศึกษา ๖ จังหวัดลพบุรี`}
+                              {`ปฏิบัติหน้าที่ ${pos.signer.org_structure_role || 'หัวหน้าฝ่าย'}`}
                             </div>
                           )}
                         </>

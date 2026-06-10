@@ -179,8 +179,6 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                     <p className="text-xs text-muted-foreground">
                       {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                       {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
-                      {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
-                      {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
                     </p>
                     {/* org_structure_role (เด่นรอง) */}
                     {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (

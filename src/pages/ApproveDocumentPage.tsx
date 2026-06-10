@@ -727,31 +727,25 @@ const ApproveDocumentPage: React.FC = () => {
             linesWithComment = [
               { type: "comment", value: `- ${commentValue}` },
               { type: "image", file_key: "sig1" },
-              { type: "name", value: fullName },
-              { type: "position_rank", value: `ตำแหน่ง ${signerProfile.job_position || ""} วิทยฐานะ ${signerProfile.academic_rank || ""}` },
-              { type: "org_structure_role", value: signerProfile.org_structure_role || "" },
-              { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
+              { type: "name", value: `(${fullName})` },
+              { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
             ];
             linesWithoutComment = [
               { type: "image", file_key: "sig1" },
-              { type: "name", value: fullName },
-              { type: "position_rank", value: `ตำแหน่ง ${signerProfile.job_position || ""} วิทยฐานะ ${signerProfile.academic_rank || ""}` },
-              { type: "org_structure_role", value: signerProfile.org_structure_role || "" },
-              { type: "timestamp", value: new Date().toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) }
+              { type: "name", value: `(${fullName})` },
+              { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
             ];
           } else if (signingPosition === 'director') {
             const commentValue = comment ? `${commentPrefix}${comment}` : (isAdminSigning ? `${commentPrefix.trim()}` : "เห็นชอบ");
             linesWithComment = [
               { type: "comment", value: `- ${commentValue}` },
               { type: "image", file_key: "sig1" },
-              { type: "name", value: fullName },
-              { type: "job_position", value: signerProfile.job_position || signerProfile.position || "" },
+              { type: "name", value: `(${fullName})` },
               { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
             ];
             linesWithoutComment = [
               { type: "image", file_key: "sig1" },
-              { type: "name", value: fullName },
-              { type: "job_position", value: signerProfile.job_position || signerProfile.position || "" },
+              { type: "name", value: `(${fullName})` },
               { type: "org_structure_role", value: signerProfile.org_structure_role || "" }
             ];
           } else {

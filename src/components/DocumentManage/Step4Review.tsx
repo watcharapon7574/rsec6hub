@@ -71,8 +71,6 @@ const Step4Review: React.FC<Step4Props> = ({
                       {signer.role === 'author' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                       {signer.role === 'parallel_signer' && `${signer.job_position || signer.position || 'ผู้ลงนามเพิ่มเติม'}`}
                       {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
-                      {signer.role === 'deputy_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}${signer.academic_rank ? ` วิทยฐานะ ${signer.academic_rank}` : ''}`}
-                      {signer.role === 'director' && `${signer.job_position || signer.position || ''}`}
                     </p>
                     {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
                       <p className="text-sm text-muted-foreground">

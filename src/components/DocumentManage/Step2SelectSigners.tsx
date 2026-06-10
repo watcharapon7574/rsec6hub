@@ -216,7 +216,7 @@ const Step2SelectSigners: React.FC<Step2Props> = ({
                         {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                       </p>
                       {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                        <p className="text-sm text-muted-foreground">{signer.org_structure_role}</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">{signer.org_structure_role}</p>
                       )}
                     </div>
                     {canToggleAnnotation && (

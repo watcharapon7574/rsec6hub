@@ -1239,7 +1239,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                               ? `(${pos.signer.name})`
                               : pos.signer.name}
                           </div>
-                          <div className="text-gray-600" style={{ fontSize: '10px' }}>
+                          <div className="text-gray-600 whitespace-pre-line" style={{ fontSize: '10px' }}>
                             {pos.signer.role === 'author' && `ตำแหน่ง ${pos.signer.academic_rank || pos.signer.job_position || pos.signer.position || ''}`}
                             {pos.signer.role === 'assistant_director' && `ตำแหน่ง ${pos.signer.org_structure_role || pos.signer.job_position || pos.signer.position || ''}`}
                             {pos.signer.role === 'deputy_director' && `${pos.signer.org_structure_role || ''}`}

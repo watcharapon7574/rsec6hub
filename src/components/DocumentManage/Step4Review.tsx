@@ -73,7 +73,7 @@ const Step4Review: React.FC<Step4Props> = ({
                       {signer.role === 'assistant_director' && `ตำแหน่ง ${signer.job_position || signer.position || ''}`}
                     </p>
                     {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">
                         {signer.org_structure_role}
                       </p>
                     )}

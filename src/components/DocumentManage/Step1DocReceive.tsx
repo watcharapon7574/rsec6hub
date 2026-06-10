@@ -182,7 +182,7 @@ const Step1DocReceive: React.FC<Step1DocReceiveProps> = ({
                     </p>
                     {/* org_structure_role (เด่นรอง) */}
                     {(signer.role === 'assistant_director' || signer.role === 'deputy_director' || signer.role === 'director') && signer.org_structure_role && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">
                         {signer.org_structure_role}
                       </p>
                     )}

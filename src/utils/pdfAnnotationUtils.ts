@@ -350,3 +350,45 @@ export async function cleanupAnnotatedFiles(documentId: string): Promise<void> {
     console.warn('Error cleaning up annotated files:', error);
   }
 }
+
+/**
+ * Reliably delete a memo's annotation OVERLAY layers — both the storage PNGs and
+ * the `memo_annotation_layers` rows. Pass `userId` to scope to one signer, or omit
+ * to clear every signer's layers for the memo (use on reject / revise).
+ *
+ * Swallows its own errors (logs them) so callers can safely `await` it without it
+ * ever throwing and breaking an already-successful approve/reject.
+ *
+ * WHY THIS EXISTS: the old cleanup was a fire-and-forget `.delete()` placed right
+ * before `navigate()`, so the in-flight request was cancelled on unmount and almost
+ * never completed — leaking orphan layers. A leaked layer makes `hasCompletedAnnotation`
+ * restore to `true` (mere row-existence) and then gets silently RE-BAKED onto the next
+ * sign, so a signer who never drew anything ends up with someone's old annotation burned
+ * into their document. Keeping layers reliably deleted means "a layer exists" can only
+ * mean "drawn this round, not yet baked".
+ */
+export async function deleteAnnotationLayers(memoId: string, userId?: string): Promise<void> {
+  try {
+    let sel = supabase.from('memo_annotation_layers').select('layer_url').eq('memo_id', memoId);
+    if (userId) sel = sel.eq('user_id', userId);
+    const { data: layers, error } = await sel;
+    if (error || !layers || layers.length === 0) return;
+
+    // Remove the overlay PNGs from storage first
+    const paths = layers
+      .map((l: any) => extractStoragePath(l.layer_url))
+      .filter((p: string | null): p is string => !!p);
+    if (paths.length > 0) {
+      const { error: removeError } = await supabase.storage.from('documents').remove(paths);
+      if (removeError) console.warn('deleteAnnotationLayers: storage remove failed:', removeError.message);
+    }
+
+    // Then drop the rows
+    let del = supabase.from('memo_annotation_layers').delete().eq('memo_id', memoId);
+    if (userId) del = del.eq('user_id', userId);
+    const { error: delError } = await del;
+    if (delError) console.warn('deleteAnnotationLayers: row delete failed:', delError.message);
+  } catch (e) {
+    console.error('deleteAnnotationLayers failed:', e);
+  }
+}

@@ -982,9 +982,12 @@ const ApproveDocumentPage: React.FC = () => {
           setShowLoadingModal(false);
           approvedRef.current = true;
           // ลบ annotation layers หลังอนุมัติสำเร็จ (วาดลง PDF แล้ว ไม่ต้องเก็บ)
+          // ⚠️ ต้อง await + ทำก่อน navigate — ของเดิมเป็น fire-and-forget แล้ว navigate ทันที
+          // ทำให้ request โดน cancel ตอน unmount → layer ค้าง → ถูก re-bake ทับ PDF รอบถัดไป
+          // โดยที่คนเซ็นไม่ได้ขีดเขียนเอง (helper กลืน error เอง awaitได้ปลอดภัย)
           if (annotatorUserId && memoId) {
-            supabase.from('memo_annotation_layers').delete()
-              .eq('memo_id', memoId).eq('user_id', annotatorUserId);
+            const { deleteAnnotationLayers } = await import('@/utils/pdfAnnotationUtils');
+            await deleteAnnotationLayers(memoId, annotatorUserId);
             pendingAnnotationImagesRef.current = null;
           }
           toast({ title: 'สำเร็จ', description: 'ส่งเสนอต่อผู้ลงนามลำดับถัดไปแล้ว' });

@@ -230,6 +230,11 @@ export const useAllMemos = ({ enableRealtime = false }: UseAllMemosOptions = {})
           const currentRevisionCount = currentMemo.revision_count || 0;
           updates.revision_count = currentRevisionCount + 1;
 
+          // เคลียร์ annotation overlay layers ทั้งหมด — ขีดเขียนรอบเก่าใช้กับ PDF ใหม่ไม่ได้
+          // และถ้าไม่ลบจะถูก re-bake ทับตอนเซ็นรอบถัดไป (ดู deleteAnnotationLayers)
+          const { deleteAnnotationLayers } = await import('@/utils/pdfAnnotationUtils');
+          await deleteAnnotationLayers(memoId);
+
           // ลบ PDF และเอกสารแนบทันทีเมื่อถูกตีกลับ (เหมือน updateMemoApproval)
           if (currentMemo.pdf_draft_path) {
             try {
@@ -470,6 +475,11 @@ export const useAllMemos = ({ enableRealtime = false }: UseAllMemosOptions = {})
         // Increment revision_count
         const currentRevisionCount = memo.revision_count || 0;
         updateData.revision_count = currentRevisionCount + 1;
+
+        // เคลียร์ annotation overlay layers ทั้งหมด — ขีดเขียนรอบเก่าใช้กับ PDF ใหม่ไม่ได้
+        // และถ้าไม่ลบจะถูก re-bake ทับตอนเซ็นรอบถัดไป (ดู deleteAnnotationLayers)
+        const { deleteAnnotationLayers } = await import('@/utils/pdfAnnotationUtils');
+        await deleteAnnotationLayers(memoId);
 
         // Reset parallel_signers.completed_user_ids เมื่อตีกลับ
         if (parallelSigners) {

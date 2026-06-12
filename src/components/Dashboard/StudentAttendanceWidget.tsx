@@ -1,7 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, LogIn, LogOut, AlarmClock, MapPin, TrendingUp, School } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Users,
+  LogIn,
+  LogOut,
+  AlarmClock,
+  MapPin,
+  TrendingUp,
+  School,
+  FileSpreadsheet,
+  Loader2,
+} from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -12,6 +24,11 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import {
+  exportStudentAttendanceExcel,
+  THAI_MONTHS,
+} from './exportStudentAttendanceExcel';
 
 const THAI_DAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
@@ -108,8 +125,14 @@ const AttendanceLine: React.FC<AttendanceRowProps> = ({ name, count, out, forgot
 );
 
 const StudentAttendanceWidget: React.FC = () => {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [todayStr, setTodayStr] = useState(() => bangkokDateStr());
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportYear, setExportYear] = useState(() => Number(bangkokDateStr().slice(0, 4)));
+  const [exportMonth, setExportMonth] = useState(() => Number(bangkokDateStr().slice(5, 7)));
+  const channelIdRef = useRef(crypto.randomUUID());
   const [totalStudents, setTotalStudents] = useState(0);
   const [todayRows, setTodayRows] = useState<AttendanceRow[]>([]);
   const [last7Rows, setLast7Rows] = useState<Pick<AttendanceRow, 'date'>[]>([]);
@@ -119,9 +142,10 @@ const StudentAttendanceWidget: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
+    let debounceTimer: number | undefined;
 
-    const load = async () => {
-      setLoading(true);
+    const load = async (opts?: { silent?: boolean }) => {
+      if (!opts?.silent) setLoading(true);
       const today = bangkokDateStr();
       const weekAgo = shiftDateStr(today, -6);
 
@@ -165,17 +189,33 @@ const StudentAttendanceWidget: React.FC = () => {
 
     load();
 
+    // Scope realtime to today's rows only (date is btree-indexed:
+    // idx_std_attendance_date). The filter value is pinned at subscribe time —
+    // after midnight the channel goes quiet until the next mount, which is fine
+    // for a dashboard widget. Debounce the refetch so a burst of check-ins
+    // (face-scan queue) collapses into one reload, refreshed silently to avoid
+    // skeleton flashes.
+    const today = bangkokDateStr();
     const channel = supabase
-      .channel('dashboard-std-attendance')
+      .channel(`std-attendance-dashboard-${channelIdRef.current}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'std_attendance' },
-        () => load(),
+        {
+          event: '*',
+          schema: 'public',
+          table: 'std_attendance',
+          filter: `date=eq.${today}`,
+        },
+        () => {
+          if (debounceTimer) window.clearTimeout(debounceTimer);
+          debounceTimer = window.setTimeout(() => load({ silent: true }), 2000);
+        },
       )
       .subscribe();
 
     return () => {
       cancelled = true;
+      if (debounceTimer) window.clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -257,6 +297,35 @@ const StudentAttendanceWidget: React.FC = () => {
       }));
   }, [hqId, classrooms, students, todayRows]);
 
+  const currentYear = Number(todayStr.slice(0, 4));
+  const exportYearOptions = [currentYear, currentYear - 1, currentYear - 2];
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const fileName = await exportStudentAttendanceExcel(exportYear, exportMonth);
+      if (!fileName) {
+        toast({
+          title: 'ไม่มีข้อมูล',
+          description: `ไม่พบข้อมูลรับ-ส่งของ${THAI_MONTHS[exportMonth - 1]} ${exportYear + 543}`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: 'ส่งออกสำเร็จ', description: `ไฟล์ ${fileName}` });
+        setExportOpen(false);
+      }
+    } catch (err) {
+      console.error('Export attendance failed:', err);
+      toast({
+        title: 'ส่งออกไม่สำเร็จ',
+        description: 'ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+        variant: 'destructive',
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const statCards = [
     {
       label: 'มาวันนี้',
@@ -292,10 +361,58 @@ const StudentAttendanceWidget: React.FC = () => {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Users className="h-5 w-5 text-muted-foreground" />
-          สถิติรับ-ส่งนักเรียนวันนี้
-        </CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users className="h-5 w-5 text-muted-foreground" />
+            สถิติรับ-ส่งนักเรียนวันนี้
+          </CardTitle>
+          <Popover open={exportOpen} onOpenChange={setExportOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="shrink-0 gap-1.5">
+                <FileSpreadsheet className="h-4 w-4 text-green-600 dark:text-green-400" />
+                Excel
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 space-y-3 bg-card">
+              <p className="text-sm font-semibold text-foreground">
+                ส่งออกข้อมูลรับ-ส่งรายเดือน
+              </p>
+              <div className="flex items-center gap-2">
+                <select
+                  value={exportMonth}
+                  onChange={(e) => setExportMonth(Number(e.target.value))}
+                  className="flex-1 border border-border rounded-lg px-2 py-1.5 bg-background text-sm"
+                >
+                  {THAI_MONTHS.map((name, i) => (
+                    <option key={i + 1} value={i + 1}>{name}</option>
+                  ))}
+                </select>
+                <select
+                  value={exportYear}
+                  onChange={(e) => setExportYear(Number(e.target.value))}
+                  className="border border-border rounded-lg px-2 py-1.5 bg-background text-sm"
+                >
+                  {exportYearOptions.map((y) => (
+                    <option key={y} value={y}>{y + 543}</option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                size="sm"
+                className="w-full gap-1.5"
+                onClick={handleExport}
+                disabled={exporting}
+              >
+                {exporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="h-4 w-4" />
+                )}
+                {exporting ? 'กำลังดึงข้อมูล...' : 'ดาวน์โหลด Excel'}
+              </Button>
+            </PopoverContent>
+          </Popover>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
